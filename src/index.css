@@ -1,0 +1,41 @@
+:root {
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  color: #25332e;
+  background: #f1eee5;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid #286d99;
+  outline-offset: 4px;
+}
+
+::selection {
+  background: #f4d17d;
+  color: #25332e;
+}

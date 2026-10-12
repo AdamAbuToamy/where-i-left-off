@@ -1,0 +1,25 @@
+.account-strip { display:flex; align-items:center; flex-wrap:wrap; gap:16px; padding:16px 20px; margin-bottom:24px; background:#fffaf0; border:1px solid #d1c4ab; border-radius:14px; overflow-wrap:anywhere; }
+.sync-status { flex:1; font-size:13px; color:#385c4b; }
+.sync-status::before { content:'●'; margin-inline-end:8px; color:#548469; }
+.sync-status.is-saving::before { color:#aa4c2a; animation:status-enter 700ms ease-in-out infinite alternate; }
+.text-button { border:0; background:transparent; color:#854123; min-height:44px; padding:8px; text-decoration:underline; text-underline-offset:4px; }
+.notice { padding:16px; border:1px solid #a6c1d1; border-radius:12px; background:#e3eef5; line-height:1.8; }
+.notice.error { border-color:#bc6c51; background:#f9e6dc; color:#743721; }
+.notice button { margin-inline-start:16px; }
+.workspace-fields { border:0; margin:0; padding:0; min-width:0; }
+.workspace-toolbar { align-items:center; justify-content:space-between; gap:16px; }
+.project-count { font-weight:700; color:#59684f; white-space:nowrap; }
+.search-toolbar { display:flex; flex-wrap:wrap; gap:14px; margin:8px 0 24px; }
+.search-toolbar input { flex:1; min-width:220px; padding:13px 16px; border:1px solid #b8c5bb; border-radius:12px; background:#fffdf5; color:#25332e; }
+.filter-group { display:flex; flex-wrap:wrap; gap:8px; }
+.filter-group button[aria-pressed='true'] { background:#d6e6ca; border-color:#688156; }
+.empty-state { padding:48px 24px; border:1px dashed #a9b697; border-radius:20px; background:#f8f6ea; line-height:1.9; text-align:center; animation:card-enter 300ms ease-out; }
+.auth-panel { display:grid; grid-template-columns:1fr 1fr; gap:36px; align-items:center; animation:card-enter 350ms ease-out; }
+.auth-intro { padding:28px; }
+.auth-intro > span { display:inline-grid; place-items:center; width:90px; height:90px; border-radius:24px; background:#ead397; color:#7b4c24; font-size:60px; transform:rotate(-8deg); }
+.auth-intro h2 { font-size:clamp(26px,4vw,40px); line-height:1.6; }
+.auth-form { margin:0; }
+button:disabled, fieldset:disabled button { cursor:not-allowed; opacity:.55; }
+.sortable-project:nth-child(3n + 2) .project-card { --accent:#4382a9; }
+.sortable-project:nth-child(3n + 3) .project-card { --accent:#6b8e47; }
+@media (max-width:700px) { .auth-panel { grid-template-columns:1fr; gap:12px; } .auth-intro { padding:8px; } .auth-intro > span { display:none; } .auth-intro h2 { font-size:25px; } .search-toolbar input { min-width:0; width:100%; flex-basis:100%; } }

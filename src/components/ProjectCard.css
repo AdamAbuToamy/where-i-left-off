@@ -1,0 +1,111 @@
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.project-card .card-actions button {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.project-card button.card-secondary {
+  border: 1px solid #b7c7ce;
+  background: #e0eaf0;
+  color: #35566b;
+  box-shadow: 0 2px 0 #bacdd8;
+}
+
+.project-card button.card-delete {
+  border: 1px solid #dab6aa;
+  background: #f2e0d8;
+  color: #843f30;
+  box-shadow: 0 2px 0 #ddc0b5;
+}
+
+.card-editor {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  animation: editor-enter 220ms ease-out;
+}
+
+.card-editor label {
+  font-size: 13px;
+  font-weight: 650;
+  color: #465b4c;
+}
+
+.card-editor input,
+.card-editor textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #bbc7b5;
+  border-radius: 9px;
+  background: #fffef9;
+  color: #25332e;
+  line-height: 1.7;
+
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.card-editor textarea {
+  resize: vertical;
+}
+
+.card-editor input:focus,
+.card-editor textarea:focus {
+  border-color: #598561;
+  background: white;
+  box-shadow: 0 0 0 3px #59856120;
+}
+
+.project-card .card-editor button {
+  margin-top: 4px;
+}
+
+.project-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@keyframes editor-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (hover: hover) {
+  .project-card button.card-secondary:hover {
+    background: #cedfe9;
+  }
+
+  .project-card button.card-delete:hover {
+    background: #e9ccc0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-editor {
+    animation: none;
+  }
+
+  .card-editor input,
+  .card-editor textarea {
+    transition: none;
+  }
+}

@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/projects/{projectId} {
+      function owner() { return request.auth != null && request.auth.uid == uid; }
+      function valid() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
+          && d.keys().hasOnly(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+          && d.name.matches('.*[^\\s].*')
+          && d.nextStep is string && d.nextStep.size() <= 1000
+          && d.status in ['later', 'active']
+          && d.rank is number && d.rank > -1000000000000000 && d.rank < 1000000000000000
+          && d.revision is int && d.revision >= 0
+          && d.updatedAt == request.time;
+      }
+      allow read, delete: if owner();
+      allow create: if owner() && valid() && request.resource.data.revision == 0;
+      allow update: if owner() && valid() && request.resource.data.revision == resource.data.revision + 1;
+    }
+  }
+}

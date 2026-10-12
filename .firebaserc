@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "where-i-left-off-b5683": {
+      "hosting": {
+        "production": [
+          "where-i-left-off"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
