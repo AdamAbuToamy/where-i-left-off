@@ -1,54 +1,110 @@
-# Where I Left Off · وين وصلت؟ · איפה עצרתי?
+# Where I Left Off
 
-**Experimental beta.** Save a link, record where you stopped, and return to the next step.
+[![Quality checks](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml)
 
-Live site: https://where-i-left-off.web.app/
+**Save the link, remember where you stopped, and know what to do next.**
 
-## What it does
+A multilingual project and follow-up organizer built with React, TypeScript and Firebase. Keep personal cards private, coordinate tasks in shared groups, and continue working with cached cards offline.
 
-- Personal cards, sections, follow-up dates, weekly view, checklists and saved links.
-- Arabic, Hebrew and English, responsive layout, keyboard/mouse/touch sorting.
-- Google or email/password sign-in through Firebase Authentication.
-- Offline card edits stored on the device, synchronized when the app is open again online; explicit conflict resolution.
-- Shared groups: managers assign tasks and control members' creation permissions. Members update their assigned work.
-- Expiring invitations, member removal and group deletion. Personal cards remain private.
-- Limited admin dashboard: account activity metrics and app-access suspension. No access to personal card contents; no Firebase Auth account deletion.
-- Installable web app and an unpacked Chromium extension for saving the current tab.
+**[Try the live app](https://where-i-left-off.web.app/)** · **[العربية](README_AR.md)** · **[Test results](TEST_RESULTS.md)** · **[Security](SECURITY.md)**
 
-## Development
+## Why I built it
 
-Requires Node.js 24, npm and Java 21 for emulator tests.
+A saved tab tells you where to return, but not where you stopped. A task title tells you what to do, but not the context you need to resume. Where I Left Off keeps the link, checkpoint and next step together in one card.
+
+For example: save a university assignment, record “finished questions 1–2”, and set the next step to “start question 3”. Return to that card from your phone or computer.
+
+## Features
+
+| Area | Available in V1 |
+| --- | --- |
+| Personal organization | Cards, custom sections, saved links, checkpoints, checklists and follow-up dates |
+| Quick views | Search, status/date filters and a weekly view |
+| Offline work | Device-local edits, reload persistence, synchronization on reconnect and explicit conflict choices |
+| Shared groups | Invitations, task assignment, membership management and member creation permissions |
+| Languages | Arabic, Hebrew and English, including right-to-left layout |
+| Mobile and desktop | Responsive UI and keyboard, mouse and touch card sorting |
+| Sign-in | Firebase email/password and Google authentication |
+| Web app | Installable PWA, offline application shell and an Android share-target declaration |
+| Browser capture | Unpacked desktop Chromium extension, activated by the user to capture the current tab title and URL |
+
+This is an experimental beta. Native phone installation/share sheets and real Google OAuth still need documented physical-device verification.
+
+## Try it
+
+1. Open [where-i-left-off.web.app](https://where-i-left-off.web.app/) and create an account or sign in.
+2. Add a card with a title, a link if needed, and your next step.
+3. Add a checkpoint, section, checklist or follow-up date when useful.
+4. Open the same account on another device to access synchronized cards.
+
+Open and sign in online before relying on offline use. Queued changes sync while the app is open online; background synchronization with the app closed is not promised.
+
+For home-screen installation on Android and iPhone, see [the installation guide](docs/INSTALL.md). For desktop tab capture, see [the extension guide](browser-extension/README_AR.md).
+
+## Architecture
+
+```mermaid
+flowchart TB
+  App[React and TypeScript app]
+  Auth[Firebase Authentication]
+  Local[IndexedDB cache and mutation queue]
+  Cloud[Cloud Firestore and security rules]
+  App --> Auth
+  App <--> Local
+  App <--> Cloud
+```
+
+Firebase Authentication provides identity. Firestore rules enforce ownership, membership and permissions on the server. IndexedDB keeps cached data and queued changes separated by account and workspace. A service worker caches the application shell. Revision checks and explicit conflict resolution protect concurrent edits.
+
+The client admin dashboard is limited to activity metrics and app-access suspension. Its rules do not grant access to personal card content. See [security scope](SECURITY.md).
+
+## Run locally
+
+Requires **Node.js 24**, npm, and **Java 21** for emulator tests.
 
 ```bash
-npm ci
+npm ci --include=dev
 cp .env.example .env.local
-# Fill the four public Firebase web configuration values in .env.local.
+# Add your own Firebase web configuration to .env.local.
 npm run dev
 ```
 
-Enable Google and Email/Password providers and Firestore in your own Firebase project. Client configuration is not an admin credential; Firestore rules enforce access. Never commit service-account keys or tokens.
+In your Firebase project, enable Firestore and the Email/Password and Google sign-in providers. Configure the authorized domains for your deployment. Firebase client configuration is not a service-account credential; keep access tokens and private keys out of Git.
 
-For local demo data without production credentials:
+To use the test emulators without production credentials, run in separate terminals:
 
 ```bash
 npm run emulators
-# In another terminal:
 npm run dev:emulator
 ```
 
-## Verification
+## Tests and checks
 
 ```bash
 npx playwright install --with-deps chromium
+npm run test:tooling
+npm audit --audit-level=high
 npm run test:all
 ```
 
-`npm test` runs unit tests only. `npm run test:rules` starts a Firestore emulator and executes security tests. `npm run test:e2e` uses Auth and Firestore emulators plus Chromium. `test:all` finishes with a production build, so an emulator bundle is not accidentally deployed. Do not run build and E2E concurrently.
+The validated suite has **44 tests: 20 unit, 14 Firestore security/repository and 10 browser tests**. The browser suite also passed three consecutive local runs. Full-tree npm audit reported **0 known vulnerabilities** on 2026-10-13. [Evidence and scope](TEST_RESULTS.md) explain what these results cover.
 
-Read [TEST_RESULTS.md](TEST_RESULTS.md) for actual results and [SECURITY.md](SECURITY.md) for limitations. GitHub Actions runs checks on pushes and pull requests; it does not deploy or need production credentials.
+CI runs on pushes and pull requests, including a blocking dependency audit and tooling compatibility checks. It uses demo Firebase emulators and does not deploy or require production credentials. Do not run E2E and production builds concurrently: both write `dist`.
 
-## Known limits
+For the documented WSL test runner and dependency override compatibility, see [tooling maintenance](docs/TOOLING_SECURITY.md).
 
-Dependency audit has unresolved findings. This is not a security-certified release. Google popup login and native installation/share sheets need real-device checks. Offline data remains on devices that have already downloaded it; revocation blocks future server access but cannot remotely erase an offline device. Group administration needs an internet connection. No AI integration, automated external reply monitoring or binary file uploads.
+## Deployment
 
-Use Firebase free quotas without attaching billing if a zero-cost deployment is required. Availability is limited by those quotas.
+```bash
+VITE_USE_EMULATORS=false VITE_TEST_OFFLINE=false npm run build
+```
+
+The included `scripts/deploy-production.sh` is configured for the maintainer's Firebase project and hosting target. Forks should use their own Firebase project, hosting target and deployed rules. Hosting and Firestore free quotas are finite; the project does not guarantee unlimited free usage.
+
+## Scope and next steps
+
+V1 includes the features above. AI assistance, external reply monitoring, binary attachment uploads, nested sections and external reminders are not implemented. See [the roadmap](ROADMAP_AR.md).
+
+Automated checks do not establish complete coverage, penetration-test certification or production IAM/abuse resistance. Offline copies cannot be remotely erased after access is revoked. Group administration needs connectivity. These limits are documented in [SECURITY.md](SECURITY.md).
+
+Built by **[Adam Abu Toamy](https://www.linkedin.com/in/adam-abu-toamy-383250363/)**.

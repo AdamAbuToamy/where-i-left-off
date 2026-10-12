@@ -1,52 +1,55 @@
-# Verification — 2026-10-12
+# Verification results — 2026-10-13
 
-Tests run against local demo Firebase emulators, never production accounts.
+The validated source is commit [`f0a16bc`](https://github.com/AdamAbuToamy/where-i-left-off/commit/f0a16bc). GitHub Actions run **#5** completed successfully: both `verify` and `dependency-audit` passed. [Workflow history](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml).
 
-| Check | Result |
-|---|---|
-| ESLint | Passed |
+Tests use demo Firebase emulators, not production user accounts.
+
+| Check | Observed result |
+| --- | --- |
+| ESLint | Passed locally and in CI |
 | TypeScript + production build + service worker generation | Passed |
-| Unit tests | 20 passed, no skipped tests |
-| Firestore security/repository tests | 14 passed, no skipped tests |
-| Existing browser scenarios | 9 passed in latest full run of those scenarios |
-| New literal-markup and mobile-account-layout scenario | Added; final rerun pending after correcting a selector |
-| Staged-source guard | Safe file accepted; environment file and synthetic service-account JSON blocked |
-| Dependency audit | Not clean: 22 full-tree affected entries; 4 high production-dependency entries |
+| Unit tests | 20 passed |
+| Firestore security/repository tests | 14 passed |
+| Browser suite | 10 passed in each of three consecutive local runs; CI verification passed |
+| Tooling compatibility | Rules-file watching, UUID v4, trace propagation and Pub/Sub construction passed |
+| Full-tree npm audit | 0 known vulnerabilities in the local run |
+| CI dependency audit | Passed at high/critical threshold |
+| Local WSL verification | Completed with RECALL_VERIFICATION_COMPLETE and WSL_EXIT_CODE=0 |
 
-The new browser test originally used role=option for a language control implemented as buttons. Corrected to the existing .language-option button selector. Chromium redownload failed after the environment restarted, so the corrected test is not counted as passed.
+These are **44 distinct test cases**; three browser runs are repeated executions of the same 10 cases, not 30 distinct cases. No skipped suites or automatic retries were used to make the failed checks pass.
 
-Earlier browser runs exposed intermittent offline/group test failures: one delayed initial sync, one permission-denied response while syncing queued edits, and one card-submit timing failure. A targeted rerun passed both cases; three repetitions gave five passes and one initial sync timeout. The save helper now waits for form expansion to finish and allows 15 seconds for synchronization instead of five. The next full run passed all nine existing scenarios. The isolated permission-denied event was not conclusively explained; this remains a reliability observation, not a claimed production bug fix. No automatic retries or skipped assertions were added to turn failures green.
+## Browser coverage
 
-## What security tests exercise
+Creation at phone viewport size; multi-session persistence; edits, ordering and deletion; three languages and horizontal overflow; tab capture; sections, checkpoints and checklists; offline reload and reconnect; concurrent edit conflict choices; offline account isolation; group assignment/membership and queued progress; shared invite routing; literal rendering of untrusted markup-like text.
 
-- Own data access and denial to other users and anonymous clients.
-- Invalid fields, unsafe URLs, oversized content, forged revision/time.
-- Verified admin email versus unverified impersonation and another verified email.
-- Admin restricted to metrics/suspension; private card content inaccessible.
-- Self-unsuspension and metrics tampering denied.
-- Group ownership/membership, private workspace isolation and task assignment.
-- Member creation allowed/revoked/restored; no self-granting permissions.
-- Invalid permission types and role promotion denied.
-- Invite creation/revocation/expiry; group deletion and retry after interruption.
-- Queued member creation denied after revocation; deleted group cannot be rejoined or resurrected.
+## Security coverage
 
-## Browser flows
+Own-data access and rejection of other users/anonymous clients; invalid fields, URL protocols, sizes, revisions and timestamps; verified admin identity and restricted metrics/suspension; rejection of self-escalation and tampering; group ownership, membership, assignments and creation permission; invitations, revocation and deletion; blocked queued changes after revocation.
 
-Phone-size card creation, sessions and persistence; links/week view; edits/order/delete; three languages; section/recall/checklist synchronization; capture links; offline reload/reconnect; concurrent conflict choices; account isolation; group lifecycle and member progress; shared-invite URL parsing.
+## Findings resolved during verification
 
-## Why skipped appeared previously
+- A rejected stale offline write could surface a permissions error instead of conflict choices. The app now rereads the server document after permission-denied; it reports a conflict only when the document differs from the queued base. Unchanged-document permission errors remain errors. Firestore rules were not weakened.
+- gRPC, FTP and remaining CLI dependency findings were remediated through reviewed scoped overrides. The audit still examines the full dependency tree. See [tooling compatibility and scope](docs/TOOLING_SECURITY.md).
 
-The old npm test command included emulator-dependent suites with describe.skipIf when FIRESTORE_EMULATOR_HOST was absent. Skipped means not run, not successful. This update separates the suites:
+Earlier failed CI runs remain part of the history. They do not describe the status of the validated commit.
+
+## WSL stability observation
+
+Before the successful run, Windows had a fixed 2 GiB pagefile and little available virtual memory. System-managed paging was enabled and, after reboot, Windows allocated a 6400 MiB pagefile. Dependency installation then completed, followed by three successful browser runs with software-rendering flags. These results demonstrate stability under that tested configuration; they do not isolate paging or GPU settings as the sole cause of the earlier crashes, or prove all future WSL workloads stable.
+
+## Why skipped tests appeared in an earlier version
+
+Emulator-dependent tests were previously included in the default unit command and skipped when no emulator was configured. They now have explicit separate commands:
 
 ```bash
-npm test             # unit only
-npm run test:rules   # starts Firestore emulator, runs security suites
-npm run test:e2e     # Auth + Firestore + browser
-npm run test:all     # lint, unit, rules, browser, then production build
+npm test             # unit tests
+npm run test:rules   # Firestore emulator security/repository tests
+npm run test:e2e     # Auth + Firestore + Chromium
+npm run test:all     # lint, unit, rules, browser, production build
 ```
 
-Calling TEST_SUITE=security without the emulator now errors instead of producing a misleading green skipped suite.
+Requesting the security suite without a Firestore emulator fails rather than silently skipping it.
 
-## Limits and next gates
+## Limits
 
-These are selected automated scenarios, not proof of 100% coverage or security. Real Android/iPhone installation, Google OAuth, production Firebase configuration, dependency remediation and the observed intermittent sync error require follow-up. The dependency-audit CI job remains red on known high/critical findings. No remote deployment or GitHub push was performed.
+This is not complete test coverage or a penetration-test certificate. Real Google OAuth, native Android/iPhone installation and share sheets, production IAM, abuse resistance and load/quota behavior are outside these automated results. An audit result is a timestamped check against known advisories, not a guarantee against undisclosed vulnerabilities. The live hosting deployment and Firestore rules release were confirmed separately before the tooling-only update.
