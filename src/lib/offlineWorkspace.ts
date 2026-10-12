@@ -1,4 +1,4 @@
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, getDocFromServer, runTransaction, serverTimestamp } from 'firebase/firestore'
 import type { Firestore } from 'firebase/firestore'
 import type { Project, Section } from '../types'
 import type { ProjectDetails } from './projects'
@@ -103,6 +103,22 @@ export class OfflineWorkspace {
     })
   }
   private async commit(op: Mutation): Promise<{ remote?: LocalEntity | null }> {
+    try {
+      return await this.commitAttempt(op)
+    } catch (error) {
+      if (!(error instanceof Error) || !('code' in error) || error.code !== 'permission-denied') throw error
+      if (!this.isCurrentUser()) throw error
+      const ref = doc(this.db, this.groupId ? 'groups' : 'users', this.groupId || this.uid, op.entity === 'project' ? 'projects' : 'sections', op.entityId)
+      const snapshot = await getDocFromServer(ref)
+      if (!this.isCurrentUser()) throw error
+      const data = snapshot.data()
+      const remote = data ? (op.entity === 'project' ? normalizedProject(snapshot.id, data) : normalizedSection(snapshot.id, data)) : null
+      if (data?.mutationId === op.id) return {}
+      if (JSON.stringify(remote) !== JSON.stringify(op.before)) return { remote }
+      throw error
+    }
+  }
+  private async commitAttempt(op: Mutation): Promise<{ remote?: LocalEntity | null }> {
     const ref = doc(this.db, this.groupId ? 'groups' : 'users', this.groupId || this.uid, op.entity === 'project' ? 'projects' : 'sections', op.entityId)
     return runTransaction(this.db, async tx => {
       if (!this.isCurrentUser()) throw new Error('permission-denied')
