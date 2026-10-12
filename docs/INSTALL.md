@@ -19,3 +19,12 @@ Sign in and load your cards online first. After that, cached cards can be edited
 - **iPhone:** افتح الموقع في Safari، ثم مشاركة ← إضافة إلى الشاشة الرئيسية، وفعّل الفتح كتطبيق ويب إذا ظهر، ثم إضافة.
 
 سجّل الدخول وافتح بطاقاتك مع الإنترنت قبل الاعتماد على وضع offline. اختبارات المشروع تتحقق من سلوك التطبيق في المتصفح، لكنها لا تثبت فحص كل قوائم التثبيت والمشاركة على أجهزة فعلية.
+
+<!-- recall-media:start -->
+## Illustrated guides / أدلة مرسومة
+
+[English illustration](media/images/install-en.png) · [الرسم العربي](media/images/install-ar.png)
+
+These are explanatory drawings. Native browser menus vary; follow the written steps above. الرسومات للتوضيح، وقد تختلف قوائم الجهاز حسب الإصدار واللغة.
+
+<!-- recall-media:end -->

@@ -1,0 +1,34 @@
+{
+  "docs/media/images/install-en.png": {
+    "sha256": "64a27e6a8acf24ad717ce9b5a357ebf1069292120f2e127128093976b64cdd32",
+    "bytes": 2496171
+  },
+  "docs/media/images/install-ar.png": {
+    "sha256": "972c4eb9123eab2da57510c5dcda4fcf6273939ce4abf632c34d4cfa7f80a80d",
+    "bytes": 2469744
+  },
+  "docs/media/images/resume-en.png": {
+    "sha256": "cdf1256cb6380546327cce5c3ed1b9edbcb8fb41aebdbf8ecb0578f589b02374",
+    "bytes": 2617129
+  },
+  "docs/media/images/tabs-en.png": {
+    "sha256": "8eff3b4629e489eada9f3c7d5f9a313b00080b78b6df7bc1029b86eedc244d70",
+    "bytes": 2202579
+  },
+  "docs/media/images/tabs-ar.png": {
+    "sha256": "1a7aba198c7533af7d9adb562e71b0762e6fd2e1a59393401159c008efae3d2d",
+    "bytes": 2137953
+  },
+  "docs/media/images/resume-ar.png": {
+    "sha256": "672dce07fb42e7eb7d0f95f410be42f2474c18d733cd74baec9ebe2ea11c26a6",
+    "bytes": 2614831
+  },
+  "docs/media/videos/promo-en.mp4": {
+    "sha256": "97829cce86b2eaf97e35d2572fe059386ac9b03219c5fb304a19c229f9503569",
+    "bytes": 1663305
+  },
+  "docs/media/videos/promo-ar.mp4": {
+    "sha256": "a5fbcc1f814c2c8e8103eecbb77cddbcef9804842c5e9509785eafb6782703d2",
+    "bytes": 1391384
+  }
+}

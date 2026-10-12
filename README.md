@@ -8,6 +8,17 @@ A multilingual project and follow-up organizer built with React, TypeScript and 
 
 **[Try the live app](https://where-i-left-off.web.app/)** · **[العربية](README_AR.md)** · **[Test results](TEST_RESULTS.md)** · **[Security](SECURITY.md)**
 
+<!-- recall-media:start -->
+## Promotional preview
+
+<a href="docs/media/README.md"><img src="docs/media/images/resume-en.png" width="360" alt="Where I Left Off promotional illustration"></a>
+
+Promotional illustration; not a screenshot of the live interface.
+
+**[English video](docs/media/videos/promo-en.mp4)** · **[Arabic video](docs/media/videos/promo-ar.mp4)** · **[Full media gallery](docs/media/README.md)** · **[Phone installation illustrations](docs/media/README.md#phone-installation-illustrations--رسومات-تثبيت-الهاتف)**
+
+<!-- recall-media:end -->
+
 ## Why I built it
 
 A saved tab tells you where to return, but not where you stopped. A task title tells you what to do, but not the context you need to resume. Where I Left Off keeps the link, checkpoint and next step together in one card.

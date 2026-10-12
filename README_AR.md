@@ -8,6 +8,17 @@
 
 **[جرّب التطبيق](https://where-i-left-off.web.app/)** · **[English](README.md)** · **[نتائج الاختبارات](TEST_RESULTS.md)**
 
+<!-- recall-media:start -->
+## عرض تعريفي
+
+<a href="docs/media/README.md"><img src="docs/media/images/resume-ar.png" width="360" alt="ملصق إعلاني لتطبيق وين وصلت"></a>
+
+رسم إعلاني يشرح الفكرة، وليس لقطة شاشة فعلية للتطبيق.
+
+**[الفيديو العربي](docs/media/videos/promo-ar.mp4)** · **[الفيديو الإنجليزي](docs/media/videos/promo-en.mp4)** · **[معرض الصور ودليلا التثبيت](docs/media/README.md)**
+
+<!-- recall-media:end -->
+
 ## الفكرة
 
 الرابط المحفوظ وحده لا يوضح أين توقفت. البطاقة تجمع الرابط ونقطة التوقف والخطوة التالية؛ مثل واجب جامعي: «أنهيت السؤالين الأول والثاني، والخطوة القادمة حل السؤال الثالث».
