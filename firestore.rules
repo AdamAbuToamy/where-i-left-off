@@ -1,23 +1,187 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{uid}/projects/{projectId} {
-      function owner() { return request.auth != null && request.auth.uid == uid; }
-      function valid() {
+      function validProject() {
         let d = request.resource.data;
         return d.keys().hasAll(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
-          && d.keys().hasOnly(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
+          && d.keys().hasOnly(['name', 'nextStep', 'projectUrl', 'attachmentUrl', 'dueDate', 'assignedTo', 'sectionId', 'kind', 'checkpoint', 'checklist', 'mutationId', 'status', 'rank', 'revision', 'updatedAt'])
           && d.name is string && d.name.size() > 0 && d.name.size() <= 100
           && d.name.matches('.*[^\\s].*')
           && d.nextStep is string && d.nextStep.size() <= 1000
-          && d.status in ['later', 'active']
+          && (!d.keys().hasAny(['projectUrl']) || d.projectUrl is string && d.projectUrl.size() <= 500 && (d.projectUrl == '' || d.projectUrl.matches('^https?://[^\\s]+$')))
+          && (!d.keys().hasAny(['attachmentUrl']) || d.attachmentUrl is string && d.attachmentUrl.size() <= 500 && (d.attachmentUrl == '' || d.attachmentUrl.matches('^https?://[^\\s]+$')))
+          && (!d.keys().hasAny(['dueDate']) || d.dueDate is string && (d.dueDate == '' || d.dueDate.matches('^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$')))
+          && (!d.keys().hasAny(['assignedTo']) || d.assignedTo is string && d.assignedTo.size() <= 128)
+          && (!d.keys().hasAny(['sectionId']) || d.sectionId is string && d.sectionId.size() <= 100)
+          && (!d.keys().hasAny(['kind']) || d.kind in ['resume', 'waiting', 'deadline', 'list'])
+          && (!d.keys().hasAny(['checkpoint']) || d.checkpoint is string && d.checkpoint.size() <= 1000)
+          && (!d.keys().hasAny(['checklist']) || d.checklist is string && d.checklist.size() <= 3000)
+          && (!d.keys().hasAny(['mutationId']) || d.mutationId is string && d.mutationId.size() <= 100)
+          && d.status in ['later', 'active', 'waiting', 'done']
           && d.rank is number && d.rank > -1000000000000000 && d.rank < 1000000000000000
           && d.revision is int && d.revision >= 0
           && d.updatedAt == request.time;
       }
-      allow read, delete: if owner();
-      allow create: if owner() && valid() && request.resource.data.revision == 0;
-      allow update: if owner() && valid() && request.resource.data.revision == resource.data.revision + 1;
+      function validSection() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['name', 'updatedAt']) && d.keys().hasOnly(['name', 'updatedAt', 'revision', 'mutationId'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+          && d.name.matches('.*[^\\s].*') && d.updatedAt == request.time
+          && (!d.keys().hasAny(['revision']) || d.revision is int && d.revision >= 0)
+          && (!d.keys().hasAny(['mutationId']) || d.mutationId is string && d.mutationId.size() <= 100);
+      }
+    match /users/{uid}/projects/{projectId} {
+      function owner() { return request.auth != null && request.auth.uid == uid; }
+      function activeAccount() {
+        let path = /databases/$(database)/documents/appMetrics/$(uid);
+        return !exists(path) || get(path).data.suspended != true;
+      }
+      allow read, delete: if owner() && activeAccount();
+      allow create: if owner() && activeAccount() && validProject() && request.resource.data.revision == 0;
+      allow update: if owner() && activeAccount() && validProject() && request.resource.data.revision == resource.data.revision + 1;
+    }
+
+    match /users/{uid}/sections/{sectionId} {
+      function owner() { return request.auth != null && request.auth.uid == uid; }
+      function activeAccount() {
+        let path = /databases/$(database)/documents/appMetrics/$(uid);
+        return !exists(path) || get(path).data.suspended != true;
+      }
+      allow read, delete: if owner() && activeAccount();
+      allow create: if owner() && activeAccount() && validSection() && request.resource.data.get('revision', 0) == 0;
+      allow update: if owner() && activeAccount() && validSection()
+        && (request.resource.data.keys().hasAny(['revision'])
+          ? request.resource.data.revision == resource.data.get('revision', 0) + 1
+          : !resource.data.keys().hasAny(['revision']));
+    }
+
+    function signedActive() {
+      return request.auth != null && (!exists(/databases/$(database)/documents/appMetrics/$(request.auth.uid))
+        || get(/databases/$(database)/documents/appMetrics/$(request.auth.uid)).data.suspended != true);
+    }
+    function groupMember(gid) {
+      return signedActive() && exists(/databases/$(database)/documents/groups/$(gid))
+        && get(/databases/$(database)/documents/groups/$(gid)).data.get('deleted', false) == false
+        && exists(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid));
+    }
+    function groupManager(gid) {
+      return groupMember(gid) && get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.role == 'manager';
+    }
+    function cleaningOwner(gid) {
+      return signedActive() && get(/databases/$(database)/documents/groups/$(gid)).data.ownerUid == request.auth.uid
+        && get(/databases/$(database)/documents/groups/$(gid)).data.get('deleted', false) == true;
+    }
+    function mayCreate(gid) {
+      return groupMember(gid) && get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.get('canCreate', true) == true;
+    }
+    function ownerAfter(gid) {
+      return getAfter(/databases/$(database)/documents/groups/$(gid)).data.ownerUid == request.auth.uid;
+    }
+    match /groups/{gid} {
+      allow get: if groupMember(gid) || cleaningOwner(gid);
+      allow list: if false;
+      allow update: if signedActive() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted']) && request.resource.data.deleted == true;
+      allow delete: if cleaningOwner(gid);
+      allow create: if signedActive() && request.resource.data.keys().hasOnly(['name', 'ownerUid', 'createdAt'])
+        && request.resource.data.ownerUid == request.auth.uid && request.resource.data.createdAt == request.time
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60
+        && request.resource.data.name.matches('.*[^\\s].*')
+        && getAfter(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.role == 'manager';
+      match /members/{memberUid} {
+        function validMember() {
+          let d = request.resource.data;
+          return d.keys().hasAll(['name', 'email', 'role', 'joinedAt']) && d.keys().hasOnly(['name', 'email', 'role', 'joinedAt', 'inviteId', 'canCreate'])
+            && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+            && d.email == request.auth.token.email && d.joinedAt == request.time
+            && (!d.keys().hasAny(['canCreate']) || d.canCreate == true);
+        }
+        function validInvitation() {
+          let invite = get(/databases/$(database)/documents/groupInvites/$(request.resource.data.inviteId));
+          return invite.data.groupId == gid && invite.data.expiresAt > request.time;
+        }
+        allow get: if signedActive() && (request.auth.uid == memberUid || groupMember(gid) || cleaningOwner(gid));
+        allow list: if groupMember(gid) || cleaningOwner(gid);
+        allow create: if signedActive() && request.auth.uid == memberUid && validMember()
+          && ((ownerAfter(gid) && request.resource.data.role == 'manager' && !request.resource.data.keys().hasAny(['inviteId']))
+            || (request.resource.data.role == 'member' && validInvitation() && getAfter(/databases/$(database)/documents/groups/$(gid)).data.get('deleted', false) == false))
+          && getAfter(/databases/$(database)/documents/users/$(memberUid)/groupMemberships/$(gid)).data.role == request.resource.data.role;
+        allow update: if groupManager(gid) && resource.data.role == 'member'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['canCreate']) && request.resource.data.canCreate is bool;
+        allow delete: if (cleaningOwner(gid) || (groupManager(gid) && get(/databases/$(database)/documents/groups/$(gid)).data.ownerUid != memberUid))
+          && !existsAfter(/databases/$(database)/documents/users/$(memberUid)/groupMemberships/$(gid));
+      }
+      match /projects/{projectId} {
+        function assignmentValid() {
+          return request.resource.data.get('assignedTo', '') == ''
+            || exists(/databases/$(database)/documents/groups/$(gid)/members/$(request.resource.data.assignedTo));
+        }
+        allow read: if groupMember(gid) || cleaningOwner(gid);
+        allow create: if (groupManager(gid) || (mayCreate(gid) && request.resource.data.get('assignedTo', '') == request.auth.uid)) && validProject() && assignmentValid() && request.resource.data.revision == 0;
+        allow delete: if groupManager(gid) || cleaningOwner(gid);
+        allow update: if groupMember(gid) && validProject() && request.resource.data.revision == resource.data.revision + 1
+          && ((groupManager(gid) && assignmentValid())
+            || (resource.data.get('assignedTo', '') == request.auth.uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nextStep', 'status', 'checkpoint', 'checklist', 'revision', 'updatedAt', 'mutationId'])));
+      }
+      match /sections/{sectionId} {
+        allow read: if groupMember(gid) || cleaningOwner(gid);
+        allow delete: if groupManager(gid) || cleaningOwner(gid);
+        allow create: if groupManager(gid) && validSection() && request.resource.data.get('revision', 0) == 0;
+        allow update: if groupManager(gid) && validSection() && request.resource.data.revision == resource.data.get('revision', 0) + 1;
+      }
+    }
+    match /users/{uid}/groupMemberships/{gid} {
+      function matchingIndex() {
+        let member = getAfter(/databases/$(database)/documents/groups/$(gid)/members/$(uid));
+        return request.resource.data.keys().hasOnly(['groupName', 'role'])
+          && request.resource.data.groupName == getAfter(/databases/$(database)/documents/groups/$(gid)).data.name
+          && request.resource.data.role == member.data.role;
+      }
+      allow read: if signedActive() && request.auth.uid == uid;
+      allow create, update: if signedActive() && request.auth.uid == uid && matchingIndex();
+      allow delete: if (groupManager(gid) || cleaningOwner(gid)) && !existsAfter(/databases/$(database)/documents/groups/$(gid)/members/$(uid));
+    }
+    match /groupInvites/{token} {
+      allow get: if signedActive() && (resource.data.expiresAt > request.time || groupManager(resource.data.groupId) || cleaningOwner(resource.data.groupId));
+      allow list: if groupManager(resource.data.groupId) || cleaningOwner(resource.data.groupId);
+      allow create: if signedActive() && groupManager(request.resource.data.groupId)
+        && request.resource.data.keys().hasOnly(['groupId', 'groupName', 'createdBy', 'createdAt', 'expiresAt'])
+        && request.resource.data.groupName == get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.name
+        && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(7, 'd');
+      allow update: if false;
+      allow delete: if groupManager(resource.data.groupId) || cleaningOwner(resource.data.groupId);
+    }
+
+    match /appMetrics/{uid} {
+      function owner() { return request.auth != null && request.auth.uid == uid; }
+      function admin() {
+        return request.auth != null
+          && request.auth.token.email == 'adam2002hosny@gmail.com'
+          && request.auth.token.email_verified == true;
+      }
+      function validOwnerMetric() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['firstSeen', 'lastSeen', 'email', 'suspended'])
+          && d.keys().hasOnly(['firstSeen', 'lastSeen', 'email', 'suspended'])
+          && d.firstSeen is timestamp && d.lastSeen == request.time
+          && d.email is string && d.email == request.auth.token.email
+          && d.suspended is bool;
+      }
+      allow get: if owner() || admin();
+      allow list: if admin();
+      allow create: if owner() && validOwnerMetric()
+        && request.resource.data.firstSeen == request.time
+        && request.resource.data.suspended == false;
+      allow update: if (owner() && validOwnerMetric()
+          && request.resource.data.firstSeen == resource.data.firstSeen
+          && request.resource.data.suspended == resource.data.suspended
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen', 'email']))
+        || (admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended'])
+          && request.resource.data.suspended is bool);
+      allow delete: if false;
     }
   }
 }

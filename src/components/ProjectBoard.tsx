@@ -15,10 +15,11 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { CSSProperties } from 'react'
-import type { Project } from '../types'
+import type { Project, Section, GroupMember } from '../types'
 import type { Language } from '../translations'
 import ProjectCard from './ProjectCard'
 import './ProjectBoard.css'
+import type { ProjectDetails } from '../lib/projects'
 
 const messages = {
   ar: {
@@ -55,10 +56,14 @@ const messages = {
 
 type ProjectBoardProps = {
   projects: Project[]
+  sections: Section[]
   language: Language
+  members?: GroupMember[]
+  currentUid?: string
+  canManage?: boolean
   onReorder: (activeId: string, overId: string) => void
   onToggle: (id: string) => void
-  onUpdate: (id: string, name: string, nextStep: string, revision: number) => Promise<boolean>
+  onUpdate: (id: string, name: string, nextStep: string, details: ProjectDetails, revision: number) => Promise<boolean>
   onDelete: (id: string, revision: number) => Promise<boolean>
 }
 
@@ -71,7 +76,9 @@ type SortableCardProps = Omit<
 
 function SortableCard({
   project,
+  sections,
   language,
+  members, currentUid, canManage = true,
   onToggle,
   onUpdate,
   onDelete,
@@ -84,7 +91,7 @@ function SortableCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: project.id })
+  } = useSortable({ id: project.id, disabled: !canManage })
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -98,7 +105,7 @@ function SortableCard({
       style={style}
       className={`sortable-project ${isDragging ? 'is-dragging' : ''}`}
     >
-      <button
+      {canManage && <button
         ref={setActivatorNodeRef}
         type="button"
         className="drag-handle"
@@ -121,10 +128,12 @@ function SortableCard({
           <circle cx="7" cy="20" r="2" />
           <circle cx="15" cy="20" r="2" />
         </svg>
-      </button>
+      </button>}
 
       <ProjectCard
         project={project}
+        members={members} canManage={canManage} canEdit={canManage || project.assignedTo === currentUid}
+        sections={sections}
         language={language}
         onToggle={onToggle}
         onUpdate={onUpdate}
@@ -136,7 +145,9 @@ function SortableCard({
 
 export default function ProjectBoard({
   projects,
+  sections,
   language,
+  members, currentUid, canManage = true,
   onReorder,
   onToggle,
   onUpdate,
@@ -166,7 +177,7 @@ export default function ProjectBoard({
 
   return (
     <div className="project-board">
-      <p className="board-hint">{t.hint}</p>
+      {canManage && <p className="board-hint">{t.hint}</p>}
 
       <DndContext
         sensors={sensors}
@@ -193,7 +204,7 @@ export default function ProjectBoard({
           },
         }}
         onDragEnd={({ active, over }) => {
-          if (over && active.id !== over.id) {
+          if (canManage && over && active.id !== over.id) {
             onReorder(String(active.id), String(over.id))
           }
         }}
@@ -207,6 +218,8 @@ export default function ProjectBoard({
               <SortableCard
                 key={project.id}
                 project={project}
+                members={members} currentUid={currentUid} canManage={canManage}
+                sections={sections}
                 language={language}
                 onToggle={onToggle}
                 onUpdate={onUpdate}

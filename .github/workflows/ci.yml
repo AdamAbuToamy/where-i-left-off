@@ -34,7 +34,7 @@ jobs:
         run: npm run lint
 
       - name: Build production app
-        run: npm run build
+        run: VITE_USE_EMULATORS=false npm run build
 
       - name: Run unit tests
         run: npm test
@@ -47,3 +47,22 @@ jobs:
 
       - name: Run browser tests against Firebase emulators
         run: npm run test:e2e
+
+      - name: Keep failed browser traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: test-results/
+          retention-days: 7
+
+  dependency-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check high and critical dependency advisories
+        run: npm audit --audit-level=high

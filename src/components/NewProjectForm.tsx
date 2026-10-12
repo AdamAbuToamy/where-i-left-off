@@ -2,25 +2,44 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Language } from '../translations'
 import { translations } from '../translations'
+import { recallText } from '../recallTranslations'
+import type { Section, GroupMember } from '../types'
+import type { ProjectDetails } from '../lib/projects'
+import RecallFields from './RecallFields'
+import type { RecallDetails } from './RecallFields'
 
 type NewProjectFormProps = {
   language: Language
   isOpen: boolean
-  onAdd: (name: string, nextStep: string) => Promise<boolean>
+  sections?: Section[]
+  members?: GroupMember[]
+  defaultSectionId?: string
+  defaultAssignedTo?: string
+  initialValues?: { name: string; projectUrl: string }
+  onAdd: (name: string, nextStep: string, details: ProjectDetails) => Promise<boolean>
   onCancel: () => void
 }
 
 export default function NewProjectForm({
   language,
   isOpen,
+  initialValues,
+  sections = [],
+  members,
+  defaultSectionId = '',
+  defaultAssignedTo = '',
   onAdd,
   onCancel,
 }: NewProjectFormProps) {
-  const t = translations[language]
+  const t = translations[language], r = recallText[language]
+  const [metadata, setMetadata] = useState<RecallDetails>({ assignedTo: defaultAssignedTo, status: 'later', kind: 'resume', sectionId: defaultSectionId, checkpoint: '', checklist: '' })
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const [name, setName] = useState('')
+  const [name, setName] = useState(() => initialValues?.name ?? '')
   const [nextStep, setNextStep] = useState('')
+  const [projectUrl, setProjectUrl] = useState(() => initialValues?.projectUrl ?? '')
+  const [attachmentUrl, setAttachmentUrl] = useState('')
+  const [dueDate, setDueDate] = useState('')
 
   useEffect(() => {
     if (isOpen) {
@@ -33,16 +52,21 @@ export default function NewProjectForm({
 
     if (!name.trim()) return
 
-    if (!await onAdd(name.trim(), nextStep.trim())) return
+    if (!await onAdd(name.trim(), nextStep.trim(), { projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, ...metadata })) return
     setName('')
     setNextStep('')
+    setProjectUrl('')
+    setAttachmentUrl('')
+    setDueDate('')
+    setMetadata({ assignedTo: defaultAssignedTo, status: 'later', kind: 'resume', sectionId: defaultSectionId, checkpoint: '', checklist: '' })
   }
 
   return (
     <form className="new-project-form" onSubmit={handleSubmit}>
-      <h2>{t.addProject}</h2>
+      <h2>{r.newCard}</h2>
+      {initialValues && <p className="notice">{r.captured}</p>}
 
-      <label htmlFor="project-name">{t.projectName}</label>
+      <label htmlFor="project-name">{r.cardName}</label>
 
       <input
         ref={inputRef}
@@ -67,13 +91,23 @@ export default function NewProjectForm({
         onChange={(event) => setNextStep(event.target.value)}
       />
 
+      <RecallFields members={members} value={metadata} onChange={setMetadata} sections={sections} language={language} prefix="new" />
+      <label htmlFor="project-url">{t.projectUrl}</label>
+      <input id="project-url" type="url" inputMode="url" maxLength={500} placeholder={t.projectUrlPlaceholder} value={projectUrl} onChange={event => setProjectUrl(event.target.value)} />
+
+      <label htmlFor="project-attachment">{t.attachmentUrl}</label>
+      <input id="project-attachment" type="url" inputMode="url" maxLength={500} placeholder={t.attachmentUrlPlaceholder} value={attachmentUrl} onChange={event => setAttachmentUrl(event.target.value)} />
+
+      <label htmlFor="project-due-date">{t.dueDate}</label>
+      <input id="project-due-date" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} />
+
       <div className="form-actions">
         <button
           type="submit"
           className="primary-button"
           disabled={!name.trim()}
         >
-          {t.saveProject}
+          {r.saveCard}
         </button>
 
         <button

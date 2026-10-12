@@ -28,6 +28,7 @@
         "source": "**",
         "destination": "/index.html"
       }
-    ]
+    ],
+    "target": "production"
   }
 }

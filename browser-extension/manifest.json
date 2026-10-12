@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Where I Left Off — Save this page",
+  "version": "0.1.0",
+  "description": "Save the current page as a project link in Where I Left Off.",
+  "permissions": ["activeTab"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Save this page to Where I Left Off"
+  }
+}

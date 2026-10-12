@@ -1,0 +1,29 @@
+.sections-panel { margin-block: 18px; padding: 18px; border: 1px solid #b8c8ba; border-radius: 20px; background: #edf1e6; animation: reveal-up .3s ease both; }
+.section-navigation, .section-management > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.section-navigation small { margin-inline-start: 9px; border-radius: 20px; padding: 2px 7px; background: #dce5d3; }
+.section-editor { border: 0; padding: 15px 0 0; margin: 0; }
+.section-editor form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.section-editor input { flex: 1; min-width: 100px; }
+.section-management { display: grid; gap: 7px; margin-block-start: 12px; }
+.section-management strong { margin-inline-end: auto; }
+.recall-fields { display: grid; gap: 10px; margin-block: 12px; }
+.recall-field-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.recall-field-row > div { display: grid; gap: 6px; }
+.recall-fields select { width: 100%; padding: 12px; border: 1px solid #b8c8ba; border-radius: 12px; color: #173849; background: #f7f5ed; font: inherit; }
+.card-meta { display: flex; gap: 7px; flex-wrap: wrap; margin-block: 14px; }
+.card-meta span { padding: 5px 9px; border-radius: 9px; background: #e6d6b2; font-size: .85rem; }
+.checkpoint-copy { white-space: pre-wrap; overflow-wrap: anywhere; border-inline-start: 3px solid #b55c39; padding-inline-start: 12px; }
+.recall-checklist { display: grid; gap: 8px; margin-block: 14px; }
+.recall-checklist label { display: flex; align-items: flex-start; gap: 10px; overflow-wrap: anywhere; }
+.recall-checklist input { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 3px; accent-color: #47634f; }
+.recall-checklist input:checked + span { text-decoration: line-through; opacity: .6; }
+.project-card.is-waiting { background: #f1e2bf; }
+.project-card.is-done { background: #e1e8df; }
+@media (max-width: 600px) { .recall-field-row { grid-template-columns: 1fr; } .section-editor form { align-items: stretch; flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { .sections-panel { animation: none; } }
+
+.sync-conflict { border: 2px solid #b55c39; }
+.conflict-versions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.conflict-versions p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.sync-conflict button { margin: 4px; }
+@media(max-width:600px) { .conflict-versions { grid-template-columns: 1fr; } }

@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/generate-sw.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:rules": "firebase emulators:exec --project demo-where-i-left-off --only firestore \"vitest run\"",
-    "test:e2e": "VITE_USE_EMULATORS=true vite build && firebase emulators:exec --project demo-where-i-left-off --only auth,firestore \"playwright test\"",
+    "test:rules": "firebase emulators:exec --project demo-where-i-left-off --only firestore \"env TEST_SUITE=security vitest run\"",
+    "test:e2e": "VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true vite build && node scripts/generate-sw.mjs && firebase emulators:exec --project demo-where-i-left-off --only auth,firestore \"playwright test\"",
     "emulators": "firebase emulators:start --project demo-where-i-left-off --only auth,firestore",
-    "dev:emulator": "VITE_USE_EMULATORS=true vite --host 127.0.0.1"
+    "dev:emulator": "VITE_USE_EMULATORS=true vite --host 127.0.0.1",
+    "test:all": "npm run lint && npm test && npm run test:rules && npm run test:e2e && VITE_USE_EMULATORS=false npm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1,20 +1,52 @@
-# Verification — 12 October 2026
+# Verification — 2026-10-12
 
-Executed against the updated source:
+Tests run against local demo Firebase emulators, never production accounts.
 
 | Check | Result |
 |---|---|
-| TypeScript + production Vite build | Passed |
 | ESLint | Passed |
-| Vitest unit + real Firestore emulator | 9 tests passed |
-| Playwright + Authentication/Firestore emulators | 2 tests passed |
+| TypeScript + production build + service worker generation | Passed |
+| Unit tests | 20 passed, no skipped tests |
+| Firestore security/repository tests | 14 passed, no skipped tests |
+| Existing browser scenarios | 9 passed in latest full run of those scenarios |
+| New literal-markup and mobile-account-layout scenario | Added; final rerun pending after correcting a selector |
+| Staged-source guard | Safe file accepted; environment file and synthetic service-account JSON blocked |
+| Dependency audit | Not clean: 22 full-tree affected entries; 4 high production-dependency entries |
 
-The Firestore tests exercise owner CRUD, collection reads, denied reads/writes/deletes by another UID and an anonymous client, invalid fields/types/lengths/revisions/timestamps, a live second-session subscription and rejection of stale edits/deletes.
+The new browser test originally used role=option for a language control implemented as buttons. Corrected to the existing .language-option button selector. Chromium redownload failed after the environment restarted, so the corrected test is not counted as passed.
 
-The browser tests use isolated browser contexts with the same account, including a 390px phone viewport and crypto.randomUUID disabled. They cover project creation, edit synchronization, activation with the original orange button color, keyboard reordering and persistence after reload, custom delete confirmation/cancel/delete, a second account's empty workspace, language changes with form draft retention, search, offline write controls and viewport overflow.
+Earlier browser runs exposed intermittent offline/group test failures: one delayed initial sync, one permission-denied response while syncing queued edits, and one card-submit timing failure. A targeted rerun passed both cases; three repetitions gave five passes and one initial sync timeout. The save helper now waits for form expansion to finish and allows 15 seconds for synchronization instead of five. The next full run passed all nine existing scenarios. The isolated permission-denied event was not conclusively explained; this remains a reliability observation, not a claimed production bug fix. No automatic retries or skipped assertions were added to turn failures green.
 
-Environment: Node 24, Java 17, Firebase CLI 14, Chromium 153 through Playwright. The normal Playwright browser download was unavailable in the runner, so the installed Chromium executable was supplied using TEST_CHROMIUM_PATH. The project defaults to normal Playwright Chromium on your machine.
+## What security tests exercise
 
-Not verified: live Google OAuth against your Firebase project, your production deployment, your physical S24 browser, or real touch/mouse drag gestures (the saved reorder workflow was tested with the keyboard sensor). Firebase Console setup and authorized domains remain necessary. Tests do not consume production Firebase quotas.
+- Own data access and denial to other users and anonymous clients.
+- Invalid fields, unsafe URLs, oversized content, forged revision/time.
+- Verified admin email versus unverified impersonation and another verified email.
+- Admin restricted to metrics/suspension; private card content inaccessible.
+- Self-unsuspension and metrics tampering denied.
+- Group ownership/membership, private workspace isolation and task assignment.
+- Member creation allowed/revoked/restored; no self-granting permissions.
+- Invalid permission types and role promotion denied.
+- Invite creation/revocation/expiry; group deletion and retry after interruption.
+- Queued member creation denied after revocation; deleted group cannot be rejoined or resurrected.
 
-Vite emits a non-failing bundle-size warning (about 254 KB gzip for the main JavaScript bundle); further code splitting is deferred. Firebase CLI warns that its next major version requires Java 21; this project uses the 14 series.
+## Browser flows
+
+Phone-size card creation, sessions and persistence; links/week view; edits/order/delete; three languages; section/recall/checklist synchronization; capture links; offline reload/reconnect; concurrent conflict choices; account isolation; group lifecycle and member progress; shared-invite URL parsing.
+
+## Why skipped appeared previously
+
+The old npm test command included emulator-dependent suites with describe.skipIf when FIRESTORE_EMULATOR_HOST was absent. Skipped means not run, not successful. This update separates the suites:
+
+```bash
+npm test             # unit only
+npm run test:rules   # starts Firestore emulator, runs security suites
+npm run test:e2e     # Auth + Firestore + browser
+npm run test:all     # lint, unit, rules, browser, then production build
+```
+
+Calling TEST_SUITE=security without the emulator now errors instead of producing a misleading green skipped suite.
+
+## Limits and next gates
+
+These are selected automated scenarios, not proof of 100% coverage or security. Real Android/iPhone installation, Google OAuth, production Firebase configuration, dependency remediation and the observed intermittent sync error require follow-up. The dependency-audit CI job remains red on known high/critical findings. No remote deployment or GitHub push was performed.

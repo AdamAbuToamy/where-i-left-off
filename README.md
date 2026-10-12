@@ -1,44 +1,54 @@
 # Where I Left Off · وين وصلت؟ · איפה עצרתי?
 
-A personal project workspace built with React, TypeScript, Vite, Firebase Authentication and Firestore. Keep the next step for each project, reorder cards and resume from another device.
+**Experimental beta.** Save a link, record where you stopped, and return to the next step.
 
-Start with **[START_HERE_AR.md](START_HERE_AR.md)** for the Ubuntu update, Firebase Spark setup and optional HTTPS deployment.
+Live site: https://where-i-left-off.web.app/
 
-## Features
+## What it does
 
-- Google or email/password authentication; password reset.
-- Projects scoped to the signed-in UID, enforced by Firestore rules.
-- Live synchronization between sessions, loading/saving/error feedback.
-- Create, edit, delete, activate, search and filter projects.
-- Mouse, touch and keyboard sorting with persisted positions.
-- Arabic, Hebrew and English; RTL support and reduced-motion styles.
-- Transaction revision checks preserve newer edits when two devices conflict.
+- Personal cards, sections, follow-up dates, weekly view, checklists and saved links.
+- Arabic, Hebrew and English, responsive layout, keyboard/mouse/touch sorting.
+- Google or email/password sign-in through Firebase Authentication.
+- Offline card edits stored on the device, synchronized when the app is open again online; explicit conflict resolution.
+- Shared groups: managers assign tasks and control members' creation permissions. Members update their assigned work.
+- Expiring invitations, member removal and group deletion. Personal cards remain private.
+- Limited admin dashboard: account activity metrics and app-access suspension. No access to personal card contents; no Firebase Auth account deletion.
+- Installable web app and an unpacked Chromium extension for saving the current tab.
 
-## Quick start
+## Development
+
+Requires Node.js 24, npm and Java 21 for emulator tests.
 
 ```bash
 npm ci
-node scripts/setup-firebase.mjs
+cp .env.example .env.local
+# Fill the four public Firebase web configuration values in .env.local.
 npm run dev
 ```
 
-Enable Google and Email/Password in Firebase Authentication, create the default Firestore database and deploy `firestore.rules` before using real accounts. See the Arabic guide. Use Spark without attaching billing. Free quotas are finite; this is not a promise of unlimited hosting or database usage.
+Enable Google and Email/Password providers and Firestore in your own Firebase project. Client configuration is not an admin credential; Firestore rules enforce access. Never commit service-account keys or tokens.
 
-## Tests
+For local demo data without production credentials:
 
 ```bash
-npm test
-npm run test:rules
-npx playwright install chromium
-npm run test:e2e
-npm run lint
-npm run build
+npm run emulators
+# In another terminal:
+npm run dev:emulator
 ```
 
-The emulator commands use a `demo-` project and never your production data. Java 17 or 21 is required by the pinned Firebase CLI 14 series. Browser tests build an emulator bundle; run a normal `npm run build` before deployment. See `TEST_RESULTS.md` for executed checks and limitations.
+## Verification
 
-## Data design
+```bash
+npx playwright install --with-deps chromium
+npm run test:all
+```
 
-Each project is stored at `users/{uid}/projects/{projectId}`. A snapshot subscription reflects changes. A move updates only the moved project's numeric rank. Equal ranks have a deterministic ID tie breaker. Content edits and deletes check the revision captured when the editor or confirmation opened. Concurrent moves use last successful write semantics. There is no global collection query or shared document containing all users' projects.
+`npm test` runs unit tests only. `npm run test:rules` starts a Firestore emulator and executes security tests. `npm run test:e2e` uses Auth and Firestore emulators plus Chromium. `test:all` finishes with a production build, so an emulator bundle is not accidentally deployed. Do not run build and E2E concurrently.
 
-This version does not persist offline drafts or include AI integrations. The initial demo cards in the uploaded app existed only in component memory; new cloud accounts begin empty.
+Read [TEST_RESULTS.md](TEST_RESULTS.md) for actual results and [SECURITY.md](SECURITY.md) for limitations. GitHub Actions runs checks on pushes and pull requests; it does not deploy or need production credentials.
+
+## Known limits
+
+Dependency audit has unresolved findings. This is not a security-certified release. Google popup login and native installation/share sheets need real-device checks. Offline data remains on devices that have already downloaded it; revocation blocks future server access but cannot remotely erase an offline device. Group administration needs an internet connection. No AI integration, automated external reply monitoring or binary file uploads.
+
+Use Firebase free quotas without attaching billing if a zero-cost deployment is required. Availability is limited by those quotas.

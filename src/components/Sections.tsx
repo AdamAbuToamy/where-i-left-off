@@ -1,0 +1,12 @@
+import { useState } from 'react'
+import type { Language } from '../translations'
+import type { Project, Section } from '../types'
+import { recallText } from '../recallTranslations'
+export default function Sections({ sections, projects, selected, onSelect, onSave, onDelete, language, disabled, canManage = true }: { sections: Section[]; projects: Project[]; selected: string; onSelect: (id: string) => void; onSave: (name: string, id?: string) => Promise<boolean>; onDelete: (id: string) => Promise<boolean>; language: Language; disabled: boolean; canManage?: boolean }) {
+  const t = recallText[language]
+  const [manage, setManage] = useState(false), [name, setName] = useState(''), [editing, setEditing] = useState<string | undefined>()
+  return <section className="sections-panel">
+    <div className="section-navigation"><button className="secondary-button" aria-pressed={selected === 'all'} onClick={() => onSelect('all')}>{t.allSections}</button><button className="secondary-button" aria-pressed={selected === ''} onClick={() => onSelect('')}>{t.noSection}</button>{sections.map(s => <button key={s.id} className="secondary-button" aria-pressed={selected === s.id} onClick={() => onSelect(s.id)}><span dir="auto">{s.name}</span><small>{projects.filter(p => p.sectionId === s.id).length}</small></button>)}{canManage && <button className="text-button" aria-expanded={manage} onClick={() => setManage(v => !v)}>{t.manage}</button>}</div>
+    {manage && canManage && <fieldset className="section-editor" disabled={disabled}><form onSubmit={async e => { e.preventDefault(); if (await onSave(name, editing)) { setName(''); setEditing(undefined) } }}><label htmlFor="section-name">{t.sectionName}</label><input id="section-name" required dir="auto" maxLength={60} value={name} onChange={e => setName(e.target.value)} /><button className="primary-button" disabled={!name.trim()}>{editing ? t.rename : t.addSection}</button></form><div className="section-management">{sections.map(s => <div key={s.id}><strong dir="auto">{s.name}</strong><button className="text-button" onClick={() => { setEditing(s.id); setName(s.name) }}>{t.rename}</button><button className="text-button" disabled={projects.some(p => p.sectionId === s.id)} title={projects.some(p => p.sectionId === s.id) ? t.moveFirst : t.removeSection} onClick={async () => { if (await onDelete(s.id)) { if (selected === s.id) onSelect('all'); if (editing === s.id) { setEditing(undefined); setName('') } } }}>{t.removeSection}</button></div>)}</div><p>{t.moveFirst}</p></fieldset>}
+  </section>
+}

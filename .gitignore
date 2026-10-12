@@ -7,3 +7,17 @@ dist/
 playwright-report/
 test-results/
 *.tsbuildinfo
+
+# Credentials, reports and local backups
+*.log
+*.pem
+*.key
+*service-account*.json
+*serviceAccount*.json
+firebase-adminsdk*.json
+backups/
+*-backup*/
+*.tar.gz
+*.zip
+.firebase/
+.backup-*/

@@ -1,0 +1,29 @@
+.group-spaces { background: #fff7e7; border: 1px solid #d1c8b5; border-radius: 24px; padding: 20px; margin-bottom: 24px; animation: reveal-group .3s ease both; }
+.space-heading,.group-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.space-heading > span { color:#4a625e; font-size:.86rem; }
+.space-navigation { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+.space-navigation button { display:flex; align-items:center; gap:10px; }
+.space-navigation small,.group-management small { opacity:.7; }
+.space-navigation [aria-pressed=true] { background:#d4e5df; border-color:#345e53; }
+.group-create summary { cursor:pointer; color:#365e53; padding:6px 0; }
+.group-create form { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:12px; }
+.group-spaces input { min-width:0; border:1px solid #c7ceca; padding:10px 12px; border-radius:10px; max-width:100%; background:#fff; color:#173849; }
+.group-invitation { padding:12px; background:#f7deb9; border-radius:14px; margin-top:16px; }
+.group-invitation button { margin-inline-end:8px; }
+.group-management { border-top:1px solid #d1c8b5; padding-top:14px; animation:reveal-group .25s ease; }
+.group-management ul { list-style:none; margin:0; padding:0; }
+.group-management li { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:10px 0; }
+.group-management li > div { flex:1; display:flex; gap:12px; min-width:0; overflow-wrap:anywhere; }
+.invite-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.invite-row input { flex:1 1 220px; }
+.group-heading h2 { font-size:1.3rem; margin:10px 0; }
+.assignment-badge { color:#365e53; font-size:.85rem; margin:8px 0; overflow-wrap:anywhere; }
+@keyframes reveal-group { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+@media(prefers-reduced-motion:reduce) { .group-spaces,.group-management { animation:none; } }
+@media(max-width:520px) { .group-spaces { padding:14px; } .group-create input { flex:1; width:100%; } }
+
+.space-navigation button { max-width:100%; }
+.space-navigation button > span { white-space:normal; overflow-wrap:anywhere; min-width:0; }
+
+.creation-permission { display:flex; align-items:center; gap:8px; font-size:.9rem; }
+.group-delete { padding-top:16px; margin-top:16px; border-top:1px solid #d1c8b5; }

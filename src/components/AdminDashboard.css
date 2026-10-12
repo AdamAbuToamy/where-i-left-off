@@ -1,0 +1,24 @@
+.admin-dashboard { display:grid; gap:18px; animation:card-enter 260ms ease-out; }
+.admin-dashboard h2 { margin:0; }
+.admin-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.admin-stats article { display:grid; gap:8px; padding:22px; border:1px solid #cfc1a8; border-radius:16px; background:#fcf8ed; }
+.admin-stats strong { color:#854123; font-size:36px; }
+.admin-stats span { color:#435b4d; }
+.admin-limits { padding:14px; border:1px solid #d7b658; border-radius:12px; background:#f4e4a4; line-height:1.8; }
+.admin-console-link { width:fit-content; text-decoration:none; }
+.admin-account-list { display:grid; gap:10px; }
+.admin-account-list h3 { margin:4px 0; }
+.admin-account { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:15px; border:1px solid #d1c4ab; border-radius:12px; background:#fffaf0; }
+.admin-account-info { display:grid; gap:6px; min-width:0; overflow-wrap:anywhere; }
+.admin-account-info span { font-size:13px; color:#5c685d; }
+.admin-account-info .account-paused { color:#843f30; font-weight:700; }
+.admin-account-info .account-active { color:#355932; font-weight:700; }
+.admin-account-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.admin-account-actions > button, .admin-confirm button { min-height:40px; padding:8px 12px; border-radius:9px; font-weight:650; }
+.admin-account-actions .card-delete, .admin-confirm .card-delete { border:1px solid #dab6aa; background:#f2e0d8; color:#843f30; }
+.admin-account-actions .card-secondary, .admin-confirm .card-secondary { border:1px solid #b7c7ce; background:#e0eaf0; color:#35566b; }
+.admin-confirm { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:8px; max-width:500px; }
+.admin-confirm span { grid-column:1/-1; font-size:13px; }
+@media(max-width:520px) { .admin-stats { grid-template-columns:1fr; } .admin-console-link { width:100%; } }
+@media(max-width:600px) { .admin-account { align-items:stretch; flex-direction:column; } .admin-account-actions { justify-content:stretch; } .admin-account-actions > button { flex:1; } .admin-confirm { grid-template-columns:1fr 1fr; } .admin-confirm span { grid-column:1/-1; } }
+@media(prefers-reduced-motion:reduce) { .admin-dashboard { animation:none; } }
