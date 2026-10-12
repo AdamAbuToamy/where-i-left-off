@@ -13,7 +13,8 @@
     "test:e2e": "VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true vite build && node scripts/generate-sw.mjs && firebase emulators:exec --project demo-where-i-left-off --only auth,firestore \"playwright test\"",
     "emulators": "firebase emulators:start --project demo-where-i-left-off --only auth,firestore",
     "dev:emulator": "VITE_USE_EMULATORS=true vite --host 127.0.0.1",
-    "test:all": "npm run lint && npm test && npm run test:rules && npm run test:e2e && VITE_USE_EMULATORS=false npm run build"
+    "test:all": "npm run lint && npm test && npm run test:rules && npm run test:e2e && VITE_USE_EMULATORS=false npm run build",
+    "test:tooling": "node scripts/check-tooling.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -45,6 +46,15 @@
     "@grpc/grpc-js": "1.14.6",
     "get-uri": {
       "basic-ftp": "6.2.3"
+    },
+    "firebase-tools": {
+      "chokidar": "4.0.3"
+    },
+    "gaxios": {
+      "uuid": "11.1.1"
+    },
+    "@google-cloud/pubsub": {
+      "@opentelemetry/core": "2.8.0"
     }
   }
 }
