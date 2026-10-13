@@ -34,7 +34,8 @@ service cloud.firestore {
       function owner() { return request.auth != null && request.auth.uid == uid; }
       function activeAccount() {
         let path = /databases/$(database)/documents/appMetrics/$(uid);
-        return !exists(path) || get(path).data.suspended != true;
+        return (!exists(path) || get(path).data.suspended != true)
+          && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
       }
       allow read, delete: if owner() && activeAccount();
       allow create: if owner() && activeAccount() && validProject() && request.resource.data.revision == 0;
@@ -45,7 +46,8 @@ service cloud.firestore {
       function owner() { return request.auth != null && request.auth.uid == uid; }
       function activeAccount() {
         let path = /databases/$(database)/documents/appMetrics/$(uid);
-        return !exists(path) || get(path).data.suspended != true;
+        return (!exists(path) || get(path).data.suspended != true)
+          && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
       }
       allow read, delete: if owner() && activeAccount();
       allow create: if owner() && activeAccount() && validSection() && request.resource.data.get('revision', 0) == 0;
@@ -57,7 +59,8 @@ service cloud.firestore {
 
     function signedActive() {
       return request.auth != null && (!exists(/databases/$(database)/documents/appMetrics/$(request.auth.uid))
-        || get(/databases/$(database)/documents/appMetrics/$(request.auth.uid)).data.suspended != true);
+        || get(/databases/$(database)/documents/appMetrics/$(request.auth.uid)).data.suspended != true)
+        && !exists(/databases/$(database)/documents/accountDeletions/$(request.auth.uid));
     }
     function groupMember(gid) {
       return signedActive() && exists(/databases/$(database)/documents/groups/$(gid))
@@ -106,8 +109,12 @@ service cloud.firestore {
           && ((ownerAfter(gid) && request.resource.data.role == 'manager' && !request.resource.data.keys().hasAny(['inviteId']))
             || (request.resource.data.role == 'member' && validInvitation() && getAfter(/databases/$(database)/documents/groups/$(gid)).data.get('deleted', false) == false))
           && getAfter(/databases/$(database)/documents/users/$(memberUid)/groupMemberships/$(gid)).data.role == request.resource.data.role;
-        allow update: if groupManager(gid) && resource.data.role == 'member'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['canCreate']) && request.resource.data.canCreate is bool;
+        allow update: if (groupManager(gid) && resource.data.role == 'member'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['canCreate']) && request.resource.data.canCreate is bool)
+          || (groupMember(gid) && request.auth.uid == memberUid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+            && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+            && request.resource.data.name.matches('.*[^\\s].*'));
         allow delete: if (cleaningOwner(gid) || (groupManager(gid) && get(/databases/$(database)/documents/groups/$(gid)).data.ownerUid != memberUid))
           && !existsAfter(/databases/$(database)/documents/users/$(memberUid)/groupMemberships/$(gid));
       }
@@ -155,10 +162,62 @@ service cloud.firestore {
       allow delete: if groupManager(resource.data.groupId) || cleaningOwner(resource.data.groupId);
     }
 
+    function logAdmin() {
+      return signedActive() && request.auth.token.email == 'adam2002hosny@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    match /appLogs/{logId} {
+      function validLog() {
+        let d = request.resource.data;
+        return signedActive() && d.keys().hasAll(['id', 'uid', 'timestamp', 'level', 'event', 'code', 'page', 'environment', 'version', 'durationMs', 'source', 'receivedAt'])
+          && d.keys().hasOnly(['id', 'uid', 'timestamp', 'level', 'event', 'code', 'page', 'environment', 'version', 'durationMs', 'source', 'receivedAt'])
+          && d.id == logId && d.uid == request.auth.uid
+          && d.timestamp is string && d.timestamp.size() <= 40
+          && d.level in ['info', 'warn', 'error']
+          && d.event is string && d.event.matches('^[a-zA-Z0-9._-]{1,60}$')
+          && d.code is string && d.code.matches('^[a-zA-Z0-9/_-]{1,80}$')
+          && d.page is string && d.page.size() <= 80
+          && d.environment in ['emulator', 'development', 'production']
+          && d.version is string && d.version.size() <= 40
+          && d.source is string && d.source.size() <= 500
+          && d.durationMs is int && d.durationMs >= 0 && d.durationMs <= 3600000
+          && d.receivedAt == request.time;
+      }
+      allow read: if logAdmin();
+      allow create: if validLog();
+      // Repeat uploads of the same device event are idempotent; payload edits are rejected.
+      allow update: if validLog() && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['receivedAt']);
+      allow delete: if logAdmin();
+    }
+
+
+    match /system/accountDeletionWorker {
+      allow get: if request.auth != null;
+      allow list, write: if false;
+    }
+    match /accountDeletions/{uid} {
+      function owner() { return request.auth != null && request.auth.uid == uid; }
+      function recentIdentity() {
+        return request.auth.token.auth_time is int
+          && request.time.toMillis() / 1000 - request.auth.token.auth_time < 300;
+      }
+      allow get: if owner();
+      allow list, update: if false;
+      allow create: if owner() && recentIdentity()
+        && request.auth.token.email != 'adam2002hosny@gmail.com'
+        && request.resource.data.keys().hasOnly(['status', 'requestedAt'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.requestedAt == request.time
+        && get(/databases/$(database)/documents/system/accountDeletionWorker).data.availableUntil > request.time;
+      allow delete: if owner() && recentIdentity() && resource.data.status == 'pending'
+        && request.time < resource.data.requestedAt + duration.value(24, 'h');
+    }
+
     match /appMetrics/{uid} {
       function owner() { return request.auth != null && request.auth.uid == uid; }
       function admin() {
-        return request.auth != null
+        return signedActive()
           && request.auth.token.email == 'adam2002hosny@gmail.com'
           && request.auth.token.email_verified == true;
       }
@@ -172,14 +231,16 @@ service cloud.firestore {
       }
       allow get: if owner() || admin();
       allow list: if admin();
-      allow create: if owner() && validOwnerMetric()
+      allow create: if owner() && signedActive() && validOwnerMetric()
         && request.resource.data.firstSeen == request.time
         && request.resource.data.suspended == false;
-      allow update: if (owner() && validOwnerMetric()
+      allow update: if (owner() && signedActive() && validOwnerMetric()
           && request.resource.data.firstSeen == resource.data.firstSeen
           && request.resource.data.suspended == resource.data.suspended
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen', 'email']))
-        || (admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended'])
+        || (admin() && resource.data.email != 'adam2002hosny@gmail.com'
+          && request.resource.data.email != 'adam2002hosny@gmail.com'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended'])
           && request.resource.data.suspended is bool);
       allow delete: if false;
     }
