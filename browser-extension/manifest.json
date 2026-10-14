@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Where I Left Off — Save this page",
-  "version": "0.1.0",
-  "description": "Save the current page as a project link in Where I Left Off.",
-  "permissions": ["activeTab"],
+  "name": "Where I Left Off \u2014 Save this page",
+  "version": "0.2.0",
+  "description": "Save the current page and available video playback position with one click.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
   "background": {
     "service_worker": "service-worker.js"
   },

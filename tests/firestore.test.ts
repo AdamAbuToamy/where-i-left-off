@@ -31,11 +31,16 @@ describe.skipIf(!enabled)('real Firestore emulator: rules and repository', () =>
   })
   it('rejects malformed documents and forged revision/timestamp', async () => {
     const ref = doc(env.authenticatedContext('alice').firestore(), 'users/alice/projects/one')
-    for (const patch of [{ name: '' }, { name: '  ' }, { name: 'x'.repeat(101) }, { nextStep: 'x'.repeat(1001) }, { projectUrl: 'javascript:alert(1)' }, { attachmentUrl: 'file:///etc/passwd' }, { dueDate: '2026-13-01' }, { status: 'admin' }, { kind: 'admin' }, { mutationId: 'x'.repeat(101) }, { sectionId: 'x'.repeat(101) }, { checkpoint: 'x'.repeat(1001) }, { checklist: 'x'.repeat(3001) }, { rank: '0' }, { revision: 5 }, { owner: 'bob' }, { updatedAt: new Date(0) }]) {
+    for (const patch of [{ name: '' }, { name: '  ' }, { name: 'x'.repeat(101) }, { nextStep: 'x'.repeat(1001) }, { projectUrl: 'javascript:alert(1)' }, { links: ['javascript:alert(1)'] }, { links: Array(11).fill('https://example.test') }, { links: ['https://example.test', 42] }, { attachmentUrl: 'file:///etc/passwd' }, { dueDate: '2026-13-01' }, { status: 'admin' }, { kind: 'admin' }, { mutationId: 'x'.repeat(101) }, { sectionId: 'x'.repeat(101) }, { checkpoint: 'x'.repeat(1001) }, { checklist: 'x'.repeat(3001) }, { rank: '0' }, { revision: 5 }, { owner: 'bob' }, { updatedAt: new Date(0) }]) {
       await assertFails(setDoc(ref, { ...data(), ...patch }))
     }
     await setDoc(ref, data())
     await assertFails(updateDoc(ref, { name: 'No revision' }))
+  })
+  it('accepts extra links and keeps legacy documents compatible', async () => {
+    const ref=doc(env.authenticatedContext('alice').firestore(),'users/alice/projects/links')
+    await assertSucceeds(setDoc(ref,{...data(),projectUrl:'https://example.test',links:['https://example.org','https://example.test/file']}))
+    await assertSucceeds(updateDoc(ref,{links:[],revision:1,updatedAt:serverTimestamp()}))
   })
   it('restricts admin to aggregate metrics and permits app-access suspension only', async () => {
     const alice = env.authenticatedContext('alice', { email: 'alice@example.test' }).firestore()
@@ -54,6 +59,10 @@ describe.skipIf(!enabled)('real Firestore emulator: rules and repository', () =>
     await assertFails(setUserSuspended(alice, 'bob', true))
     await assertFails(setUserSuspended(alice, 'alice', true))
     await assertSucceeds(setUserSuspended(admin, 'alice', true))
+    const protectedAdmin = env.authenticatedContext('protected-admin', { email: 'adam2002hosny@gmail.com', email_verified: true }).firestore()
+    await touchUserMetric(protectedAdmin, 'protected-admin', 'adam2002hosny@gmail.com')
+    await assertFails(setUserSuspended(admin, 'protected-admin', true))
+    await assertFails(setUserSuspended(protectedAdmin, 'protected-admin', true))
     await assertFails(getDoc(doc(alice, 'users/alice/projects/secret')))
     await assertFails(updateDoc(doc(alice, 'users/alice/projects/secret'), { name: 'blocked', revision: 1, updatedAt: serverTimestamp() }))
     await assertSucceeds(getDoc(doc(admin, 'appMetrics/alice')))

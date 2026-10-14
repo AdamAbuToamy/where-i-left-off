@@ -15,4 +15,4 @@ hosting.target = 'production'
 fs.writeFileSync(filename, JSON.stringify(config, null, 2) + '\n')
 NODE
 VITE_USE_EMULATORS=false npm run build
-"$CLI" deploy --only hosting:production,firestore:rules --project where-i-left-off-b5683
+"$CLI" deploy --only hosting:production,firestore:rules,firestore:indexes --project where-i-left-off-b5683

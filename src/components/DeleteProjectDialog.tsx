@@ -13,9 +13,9 @@ type DeleteProjectDialogProps = {
 }
 
 const descriptions: Record<Language, string> = {
-  ar: 'سيُحذف المشروع من قائمتك. لا يمكن التراجع عن هذه العملية.',
-  he: 'הפרויקט יימחק מהרשימה שלך. לא ניתן לבטל את הפעולה.',
-  en: 'This project will be removed from your list. This action cannot be undone.',
+  ar: 'ستُنقل البطاقة إلى سلة المهملات. يمكنك استرجاعها من الأرشيف والسلة.',
+  he: 'הכרטיס יועבר לאשפה. אפשר לשחזר אותו מהארכיון והאשפה.',
+  en: 'This card will move to Trash. Restore it from Archive and trash.',
 }
 
 export default function DeleteProjectDialog({

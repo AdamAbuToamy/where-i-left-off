@@ -58,6 +58,7 @@ type ProjectBoardProps = {
   projects: Project[]
   sections: Section[]
   language: Language
+  groupId?:string
   members?: GroupMember[]
   currentUid?: string
   canManage?: boolean
@@ -72,13 +73,14 @@ type SortableCardProps = Omit<
   'projects' | 'onReorder'
 > & {
   project: Project
+  canReorder: boolean
 }
 
 function SortableCard({
   project,
   sections,
   language,
-  members, currentUid, canManage = true,
+  groupId, members, currentUid, canManage = true, canReorder,
   onToggle,
   onUpdate,
   onDelete,
@@ -91,7 +93,7 @@ function SortableCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: project.id, disabled: !canManage })
+  } = useSortable({ id: project.id, disabled: !canReorder })
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -105,7 +107,7 @@ function SortableCard({
       style={style}
       className={`sortable-project ${isDragging ? 'is-dragging' : ''}`}
     >
-      {canManage && <button
+      {canReorder && <button
         ref={setActivatorNodeRef}
         type="button"
         className="drag-handle"
@@ -130,7 +132,7 @@ function SortableCard({
         </svg>
       </button>}
 
-      <ProjectCard
+      <ProjectCard groupId={groupId}
         project={project}
         members={members} canManage={canManage} canEdit={canManage || project.assignedTo === currentUid}
         sections={sections}
@@ -147,7 +149,7 @@ export default function ProjectBoard({
   projects,
   sections,
   language,
-  members, currentUid, canManage = true,
+  groupId, members, currentUid, canManage = true,
   onReorder,
   onToggle,
   onUpdate,
@@ -177,7 +179,7 @@ export default function ProjectBoard({
 
   return (
     <div className="project-board">
-      {canManage && <p className="board-hint">{t.hint}</p>}
+      {canManage && projects.length > 1 && <p className="board-hint">{t.hint}</p>}
 
       <DndContext
         sensors={sensors}
@@ -215,9 +217,10 @@ export default function ProjectBoard({
         >
           <section className="projects-grid">
             {projects.map((project) => (
-              <SortableCard
+              <SortableCard groupId={groupId}
                 key={project.id}
                 project={project}
+                canReorder={canManage && projects.length > 1}
                 members={members} currentUid={currentUid} canManage={canManage}
                 sections={sections}
                 language={language}

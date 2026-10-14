@@ -1,7 +1,7 @@
 :root {
   font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-  color: #25332e;
-  background: #f1eee5;
+  color: var(--site-text,#25332e);
+  background: var(--site-bg,#f1eee5);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -37,5 +37,5 @@ button {
 
 ::selection {
   background: #f4d17d;
-  color: #25332e;
+  color: var(--site-text,#25332e);
 }

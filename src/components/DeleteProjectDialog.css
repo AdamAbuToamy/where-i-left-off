@@ -8,7 +8,7 @@
   border: 1px solid #d4c5af;
   border-radius: 22px;
   background: #fcf8ed;
-  color: #25332e;
+  color: var(--site-text,#25332e);
 
   box-shadow:
     0 24px 80px #17221d40,
@@ -100,7 +100,7 @@
 .delete-dialog-confirm {
   border: 1px solid #873a28;
   background: #aa4931;
-  color: #ffffff;
+  color: var(--site-input,#ffffff);
   box-shadow: 0 3px 0 #793523;
 }
 

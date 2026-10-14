@@ -1,3 +1,5 @@
+import ErrorBoundary from './components/ErrorBoundary'
+import { installLogging } from './lib/logging'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
@@ -6,9 +8,11 @@ import { sharedInvite } from './lib/inviteLink'
 const incomingInvite = sharedInvite(location.search, location.origin)
 if (incomingInvite) history.replaceState({}, '', `/?groupInvite=${incomingInvite}`)
 
+installLogging()
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary><App /></ErrorBoundary>
   </StrictMode>,
 )
 

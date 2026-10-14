@@ -1,3 +1,4 @@
+import { auth } from './firebase'
 import { collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import type { Firestore } from 'firebase/firestore'
 import type { Project, Section } from '../types'
@@ -60,6 +61,7 @@ export function watchUserMetric(db: Firestore, uid: string, receive: (metric: Pi
 }
 
 export async function setUserSuspended(db: Firestore, uid: string, suspended: boolean) {
+  if (suspended && uid === auth?.currentUser?.uid && auth.currentUser.email?.trim().toLowerCase() === 'adam2002hosny@gmail.com') throw new Error('protected-admin')
   const ref = doc(db, 'appMetrics', uid)
   const snapshot = await getDoc(ref)
   if (!snapshot.exists()) throw new Error('account-metric-missing')

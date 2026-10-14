@@ -18,11 +18,12 @@ export function rankForMove(projects: Project[], activeId: string, overId: strin
   return rank
 }
 
-export type ProjectDetails = Pick<Project, 'projectUrl' | 'attachmentUrl' | 'dueDate' | 'assignedTo' | 'sectionId' | 'kind' | 'checkpoint' | 'checklist'> & { status?: Project['status'] }
+export type ProjectDetails = Pick<Project, 'projectUrl' | 'attachmentUrl' | 'links' | 'dueDate' | 'assignedTo' | 'sectionId' | 'kind' | 'checkpoint' | 'checklist' | 'archivedAt' | 'trashedAt' | 'activityAt' | 'completedAt' | 'resourceType' | 'progressUnits' | 'totalUnits' | 'followUpDate' | 'coverUrl' | 'description' | 'catalogSource' | 'catalogId'> & { status?: Project['status']; nextStep?:string }
 
 function validHttpUrl(value: string) {
   if (!value) return true
   try {
+    if (/\s/.test(value)) return false
     const parsed = new URL(value)
     return parsed.protocol === 'https:' || parsed.protocol === 'http:'
   } catch { return false }
@@ -40,10 +41,15 @@ export function validateProject(name: string, nextStep: string, details: Project
   const { projectUrl = '', attachmentUrl = '', dueDate = '' } = details
   if (projectUrl.length > 500 || !validHttpUrl(projectUrl)) throw new Error('invalid-project-url')
   if (attachmentUrl.length > 500 || !validHttpUrl(attachmentUrl)) throw new Error('invalid-attachment-url')
+  if (details.links && (!Array.isArray(details.links) || details.links.length>10 || details.links.some(url=>typeof url!=='string' || url.length>500 || !url || !validHttpUrl(url)))) throw new Error('invalid-project-url')
   if ((details.assignedTo ?? '').length > 128) throw new Error('invalid-project')
   if ((details.sectionId ?? '').length > 100 || (details.checkpoint ?? '').length > 1000 || (details.checklist ?? '').length > 3000) throw new Error('invalid-project')
   if (details.kind && !['resume', 'waiting', 'deadline', 'list'].includes(details.kind)) throw new Error('invalid-project')
   if (details.status && !['later', 'active', 'waiting', 'done'].includes(details.status)) throw new Error('invalid-project')
+  for(const field of ['archivedAt','trashedAt','activityAt','completedAt'] as const)if(details[field]!==undefined&&(!Number.isSafeInteger(details[field])||details[field]!<0||details[field]!>9000000000000000))throw new Error('invalid-project')
+  for(const field of ['progressUnits','totalUnits'] as const)if(details[field]!==undefined&&(!Number.isInteger(details[field])||details[field]!<0||details[field]!>1000000))throw new Error('invalid-project')
+  if(details.resourceType&&!['project','book','course','video','series','film','shopping','idea'].includes(details.resourceType))throw new Error('invalid-project')
+  if((details.description || '').length>1000||(details.catalogId || '').length>100||(details.catalogSource || '').length>30||(details.coverUrl || '').length>500||!validHttpUrl(details.coverUrl || '')||!validDate(details.followUpDate || ''))throw new Error('invalid-project')
   if (!validDate(dueDate)) throw new Error('invalid-due-date')
 }
 
@@ -57,5 +63,5 @@ export function matchesView(project: Project, view: string, today = localDateKey
   return view === 'all' || project.status === view
 }
 export function toggleChecklist(text: string, index: number) {
-  return text.split('\n').map((line, i) => i === index ? (/^\[x\] /i.test(line) ? line.replace(/^\[x\] /i, '[ ] ') : `[x] ${line.replace(/^\[ \] /, '')}`) : line).join('\n')
+  return text.split('\n').map((line, i) => i === index ? (/^\s*\[x\]\s/i.test(line) ? `[ ] ${line.replace(/^\s*\[x\]\s*/i, '')}` : `[x] ${line.replace(/^\s*\[ \]\s*/, '')}`) : line).join('\n')
 }

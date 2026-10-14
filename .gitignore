@@ -21,3 +21,5 @@ backups/
 *.zip
 .firebase/
 .backup-*/
+*:Zone.Identifier
+*.bak

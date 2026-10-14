@@ -1,12 +1,45 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function validWorkflowFields(d) {
+      return (!d.keys().hasAny(['resourceType']) || d.resourceType in ['project','book','course','video','series','film','shopping','idea'])
+        && (!d.keys().hasAny(['archivedAt']) || d.archivedAt is int && d.archivedAt>=0 && d.archivedAt<=9000000000000000)
+        && (!d.keys().hasAny(['trashedAt']) || d.trashedAt is int && d.trashedAt>=0 && d.trashedAt<=9000000000000000)
+        && (!d.keys().hasAny(['activityAt']) || d.activityAt is int && d.activityAt>=0 && d.activityAt<=9000000000000000)
+        && (!d.keys().hasAny(['completedAt']) || d.completedAt is int && d.completedAt>=0 && d.completedAt<=9000000000000000)
+        && (!d.keys().hasAny(['progressUnits']) || d.progressUnits is int && d.progressUnits>=0 && d.progressUnits<=1000000)
+        && (!d.keys().hasAny(['totalUnits']) || d.totalUnits is int && d.totalUnits>=0 && d.totalUnits<=1000000)
+        && (!d.keys().hasAny(['description']) || d.description is string && d.description.size()<=1000)
+        && (!d.keys().hasAny(['catalogSource']) || d.catalogSource is string && d.catalogSource.size()<=30)
+        && (!d.keys().hasAny(['catalogId']) || d.catalogId is string && d.catalogId.size()<=100)
+        && (!d.keys().hasAny(['coverUrl']) || d.coverUrl is string && d.coverUrl.size()<=500 && (d.coverUrl=='' || d.coverUrl.matches('^https?://[^\\s]+$')))
+        && (!d.keys().hasAny(['followUpDate']) || d.followUpDate is string && (d.followUpDate=='' || d.followUpDate.matches('^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$')));
+    }
+    function validExtraLink(value) {
+      return value is string && value.size()>0 && value.size()<=500 && value.matches('^https?://[^\\s]+$');
+    }
+    function validExtraLinks(links) {
+      return links is list && links.size()<=10
+        && (links.size()<=0 || validExtraLink(links[0]))
+        && (links.size()<=1 || validExtraLink(links[1]))
+        && (links.size()<=2 || validExtraLink(links[2]))
+        && (links.size()<=3 || validExtraLink(links[3]))
+        && (links.size()<=4 || validExtraLink(links[4]))
+        && (links.size()<=5 || validExtraLink(links[5]))
+        && (links.size()<=6 || validExtraLink(links[6]))
+        && (links.size()<=7 || validExtraLink(links[7]))
+        && (links.size()<=8 || validExtraLink(links[8]))
+        && (links.size()<=9 || validExtraLink(links[9]))
+        ;
+    }
       function validProject() {
         let d = request.resource.data;
         return d.keys().hasAll(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
-          && d.keys().hasOnly(['name', 'nextStep', 'projectUrl', 'attachmentUrl', 'dueDate', 'assignedTo', 'sectionId', 'kind', 'checkpoint', 'checklist', 'mutationId', 'status', 'rank', 'revision', 'updatedAt'])
+          && d.keys().hasOnly(['name', 'nextStep', 'projectUrl', 'attachmentUrl', 'links', 'dueDate', 'assignedTo', 'sectionId', 'kind', 'checkpoint', 'checklist', 'mutationId', 'archivedAt', 'trashedAt', 'activityAt', 'completedAt', 'resourceType', 'progressUnits', 'totalUnits', 'followUpDate', 'coverUrl', 'description', 'catalogSource', 'catalogId', 'status', 'rank', 'revision', 'updatedAt'])
           && d.name is string && d.name.size() > 0 && d.name.size() <= 100
           && d.name.matches('.*[^\\s].*')
+          && (!d.keys().hasAny(['links']) || validExtraLinks(d.links))
+          && validWorkflowFields(d)
           && d.nextStep is string && d.nextStep.size() <= 1000
           && (!d.keys().hasAny(['projectUrl']) || d.projectUrl is string && d.projectUrl.size() <= 500 && (d.projectUrl == '' || d.projectUrl.matches('^https?://[^\\s]+$')))
           && (!d.keys().hasAny(['attachmentUrl']) || d.attachmentUrl is string && d.attachmentUrl.size() <= 500 && (d.attachmentUrl == '' || d.attachmentUrl.matches('^https?://[^\\s]+$')))
@@ -129,13 +162,25 @@ service cloud.firestore {
         allow update: if groupMember(gid) && validProject() && request.resource.data.revision == resource.data.revision + 1
           && ((groupManager(gid) && assignmentValid())
             || (resource.data.get('assignedTo', '') == request.auth.uid
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nextStep', 'status', 'checkpoint', 'checklist', 'revision', 'updatedAt', 'mutationId'])));
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nextStep', 'status', 'checkpoint', 'checklist', 'progressUnits', 'followUpDate', 'activityAt', 'completedAt', 'revision', 'updatedAt', 'mutationId'])));
       }
       match /sections/{sectionId} {
         allow read: if groupMember(gid) || cleaningOwner(gid);
         allow delete: if groupManager(gid) || cleaningOwner(gid);
         allow create: if groupManager(gid) && validSection() && request.resource.data.get('revision', 0) == 0;
         allow update: if groupManager(gid) && validSection() && request.resource.data.revision == resource.data.get('revision', 0) + 1;
+      }
+      match /announcements/{announcementId} {
+        allow read: if groupMember(gid) || cleaningOwner(gid);
+        allow create: if groupManager(gid)
+          && request.resource.data.keys().hasOnly(['title','body','authorUid','authorName','createdAt'])
+          && request.resource.data.title is string && request.resource.data.title.size()>0 && request.resource.data.title.size()<=100
+          && request.resource.data.body is string && request.resource.data.body.size()>0 && request.resource.data.body.size()<=2000
+          && request.resource.data.authorUid == request.auth.uid
+          && request.resource.data.authorName is string && request.resource.data.authorName.size()>0 && request.resource.data.authorName.size()<=100
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if groupManager(gid) || cleaningOwner(gid);
       }
     }
     match /users/{uid}/groupMemberships/{gid} {
@@ -214,6 +259,56 @@ service cloud.firestore {
         && request.time < resource.data.requestedAt + duration.value(24, 'h');
     }
 
+    match /system/securityEmailWorker {
+      allow get: if request.auth != null;
+      allow list, write: if false;
+    }
+    match /securityNotifications/{uid} {
+      function validNotice() {
+        return signedActive() && request.auth.uid == uid && request.auth.token.email_verified == true
+          && request.time.toMillis() / 1000 - request.auth.token.auth_time < 300
+          && request.resource.data.keys().hasOnly(['status','event','language','requestedAt'])
+          && request.resource.data.status == 'pending' && request.resource.data.event == 'password-changed'
+          && request.resource.data.language in ['ar','en','he'] && request.resource.data.requestedAt == request.time
+          && get(/databases/$(database)/documents/system/securityEmailWorker).data.availableUntil > request.time;
+      }
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, delete: if false;
+      allow create: if validNotice();
+      allow update: if validNotice() && resource.data.status != 'processing'
+        && request.time > resource.data.requestedAt + duration.value(1,'m');
+    }
+
+
+    match /users/{uid}/preferences/{preference} {
+      function ownerPreference() { return signedActive() && request.auth.uid==uid && preference=='workflow'; }
+      allow get: if ownerPreference();
+      allow list,delete: if false;
+      allow create,update: if ownerPreference()
+        && request.resource.data.keys().hasOnly(['autoArchive','reminders','desktop','reviewDays','updatedAt'])
+        && request.resource.data.autoArchive is bool && request.resource.data.reminders is bool && request.resource.data.desktop is bool
+        && request.resource.data.reviewDays in [7,14,30,60,90] && request.resource.data.updatedAt==request.time;
+    }
+    match /users/{uid}/sessions/{sessionId} {
+      function validSession() {
+        let d=request.resource.data;
+        return signedActive() && request.auth.uid==uid
+          && d.keys().hasOnly(['projectId','projectName','groupId','resourceType','startedAt','endedAt','seconds','checkpoint','nextStep','receivedAt'])
+          && d.projectId is string && d.projectId.size()>0 && d.projectId.size()<=100
+          && d.projectName is string && d.projectName.size()>0 && d.projectName.size()<=100
+          && d.groupId is string && d.groupId.size()<=100
+          && d.resourceType in ['project','book','course','video','series','film','shopping','idea']
+          && d.startedAt is int && d.startedAt>=0 && d.endedAt is int && d.endedAt>=d.startedAt
+          && d.seconds is int && d.seconds>=0 && d.seconds<=5400
+          && d.seconds*1000<=d.endedAt-d.startedAt+1000
+          && d.checkpoint is string && d.checkpoint.size()<=1000 && d.nextStep is string && d.nextStep.size()<=1000
+          && d.receivedAt==request.time;
+      }
+      allow read: if signedActive() && request.auth.uid==uid;
+      allow create: if validSession();
+      allow update: if validSession() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['receivedAt']);
+      allow delete: if signedActive() && request.auth.uid==uid;
+    }
     match /appMetrics/{uid} {
       function owner() { return request.auth != null && request.auth.uid == uid; }
       function admin() {

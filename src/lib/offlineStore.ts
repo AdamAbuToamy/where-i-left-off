@@ -30,7 +30,7 @@ export function nextMutation(state: OfflineState) {
   return state.operations.find((op, i) => !op.conflict && !state.operations.slice(0, i).some(previous => previous.entity === op.entity && previous.entityId === op.entityId))
 }
 export function normalizedProject(id: string, value: Partial<Project>): Project {
-  return { id, name: value.name || '', nextStep: value.nextStep || '', projectUrl: value.projectUrl || '', attachmentUrl: value.attachmentUrl || '', dueDate: value.dueDate || '', assignedTo: value.assignedTo || '', sectionId: value.sectionId || '', kind: value.kind || 'resume', checkpoint: value.checkpoint || '', checklist: value.checklist || '', status: value.status || 'later', rank: value.rank ?? 0, revision: value.revision ?? 0 }
+  return { archivedAt:value.archivedAt || 0,trashedAt:value.trashedAt || 0,activityAt:value.activityAt || (value as Partial<Project>&{updatedAt?:{toMillis:()=>number}}).updatedAt?.toMillis?.() || 0,completedAt:value.completedAt || 0,resourceType:value.resourceType || 'project',progressUnits:value.progressUnits || 0,totalUnits:value.totalUnits || 0,followUpDate:value.followUpDate || '',coverUrl:value.coverUrl || '',description:value.description || '',catalogSource:value.catalogSource || '',catalogId:value.catalogId || '',id, name: value.name || '', nextStep: value.nextStep || '', projectUrl: value.projectUrl || '', attachmentUrl: value.attachmentUrl || '', links: Array.isArray(value.links)?value.links.filter(link=>typeof link==='string'):[], dueDate: value.dueDate || '', assignedTo: value.assignedTo || '', sectionId: value.sectionId || '', kind: value.kind || 'resume', checkpoint: value.checkpoint || '', checklist: value.checklist || '', status: value.status || 'later', rank: value.rank ?? 0, revision: value.revision ?? 0 }
 }
 export function normalizedSection(id: string, value: Partial<Section>): Section { return { id, name: value.name || '', revision: value.revision ?? 0 } }
 
@@ -80,4 +80,19 @@ export async function updateLocal(key: string, change: (state: OfflineState) => 
   })
   window.dispatchEvent(new CustomEvent('recall-local-change', { detail: key }))
   channel?.postMessage(key)
+}
+
+export async function clearLocalAccount(projectId: string, uid: string) {
+ const db = await localDatabase(), prefix = `${projectId}/${uid}`
+ await new Promise<void>((resolve, reject) => {
+  const tx = db.transaction('accounts', 'readwrite'), store = tx.objectStore('accounts'), cursor = store.openCursor()
+  cursor.onsuccess = () => {
+   const item = cursor.result
+   if (!item) return
+   const key = String(item.key)
+   if (key === prefix || key.startsWith(`${prefix}/`)) item.delete()
+   item.continue()
+  }
+  tx.oncomplete = () => resolve(); tx.onerror = () => reject(new Error('local-storage-unavailable'))
+ })
 }

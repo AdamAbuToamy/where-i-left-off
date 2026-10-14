@@ -41,6 +41,11 @@ async function cleanGroup(gid, uid) {
    cards.docs.forEach(card => batch.update(card.ref, { assignedTo:'', revision:FieldValue.increment(1), updatedAt:FieldValue.serverTimestamp() }))
    await batch.commit()
   }
+  while(true) {
+   const authored=await group.collection('announcements').where('authorUid','==',uid).limit(200).get()
+   if(authored.empty)break
+   const batch=db.batch();authored.docs.forEach(item=>batch.update(item.ref,{authorUid:'',authorName:'Former member'}));await batch.commit()
+  }
   await group.collection('members').doc(uid).delete()
  }
  await db.doc(`users/${uid}/groupMemberships/${gid}`).delete()
@@ -63,6 +68,7 @@ async function eraseAccount(uid) {
  await deleteMatches(db.collection('appLogs').where('uid','==',uid))
  await db.recursiveDelete(db.doc(`users/${uid}`))
  await db.doc(`appMetrics/${uid}`).delete()
+ await db.doc(`securityNotifications/${uid}`).delete()
  await db.doc(`accountDeletions/${uid}`).update({ status:'completed', completedAt:FieldValue.serverTimestamp(), leaseUntil:FieldValue.delete() })
 }
 const now = Date.now(), requests = db.collection('accountDeletions')

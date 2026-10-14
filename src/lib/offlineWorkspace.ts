@@ -1,3 +1,5 @@
+import { sameProjectBaseline } from './projectBaseline'
+import { completionDates,shouldArchive } from './workflow'
 import { collection, doc, getDocFromServer, runTransaction, serverTimestamp } from 'firebase/firestore'
 import type { Firestore } from 'firebase/firestore'
 import type { Project, Section } from '../types'
@@ -63,7 +65,7 @@ export class OfflineWorkspace {
   }
   add(name: string, nextStep: string, rank: number, details: ProjectDetails) {
     validateProject(name, nextStep, details)
-    const after = normalizedProject(this.id(), { ...details, name: name.trim(), nextStep: nextStep.trim(), rank, revision: 0 })
+    const after = normalizedProject(this.id(), { activityAt:Date.now(),completedAt:details.status==='done'?Date.now():0,...details, name: name.trim(), nextStep: nextStep.trim(), rank, revision: 0 })
     return this.queue(() => ({ id: this.id(), entity: 'project', entityId: after.id, before: null, after }))
   }
   change(project: Project, operation: 'edit' | 'toggle' | 'delete' | 'move', values: ProjectDetails & { name?: string; nextStep?: string; rank?: number } = {}) {
@@ -81,6 +83,7 @@ export class OfflineWorkspace {
         after = normalizedProject(current.id, { ...after, ...values, revision: current.revision + 1, name: values.name?.trim(), nextStep: values.nextStep?.trim() })
         validateProject(after.name, after.nextStep, after)
       }
+      if(after)after=completionDates(current,after)
       return { id: this.id(), entity: 'project', entityId: current.id, before: current, after }
     })
   }
@@ -93,13 +96,30 @@ export class OfflineWorkspace {
       return { id: this.id(), entity: 'section', entityId, before, after }
     })
   }
-  deleteSection(id: string) {
-    return this.queue(state => {
+  async archiveCompleted() {
+    if(this.groupId || !this.isCurrentUser())throw new Error('permission-denied')
+    const now=Date.now()
+    await updateLocal(this.key,state=>{
+      const moves:Mutation[]=projectedState(state).projects.filter(project=>shouldArchive(project,true,now)).map(project=>({id:this.id(),entity:'project',entityId:project.id,before:project,after:{...project,archivedAt:now,revision:project.revision+1}}))
+      return{...state,operations:[...state.operations,...moves]}
+    })
+  }
+  async deleteSection(id: string) {
+    if (!this.isCurrentUser()) throw new Error('permission-denied')
+    await updateLocal(this.key, state => {
       const view = projectedState(state)
-      if (view.projects.some(p => p.sectionId === id)) throw new Error('section-not-empty')
       const before = view.sections.find(s => s.id === id)
       if (!before) throw new Error('section-missing')
-      return { id: this.id(), entity: 'section', entityId: id, before, after: null }
+      const moves: Mutation[] = view.projects
+        .filter(p => p.sectionId === id)
+        .map(project => ({
+          id: this.id(), entity: 'project', entityId: project.id,
+          before: project,
+          after: { ...project, sectionId: '', revision: project.revision + 1 },
+        }))
+      return { ...state, operations: [...state.operations, ...moves,
+        { id: this.id(), entity: 'section', entityId: id,
+          before, after: null } as Mutation] }
     })
   }
   private async commit(op: Mutation): Promise<{ remote?: LocalEntity | null }> {
@@ -114,7 +134,7 @@ export class OfflineWorkspace {
       const data = snapshot.data()
       const remote = data ? (op.entity === 'project' ? normalizedProject(snapshot.id, data) : normalizedSection(snapshot.id, data)) : null
       if (data?.mutationId === op.id) return {}
-      if (JSON.stringify(remote) !== JSON.stringify(op.before)) return { remote }
+      if (op.entity==='project'&&remote&&op.before ? !sameProjectBaseline(op.before as Project,remote as Project,data || {}) : JSON.stringify(remote)!==JSON.stringify(op.before)) return { remote }
       throw error
     }
   }
@@ -126,11 +146,13 @@ export class OfflineWorkspace {
       const data = snapshot.data()
       const remote = data ? (op.entity === 'project' ? normalizedProject(snapshot.id, data) : normalizedSection(snapshot.id, data)) : null
       if (data?.mutationId === op.id || (!remote && !op.after)) return {}
-      if ((!op.before && remote) || (op.before && !remote) || (op.before && remote && ((op.before.revision ?? 0) !== (remote.revision ?? 0) || (op.entity === 'section' ? op.before.name !== remote.name : JSON.stringify(normalizedProject(op.entityId, op.before as Project)) !== JSON.stringify(normalizedProject(op.entityId, remote as Project)))))) return { remote }
+      if ((!op.before && remote) || (op.before && !remote) || (op.before && remote && ((op.before.revision ?? 0) !== (remote.revision ?? 0) || (op.entity === 'section' ? op.before.name !== remote.name : !sameProjectBaseline(op.before as Project,remote as Project,data || {}))))) return { remote }
       if (!op.after) tx.delete(ref)
       else {
         const body: Record<string, unknown> = { ...op.after, updatedAt: serverTimestamp(), mutationId: op.id }
         delete body.id
+        const defaults:Record<string,unknown>={links:[],archivedAt:0,trashedAt:0,completedAt:0,resourceType:'project',progressUnits:0,totalUnits:0,followUpDate:'',coverUrl:'',description:'',catalogSource:'',catalogId:''}
+        if(data)for(const [key,value] of Object.entries(defaults))if(!(key in data)&&JSON.stringify(body[key])===JSON.stringify(value))delete body[key]
         tx.set(ref, body)
       }
       return {}

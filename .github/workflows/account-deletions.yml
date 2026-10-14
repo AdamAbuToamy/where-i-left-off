@@ -10,9 +10,11 @@ concurrency:
   cancel-in-progress: false
 jobs:
   delete-expired-accounts:
-    if: ${{ vars.ACCOUNT_DELETION_ENABLED == 'true' }}
+    if: ${{ vars.ACCOUNT_DELETION_ENABLED == 'true' || vars.SECURITY_EMAILS_ENABLED == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      SMTP_CONFIG: ${{ secrets.SMTP_CONFIG }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,7 +23,14 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Complete confirmed deletion requests older than 24 hours
+        if: ${{ vars.ACCOUNT_DELETION_ENABLED == 'true' }}
         run: node scripts/process-account-deletions.mjs --execute
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'where-i-left-off-b5683' }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Send password-change confirmation emails
+        if: ${{ vars.SECURITY_EMAILS_ENABLED == 'true' && env.SMTP_CONFIG != '' }}
+        run: node scripts/process-security-emails.mjs
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'where-i-left-off-b5683' }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

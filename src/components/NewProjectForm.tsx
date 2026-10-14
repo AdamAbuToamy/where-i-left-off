@@ -1,3 +1,5 @@
+import CatalogLookup from './CatalogLookup'
+import ExtraLinks from './ExtraLinks'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Language } from '../translations'
@@ -15,7 +17,7 @@ type NewProjectFormProps = {
   members?: GroupMember[]
   defaultSectionId?: string
   defaultAssignedTo?: string
-  initialValues?: { name: string; projectUrl: string }
+  initialValues?: { name: string; projectUrl: string;checkpoint?:string;resourceType?:'video'|'course' }
   onAdd: (name: string, nextStep: string, details: ProjectDetails) => Promise<boolean>
   onCancel: () => void
 }
@@ -32,7 +34,7 @@ export default function NewProjectForm({
   onCancel,
 }: NewProjectFormProps) {
   const t = translations[language], r = recallText[language]
-  const [metadata, setMetadata] = useState<RecallDetails>({ assignedTo: defaultAssignedTo, status: 'later', kind: 'resume', sectionId: defaultSectionId, checkpoint: '', checklist: '' })
+  const [metadata, setMetadata] = useState<RecallDetails>({ assignedTo: defaultAssignedTo, status: 'later', kind: 'resume', sectionId: defaultSectionId, checkpoint: initialValues?.checkpoint || '', checklist: '',resourceType:initialValues?.resourceType || 'project' })
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState(() => initialValues?.name ?? '')
@@ -40,6 +42,7 @@ export default function NewProjectForm({
   const [projectUrl, setProjectUrl] = useState(() => initialValues?.projectUrl ?? '')
   const [attachmentUrl, setAttachmentUrl] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [links,setLinks]=useState<string[]>([])
 
   useEffect(() => {
     if (isOpen) {
@@ -47,17 +50,22 @@ export default function NewProjectForm({
     }
   }, [isOpen])
 
+  useEffect(() => {
+    if (isOpen) window.dispatchEvent(new CustomEvent('tour-fields-ready', { detail: !!name.trim() && !!nextStep.trim() }))
+  }, [isOpen, name, nextStep])
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (!name.trim()) return
 
-    if (!await onAdd(name.trim(), nextStep.trim(), { projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, ...metadata })) return
+    if (!await onAdd(name.trim(), nextStep.trim(), { projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, links:links.map(url=>url.trim()).filter(Boolean), ...metadata })) return
     setName('')
     setNextStep('')
     setProjectUrl('')
     setAttachmentUrl('')
     setDueDate('')
+    setLinks([])
     setMetadata({ assignedTo: defaultAssignedTo, status: 'later', kind: 'resume', sectionId: defaultSectionId, checkpoint: '', checklist: '' })
   }
 
@@ -79,6 +87,7 @@ export default function NewProjectForm({
         onChange={(event) => setName(event.target.value)}
       />
 
+      <CatalogLookup name={name} type={metadata.resourceType} language={language} onChoose={(title,values)=>{setName(title);setMetadata({...metadata,...values});if(values.projectUrl)setProjectUrl(values.projectUrl)}}/>
       <label htmlFor="project-next-step">{t.nextStep}</label>
 
       <textarea
@@ -91,19 +100,22 @@ export default function NewProjectForm({
         onChange={(event) => setNextStep(event.target.value)}
       />
 
-      <RecallFields members={members} value={metadata} onChange={setMetadata} sections={sections} language={language} prefix="new" />
+      <div className="project-extra-fields"><RecallFields members={members} value={metadata} onChange={setMetadata} sections={sections} language={language} prefix="new" />
       <label htmlFor="project-url">{t.projectUrl}</label>
       <input id="project-url" type="url" inputMode="url" maxLength={500} placeholder={t.projectUrlPlaceholder} value={projectUrl} onChange={event => setProjectUrl(event.target.value)} />
 
       <label htmlFor="project-attachment">{t.attachmentUrl}</label>
       <input id="project-attachment" type="url" inputMode="url" maxLength={500} placeholder={t.attachmentUrlPlaceholder} value={attachmentUrl} onChange={event => setAttachmentUrl(event.target.value)} />
 
+      <ExtraLinks value={links} onChange={setLinks} language={language} prefix="new"/>
       <label htmlFor="project-due-date">{t.dueDate}</label>
       <input id="project-due-date" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} />
 
+      </div>
       <div className="form-actions">
         <button
           type="submit"
+          data-tour="save-project"
           className="primary-button"
           disabled={!name.trim()}
         >

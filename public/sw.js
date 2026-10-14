@@ -21,3 +21,14 @@ self.addEventListener('fetch', event => {
   const pathname = new URL(event.request.url).pathname;
   if (PRECACHE.includes(pathname)) event.respondWith(caches.open(CACHE_NAME).then(cache => cache.match(pathname, { ignoreVary: true })).then(cached => cached || fetch(event.request)));
 });
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close()
+  event.waitUntil((async () => {
+    const target = new URL('/#/resume', self.location.origin).href
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    const window = windows.find(client => new URL(client.url).origin === self.location.origin)
+    if (window) { await window.navigate(target); return window.focus() }
+    return self.clients.openWindow(target)
+  })())
+})

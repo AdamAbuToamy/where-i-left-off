@@ -1,5 +1,6 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, runTransaction, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
 import type { Firestore } from 'firebase/firestore'
+import { displayName } from './profile'
 import type { User } from 'firebase/auth'
 import type { GroupInfo, GroupMember } from '../types'
 export type GroupInvite = { id: string; groupId: string; groupName: string; expiresAt: Timestamp }
@@ -7,9 +8,9 @@ export function watchGroups(db: Firestore, uid: string, receive: (groups: GroupI
   return onSnapshot(collection(db, 'users', uid, 'groupMemberships'), { includeMetadataChanges: true }, snap => receive(snap.docs.map(d => ({ id: d.id, name: d.data().groupName, role: d.data().role }) as GroupInfo).sort((a, b) => a.name.localeCompare(b.name)), snap.metadata.fromCache || snap.metadata.hasPendingWrites), fail)
 }
 export function watchMembers(db: Firestore, groupId: string, receive: (members: GroupMember[], cached: boolean) => void, fail: (error: Error) => void) {
-  return onSnapshot(collection(db, 'groups', groupId, 'members'), { includeMetadataChanges: true }, snap => receive(snap.docs.map(d => ({ ...d.data(), uid: d.id }) as GroupMember), snap.metadata.fromCache || snap.metadata.hasPendingWrites), fail)
+  return onSnapshot(collection(db, 'groups', groupId, 'members'), { includeMetadataChanges: true }, snap => receive(snap.docs.map(d => ({ ...d.data(), uid: d.id, name: d.data().name === d.data().email ? 'Member' : d.data().name }) as GroupMember), snap.metadata.fromCache || snap.metadata.hasPendingWrites), fail)
 }
-function identity(user: User) { return { name: (user.displayName || user.email || 'Member').slice(0, 100), email: user.email || '' } }
+function identity(user: User) { return { name: displayName(user).slice(0, 100), email: user.email || '' } }
 export async function createGroup(db: Firestore, user: User, name: string) {
   if (!name.trim() || name.trim().length > 60) throw new Error('invalid-group')
   const ref = doc(collection(db, 'groups')), batch = writeBatch(db)
@@ -63,12 +64,12 @@ export async function deleteGroup(db: Firestore, groupId: string, uid: string) {
   const ref = doc(db, 'groups', groupId)
   // Block all member access and writes before cleanup. Retain owner access for safe retry.
   await updateDoc(ref, { deleted: true })
-  const [projects, sections, invitations, members] = await Promise.all([
+  const [projects, sections, invitations, members, announcements] = await Promise.all([
     getDocs(collection(ref, 'projects')), getDocs(collection(ref, 'sections')),
     getDocs(query(collection(db, 'groupInvites'), where('groupId', '==', groupId))),
-    getDocs(collection(ref, 'members')),
+    getDocs(collection(ref, 'members')), getDocs(collection(ref, 'announcements')),
   ])
-  const refs = [...projects.docs, ...sections.docs, ...invitations.docs].map(d => d.ref)
+  const refs = [...projects.docs, ...sections.docs, ...invitations.docs, ...announcements.docs].map(d => d.ref)
   for (let i = 0; i < refs.length; i += 200) {
     const batch = writeBatch(db); refs.slice(i, i + 200).forEach(r => batch.delete(r)); await batch.commit()
   }
