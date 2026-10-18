@@ -1,3 +1,4 @@
+import { doc, getDocFromServer } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { User } from 'firebase/auth'
@@ -34,11 +35,21 @@ export default function GroupSpaces({ user, language, children, page, groupId: r
   const group = groups.find(g => g.id === selected)
   const groupId = group?.id, groupRole = group?.role
   useEffect(() => { if (online && user.displayName?.trim()) void traced('profile.sync', () => syncMemberNames(db!, user)).catch(setError) }, [user, profileVersion, online])
-  useEffect(() => watchGroups(db!, user.uid, (items, fromCache) => {
-    if (fromCache) return
-    setGroups(items); remember(namespace, items)
-    if (routeGroupId && !items.some(g => g.id === routeGroupId)) navigate('groups')
-  }, e => { setError(e); logEvent('groups.list', e) }), [user.uid, namespace, routeGroupId])
+  useEffect(() => {
+    let active = true
+    const stop = watchGroups(db!, user.uid, (items, fromCache) => {
+      if (fromCache) return
+      setGroups(items); remember(namespace, items)
+      // A listener snapshot can lag behind a just-confirmed join. Verify the
+      // membership on the server before redirecting out of the selected group.
+      if (routeGroupId && !items.some(g => g.id === routeGroupId)) {
+        void getDocFromServer(doc(db!, 'users', user.uid, 'groupMemberships', routeGroupId)).then(member => {
+          if (active && !member.exists()) navigate('groups')
+        }).catch(e => { if (active) { setError(e); logEvent('groups.membership', e) } })
+      }
+    }, e => { setError(e); logEvent('groups.list', e) })
+    return () => { active = false; stop() }
+  }, [user.uid, namespace, routeGroupId])
   useEffect(() => {
     const update = () => setOnline(navigator.onLine)
     window.addEventListener('online', update); window.addEventListener('offline', update)

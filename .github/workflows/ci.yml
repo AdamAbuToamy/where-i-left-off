@@ -56,6 +56,15 @@ jobs:
           path: test-results/
           retention-days: 7
 
+      - name: Keep interface review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interface-review
+          path: test-results/layout-review/
+          if-no-files-found: ignore
+          retention-days: 7
+
   dependency-audit:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

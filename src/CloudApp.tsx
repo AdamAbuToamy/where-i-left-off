@@ -1,3 +1,4 @@
+import SideNavigation from './components/SideNavigation'
 import Support, { LegalLinks } from './components/Support'
 import ExtensionInstall from './components/ExtensionInstall'
 import { supportText } from './supportText'
@@ -26,7 +27,6 @@ import { featureText } from './featureText'
 import WelcomeTour from './components/WelcomeTour'
 import { AccountLifecycle } from './components/AccountDeletion'
 import { pageText } from './pageText'
-import type { PageName } from './lib/navigation'
 import { navigate, usePage } from './lib/navigation'
 import { displayName } from './lib/profile'
 import { flushLogs, logEvent, traced } from './lib/logging'
@@ -43,6 +43,7 @@ import './App.css'
 import './Cloud.css'
 import './Recall.css'
 import './Themes.css'
+import './Layout.css'
 import { applyTheme } from './lib/theme'
 import Sections from './components/Sections'
 import { recallText } from './recallTranslations'
@@ -179,10 +180,13 @@ function Workspace({ user, language, group, members }: { user: User; language: L
           <span className={`add-icon ${isFormOpen ? 'is-open' : ''}`} aria-hidden="true">+</span>{isFormOpen ? t.cancel : r.newCard}
         </button>}
       </div>}
+      <div className="board-utility-row">
       {(projects.length > 0 || view === 'week') && <nav className="view-tabs" aria-label={t.workspace}>
         <button className="secondary-button" aria-pressed={view === 'board'} onClick={() => setView('board')}>{t.boardView}</button>
         <button className="secondary-button" aria-pressed={view === 'week'} onClick={() => setView('week')}>{t.weekView}</button>
       </nav>}
+        {projects.length > 0 && <section className="workspace-report"><div><h3>{featureText[language].report}</h3><p>{group?.name || pageText[language].personal} · {projects.length} {r.cards}</p></div><SummaryPdfButton entries={projects.map(project=>({project,scope:group?.name || pageText[language].personal,groupId:group?.id}))} title={group?.name || featureText[language].report} userName={user.displayName || ''} language={language} cached={cached || queued>0} scopeLabel /></section>}
+      </div>
       {group && projects.length > 0 && <div className="filter-group"><button className="secondary-button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>{g.all}</button><button className="secondary-button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>{g.mine}</button></div>}
       {view === 'board' && <Sections canManage={canManage} sections={sections} projects={projects} selected={sectionFilter} onSelect={setSectionFilter} language={language} disabled={pending} onSave={(name, id) => run(() => repository.current!.saveSection(name, id), 'section.save')} onDelete={id => run(() => repository.current!.deleteSection(id), 'section.delete')} />}
       <fieldset className="workspace-fields" disabled={pending} aria-busy={pending}>
@@ -194,7 +198,7 @@ function Workspace({ user, language, group, members }: { user: User; language: L
           }} /></div>
         </div>}
       </fieldset>
-      {projects.length > 0 && <section className="workspace-report"><div><h3>{featureText[language].report}</h3><p>{group?.name || pageText[language].personal} · {projects.length} {r.cards}</p></div><SummaryPdfButton entries={projects.map(project=>({project,scope:group?.name || pageText[language].personal,groupId:group?.id}))} title={group?.name || featureText[language].report} userName={user.displayName || ''} language={language} cached={cached || queued>0} scopeLabel /></section>}
+
       {projects.length > 0 && <div className="search-toolbar">
         <input type="search" aria-label={c.search} placeholder={c.search} value={search} onChange={e => setSearch(e.target.value)} />
         <div className="filter-group"><select aria-label={r.all} value={filter} onChange={e => setFilter(e.target.value)}>{[['all', r.all], ['today', r.today], ['waiting', r.waiting], ['overdue', r.overdue], ['upcoming', r.upcoming], ['active', r.active], ['later', r.later], ['done', r.done], ['ideas',workflowText[language].ideas]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
@@ -238,14 +242,14 @@ export default function App() {
     return onAuthStateChanged(auth, current => { setUser(current); setLoading(false); if (current) { void flushLogs(); if (new URLSearchParams(location.search).has('groupInvite')) navigate('groups') } }, e => { setAuthError(e); setLoading(false); logEvent('auth.subscription', e) })
   }, [])
   return <IdleSleep key={user?.uid || 'signed-out'} uid={user?.uid} user={user || undefined} language={language}><main className={`workspace language-${language}`}>
-    <header className="page-header"><div className="heading-copy"><p>{t.workspace}</p><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', () => signOut(auth!)).catch(() => {})}>{c.logout}</button>}</div></header>
+    <header className="page-header"><div className="heading-copy"><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', () => signOut(auth!)).catch(() => {})}>{c.logout}</button>}</div></header>
     {emulatorMode && <p className="notice">{c.demo}</p>}
     {authError !== null && <p className="notice error" role="alert">{errorText(authError, language)}</p>}
     {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <p role="status">{c.loading}</p> : user ? page === 'support' ? <Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} /> : <AccountLifecycle key={user.uid} user={user} language={language}>
       {page !== 'settings' && <ExtensionInstall language={language} />}
       <WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
       <WelcomeTour key={user.uid} user={user} language={language} />
-      <nav className="page-navigation" aria-label={t.workspace}>{(['resume', 'personal', 'groups', 'library', 'analytics', 'settings', ...(isAdmin(user.email, user.emailVerified) ? ['admin'] : [])] as PageName[]).map(item => <a key={item} href={`#/${item}`} aria-current={page === item ? 'page' : undefined}>{item==='library'?workflowText[language].library:item==='analytics'?workflowText[language].analytics:p[item as keyof typeof p]}</a>)}</nav>
+      <SideNavigation language={language} page={page} admin={isAdmin(user.email, user.emailVerified)} />
       {!user.displayName?.trim() && page !== 'settings' && <section className="profile-prompt" aria-label={p.needsName}><span className="profile-prompt-icon" aria-hidden="true">✦</span><div className="profile-prompt-copy"><strong>{p.needsName}</strong><span>{p.profilePrompt}</span></div><a className="primary-button profile-prompt-action" href="#/settings">{p.editProfile} <span aria-hidden="true">↗</span></a></section>}
             {(page === 'personal' || page === 'groups') && <GroupSpaces key={user.uid} user={user} language={language} page={page} groupId={groupId} profileVersion={profileVersion}>{(group, members) => <Workspace key={`${user.uid}/${group?.id || 'personal'}`} user={user} language={language} group={group} members={members} />}</GroupSpaces>}
       {page === 'resume' && <ContinueNow key={user.uid} user={user} language={language} />}

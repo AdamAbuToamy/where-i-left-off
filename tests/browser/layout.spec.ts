@@ -1,0 +1,63 @@
+import { test, expect } from '@playwright/test'
+import { mkdir } from 'node:fs/promises'
+const languages = {
+ en:{name:'Demo project',next:'Check the first prototype',menu:'Menu',profile:'Profile',appearance:'Site colors',extension:'Chrome extension',newCard:'New card',save:'Save card',title:'Card title',step:'Next step',manage:'Manage sections',section:'Section name',addSection:'Add section'},
+ ar:{name:'مشروع تجريبي',next:'فحص النموذج الأول',menu:'القائمة',profile:'الملف الشخصي',appearance:'ألوان الموقع',extension:'إضافة Chrome',newCard:'بطاقة جديدة',save:'حفظ البطاقة',title:'عنوان البطاقة',step:'الخطوة التالية',manage:'تنظيم الأقسام',section:'اسم القسم',addSection:'إضافة قسم'},
+ he:{name:'פרויקט לדוגמה',next:'בדיקת אב טיפוס',menu:'תפריט',profile:'פרופיל אישי',appearance:'צבעי האתר',extension:'תוסף Chrome',newCard:'כרטיס חדש',save:'שמירת כרטיס',title:'כותרת הכרטיס',step:'הצעד הבא',manage:'ניהול מדורים',section:'שם המדור',addSection:'הוספת מדור'},
+}
+for(const lang of ['en','ar','he'] as const)for(const mobile of [false,true])test.describe(`${lang} ${mobile?'phone':'desktop'}`,()=>{
+ test.use({viewport:mobile?{width:390,height:844}:{width:1440,height:1000},isMobile:mobile,hasTouch:mobile})
+ test('compact controls, accessible side menu, sections and collapsed settings',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('language','en'))
+  await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click()
+  await page.getByLabel('Personal name',{exact:true}).fill('Demo visitor')
+  await page.getByLabel('Email',{exact:true}).fill(`layout-${lang}-${mobile}-${Date.now()}@example.test`)
+  await page.getByLabel('Password',{exact:true}).fill('Test-Password-2026')
+  await page.locator('form').getByRole('button',{name:'Create account',exact:true}).click()
+  await expect(page.locator('.side-navigation-toggle')).toBeVisible()
+  const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click()
+  // Seed one real card through the normal form, then inspect it in all languages.
+  await page.goto('/#/personal');await page.getByRole('button',{name:'New card',exact:true}).click()
+  await page.getByLabel('Card title',{exact:true}).fill(languages[lang].name)
+  await page.getByLabel('Next step',{exact:true}).fill(languages[lang].next)
+  await page.getByRole('button',{name:'Save card',exact:true}).click()
+  await expect(page.getByRole('heading',{name:languages[lang].name,exact:true})).toBeVisible()
+  await page.getByRole('button',{name:'Manage sections',exact:true}).click()
+  await page.getByLabel('Section name',{exact:true}).fill('Robotics')
+  await page.getByRole('button',{name:'Add section',exact:true}).click()
+  await page.getByRole('button',{name:'Robotics',exact:false}).first().click()
+  const selected=page.locator('.section-navigation button[aria-pressed=true]')
+  await expect(selected).toContainText('Robotics')
+  expect(await selected.evaluate(el=>getComputedStyle(el).color)).toBe('rgb(255, 255, 255)')
+  await page.getByRole('button',{name:'Manage sections',exact:true}).click()
+  await page.getByRole('button',{name:'All sections',exact:true}).click()
+  if(lang!=='en'){
+   await page.locator('.language-trigger').click();await page.locator('.language-option').filter({hasText:lang==='ar'?'العربية':'עברית'}).click()
+  }
+  await expect(page.locator('html')).toHaveAttribute('dir',lang==='en'?'ltr':'rtl')
+  await expect(page.locator('.heading-copy > p')).toHaveCount(0)
+  await expect(page.locator('.page-navigation')).not.toBeVisible()
+  expect(await page.locator('.account-strip').evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(60)
+  expect(await page.locator('.workspace-report').evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(100)
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  const toggle=page.locator('.side-navigation-toggle')
+  if(mobile)await toggle.tap();else await toggle.hover()
+  await expect(toggle).toHaveAttribute('aria-expanded','true');await expect(page.locator('.page-navigation')).toBeVisible();await expect(page.locator('.page-navigation')).toHaveCSS('opacity','1')
+  const box=await toggle.boundingBox();expect(lang==='en'?box!.x<60:box!.x>page.viewportSize()!.width-130).toBe(true)
+  await mkdir('test-results/layout-review',{recursive:true})
+  await page.screenshot({path:`test-results/layout-review/${lang}-${mobile?'phone':'desktop'}-menu.png`,fullPage:true})
+  await toggle.press('Escape');await expect(toggle).toHaveAttribute('aria-expanded','false')
+  await page.goto('/#/settings')
+  await expect(page.locator('.settings-group')).toHaveCount(8);await expect(page.locator('.settings-group[open]')).toHaveCount(0)
+  await page.locator('.settings-group>summary').filter({hasText:languages[lang].profile}).click()
+  await expect(page.locator('#profile-name')).toBeVisible()
+  await page.locator('.settings-group>summary').filter({hasText:languages[lang].appearance}).click()
+  await expect(page.locator('.settings-group[open]')).toHaveCount(1);await expect(page.locator('#profile-name')).not.toBeVisible()
+  await page.screenshot({path:`test-results/layout-review/${lang}-${mobile?'phone':'desktop'}-settings.png`,fullPage:true})
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  await page.goto('/#/resume')
+  await expect(page.locator('.resume-tools .review-actions a')).toHaveCount(2)
+  await expect(page.locator('.review-actions a[href="#/library?view=review"]')).toBeVisible()
+  await page.screenshot({path:`test-results/layout-review/${lang}-${mobile?'phone':'desktop'}-resume.png`,fullPage:true})
+ })
+})

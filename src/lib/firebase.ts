@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app'
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
 import { connectAuthEmulator, getAuth } from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 
@@ -14,6 +15,15 @@ const config = emulatorMode ? {
 }
 export const configured = Object.values(config).every(Boolean)
 const app = configured ? initializeApp(config) : null
+// App Check is enabled only for production builds with a registered public site key.
+// Do not enforce in Firebase Console until verified requests appear in metrics.
+const appCheckSiteKey = env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY?.trim()
+if (app && !emulatorMode && env.PROD && appCheckSiteKey) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  })
+}
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
 if (emulatorMode && auth && db) {

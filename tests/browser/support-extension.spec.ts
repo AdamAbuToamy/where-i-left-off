@@ -7,7 +7,7 @@ async function register(page:Page){
  await page.getByLabel('Email',{exact:true}).fill(`support-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`)
  await page.getByLabel('Password',{exact:true}).fill('Test-Password-2026')
  await page.locator('form').getByRole('button',{name:'Create account',exact:true}).click()
- await expect(page.locator('.page-navigation')).toBeVisible()
+ await expect(page.locator('.side-navigation-toggle')).toBeVisible()
  const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click()
 }
 test('extension offer snoozes, Settings keeps the store link, and feedback survives reload',async({page})=>{
@@ -16,7 +16,7 @@ test('extension offer snoozes, Settings keeps the store link, and feedback survi
  await expect(page.locator('.extension-prompt')).toBeVisible()
  await page.getByRole('button',{name:'Remind me in 7 days',exact:true}).click()
  await expect(page.locator('.extension-prompt')).toHaveCount(0)
- await page.goto('/#/settings')
+ await page.goto('/#/settings');await page.locator('.settings-group > summary').filter({hasText:'Chrome extension'}).click()
  await expect(page.getByRole('link',{name:'Open Chrome Web Store',exact:true})).toHaveAttribute('href',`https://chromewebstore.google.com/detail/${'a'.repeat(32)}`)
  await page.goto('/#/support');await page.getByLabel('Subject',{exact:true}).fill('A test support request')
  await page.getByLabel('Message',{exact:true}).fill('A useful report without private data.\nAnother line.')
@@ -27,7 +27,7 @@ test('extension offer snoozes, Settings keeps the store link, and feedback survi
 })
 test('unpublished extension has no install offer or broken store link',async({page})=>{
  await register(page);await expect(page.locator('.extension-prompt')).toHaveCount(0)
- await page.goto('/#/settings');await expect(page.getByText('The extension is awaiting store availability.',{exact:false})).toBeVisible()
+ await page.goto('/#/settings');await page.locator('.settings-group > summary').filter({hasText:'Chrome extension'}).click();await expect(page.getByText('The extension is awaiting store availability.',{exact:false})).toBeVisible()
  await expect(page.getByRole('link',{name:'Open Chrome Web Store',exact:true})).toHaveCount(0)
 })
 test('public legal pages render Arabic and English without requiring login',async({page})=>{
