@@ -1,3 +1,4 @@
+import { supportText } from '../supportText'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
@@ -29,7 +30,7 @@ export default function AuthPanel({ language }: { language: Language }) {
   return <section className="auth-panel" aria-busy={busy}>
     <div className="auth-intro"><span aria-hidden="true">↗</span><h2>{t.intro}</h2></div>
     <form onSubmit={submit} className="new-project-form auth-form">
-      <h2>{register ? t.signUp : t.signIn}</h2>
+      <h2>{register ? t.signUp : t.signIn}</h2><p className="legal-notice">{supportText[language].notice} <a href={`/terms.html?lang=${language}`} target="_blank" rel="noopener noreferrer">{supportText[language].terms}</a> · <a href={`/privacy.html?lang=${language}`} target="_blank" rel="noopener noreferrer">{supportText[language].privacy}</a></p>
       {register && <><label htmlFor="name">{pageText[language].name}</label><input id="name" autoComplete="name" required maxLength={100}  value={name} onChange={e => setName(e.target.value)} dir="auto" /></>}
       <label htmlFor="email">{t.email}</label>
       <input id="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} dir="ltr" />

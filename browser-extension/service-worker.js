@@ -17,3 +17,12 @@ chrome.action.onClicked.addListener(async tab => {
  if(checkpoint){captureUrl.searchParams.set('checkpoint',checkpoint);captureUrl.searchParams.set('resource',resource)}
  await chrome.tabs.create({url:captureUrl.toString(),active:true})
 })
+
+// A presence check from the companion site only. No page content is accessed.
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+ let origin = ''
+ try { origin = new URL(sender.url || sender.origin || '').origin } catch { return false }
+ if (origin !== 'https://where-i-left-off.web.app' || message?.type !== 'WILO_PING') return false
+ sendResponse({ app:'where-i-left-off', installed:true, version:chrome.runtime.getManifest().version })
+ return false
+})

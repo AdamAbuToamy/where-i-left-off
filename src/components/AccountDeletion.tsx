@@ -1,3 +1,4 @@
+import { supportText } from '../supportText'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { User } from 'firebase/auth'
@@ -61,7 +62,7 @@ export default function AccountDeletion({ user, language, request = null, cached
   <h3>{request ? t.pendingTitle : t.deletionTitle}</h3>
   <p>{request ? request.status === 'completed' ? t.deleted : canRestore ? t.pendingBody : t.processing : t.deletionBody}</p>
   {deadline && <><span>{t.deadline}</span><time dateTime={new Date(deadline).toISOString()}>{new Date(deadline).toLocaleString(language)}</time></>}
-  {request ? canRestore && <button className="primary-button" disabled={cached} onClick={() => { setFailed(false); setConfirm(true) }}>{t.restore}</button> : <><button className="danger-button" disabled={!enabled} onClick={() => setConfirm(true)}>{t.requestDelete}</button>{!enabled && <p role="status">{t.unavailable}</p>}</>}
+  {request ? canRestore && <button className="primary-button" disabled={cached} onClick={() => { setFailed(false); setConfirm(true) }}>{t.restore}</button> : <><button className="danger-button" disabled={!enabled} onClick={() => setConfirm(true)}>{t.requestDelete}</button>{!enabled && <><p role="status">{t.unavailable}</p><p>{supportText[language].manual}</p><a className="secondary-button" href="#/support?kind=deletion">{supportText[language].deleteHelp}</a></>}</>}
   <dialog ref={dialog} className="settings-dialog" aria-labelledby="deletion-confirm-title" onCancel={e => { e.preventDefault(); close() }}>
    <form onSubmit={e => { e.preventDefault(); void submit() }}>
     <h2 id="deletion-confirm-title">{request ? t.restoreTitle : t.confirmTitle}</h2>

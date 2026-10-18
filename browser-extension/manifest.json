@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Where I Left Off \u2014 Save this page",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Save the current page and available video playback position with one click.",
   "permissions": [
     "activeTab",
@@ -11,6 +11,23 @@
     "service_worker": "service-worker.js"
   },
   "action": {
-    "default_title": "Save this page to Where I Left Off"
+    "default_title": "Save this page to Where I Left Off",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "homepage_url": "https://where-i-left-off.web.app/",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "externally_connectable": {
+    "matches": [
+      "https://where-i-left-off.web.app/*"
+    ]
   }
 }

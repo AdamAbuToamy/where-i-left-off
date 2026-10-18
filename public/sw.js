@@ -8,14 +8,14 @@ self.addEventListener('activate', event => {
 });
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
-  if (new URL(event.request.url).pathname.startsWith('/__/')) return;
+  if (new URL(event.request.url).pathname.startsWith('/__/') || new URL(event.request.url).pathname === '/extension-config.json') return;
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request).then(response => {
       if (!response.ok) throw new Error('Navigation unavailable');
       // Keep each precached shell immutable: a newer HTML file may reference
       // assets the current worker has not downloaded. Activation switches versions atomically.
       return response;
-    }).catch(async () => (await (await caches.open(CACHE_NAME)).match('/index.html', { ignoreVary: true })) || Response.error()));
+    }).catch(async () => (await (await caches.open(CACHE_NAME)).match(['/privacy.html','/terms.html','/support.html','/extension-privacy.html'].includes(new URL(event.request.url).pathname) ? new URL(event.request.url).pathname : '/index.html', { ignoreVary: true })) || Response.error()));
     return;
   }
   const pathname = new URL(event.request.url).pathname;

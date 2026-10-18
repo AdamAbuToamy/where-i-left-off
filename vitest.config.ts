@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-const rules = ['tests/firestore.test.ts', 'tests/groups.test.ts', 'tests/logSecurity.test.ts', 'tests/accountSecurity.test.ts', 'tests/workflowSecurity.test.ts']
+const rules = ['tests/feedbackSecurity.test.ts', 'tests/firestore.test.ts', 'tests/groups.test.ts', 'tests/logSecurity.test.ts', 'tests/accountSecurity.test.ts', 'tests/workflowSecurity.test.ts']
 const security = process.env.TEST_SUITE === 'security'
 if (security && !process.env.FIRESTORE_EMULATOR_HOST) {
   throw new Error('Security tests require Firestore emulator. Run npm run test:rules.')

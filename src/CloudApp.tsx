@@ -1,3 +1,6 @@
+import Support, { LegalLinks } from './components/Support'
+import ExtensionInstall from './components/ExtensionInstall'
+import { supportText } from './supportText'
 import CaptureCheckpoint from './components/CaptureCheckpoint'
 import WorkflowAgent from './components/WorkflowAgent'
 import LibraryPage from './components/LibraryPage'
@@ -238,7 +241,8 @@ export default function App() {
     <header className="page-header"><div className="heading-copy"><p>{t.workspace}</p><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', () => signOut(auth!)).catch(() => {})}>{c.logout}</button>}</div></header>
     {emulatorMode && <p className="notice">{c.demo}</p>}
     {authError !== null && <p className="notice error" role="alert">{errorText(authError, language)}</p>}
-    {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <p role="status">{c.loading}</p> : user ? <AccountLifecycle key={user.uid} user={user} language={language}>
+    {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <p role="status">{c.loading}</p> : user ? page === 'support' ? <Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} /> : <AccountLifecycle key={user.uid} user={user} language={language}>
+      {page !== 'settings' && <ExtensionInstall language={language} />}
       <WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
       <WelcomeTour key={user.uid} user={user} language={language} />
       <nav className="page-navigation" aria-label={t.workspace}>{(['resume', 'personal', 'groups', 'library', 'analytics', 'settings', ...(isAdmin(user.email, user.emailVerified) ? ['admin'] : [])] as PageName[]).map(item => <a key={item} href={`#/${item}`} aria-current={page === item ? 'page' : undefined}>{item==='library'?workflowText[language].library:item==='analytics'?workflowText[language].analytics:p[item as keyof typeof p]}</a>)}</nav>
@@ -250,6 +254,7 @@ export default function App() {
       {page === 'settings' && <ProfileSettings key={user.uid} user={user} language={language} />}
       {page === 'logs' && isAdmin(user.email, user.emailVerified) && <AdminDashboard db={db!} language={language} user={user} />}
       {page === 'admin' && (isAdmin(user.email, user.emailVerified) ? <AdminDashboard db={db!} language={language} user={user} /> : <p role="alert">{c.signIn}</p>)}
-    </AccountLifecycle> : <AuthPanel language={language} />}
+    </AccountLifecycle> : <>{page === 'support' && <p className="notice">{supportText[language].signin}</p>}<AuthPanel language={language} /></>}
+    <LegalLinks language={language} />
   </main></IdleSleep>
 }

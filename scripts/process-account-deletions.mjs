@@ -66,6 +66,7 @@ async function eraseAccount(uid) {
  for (const gid of groups) await cleanGroup(gid,uid)
  await deleteMatches(db.collection('groupInvites').where('createdBy','==',uid))
  await deleteMatches(db.collection('appLogs').where('uid','==',uid))
+ await deleteMatches(db.collection('feedback').where('uid','==',uid))
  await db.recursiveDelete(db.doc(`users/${uid}`))
  await db.doc(`appMetrics/${uid}`).delete()
  await db.doc(`securityNotifications/${uid}`).delete()

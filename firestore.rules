@@ -211,6 +211,43 @@ service cloud.firestore {
       return signedActive() && request.auth.token.email == 'adam2002hosny@gmail.com'
         && request.auth.token.email_verified == true;
     }
+    match /feedback/{id} {
+      function validFeedback() {
+        let d = request.resource.data;
+        let rate = getAfter(/databases/$(database)/documents/users/$(request.auth.uid)/supportRate/state).data;
+        return request.auth != null
+          && d.keys().hasAll(['uid','kind','subject','message','language','status','reply','createdAt','updatedAt'])
+          && d.keys().hasOnly(['uid','kind','subject','message','language','status','reply','createdAt','updatedAt'])
+          && d.uid == request.auth.uid && d.kind in ['suggestion','bug','privacy','deletion']
+          && d.subject is string && d.subject.size() >= 3 && d.subject.size() <= 120 && d.subject.matches('.*[^\\s].*')
+          && d.message is string && d.message.size() >= 10 && d.message.size() <= 3000 && d.message.matches('[\\s\\S]*[^\\s][\\s\\S]*')
+          && d.language in ['ar','en','he'] && d.status == 'open' && d.reply == ''
+          && d.createdAt == request.time && d.updatedAt == request.time
+          && rate.lastId == id && rate.submittedAt == request.time;
+      }
+      allow read: if request.auth != null && (resource.data.uid == request.auth.uid || logAdmin());
+      allow create: if request.auth != null && validFeedback();
+      allow update: if logAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reply','updatedAt'])
+        && request.resource.data.status in ['open','reviewing','closed']
+        && request.resource.data.reply is string && request.resource.data.reply.size() <= 2000
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+    match /users/{uid}/supportRate/state {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, delete: if false;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['submittedAt','lastId'])
+        && request.resource.data.keys().hasOnly(['submittedAt','lastId'])
+        && request.resource.data.submittedAt == request.time
+        && request.resource.data.lastId is string && request.resource.data.lastId.matches('^[a-zA-Z0-9]{20}$')
+        && (!exists(/databases/$(database)/documents/users/$(uid)/supportRate/state)
+          || request.time >= resource.data.submittedAt + duration.value(1,'m'))
+        && getAfter(/databases/$(database)/documents/feedback/$(request.resource.data.lastId)).data.uid == uid
+        && getAfter(/databases/$(database)/documents/feedback/$(request.resource.data.lastId)).data.createdAt == request.time;
+    }
+
     match /appLogs/{logId} {
       function validLog() {
         let d = request.resource.data;

@@ -1,3 +1,5 @@
+import { FeedbackList } from './Support'
+import { supportText } from '../supportText'
 import { useEffect, useState } from 'react'
 import type { Firestore } from 'firebase/firestore'
 import type { Language } from '../translations'
@@ -17,7 +19,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
   const t = translations[language]
   const c = cloudText[language]
   const p = pageText[language]
-  const section = location.hash.endsWith('/logs') || location.hash === '#/logs' ? 'logs' : 'accounts'
+  const section = location.hash.endsWith('/logs') || location.hash === '#/logs' ? 'logs' : location.hash.endsWith('/support') ? 'support' : 'accounts'
   const [metrics, setMetrics] = useState<UserMetric[]>([])
   const [active, setActive] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -49,8 +51,8 @@ export default function AdminDashboard({ db, language, user }: Props) {
   }
   return <section className="admin-dashboard">
     <h2>{t.adminTitle}</h2>
-    <nav className="admin-sections" aria-label={t.adminTitle}><a className={section === 'accounts' ? 'is-current' : ''} aria-current={section === 'accounts' ? 'page' : undefined} href="#/admin">{p.adminAccounts}</a><a className={section === 'logs' ? 'is-current' : ''} aria-current={section === 'logs' ? 'page' : undefined} href="#/admin/logs">{p.logs}</a></nav>
-    {section === 'logs' ? <LogViewer user={user} language={language} /> : loading ? <p role="status">…</p> : error ? <div role="alert"><p>{c.error}</p><button className="secondary-button" onClick={() => { setError(false); setLoading(true); setAttempt(value => value + 1) }}>{c.retry}</button></div> : <>
+    <nav className="admin-sections" aria-label={t.adminTitle}><a className={section === 'accounts' ? 'is-current' : ''} aria-current={section === 'accounts' ? 'page' : undefined} href="#/admin">{p.adminAccounts}</a><a className={section === 'logs' ? 'is-current' : ''} aria-current={section === 'logs' ? 'page' : undefined} href="#/admin/logs">{p.logs}</a><a className={section === 'support' ? 'is-current' : ''} href="#/admin/support" aria-current={section === 'support' ? 'page' : undefined}>{supportText[language].admin}</a></nav>
+    {section === 'support' ? <FeedbackList user={user} language={language} admin /> : section === 'logs' ? <LogViewer user={user} language={language} /> : loading ? <p role="status">…</p> : error ? <div role="alert"><p>{c.error}</p><button className="secondary-button" onClick={() => { setError(false); setLoading(true); setAttempt(value => value + 1) }}>{c.retry}</button></div> : <>
       <div className="admin-stats">
       <article><strong>{metrics.length}</strong><span>{t.accountsSeen}</span></article>
       <article><strong>{active}</strong><span>{t.activeThisWeek}</span></article>
