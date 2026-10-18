@@ -1,3 +1,4 @@
+import { withWorkspaceLock } from './workspaceLock'
 import { sameProjectBaseline } from './projectBaseline'
 import { completionDates,shouldArchive } from './workflow'
 import { collection, doc, getDocFromServer, runTransaction, serverTimestamp } from 'firebase/firestore'
@@ -163,6 +164,7 @@ export class OfflineWorkspace {
     this.syncing = true
     this.publish()
     try {
+      await withWorkspaceLock(this.key, async () => {
       for (;;) {
         if (this.stopped || !navigator.onLine || !this.isCurrentUser()) break
         const state = await readLocal(this.key)
@@ -182,6 +184,7 @@ export class OfflineWorkspace {
         })
         this.failure = null
       }
+      })
     } catch (error) { this.failure = error; this.retryAt = Date.now() + 15000 }
     finally {
       this.syncing = false
