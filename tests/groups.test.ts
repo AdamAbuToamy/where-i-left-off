@@ -1,3 +1,6 @@
+import { FirestoreWorkspaceRemote } from '../src/lib/firestoreWorkspaceRemote'
+import { ProjectEntity } from '../src/lib/projectEntity'
+import { normalizedProject } from '../src/lib/workspaceModel'
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing'
@@ -88,6 +91,43 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('group security with real 
     await assertSucceeds(setDoc(doc(owner, 'groups', id, 'sections', 'team'), { name: 'Homework', revision: 0, updatedAt: serverTimestamp() }))
     await assertSucceeds(getDocs(collection(member, 'groups', id, 'sections')))
     await assertFails(setDoc(doc(member, 'groups', id, 'sections', 'new'), { name: 'No', revision: 0, updatedAt: serverTimestamp() }))
+  })
+  it('saves assigned progress through the application adapter without adding absent legacy fields', async () => {
+    const { owner, member, id } = await setup()
+    const ref = doc(owner, 'groups', id, 'projects', 'legacy-task')
+    await setDoc(ref, task('member'))
+    const snapshot = await getDoc(ref)
+    const before = normalizedProject(snapshot.id, snapshot.data()!)
+    const after = ProjectEntity.restore(before).apply('edit', { nextStep: 'Reviewed', status: 'active' }, before.revision, Date.now())!.snapshot()
+    const remote = new FirestoreWorkspaceRemote(member, 'member', () => true, id)
+    const mutation = { id: remote.newId(), entity: 'project' as const, entityId: before.id, before, after }
+    await assertSucceeds(remote.commit(mutation))
+    // An acknowledged mutation replay is idempotent.
+    await assertSucceeds(remote.commit(mutation))
+    const saved = (await getDoc(ref)).data()!
+    expect(saved).toMatchObject({ nextStep: 'Reviewed', revision: 1, assignedTo: 'member' })
+    expect(saved).not.toHaveProperty('kind')
+    expect(saved).not.toHaveProperty('projectUrl')
+    const stale = { ...mutation, id: remote.newId(), after: { ...after, nextStep: 'Stale edit' } }
+    expect(await remote.commit(stale)).toHaveProperty('remote')
+    expect((await getDoc(ref)).data()?.nextStep).toBe('Reviewed')
+  })
+  it('accepts fully populated cards through the real adapter and enforces member edit limits', async () => {
+    const { owner, member, id } = await setup()
+    const managerRemote = new FirestoreWorkspaceRemote(owner, 'owner', () => true, id)
+    const before = ProjectEntity.create(managerRemote.newId(), 'Course', 'Lesson 1', 0, {
+      assignedTo: 'member', resourceType: 'course', totalUnits: 100, progressUnits: 1,
+      links: Array.from({ length: 10 }, (_, i) => `https://example.test/resource/${i}`),
+      checkpoint: 'Started', dueDate: '2026-12-01', coverUrl: 'https://example.test/cover.jpg', description: 'Course notes',
+      projectUrl: 'https://example.test/course', attachmentUrl: 'https://example.test/notes', followUpDate: '2026-12-02',
+      kind: 'list', sectionId: 'study', checklist: '[ ] Lesson', catalogSource: 'catalog', catalogId: 'course-123',
+    }, Date.now()).snapshot()
+    await assertSucceeds(managerRemote.commit({ id: managerRemote.newId(), entity: 'project', entityId: before.id, before: null, after: before }))
+    const memberRemote = new FirestoreWorkspaceRemote(member, 'member', () => true, id)
+    const after = ProjectEntity.restore(before).apply('edit', { progressUnits: 2, nextStep: 'Lesson 2' }, 0, Date.now())!.snapshot()
+    await assertSucceeds(memberRemote.commit({ id: memberRemote.newId(), entity: 'project', entityId: before.id, before, after }))
+    const forbidden = ProjectEntity.restore(after).apply('edit', { name: 'Renamed by member' }, 1, Date.now())!.snapshot()
+    await assertFails(memberRemote.commit({ id: memberRemote.newId(), entity: 'project', entityId: before.id, before: after, after: forbidden }))
   })
   it('lets members add self-assigned tasks unless revoked and forbids self-granting permissions', async () => {
     const { owner, member, id } = await setup()

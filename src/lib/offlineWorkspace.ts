@@ -1,14 +1,13 @@
 import { withWorkspaceLock } from './workspaceLock'
-import { sameProjectBaseline } from './projectBaseline'
-import { completionDates,shouldArchive } from './workflow'
-import { collection, doc, getDocFromServer, runTransaction, serverTimestamp } from 'firebase/firestore'
-import type { Firestore } from 'firebase/firestore'
+import { shouldArchive } from './workflow'
 import type { Project, Section } from '../types'
 import type { ProjectDetails } from './projects'
-import { validateProject } from './projects'
-import { watchProjects, watchSections } from './repository'
-import { emptyState, listenLocal, nextMutation, normalizedProject, normalizedSection, projectedState, readLocal, updateLocal } from './offlineStore'
-import type { LocalEntity, Mutation, OfflineState } from './offlineStore'
+import { ProjectEntity } from './projectEntity'
+import type { ProjectOperation, ProjectChanges } from './projectEntity'
+import { DomainError } from './appError'
+import { emptyState, nextMutation, normalizedProject, normalizedSection, projectedState } from './workspaceModel'
+import type { LocalEntity, Mutation, OfflineState } from './workspaceModel'
+import type { WorkspaceRemote, WorkspaceStore } from './workspacePorts'
 
 export type OfflineSnapshot = ReturnType<typeof projectedState> & { queued: number; syncing: boolean; conflicts: Mutation[]; error: unknown; cached: boolean }
 export class OfflineWorkspace {
@@ -20,18 +19,26 @@ export class OfflineWorkspace {
   private retryAt = 0
   private stops: (() => void)[] = []
   readonly key: string
-  private db: Firestore
-  private uid: string
-  private groupId?: string
-  private isCurrentUser: () => boolean
-  private receive: (snapshot: OfflineSnapshot) => void
-  constructor(db: Firestore, uid: string, isCurrentUser: () => boolean, receive: (snapshot: OfflineSnapshot) => void, groupId?: string) {
-    this.groupId = groupId
-    this.db = db; this.uid = uid; this.isCurrentUser = isCurrentUser; this.receive = receive
-    this.key = `${db.app.options.projectId}/${uid}${groupId ? `/group/${groupId}` : ''}`
+  private readonly local: WorkspaceStore
+  private readonly remote: WorkspaceRemote
+  private readonly personal: boolean
+  private readonly isCurrentUser: () => boolean
+  private readonly receive: (snapshot: OfflineSnapshot) => void
+  private readonly now: () => number
+  constructor(options: {
+    key: string; local: WorkspaceStore; remote: WorkspaceRemote; personal: boolean
+    isCurrentUser: () => boolean; receive: (snapshot: OfflineSnapshot) => void; now?: () => number
+  }) {
+    this.key = options.key
+    this.local = options.local
+    this.remote = options.remote
+    this.personal = options.personal
+    this.isCurrentUser = options.isCurrentUser
+    this.receive = options.receive
+    this.now = options.now || Date.now
   }
   start() {
-    this.stops.push(listenLocal(this.key, () => { void this.refresh().catch(error => this.fail(error)) }))
+    this.stops.push(this.local.listen(() => { void this.refresh().catch(error => this.fail(error)) }))
     const resume = () => { this.retryAt = 0; void this.flush() }
     window.addEventListener('online', resume)
     this.stops.push(() => window.removeEventListener('online', resume))
@@ -39,14 +46,14 @@ export class OfflineWorkspace {
     this.stops.push(() => clearInterval(interval))
     void this.refresh().then(() => {
       if (this.stopped) return
-      this.stops.push(watchProjects(this.db, this.uid, (projects, cached) => {
+      this.stops.push(this.remote.watchProjects((projects, cached) => {
         this.cached = cached
-        if (!cached) void updateLocal(this.key, state => ({ ...state, projects: projects.map(p => normalizedProject(p.id, p)) })).catch(error => this.fail(error))
+        if (!cached) void this.update(state => ({ ...state, projects: projects.map(p => normalizedProject(p.id, p)) })).catch(error => this.fail(error))
         else this.publish()
-      }, error => this.fail(error), this.groupId))
-      this.stops.push(watchSections(this.db, this.uid, (sections, cached) => {
-        if (!cached) void updateLocal(this.key, state => ({ ...state, sections: sections.map(s => normalizedSection(s.id, s)) })).catch(error => this.fail(error))
-      }, error => this.fail(error), this.groupId))
+      }, error => this.fail(error)))
+      this.stops.push(this.remote.watchSections((sections, cached) => {
+        if (!cached) void this.update(state => ({ ...state, sections: sections.map(s => normalizedSection(s.id, s)) })).catch(error => this.fail(error))
+      }, error => this.fail(error)))
     }).catch(error => this.fail(error))
     return () => { this.stopped = true; this.stops.forEach(stop => stop()) }
   }
@@ -55,41 +62,35 @@ export class OfflineWorkspace {
   }
   private fail(error: unknown) { this.failure = error; this.publish() }
   private async refresh() {
-    this.state = await readLocal(this.key)
+    this.state = await this.local.read()
     this.publish()
     void this.flush()
   }
-  private id() { return doc(collection(this.db, this.groupId ? 'groups' : 'users', this.groupId || this.uid, 'projects')).id }
+  private id() { return this.remote.newId() }
+  private update(change: (state: OfflineState) => OfflineState): Promise<void> {
+    return this.local.update(state => {
+      if (!this.isCurrentUser()) throw new DomainError('permission-denied')
+      return change(state)
+    })
+  }
   private async queue(change: (state: OfflineState) => Mutation) {
-    if (!this.isCurrentUser()) throw new Error('permission-denied')
-    await updateLocal(this.key, state => ({ ...state, operations: [...state.operations, change(state)] }))
+    if (!this.isCurrentUser()) throw new DomainError('permission-denied')
+    await this.update(state => ({ ...state, operations: [...state.operations, change(state)] }))
   }
   add(name: string, nextStep: string, rank: number, details: ProjectDetails) {
-    validateProject(name, nextStep, details)
-    const after = normalizedProject(this.id(), { activityAt:Date.now(),completedAt:details.status==='done'?Date.now():0,...details, name: name.trim(), nextStep: nextStep.trim(), rank, revision: 0 })
+    const after = ProjectEntity.create(this.id(), name, nextStep, rank, details, this.now()).snapshot()
     return this.queue(() => ({ id: this.id(), entity: 'project', entityId: after.id, before: null, after }))
   }
-  change(project: Project, operation: 'edit' | 'toggle' | 'delete' | 'move', values: ProjectDetails & { name?: string; nextStep?: string; rank?: number } = {}) {
+  change(project: Project, operation: ProjectOperation, values: ProjectChanges = {}) {
     return this.queue(state => {
-      const current = projectedState(state).projects.find(p => p.id === project.id)
-      if (!current) throw new Error('project-missing')
-      if ((operation === 'edit' || operation === 'delete') && current.revision !== project.revision) throw new Error('conflict')
-      let after: Project | null = { ...current, revision: current.revision + 1 }
-      if (operation === 'delete') after = null
-      else if (operation === 'toggle') after.status = current.status === 'active' ? 'later' : 'active'
-      else if (operation === 'move') {
-        if (!Number.isFinite(values.rank)) throw new Error('order-limit')
-        after.rank = values.rank!
-      } else {
-        after = normalizedProject(current.id, { ...after, ...values, revision: current.revision + 1, name: values.name?.trim(), nextStep: values.nextStep?.trim() })
-        validateProject(after.name, after.nextStep, after)
-      }
-      if(after)after=completionDates(current,after)
+      const current = projectedState(state).projects.find(item => item.id === project.id)
+      if (!current) throw new DomainError('project-missing')
+      const after = ProjectEntity.restore(current).apply(operation, values, project.revision, this.now())?.snapshot() ?? null
       return { id: this.id(), entity: 'project', entityId: current.id, before: current, after }
     })
   }
   saveSection(name: string, id?: string) {
-    if (!name.trim() || name.trim().length > 60) return Promise.reject(new Error('invalid-section'))
+    if (!name.trim() || name.trim().length > 60) return Promise.reject(new DomainError('invalid-section'))
     const entityId = id || this.id()
     return this.queue(state => {
       const before = projectedState(state).sections.find(s => s.id === entityId) || null
@@ -98,19 +99,19 @@ export class OfflineWorkspace {
     })
   }
   async archiveCompleted() {
-    if(this.groupId || !this.isCurrentUser())throw new Error('permission-denied')
-    const now=Date.now()
-    await updateLocal(this.key,state=>{
+    if(!this.personal || !this.isCurrentUser())throw new DomainError('permission-denied')
+    const now=this.now()
+    await this.update(state=>{
       const moves:Mutation[]=projectedState(state).projects.filter(project=>shouldArchive(project,true,now)).map(project=>({id:this.id(),entity:'project',entityId:project.id,before:project,after:{...project,archivedAt:now,revision:project.revision+1}}))
       return{...state,operations:[...state.operations,...moves]}
     })
   }
   async deleteSection(id: string) {
-    if (!this.isCurrentUser()) throw new Error('permission-denied')
-    await updateLocal(this.key, state => {
+    if (!this.isCurrentUser()) throw new DomainError('permission-denied')
+    await this.update(state => {
       const view = projectedState(state)
       const before = view.sections.find(s => s.id === id)
-      if (!before) throw new Error('section-missing')
+      if (!before) throw new DomainError('section-missing')
       const moves: Mutation[] = view.projects
         .filter(p => p.sectionId === id)
         .map(project => ({
@@ -123,55 +124,19 @@ export class OfflineWorkspace {
           before, after: null } as Mutation] }
     })
   }
-  private async commit(op: Mutation): Promise<{ remote?: LocalEntity | null }> {
-    try {
-      return await this.commitAttempt(op)
-    } catch (error) {
-      if (!(error instanceof Error) || !('code' in error) || error.code !== 'permission-denied') throw error
-      if (!this.isCurrentUser()) throw error
-      const ref = doc(this.db, this.groupId ? 'groups' : 'users', this.groupId || this.uid, op.entity === 'project' ? 'projects' : 'sections', op.entityId)
-      const snapshot = await getDocFromServer(ref)
-      if (!this.isCurrentUser()) throw error
-      const data = snapshot.data()
-      const remote = data ? (op.entity === 'project' ? normalizedProject(snapshot.id, data) : normalizedSection(snapshot.id, data)) : null
-      if (data?.mutationId === op.id) return {}
-      if (op.entity==='project'&&remote&&op.before ? !sameProjectBaseline(op.before as Project,remote as Project,data || {}) : JSON.stringify(remote)!==JSON.stringify(op.before)) return { remote }
-      throw error
-    }
-  }
-  private async commitAttempt(op: Mutation): Promise<{ remote?: LocalEntity | null }> {
-    const ref = doc(this.db, this.groupId ? 'groups' : 'users', this.groupId || this.uid, op.entity === 'project' ? 'projects' : 'sections', op.entityId)
-    return runTransaction(this.db, async tx => {
-      if (!this.isCurrentUser()) throw new Error('permission-denied')
-      const snapshot = await tx.get(ref)
-      const data = snapshot.data()
-      const remote = data ? (op.entity === 'project' ? normalizedProject(snapshot.id, data) : normalizedSection(snapshot.id, data)) : null
-      if (data?.mutationId === op.id || (!remote && !op.after)) return {}
-      if ((!op.before && remote) || (op.before && !remote) || (op.before && remote && ((op.before.revision ?? 0) !== (remote.revision ?? 0) || (op.entity === 'section' ? op.before.name !== remote.name : !sameProjectBaseline(op.before as Project,remote as Project,data || {}))))) return { remote }
-      if (!op.after) tx.delete(ref)
-      else {
-        const body: Record<string, unknown> = { ...op.after, updatedAt: serverTimestamp(), mutationId: op.id }
-        delete body.id
-        const defaults:Record<string,unknown>={links:[],archivedAt:0,trashedAt:0,completedAt:0,resourceType:'project',progressUnits:0,totalUnits:0,followUpDate:'',coverUrl:'',description:'',catalogSource:'',catalogId:''}
-        if(data)for(const [key,value] of Object.entries(defaults))if(!(key in data)&&JSON.stringify(body[key])===JSON.stringify(value))delete body[key]
-        tx.set(ref, body)
-      }
-      return {}
-    }, { maxAttempts: 3 })
-  }
   async flush() {
-    if (this.stopped || this.syncing || !navigator.onLine || !this.isCurrentUser() || Date.now() < this.retryAt) return
+    if (this.stopped || this.syncing || !navigator.onLine || !this.isCurrentUser() || this.now() < this.retryAt) return
     this.syncing = true
     this.publish()
     try {
       await withWorkspaceLock(this.key, async () => {
       for (;;) {
         if (this.stopped || !navigator.onLine || !this.isCurrentUser()) break
-        const state = await readLocal(this.key)
+        const state = await this.local.read()
         const op = nextMutation(state)
         if (!op) break
-        const result = await this.commit(op)
-        await updateLocal(this.key, current => {
+        const result = await this.remote.commit(op)
+        await this.update( current => {
           if (!current.operations.some(item => item.id === op.id)) return current
           if ('remote' in result) return { ...current, operations: current.operations.map(item => item.id === op.id ? { ...item, conflict: { remote: result.remote ?? null } } : item) }
           const remaining = current.operations.filter(item => item.id !== op.id)
@@ -185,15 +150,15 @@ export class OfflineWorkspace {
         this.failure = null
       }
       })
-    } catch (error) { this.failure = error; this.retryAt = Date.now() + 15000 }
+    } catch (error) { this.failure = error; this.retryAt = this.now() + 15000 }
     finally {
       this.syncing = false
-      try { this.state = await readLocal(this.key) } catch (error) { this.failure = error }
+      try { this.state = await this.local.read() } catch (error) { this.failure = error }
       this.publish()
     }
   }
   async resolve(opId: string, choice: 'local' | 'remote') {
-    await updateLocal(this.key, state => {
+    await this.update(state => {
       const op = state.operations.find(item => item.id === opId)
       if (!op?.conflict) return state
       const view = projectedState(state)

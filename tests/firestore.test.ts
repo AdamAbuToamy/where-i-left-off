@@ -3,8 +3,35 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing'
 import type { RulesTestEnvironment } from '@firebase/rules-unit-testing'
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
-import { addProject, changeProject, setUserSuspended, touchUserMetric, watchProjects, saveSection } from '../src/lib/repository'
+import { setUserSuspended, touchUserMetric } from '../src/lib/repository'
+import { FirestoreWorkspaceRemote } from '../src/lib/firestoreWorkspaceRemote'
+import { ProjectEntity } from '../src/lib/projectEntity'
+import type { Firestore } from 'firebase/firestore'
+import type { ProjectDetails } from '../src/lib/projects'
+import type { ProjectOperation, ProjectChanges } from '../src/lib/projectEntity'
+import { DomainError } from '../src/lib/appError'
 import type { Project } from '../src/types'
+
+// These helpers compose the same domain and transport used by OfflineWorkspace.
+async function addProject(db: Firestore, uid: string, name: string, nextStep: string, rank: number, details: ProjectDetails = {}) {
+  const remote = new FirestoreWorkspaceRemote(db, uid, () => true)
+  const after = ProjectEntity.create(remote.newId(), name, nextStep, rank, details, Date.now()).snapshot()
+  await remote.commit({ id: remote.newId(), entity: 'project', entityId: after.id, before: null, after })
+}
+async function changeProject(db: Firestore, uid: string, project: Project, operation: ProjectOperation, values: ProjectChanges = {}) {
+  const remote = new FirestoreWorkspaceRemote(db, uid, () => true)
+  const after = ProjectEntity.restore(project).apply(operation, values, project.revision, Date.now())?.snapshot() ?? null
+  const result = await remote.commit({ id: remote.newId(), entity: 'project', entityId: project.id, before: project, after })
+  if ('remote' in result) throw new DomainError('conflict')
+}
+function watchProjects(db: Firestore, uid: string, receive: (items: Project[]) => void, fail: (error: Error) => void) {
+  return new FirestoreWorkspaceRemote(db, uid, () => true).watchProjects(receive, fail)
+}
+async function saveSection(db: Firestore, uid: string, name: string, id = 'section') {
+  if (!name.trim() || name.trim().length > 60) throw new DomainError('invalid-section')
+  const remote = new FirestoreWorkspaceRemote(db, uid, () => true)
+  await remote.commit({ id: remote.newId(), entity: 'section', entityId: id, before: null, after: { id, name: name.trim(), revision: 0 } })
+}
 
 const enabled = !!process.env.FIRESTORE_EMULATOR_HOST
 let env: RulesTestEnvironment
@@ -36,6 +63,16 @@ describe.skipIf(!enabled)('real Firestore emulator: rules and repository', () =>
     }
     await setDoc(ref, data())
     await assertFails(updateDoc(ref, { name: 'No revision' }))
+  })
+  it('rejects malformed optional fields after rule-validation consolidation', async () => {
+    const ref = doc(env.authenticatedContext('alice').firestore(), 'users/alice/projects/optional')
+    const invalid = [
+      { links: null }, { projectUrl: 4 }, { dueDate: null }, { checkpoint: [] }, { kind: false },
+      { archivedAt: -1 }, { completedAt: '1000' }, { progressUnits: 1.5 }, { totalUnits: 1000001 },
+      { description: {} }, { catalogSource: 'x'.repeat(31) }, { coverUrl: 'javascript:alert(1)' },
+      { followUpDate: '2026-99-01' }, { mutationId: 3 },
+    ]
+    for (const fields of invalid) await assertFails(setDoc(ref, { ...data(), ...fields }))
   })
   it('accepts extra links and keeps legacy documents compatible', async () => {
     const ref=doc(env.authenticatedContext('alice').firestore(),'users/alice/projects/links')
@@ -88,7 +125,7 @@ describe.skipIf(!enabled)('real Firestore emulator: rules and repository', () =>
     const ref = (await getDocs(collection(alice, 'users/alice/projects'))).docs[0]
     const project = { ...ref.data(), id: ref.id } as Project
     await changeProject(alice, 'alice', project, 'move', { rank: 100 })
-    await changeProject(alice, 'alice', { ...project, revision: 1 }, 'edit', { name: 'Shopping updated', nextStep: 'Go to store' })
+    await changeProject(alice, 'alice', { ...project, rank: 100, revision: 1 }, 'edit', { name: 'Shopping updated', nextStep: 'Go to store' })
     expect((await getDoc(ref.ref)).data()).toMatchObject({ kind: 'list', sectionId: 'university', status: 'waiting', checkpoint: 'Waiting for approval', checklist: '[ ] Milk' })
   })
   it('streams changes to a second session and prevents stale overwrites', async () => {

@@ -1,0 +1,49 @@
+/* Shared application surfaces follow the active palette. */
+.language-picker {
+  border-color: var(--site-border);
+  border-radius: 10px;
+  background: var(--site-surface);
+  box-shadow: none;
+}
+.language-picker:focus-within { background: var(--site-surface); box-shadow: none; }
+.language-label, .language-option { color: var(--site-muted); }
+.language-trigger {
+  border-color: var(--site-border);
+  background: var(--site-input);
+  color: var(--site-text);
+}
+.language-dropdown { border-color: var(--site-border); }
+.language-option[aria-pressed='true'], .language-option:hover { background: var(--site-soft); color: var(--site-text); }
+.new-project-form, .card-editor, .sections-panel, .project-details, .profile-prompt {
+  border-color: var(--site-border);
+  background: var(--site-surface);
+  box-shadow: none;
+}
+.new-project-form h2, .new-project-form label, .card-editor label, .project-card .label,
+.profile-prompt-copy strong, .profile-prompt-copy span { color: var(--site-text); }
+.workspace :is(input, textarea, select) { border-color: var(--site-border); background-color: var(--site-input); color: var(--site-text); }
+.workspace input::placeholder, .workspace textarea::placeholder { color: var(--site-muted); }
+.card-meta span { background: var(--site-soft); color: var(--site-muted); }
+.primary-button, .project-card button { box-shadow: none; }
+.project-card button.card-secondary { background: var(--site-soft); color: var(--site-text); border-color: var(--site-border); box-shadow: none; }
+.project-card button.card-delete { box-shadow: none; }
+.project-card .card-actions { flex-wrap: wrap; }
+.project-card .card-actions button { flex-basis: 120px; }
+.project-card button:active, .primary-button:active:not(:disabled), .secondary-button:active { transform: none; }
+.project-card .status { animation: none; }
+.project-card .card-options summary { color: var(--site-muted); }
+.project-details a, .inline-link { color: var(--site-primary); }
+.profile-prompt-icon { background: var(--site-soft); color: var(--site-primary); }
+.view-tabs button[aria-pressed='true'] { border-color: var(--site-primary); box-shadow: inset 0 0 0 1px var(--site-primary); }
+.workspace-fields:disabled { opacity: .75; }
+.workspace .recall-checklist input { background: initial; accent-color: var(--site-primary); }
+.recall-checklist { padding-inline-start: 0; list-style: none; }
+.recall-checklist label { min-height: 32px; align-items: baseline; }
+.recall-checklist .check-number { flex-shrink: 0; }
+@media (hover: hover) {
+  .project-card button.card-secondary:hover { background: var(--site-soft); border-color: var(--site-primary); }
+}
+@media (max-width: 600px) {
+  .project-card { padding: 22px 18px; }
+  .search-toolbar input { min-width: 0; flex-basis: 100%; }
+}

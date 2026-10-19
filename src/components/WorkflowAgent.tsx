@@ -4,7 +4,7 @@ import type { Language } from '../translations'
 import { useWorkflowPreferences } from '../lib/workflowPreferences'
 import { useTaskOverview } from '../lib/useTaskOverview'
 import { shouldArchive,recommendation } from '../lib/workflow'
-import { OfflineWorkspace } from '../lib/offlineWorkspace'
+import { createWorkspace } from '../lib/createWorkspace'
 import { auth,db } from '../lib/firebase'
 import { workflowText } from '../workflowText'
 import { logEvent } from '../lib/logging'
@@ -17,7 +17,7 @@ export default function WorkflowAgent({user,language}:{user:User;language:Langua
   if(!ready||suspended||!prefs.autoArchive||archiving.current)return
   if(!allEntries.some(entry=>!entry.groupId&&shouldArchive(entry.project,true)))return
   archiving.current=true
-  const workspace=new OfflineWorkspace(db!,user.uid,()=>auth?.currentUser?.uid===user.uid,()=>{})
+  const workspace=createWorkspace(db!,user.uid,()=>auth?.currentUser?.uid===user.uid,()=>{})
   void workspace.archiveCompleted().then(()=>workspace.flush()).catch(error=>logEvent('workflow.auto-archive',error)).finally(()=>{archiving.current=false})
  },[allEntries,ready,suspended,prefs.autoArchive,user.uid])
  useEffect(()=>{

@@ -1,4 +1,4 @@
-import { normalizedProject } from './offlineStore'
+import { normalizedProject } from './workspaceModel'
 import type { Project } from '../types'
 import type { TaskEntry } from './taskOverview'
 import { localDateKey } from './projects'

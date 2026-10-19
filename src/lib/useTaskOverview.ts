@@ -2,8 +2,8 @@ import { currentCard } from './workflow'
 import { useEffect, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { GroupInfo } from '../types'
-import { db } from './firebase'
-import { OfflineWorkspace } from './offlineWorkspace'
+import { auth, db } from './firebase'
+import { createWorkspace } from './createWorkspace'
 import type { OfflineSnapshot } from './offlineWorkspace'
 import { watchGroups } from './groups'
 import type { TaskEntry } from './taskOverview'
@@ -27,7 +27,7 @@ export function useTaskOverview(user:User, personalLabel:string, includeAllGroup
   }
   const attach=(id='') => {
    if (stops.has(id)) return
-   const workspace=new OfflineWorkspace(db!,user.uid,()=>alive, snapshot=>{sources.set(id,snapshot);publish()},id || undefined)
+   const workspace=createWorkspace(db!,user.uid,()=>alive && auth?.currentUser?.uid === user.uid, snapshot=>{sources.set(id,snapshot);publish()},id || undefined)
    stops.set(id,workspace.start())
   }
   const stopMetric=watchUserMetric(db!,user.uid,metric=>{blocked=metric?.suspended===true;setSuspended(blocked);publish()},error=>logEvent('resume.access',error))

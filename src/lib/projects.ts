@@ -1,3 +1,4 @@
+import { DomainError } from './appError'
 import type { Project } from '../types'
 
 export function sortedProjects(projects: Project[]): Project[] {
@@ -14,7 +15,7 @@ export function rankForMove(projects: Project[], activeId: string, overId: strin
   const before = items[to - 1]?.rank
   const after = items[to + 1]?.rank
   const rank = before === undefined ? after! - 1024 : after === undefined ? before + 1024 : (before + after) / 2
-  if (!Number.isFinite(rank) || rank === before || rank === after) throw new Error('order-limit')
+  if (!Number.isFinite(rank) || rank === before || rank === after) throw new DomainError('order-limit')
   return rank
 }
 
@@ -37,20 +38,20 @@ function validDate(value: string) {
 }
 
 export function validateProject(name: string, nextStep: string, details: ProjectDetails = {}) {
-  if (!name.trim() || name.length > 100 || nextStep.length > 1000) throw new Error('invalid-project')
+  if (!name.trim() || name.length > 100 || nextStep.length > 1000) throw new DomainError('invalid-project')
   const { projectUrl = '', attachmentUrl = '', dueDate = '' } = details
-  if (projectUrl.length > 500 || !validHttpUrl(projectUrl)) throw new Error('invalid-project-url')
-  if (attachmentUrl.length > 500 || !validHttpUrl(attachmentUrl)) throw new Error('invalid-attachment-url')
-  if (details.links && (!Array.isArray(details.links) || details.links.length>10 || details.links.some(url=>typeof url!=='string' || url.length>500 || !url || !validHttpUrl(url)))) throw new Error('invalid-project-url')
-  if ((details.assignedTo ?? '').length > 128) throw new Error('invalid-project')
-  if ((details.sectionId ?? '').length > 100 || (details.checkpoint ?? '').length > 1000 || (details.checklist ?? '').length > 3000) throw new Error('invalid-project')
-  if (details.kind && !['resume', 'waiting', 'deadline', 'list'].includes(details.kind)) throw new Error('invalid-project')
-  if (details.status && !['later', 'active', 'waiting', 'done'].includes(details.status)) throw new Error('invalid-project')
-  for(const field of ['archivedAt','trashedAt','activityAt','completedAt'] as const)if(details[field]!==undefined&&(!Number.isSafeInteger(details[field])||details[field]!<0||details[field]!>9000000000000000))throw new Error('invalid-project')
-  for(const field of ['progressUnits','totalUnits'] as const)if(details[field]!==undefined&&(!Number.isInteger(details[field])||details[field]!<0||details[field]!>1000000))throw new Error('invalid-project')
-  if(details.resourceType&&!['project','book','course','video','series','film','shopping','idea'].includes(details.resourceType))throw new Error('invalid-project')
-  if((details.description || '').length>1000||(details.catalogId || '').length>100||(details.catalogSource || '').length>30||(details.coverUrl || '').length>500||!validHttpUrl(details.coverUrl || '')||!validDate(details.followUpDate || ''))throw new Error('invalid-project')
-  if (!validDate(dueDate)) throw new Error('invalid-due-date')
+  if (projectUrl.length > 500 || !validHttpUrl(projectUrl)) throw new DomainError('invalid-project-url')
+  if (attachmentUrl.length > 500 || !validHttpUrl(attachmentUrl)) throw new DomainError('invalid-attachment-url')
+  if (details.links && (!Array.isArray(details.links) || details.links.length>10 || details.links.some(url=>typeof url!=='string' || url.length>500 || !url || !validHttpUrl(url)))) throw new DomainError('invalid-project-url')
+  if ((details.assignedTo ?? '').length > 128) throw new DomainError('invalid-project')
+  if ((details.sectionId ?? '').length > 100 || (details.checkpoint ?? '').length > 1000 || (details.checklist ?? '').length > 3000) throw new DomainError('invalid-project')
+  if (details.kind && !['resume', 'waiting', 'deadline', 'list'].includes(details.kind)) throw new DomainError('invalid-project')
+  if (details.status && !['later', 'active', 'waiting', 'done'].includes(details.status)) throw new DomainError('invalid-project')
+  for(const field of ['archivedAt','trashedAt','activityAt','completedAt'] as const)if(details[field]!==undefined&&(!Number.isSafeInteger(details[field])||details[field]!<0||details[field]!>9000000000000000))throw new DomainError('invalid-project')
+  for(const field of ['progressUnits','totalUnits'] as const)if(details[field]!==undefined&&(!Number.isInteger(details[field])||details[field]!<0||details[field]!>1000000))throw new DomainError('invalid-project')
+  if(details.resourceType&&!['project','book','course','video','series','film','shopping','idea'].includes(details.resourceType))throw new DomainError('invalid-project')
+  if((details.description || '').length>1000||(details.catalogId || '').length>100||(details.catalogSource || '').length>30||(details.coverUrl || '').length>500||!validHttpUrl(details.coverUrl || '')||!validDate(details.followUpDate || ''))throw new DomainError('invalid-project')
+  if (!validDate(dueDate)) throw new DomainError('invalid-due-date')
 }
 
 export function localDateKey(date = new Date()) {

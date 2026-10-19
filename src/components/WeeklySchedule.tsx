@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { localDateKey } from '../lib/projects'
 import type { Project } from '../types'
 import type { Language } from '../translations'
 import { translations } from '../translations'
@@ -11,11 +12,6 @@ const weekdays: Record<Language, string[]> = {
   en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
 }
 
-function dateKey(date: Date) {
-  const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
 export default function WeeklySchedule({ projects, language }: Props) {
   const t = translations[language]
   const [offset, setOffset] = useState(0)
@@ -24,7 +20,7 @@ export default function WeeklySchedule({ projects, language }: Props) {
   const days = weekdays[language]
   const week = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + index)
-    return { key: dateKey(date), label: days[index], date }
+    return { key: localDateKey(date), label: days[index], date }
   })
   const dated = projects.filter(project => project.dueDate)
   const unscheduled = projects.filter(project => !project.dueDate)

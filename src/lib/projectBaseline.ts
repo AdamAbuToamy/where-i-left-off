@@ -1,5 +1,5 @@
 import type { Project } from '../types'
-import { normalizedProject } from './offlineStore'
+import { normalizedProject } from './workspaceModel'
 export function sameProjectBaseline(before:Project,remote:Project,raw:Record<string,unknown>){
  const left=normalizedProject(before.id,before),right=normalizedProject(remote.id,remote)
  // Legacy cards had only updatedAt. Inferred timestamps must not conflict with an old offline outbox.

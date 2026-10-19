@@ -1,55 +1,69 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function validInteger(value, maximum) {
+      return value is int && value >= 0 && value <= maximum;
+    }
+    function validText(value, maximum) {
+      return value is string && value.size() <= maximum;
+    }
+    function validOptionalUrl(value) {
+      return value is string && value.size() <= 500 && (value == '' || value.matches('^https?://[^\\s]+$'));
+    }
+    function validOptionalDate(value) {
+      return value is string && (value == '' || value.matches('^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$'));
+    }
     function validWorkflowFields(d) {
-      return (!d.keys().hasAny(['resourceType']) || d.resourceType in ['project','book','course','video','series','film','shopping','idea'])
-        && (!d.keys().hasAny(['archivedAt']) || d.archivedAt is int && d.archivedAt>=0 && d.archivedAt<=9000000000000000)
-        && (!d.keys().hasAny(['trashedAt']) || d.trashedAt is int && d.trashedAt>=0 && d.trashedAt<=9000000000000000)
-        && (!d.keys().hasAny(['activityAt']) || d.activityAt is int && d.activityAt>=0 && d.activityAt<=9000000000000000)
-        && (!d.keys().hasAny(['completedAt']) || d.completedAt is int && d.completedAt>=0 && d.completedAt<=9000000000000000)
-        && (!d.keys().hasAny(['progressUnits']) || d.progressUnits is int && d.progressUnits>=0 && d.progressUnits<=1000000)
-        && (!d.keys().hasAny(['totalUnits']) || d.totalUnits is int && d.totalUnits>=0 && d.totalUnits<=1000000)
-        && (!d.keys().hasAny(['description']) || d.description is string && d.description.size()<=1000)
-        && (!d.keys().hasAny(['catalogSource']) || d.catalogSource is string && d.catalogSource.size()<=30)
-        && (!d.keys().hasAny(['catalogId']) || d.catalogId is string && d.catalogId.size()<=100)
-        && (!d.keys().hasAny(['coverUrl']) || d.coverUrl is string && d.coverUrl.size()<=500 && (d.coverUrl=='' || d.coverUrl.matches('^https?://[^\\s]+$')))
-        && (!d.keys().hasAny(['followUpDate']) || d.followUpDate is string && (d.followUpDate=='' || d.followUpDate.matches('^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$')));
+      return d.get('resourceType', 'project') in ['project','book','course','video','series','film','shopping','idea']
+        && validInteger(d.get('archivedAt', 0), 9000000000000000)
+        && validInteger(d.get('trashedAt', 0), 9000000000000000)
+        && validInteger(d.get('activityAt', 0), 9000000000000000)
+        && validInteger(d.get('completedAt', 0), 9000000000000000)
+        && validInteger(d.get('progressUnits', 0), 1000000)
+        && validInteger(d.get('totalUnits', 0), 1000000)
+        && validText(d.get('description', ''), 1000)
+        && validText(d.get('catalogSource', ''), 30)
+        && validText(d.get('catalogId', ''), 100)
+        && validOptionalUrl(d.get('coverUrl', ''))
+        && validOptionalDate(d.get('followUpDate', ''));
     }
     function validExtraLink(value) {
-      return value is string && value.size()>0 && value.size()<=500 && value.matches('^https?://[^\\s]+$');
+      return value is string && value.size()<=500 && value.matches('^https?://[^\\s]+$');
     }
     function validExtraLinks(links) {
-      return links is list && links.size()<=10
-        && (links.size()<=0 || validExtraLink(links[0]))
-        && (links.size()<=1 || validExtraLink(links[1]))
-        && (links.size()<=2 || validExtraLink(links[2]))
-        && (links.size()<=3 || validExtraLink(links[3]))
-        && (links.size()<=4 || validExtraLink(links[4]))
-        && (links.size()<=5 || validExtraLink(links[5]))
-        && (links.size()<=6 || validExtraLink(links[6]))
-        && (links.size()<=7 || validExtraLink(links[7]))
-        && (links.size()<=8 || validExtraLink(links[8]))
-        && (links.size()<=9 || validExtraLink(links[9]))
+      let count = links.size();
+      return links is list && count<=10
+        && (count<=0 || validExtraLink(links[0]))
+        && (count<=1 || validExtraLink(links[1]))
+        && (count<=2 || validExtraLink(links[2]))
+        && (count<=3 || validExtraLink(links[3]))
+        && (count<=4 || validExtraLink(links[4]))
+        && (count<=5 || validExtraLink(links[5]))
+        && (count<=6 || validExtraLink(links[6]))
+        && (count<=7 || validExtraLink(links[7]))
+        && (count<=8 || validExtraLink(links[8]))
+        && (count<=9 || validExtraLink(links[9]))
         ;
     }
       function validProject() {
         let d = request.resource.data;
-        return d.keys().hasAll(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
-          && d.keys().hasOnly(['name', 'nextStep', 'projectUrl', 'attachmentUrl', 'links', 'dueDate', 'assignedTo', 'sectionId', 'kind', 'checkpoint', 'checklist', 'mutationId', 'archivedAt', 'trashedAt', 'activityAt', 'completedAt', 'resourceType', 'progressUnits', 'totalUnits', 'followUpDate', 'coverUrl', 'description', 'catalogSource', 'catalogId', 'status', 'rank', 'revision', 'updatedAt'])
-          && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+        let keys = d.keys();
+        return keys.hasAll(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
+          && keys.hasOnly(['name', 'nextStep', 'projectUrl', 'attachmentUrl', 'links', 'dueDate', 'assignedTo', 'sectionId', 'kind', 'checkpoint', 'checklist', 'mutationId', 'archivedAt', 'trashedAt', 'activityAt', 'completedAt', 'resourceType', 'progressUnits', 'totalUnits', 'followUpDate', 'coverUrl', 'description', 'catalogSource', 'catalogId', 'status', 'rank', 'revision', 'updatedAt'])
+          && d.name is string && d.name.size() <= 100
           && d.name.matches('.*[^\\s].*')
-          && (!d.keys().hasAny(['links']) || validExtraLinks(d.links))
+          && validExtraLinks(d.get('links', []))
           && validWorkflowFields(d)
-          && d.nextStep is string && d.nextStep.size() <= 1000
-          && (!d.keys().hasAny(['projectUrl']) || d.projectUrl is string && d.projectUrl.size() <= 500 && (d.projectUrl == '' || d.projectUrl.matches('^https?://[^\\s]+$')))
-          && (!d.keys().hasAny(['attachmentUrl']) || d.attachmentUrl is string && d.attachmentUrl.size() <= 500 && (d.attachmentUrl == '' || d.attachmentUrl.matches('^https?://[^\\s]+$')))
-          && (!d.keys().hasAny(['dueDate']) || d.dueDate is string && (d.dueDate == '' || d.dueDate.matches('^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$')))
-          && (!d.keys().hasAny(['assignedTo']) || d.assignedTo is string && d.assignedTo.size() <= 128)
-          && (!d.keys().hasAny(['sectionId']) || d.sectionId is string && d.sectionId.size() <= 100)
-          && (!d.keys().hasAny(['kind']) || d.kind in ['resume', 'waiting', 'deadline', 'list'])
-          && (!d.keys().hasAny(['checkpoint']) || d.checkpoint is string && d.checkpoint.size() <= 1000)
-          && (!d.keys().hasAny(['checklist']) || d.checklist is string && d.checklist.size() <= 3000)
-          && (!d.keys().hasAny(['mutationId']) || d.mutationId is string && d.mutationId.size() <= 100)
+          && validText(d.nextStep, 1000)
+          && validOptionalUrl(d.get('projectUrl', ''))
+          && validOptionalUrl(d.get('attachmentUrl', ''))
+          && validOptionalDate(d.get('dueDate', ''))
+          && validText(d.get('assignedTo', ''), 128)
+          && validText(d.get('sectionId', ''), 100)
+          && d.get('kind', 'resume') in ['resume', 'waiting', 'deadline', 'list']
+          && validText(d.get('checkpoint', ''), 1000)
+          && validText(d.get('checklist', ''), 3000)
+          && validText(d.get('mutationId', ''), 100)
           && d.status in ['later', 'active', 'waiting', 'done']
           && d.rank is number && d.rank > -1000000000000000 && d.rank < 1000000000000000
           && d.revision is int && d.revision >= 0
@@ -107,9 +121,6 @@ service cloud.firestore {
       return signedActive() && get(/databases/$(database)/documents/groups/$(gid)).data.ownerUid == request.auth.uid
         && get(/databases/$(database)/documents/groups/$(gid)).data.get('deleted', false) == true;
     }
-    function mayCreate(gid) {
-      return groupMember(gid) && get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.get('canCreate', true) == true;
-    }
     function ownerAfter(gid) {
       return getAfter(/databases/$(database)/documents/groups/$(gid)).data.ownerUid == request.auth.uid;
     }
@@ -128,7 +139,7 @@ service cloud.firestore {
         function validMember() {
           let d = request.resource.data;
           return d.keys().hasAll(['name', 'email', 'role', 'joinedAt']) && d.keys().hasOnly(['name', 'email', 'role', 'joinedAt', 'inviteId', 'canCreate'])
-            && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+            && d.name is string && d.name.size() <= 100
             && d.email == request.auth.token.email && d.joinedAt == request.time
             && (!d.keys().hasAny(['canCreate']) || d.canCreate == true);
         }
@@ -157,10 +168,14 @@ service cloud.firestore {
             || exists(/databases/$(database)/documents/groups/$(gid)/members/$(request.resource.data.assignedTo));
         }
         allow read: if groupMember(gid) || cleaningOwner(gid);
-        allow create: if (groupManager(gid) || (mayCreate(gid) && request.resource.data.get('assignedTo', '') == request.auth.uid)) && validProject() && assignmentValid() && request.resource.data.revision == 0;
+        allow create: if groupMember(gid)
+          && (get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.role == 'manager'
+            || (get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.get('canCreate', true) == true
+              && request.resource.data.get('assignedTo', '') == request.auth.uid))
+          && validProject() && assignmentValid() && request.resource.data.revision == 0;
         allow delete: if groupManager(gid) || cleaningOwner(gid);
         allow update: if groupMember(gid) && validProject() && request.resource.data.revision == resource.data.revision + 1
-          && ((groupManager(gid) && assignmentValid())
+          && ((get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.role == 'manager' && assignmentValid())
             || (resource.data.get('assignedTo', '') == request.auth.uid
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nextStep', 'status', 'checkpoint', 'checklist', 'progressUnits', 'followUpDate', 'activityAt', 'completedAt', 'revision', 'updatedAt', 'mutationId'])));
       }

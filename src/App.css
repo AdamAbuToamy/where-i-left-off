@@ -5,12 +5,6 @@
 
 body {
   background-color: var(--site-bg,#f1eee5);
-  background-image: radial-gradient(
-    circle,
-    var(--site-dot,#b4b6a5) 1.3px,
-    transparent 1.5px
-  );
-  background-size: 22px 22px;
 }
 
 main {
@@ -32,7 +26,7 @@ main {
 
   margin-bottom: 30px;
   padding-bottom: 30px;
-  border-bottom: 2px solid var(--site-border,#d7dacb);
+  border-bottom: 1px solid var(--site-border,#d7dacb);
 }
 
 .heading-copy {
@@ -67,7 +61,7 @@ main {
 .heading-copy h1 {
   margin: 0;
   font-size: clamp(30px, 5vw, 48px);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -369,8 +363,6 @@ main {
 }
 
 .project-card {
-  --accent: #ce7047;
-
   position: relative;
   display: flex;
   flex-direction: column;
@@ -378,17 +370,14 @@ main {
   min-width: 0;
   padding: 26px;
 
-  border: 1px solid #cfc1a8;
-  border-radius: 19px;
-  background: #fcf8ed;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+  background: var(--site-surface);
 
-  box-shadow:
-    0 6px 0 #ded1b9,
-    0 14px 25px #49351b0d;
+  box-shadow: 0 2px 8px #25332e08;
 
   text-align: start;
   overflow-wrap: anywhere;
-  animation: card-enter 380ms ease-out both;
 
   transition:
     transform 220ms ease,
@@ -396,49 +385,6 @@ main {
     border-color 220ms ease,
     background-color 220ms ease;
 }
-
-.project-card:nth-child(3n + 2) {
-  --accent: #4382a9;
-}
-
-.project-card:nth-child(3n + 3) {
-  --accent: #6b8e47;
-}
-
-.project-card::before {
-  content: "";
-  position: absolute;
-  inset-block-start: -1px;
-  inset-inline: 24px;
-
-  height: 5px;
-  border-radius: 0 0 6px 6px;
-  background: var(--accent);
-
-  transition: background-color 220ms ease;
-}
-
-.project-card::after {
-  content: "✳";
-  position: absolute;
-  inset-block-start: 20px;
-  inset-inline-end: 22px;
-
-  color: var(--accent);
-  font-size: 34px;
-  line-height: 1;
-  pointer-events: none;
-
-  transition:
-    transform 400ms ease,
-    color 220ms ease;
-}
-
-.project-card.is-active {
-  background: #eef5e6;
-}
-
-
 
 .status {
   display: inline-flex;
@@ -476,8 +422,8 @@ main {
 }
 
 .project-card h2 {
-  margin: 25px 0;
-  font-size: 23px;
+  margin: 20px 0 16px;
+  font-size: 21px;
   line-height: 1.5;
 }
 
@@ -490,15 +436,15 @@ main {
 
 .next-step {
   flex: 1;
-  min-height: 100px;
+  min-height: 72px;
   margin: 0;
   padding: 15px;
 
-  border: 1px solid #b9cfc4;
-  border-inline-start: 4px solid #508673;
+  border: 0;
+  border-inline-start: 2px solid var(--site-primary);
   border-radius: 10px;
-  background: #dfece3;
-  color: #355546;
+  background: var(--site-soft);
+  color: var(--site-text);
 
   font-size: 14px;
   line-height: 1.9;
@@ -619,22 +565,15 @@ main {
 
   .primary-button:hover:not(:disabled),
   .project-card button:hover {
-    background: #963f20;
+    background: var(--site-primary-border);
   }
 
   .secondary-button:hover {
-    background: #dbe2d0;
+    background: var(--site-soft);
   }
 
   .project-card:hover {
-    transform: translateY(-4px);
-    box-shadow:
-      0 9px 0 #ded1b9,
-      0 20px 30px #49351b18;
-  }
-
-  .project-card:hover::after {
-    transform: rotate(90deg);
+    border-color: var(--site-accent);
   }
 
   

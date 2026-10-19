@@ -1,6 +1,6 @@
 .board-hint {
   margin: 0 0 20px;
-  color: #59694f;
+  color: var(--site-muted);
   font-size: 13px;
   line-height: 1.8;
 }
@@ -17,24 +17,6 @@
   min-width: 0;
 }
 
-/* المقبض يحل محل العلامة الزخرفية */
-.sortable-project > .project-card::after {
-  display: none;
-}
-
-/* الحفاظ على تنويع الألوان بعد إضافة الغلاف */
-.sortable-project:nth-child(3n + 1) > .project-card {
-  --accent: #ce7047;
-}
-
-.sortable-project:nth-child(3n + 2) > .project-card {
-  --accent: #4382a9;
-}
-
-.sortable-project:nth-child(3n + 3) > .project-card {
-  --accent: #6b8e47;
-}
-
 .drag-handle {
   position: absolute;
   inset-block-start: 16px;
@@ -47,10 +29,10 @@
   height: 44px;
   padding: 0;
 
-  border: 1px solid #c8c7b6;
+  border: 1px solid var(--site-border);
   border-radius: 10px;
-  background: #eee9d9;
-  color: #687451;
+  background: var(--site-surface);
+  color: var(--site-muted);
 
   cursor: grab;
   touch-action: none;
@@ -67,8 +49,8 @@
 .drag-handle:active,
 .sortable-project.is-dragging .drag-handle {
   cursor: grabbing;
-  background: #d6e4c7;
-  color: #345934;
+  background: var(--site-soft);
+  color: var(--site-text);
   box-shadow: 0 0 0 3px #709b4630;
 }
 
@@ -80,8 +62,8 @@
 
 @media (hover: hover) {
   .drag-handle:hover {
-    background: #e0e7cf;
-    color: #345934;
+    background: var(--site-soft);
+    color: var(--site-text);
   }
 
   .sortable-project.is-dragging > .project-card:hover {

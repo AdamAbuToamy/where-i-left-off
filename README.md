@@ -119,3 +119,9 @@ V1 includes the features above. AI assistance, external reply monitoring, binary
 Automated checks do not establish complete coverage, penetration-test certification or production IAM/abuse resistance. Offline copies cannot be remotely erased after access is revoked. Group administration needs connectivity. These limits are documented in [SECURITY.md](SECURITY.md).
 
 Built by **[Adam Abu Toamy](https://www.linkedin.com/in/adam-abu-toamy-383250363/)**.
+
+## Architecture and browser credentials
+
+See [architecture decisions](docs/ARCHITECTURE.md) for domain objects, storage interfaces, adapters and the production write path. See [credential boundaries](docs/CLIENT_SECURITY.md) for public Firebase identifiers, server-only secrets, deployment guards and cloud settings that require account-side verification.
+
+`npm run build` checks browser source/assets before bundling and generated assets afterward for credential patterns. Unknown `VITE_*` variables are rejected. `scripts/deploy-production.sh` requires complete Firebase configuration and a public reCAPTCHA Enterprise site key; deploy only after verifying App Check metrics and enforcement in the Firebase project.

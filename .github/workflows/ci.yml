@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Check tracked credential patterns
+        run: npm run check:credentials
+
       - name: Lint
         run: npm run lint
 

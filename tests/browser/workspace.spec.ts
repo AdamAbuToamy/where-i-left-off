@@ -71,7 +71,14 @@ test('phone creation, two sessions, persistence, edits, ordering, isolation and 
   await robot.getByRole('button', { name: 'Start work', exact: true }).click()
   await expect(phone.locator('article.is-active h2')).toHaveText('Robot arm')
   await page.mouse.move(0, 0)
-  await expect(robot.getByRole('button', { name: 'Continue later' })).toHaveCSS('background-color', 'rgb(170, 76, 42)')
+  await expect(robot.getByRole('button', { name: 'Continue later' })).toHaveCSS('background-color', await page.evaluate(() => {
+    const probe = document.createElement('span')
+    probe.style.backgroundColor = 'var(--site-primary)'
+    document.body.append(probe)
+    const color = getComputedStyle(probe).backgroundColor
+    probe.remove()
+    return color
+  }))
   // Keyboard sensor exercises the same saved reorder callback used by mouse/touch.
   const handle = phone.getByRole('button', { name: 'Drag to reorder: STOMP', exact: true })
   await handle.focus()

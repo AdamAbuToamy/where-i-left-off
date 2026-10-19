@@ -16,9 +16,9 @@
 .recall-checklist { display: grid; gap: 8px; margin-block: 14px; }
 .recall-checklist label { display: flex; align-items: flex-start; gap: 10px; overflow-wrap: anywhere; }
 .recall-checklist input { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 3px; accent-color: #47634f; }
-.recall-checklist input:checked + span { text-decoration: line-through; opacity: .6; }
-.project-card.is-waiting { background: #f1e2bf; }
-.project-card.is-done { background: #e1e8df; }
+.recall-checklist input:checked ~ span { text-decoration: line-through; opacity: .6; }
+.project-card.is-waiting .status { background: #fff4d6; border-color: #e2c36d; color: #71530f; }
+.project-card.is-done .status { background: #e9f2ec; border-color: #adc9b7; color: #315a43; }
 @media (max-width: 600px) { .recall-field-row { grid-template-columns: 1fr; } .section-editor form { align-items: stretch; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .sections-panel { animation: none; } }
 

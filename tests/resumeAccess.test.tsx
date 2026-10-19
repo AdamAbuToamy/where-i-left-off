@@ -7,15 +7,15 @@ import type { User } from 'firebase/auth'
 import type { GroupInfo } from '../src/types'
 import type { OfflineSnapshot } from '../src/lib/offlineWorkspace'
 const callbacks=vi.hoisted(()=>({sources:new Map<string,(s:OfflineSnapshot)=>void>(),groups:undefined as undefined|((g:GroupInfo[],cached:boolean)=>void),metric:undefined as undefined|((m:{suspended:boolean})=>void)}))
-vi.mock('../src/lib/firebase',()=>({db:{app:{options:{projectId:'demo-resume'}}}}))
+vi.mock('../src/lib/firebase',()=>({db:{app:{options:{projectId:'demo-resume'}}},auth:{currentUser:{uid:'alice'}}}))
 vi.mock('../src/lib/logging',()=>({logEvent:vi.fn()}))
 vi.mock('../src/lib/repository',()=>({watchUserMetric:(_db:unknown,_uid:string,receive:typeof callbacks.metric)=>{callbacks.metric=receive;return()=>{}}}))
 vi.mock('../src/lib/groups',()=>({watchGroups:(_db:unknown,_uid:string,receive:typeof callbacks.groups)=>{callbacks.groups=receive;return()=>{}}}))
-vi.mock('../src/lib/offlineWorkspace',()=>({OfflineWorkspace:class{
+vi.mock('../src/lib/createWorkspace',()=>({createWorkspace:(_db:unknown,_uid:string,_valid:unknown,receive:(s:OfflineSnapshot)=>void,id?:string)=>new class{
  receive:(s:OfflineSnapshot)=>void;id:string
- constructor(_db:unknown,_uid:string,_valid:unknown,receive:(s:OfflineSnapshot)=>void,id?:string){this.receive=receive;this.id=id || ''}
+ constructor(){this.receive=receive;this.id=id || ''}
  start(){callbacks.sources.set(this.id,this.receive);return()=>callbacks.sources.delete(this.id)}
-}}))
+}()}))
 import { useTaskOverview } from '../src/lib/useTaskOverview'
 let root:Root,container:HTMLDivElement
 function Overview(){const value=useTaskOverview({uid:'alice'} as User,'Personal');return <output>{JSON.stringify(value)}</output>}
