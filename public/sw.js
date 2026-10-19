@@ -15,7 +15,7 @@ self.addEventListener('fetch', event => {
       // Keep each precached shell immutable: a newer HTML file may reference
       // assets the current worker has not downloaded. Activation switches versions atomically.
       return response;
-    }).catch(async () => (await (await caches.open(CACHE_NAME)).match(['/privacy.html','/terms.html','/support.html','/extension-privacy.html'].includes(new URL(event.request.url).pathname) ? new URL(event.request.url).pathname : '/index.html', { ignoreVary: true })) || Response.error()));
+    }).catch(async () => (await (await caches.open(CACHE_NAME)).match(['/about.html','/privacy.html','/terms.html','/support.html','/extension-privacy.html'].includes(new URL(event.request.url).pathname) ? new URL(event.request.url).pathname : '/index.html', { ignoreVary: true })) || Response.error()));
     return;
   }
   const pathname = new URL(event.request.url).pathname;

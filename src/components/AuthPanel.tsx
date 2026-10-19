@@ -28,7 +28,7 @@ export default function AuthPanel({ language }: { language: Language }) {
     void perform(async () => { if (register) { const result = await createUserWithEmailAndPassword(auth!, email.trim(), password); await updateProfile(result.user, { displayName: name.trim() }); window.dispatchEvent(new Event('profile-updated')) } else await signInWithEmailAndPassword(auth!, email.trim(), password) })
   }
   return <section className="auth-panel" aria-busy={busy}>
-    <div className="auth-intro"><span aria-hidden="true">↗</span><h2>{t.intro}</h2></div>
+    <div className="auth-intro"><span aria-hidden="true">↗</span><h2>{t.intro}</h2><a href="/about.html">{{ en: 'About Where I Left Off', ar: 'عن Where I Left Off', he: 'על Where I Left Off' }[language]}</a></div>
     <form onSubmit={submit} className="new-project-form auth-form">
       <h2>{register ? t.signUp : t.signIn}</h2><p className="legal-notice">{supportText[language].notice} <a href={`/terms.html?lang=${language}`} target="_blank" rel="noopener noreferrer">{supportText[language].terms}</a> · <a href={`/privacy.html?lang=${language}`} target="_blank" rel="noopener noreferrer">{supportText[language].privacy}</a></p>
       {register && <><label htmlFor="name">{pageText[language].name}</label><input id="name" autoComplete="name" required maxLength={100}  value={name} onChange={e => setName(e.target.value)} dir="auto" /></>}
