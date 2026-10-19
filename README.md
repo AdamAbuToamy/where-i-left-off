@@ -6,7 +6,7 @@
 
 A multilingual project and follow-up organizer built with React, TypeScript and Firebase. Keep personal cards private, coordinate tasks in shared groups, and continue working with cached cards offline.
 
-**[Try the live app](https://where-i-left-off.web.app/)** · **[العربية](README_AR.md)** · **[Test results](TEST_RESULTS.md)** · **[Security](SECURITY.md)**
+**[Try the live app](https://where-i-left-off.web.app/)** · **[About Where I Left Off](https://where-i-left-off.web.app/about.html)** · **[العربية](README_AR.md)** · **[Test results](TEST_RESULTS.md)** · **[Security](SECURITY.md)**
 
 <!-- recall-media:start -->
 ## Promotional preview
