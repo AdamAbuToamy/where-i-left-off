@@ -2,7 +2,7 @@ name: Deploy Firebase Hosting
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/deploy-hosting.yml', 'scripts/prepare-hosting-config.mjs']
+    paths: ['.github/workflows/deploy-hosting.yml', 'scripts/prepare-hosting-config.mjs', 'public/google*.html']
   workflow_dispatch:
 permissions:
   contents: read
