@@ -1,3 +1,4 @@
+import { isAdmin } from '../lib/admin'
 import { useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { Language } from '../translations'
@@ -42,7 +43,7 @@ export default function ProfileSettings({ user, language }: { user: User; langua
     <SettingsGroup title={a.appearance}><ThemePicker uid={user.uid} language={language} /></SettingsGroup>
     <SettingsGroup title={w.workflow}><WorkflowSettings uid={user.uid} language={language} /></SettingsGroup>
     <SettingsGroup title={l.rest}><SleepPreference uid={user.uid} language={language} /><section className="settings-section tour-settings"><h3>{tourText[language].replay}</h3><button className="secondary-button tour-replay" onClick={() => window.dispatchEvent(new Event('replay-welcome-tour'))}>{tourText[language].replay}</button></section></SettingsGroup>
-    <SettingsGroup title={l.extension}><ExtensionInstall language={language} settings /></SettingsGroup>
+    <SettingsGroup title={l.extension}><ExtensionInstall language={language} settings admin={isAdmin(user.email, user.emailVerified)} /></SettingsGroup>
     <SettingsGroup title={support.legal}><section className="settings-section"><h3>{support.legal}</h3><p>{support.exportHint}</p><button className="secondary-button" disabled={exporting} onClick={async () => {
       setExporting(true); setExportError(false)
       try {
