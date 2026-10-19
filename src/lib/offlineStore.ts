@@ -53,7 +53,7 @@ export async function updateLocal(key: string, change: (state: OfflineState) => 
 
 export async function clearLocalAccount(projectId: string, uid: string) {
  try {
-  for (const key of [`site-theme:${uid}`,`idle-sleep:${uid}`,`workflow-preferences:${projectId}/${uid}`,`workflow-preferences:${projectId}/${uid}:pending`,`session-journal:${projectId}/${uid}`,`diagnostics/${projectId}/${uid}`,`diagnostics/${projectId}/${uid}/uploaded`]) localStorage.removeItem(key)
+  for (const key of [`site-theme:${uid}`,`site-background:${uid}`,`idle-sleep:${uid}`,`workflow-preferences:${projectId}/${uid}`,`workflow-preferences:${projectId}/${uid}:pending`,`session-journal:${projectId}/${uid}`,`diagnostics/${projectId}/${uid}`,`diagnostics/${projectId}/${uid}/uploaded`]) localStorage.removeItem(key)
  } catch { /* Local storage may be unavailable; IndexedDB cleanup still runs. */ }
  const db = await localDatabase(), prefix = `${projectId}/${uid}`
  await new Promise<void>((resolve, reject) => {

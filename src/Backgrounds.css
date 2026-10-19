@@ -1,0 +1,61 @@
+/* The original beige dots are the default, independently of the color palette. */
+:root {
+  --background-base: #f1eee5;
+  --background-image: radial-gradient(circle, #b4b6a5 1.3px, transparent 1.5px);
+  --background-size: 22px 22px;
+}
+body {
+  background-color: var(--background-base);
+  background-image: var(--background-image);
+  background-size: var(--background-size);
+}
+.background-preview {
+  --background-base: var(--site-bg);
+  --background-image: none;
+  --background-size: auto;
+  display: block;
+  width: 100%;
+  height: 76px;
+  border-radius: 7px;
+  background-color: var(--background-base);
+  background-image: var(--background-image);
+  background-size: var(--background-size);
+}
+:root[data-background='dots'], .background-preview-dots {
+  --background-base: #f1eee5;
+  --background-image: radial-gradient(circle, #b4b6a5 1.3px, transparent 1.5px);
+  --background-size: 22px 22px;
+}
+:root[data-background='paper'], .background-preview-paper {
+  --background-base: #f8f4e9;
+  --background-image: linear-gradient(transparent 27px, #c6cbbc80 27px, #c6cbbc80 28px);
+  --background-size: 100% 28px;
+}
+:root[data-background='grid'], .background-preview-grid {
+  --background-base: #f1f4f0;
+  --background-image: linear-gradient(#78917e20 1px, transparent 1px), linear-gradient(90deg, #78917e20 1px, transparent 1px);
+  --background-size: 24px 24px;
+}
+:root[data-background='linen'], .background-preview-linen {
+  --background-base: #f2eee7;
+  --background-image: repeating-linear-gradient(0deg, #ae9b7d0c 0px, #ae9b7d0c 1px, transparent 1px, transparent 4px), repeating-linear-gradient(90deg, #ae9b7d0c 0px, #ae9b7d0c 1px, transparent 1px, transparent 4px);
+  --background-size: 4px 4px;
+}
+:root[data-background='mist'], .background-preview-mist {
+  --background-base: #f2f1ec;
+  --background-image: radial-gradient(ellipse at 10% 0%, #e8d8c080, transparent 65%), radial-gradient(ellipse at 95% 90%, #c9ded680, transparent 65%);
+  --background-size: 100% 100%;
+}
+:root[data-background='plain'], .background-preview-plain {
+  --background-base: var(--site-bg);
+  --background-image: none;
+  --background-size: auto;
+}
+.background-settings { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--site-border); }
+.background-settings > p { margin-bottom: 18px; color: var(--site-muted); line-height: 1.8; }
+.background-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.background-option { min-width: 0; padding: 8px; border: 1px solid var(--site-border); border-radius: 12px; background: var(--site-surface); color: var(--site-text); text-align: start; }
+.background-option[aria-pressed='true'] { outline: 2px solid var(--site-primary); outline-offset: 2px; }
+.background-option-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 3px 4px; font-size: 13px; line-height: 1.5; }
+.background-option:hover { border-color: var(--site-primary); }
+@media (max-width: 600px) { .background-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

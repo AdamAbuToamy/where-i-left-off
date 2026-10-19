@@ -33,6 +33,7 @@ import './Recall.css'
 import './Themes.css'
 import './Layout.css'
 import './Workspace.css'
+import './Backgrounds.css'
 import { applyTheme } from './lib/theme'
 import GroupSpaces from './components/GroupSpaces'
 
