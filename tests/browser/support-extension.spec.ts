@@ -32,6 +32,10 @@ test('extension offer snoozes, Settings keeps the store link, and feedback survi
  await expect(page.locator('.support-message')).toContainText('Another line.')
 })
 test('unpublished extension has no install offer or broken store link',async({page})=>{
+ await page.route('**/extension-config.json', route => route.fulfill({
+  json: { extensionId: 'a'.repeat(32), published: false }
+ }))
+
  await register(page);await expect(page.locator('.extension-prompt')).toHaveCount(0)
  await page.goto('/#/settings');await page.locator('.settings-group > summary').filter({hasText:'Chrome extension'}).click();await expect(page.getByText('The extension is awaiting store availability.',{exact:false})).toBeVisible()
  await expect(page.getByRole('link',{name:'Open Chrome Web Store',exact:true})).toHaveCount(0)
