@@ -22,3 +22,11 @@ After publication check `/about.html`, `/robots.txt` (text/plain), `/sitemap.xml
 Add the URL-prefix property `https://where-i-left-off.web.app/`. Verify using Google's exact HTML file in `public/` (then redeploy), the supplied meta tag, or another method available to the account. Do not invent a verification token. Submit `sitemap.xml`, then use URL Inspection → Test live URL → Request indexing for `/` and `/about.html`.
 
 Search Console ownership verification requires the owner's Google account. Deployment alone cannot submit indexing requests or guarantee search ranking.
+
+## Deployment from GitHub Actions
+
+`Deploy Firebase Hosting` can publish the existing `production` hosting target without a local Firebase login. It uses the existing `FIREBASE_SERVICE_ACCOUNT` repository secret already referenced by the account worker. That identity must also have Firebase Hosting deployment permission; the workflow does not grant itself additional permissions. Missing credentials or insufficient permissions cause a failed deployment, rather than a claim of success.
+
+The workflow recovers only public browser configuration from the current live site, verifies the project ID, and preserves the current public reCAPTCHA Enterprise site key. It stops when it cannot preserve App Check. The generated `.env.production.local` is ignored and removed at the end of the job. No private account or project data is read for this step.
+
+For subsequent application changes, run **Actions → Deploy Firebase Hosting → Run workflow** after checks pass. Pushes changing the hosting workflow or its configuration preparation script also trigger deployment. The action deploys Hosting only; database rules, indexes, account workers and authentication settings are not deployed.

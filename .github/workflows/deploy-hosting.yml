@@ -1,0 +1,47 @@
+name: Deploy Firebase Hosting
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/deploy-hosting.yml', 'scripts/prepare-hosting-config.mjs']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: firebase-production-hosting
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check existing deployment credential
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo '::error::FIREBASE_SERVICE_ACCOUNT is not configured. Add a Firebase Hosting deployment credential in repository secrets.'
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Preserve public production configuration and App Check
+        run: node scripts/prepare-hosting-config.mjs
+      - name: Build production application
+        run: npm run build
+      - name: Run unit tests
+        run: npm test
+      - name: Deploy existing production hosting target only
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: where-i-left-off-b5683
+          channelId: live
+          target: production
+          firebaseToolsVersion: 15.33.0
+      - name: Remove temporary public configuration
+        if: always()
+        run: rm -f .env.production.local
