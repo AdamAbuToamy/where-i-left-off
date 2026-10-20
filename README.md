@@ -125,3 +125,7 @@ Built by **[Adam Abu Toamy](https://www.linkedin.com/in/adam-abu-toamy-383250363
 See [architecture decisions](docs/ARCHITECTURE.md) for domain objects, storage interfaces, adapters and the production write path. See [credential boundaries](docs/CLIENT_SECURITY.md) for public Firebase identifiers, server-only secrets, deployment guards and cloud settings that require account-side verification.
 
 `npm run build` checks browser source/assets before bundling and generated assets afterward for credential patterns. Unknown `VITE_*` variables are rejected. `scripts/deploy-production.sh` requires complete Firebase configuration and a public reCAPTCHA Enterprise site key; deploy only after verifying App Check metrics and enforcement in the Firebase project.
+
+## More projects by Adam Abu Toamy
+
+[**DeskPages — Windows 11 desktop icon organizer**](https://github.com/AdamAbuToamy/DeskPages) organizes the original Windows desktop into pages while keeping file paths unchanged. [Downloads and release notes](https://github.com/AdamAbuToamy/DeskPages/releases).
