@@ -10,12 +10,11 @@ export const configured = runtime.firebase !== null
 const app = runtime.firebase ? initializeApp(runtime.firebase) : null
 // The site key is public. Enforcement and accepted domains live in Firebase/Google Cloud.
 const appCheckSiteKey = runtime.appCheckSiteKey
-if (app && !emulatorMode && import.meta.env.PROD && appCheckSiteKey) {
-  initializeAppCheck(app, {
+export const appCheck = app && !emulatorMode && import.meta.env.PROD && appCheckSiteKey
+  ? initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
     isTokenAutoRefreshEnabled: true,
-  })
-}
+  }) : null
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
 if (emulatorMode && auth && db) {

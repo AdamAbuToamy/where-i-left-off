@@ -1,3 +1,4 @@
+import { markCardViewed } from '../lib/pushNotifications'
 import FocusSession from './FocusSession'
 import CatalogLookup from './CatalogLookup'
 import type { User } from 'firebase/auth'
@@ -64,6 +65,7 @@ export default function ProjectCard({
   const deleteButtonRef = useRef<HTMLButtonElement>(null)
 
   function startEditing() {
+    void markCardViewed(project.id, groupId)
     revisionRef.current = project.revision
     setMetadata({ assignedTo: project.assignedTo, sectionId: project.sectionId, kind: project.kind || 'resume', status: project.status, checkpoint: project.checkpoint, checklist: project.checklist,resourceType:project.resourceType,progressUnits:project.progressUnits,totalUnits:project.totalUnits,followUpDate:project.followUpDate,coverUrl:project.coverUrl,description:project.description,catalogSource:project.catalogSource,catalogId:project.catalogId })
     setName(project.name)
@@ -95,7 +97,7 @@ export default function ProjectCard({
 
   return (
     <>
-      <article data-project={project.id} className={`project-card ${isActive ? 'is-active' : ''} is-${project.status}`}>
+      <article onClick={e=>{if((e.target as HTMLElement).closest('a,button,summary,input'))void markCardViewed(project.id,groupId)}} data-project={project.id} className={`project-card ${isActive ? 'is-active' : ''} is-${project.status}`}>
         <span
           key={project.status}
           className={`status ${isActive ? 'status-active' : ''}`}

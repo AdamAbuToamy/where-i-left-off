@@ -1,3 +1,4 @@
+import { markCardViewed } from '../lib/pushNotifications'
 import { useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { Language } from '../translations'
@@ -88,12 +89,13 @@ export default function Workspace({ user, language, group, members }: { user: Us
     if (!loaded) return
     const parts=location.hash.replace(/^#\/?/,'').split('/'),id=parts[0]==='groups' ? parts[2] : parts[1]
     if (!id || !/^[A-Za-z0-9]{20}$/.test(id)) return
+    void markCardViewed(id,group?.id)
     const element=document.querySelector<HTMLElement>(`[data-project="${id}"]`)
     element?.scrollIntoView({block:'center',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'})
     element?.classList.add('is-highlighted')
     const timer=window.setTimeout(()=>element?.classList.remove('is-highlighted'),2200)
     return ()=>window.clearTimeout(timer)
-  },[loaded,projects.length])
+  },[loaded,projects.length,group?.id])
   useEffect(() => watchUserMetric(db!, user.uid, metric => setAccountSuspended(metric?.suspended === true), () => { /* Project access rules remain the final check. */ }), [user.uid])
   useEffect(() => {
     const update = () => setOnline(navigator.onLine)

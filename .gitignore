@@ -23,3 +23,10 @@ backups/
 .backup-*/
 *:Zone.Identifier
 *.bak
+
+# Cloudflare local bindings and private credentials
+.wrangler/
+push-worker/wrangler.local.json
+push-worker/.push-private.json
+.dev.vars
+.dev.vars.*

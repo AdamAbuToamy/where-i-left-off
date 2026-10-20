@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wilo-free-push",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-20",
+  "workers_dev": true,
+  "vars": {
+    "FIREBASE_PROJECT_ID": "where-i-left-off-b5683",
+    "FIREBASE_APP_ID": "SET_BY_SETUP_SCRIPT",
+    "APP_ORIGINS": "https://where-i-left-off.web.app,https://where-i-left-off.firebaseapp.com",
+    "VAPID_PUBLIC_KEY": "SET_BY_SETUP_SCRIPT",
+    "VAPID_SUBJECT": "mailto:adam2002hosny@gmail.com"
+  },
+  "d1_databases": [{ "binding": "DB", "database_name": "wilo-push", "database_id": "SET_BY_SETUP_SCRIPT" }],
+  "queues": {
+    "producers": [{"binding":"PUSH_QUEUE","queue":"wilo-push"}],
+    "consumers": [{"queue":"wilo-push","max_batch_size":1,"max_retries":2,"max_concurrency":1}]
+  },
+  "triggers": { "crons": ["* * * * *"] },
+  "observability": {"enabled":false}
+}

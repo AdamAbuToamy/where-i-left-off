@@ -77,3 +77,8 @@ npm run test:all
 التطبيق لا يحتوي حاليًا على مساعد AI أو متابعة ردود خارجية أو رفع ملفات فعلية. إلغاء الوصول السحابي لا يمحو نسخًا نُزّلت سابقًا على جهاز غير متصل.
 
 المطور: **[Adam Abu Toamy](https://www.linkedin.com/in/adam-abu-toamy-383250363/)**.
+
+
+## Free installed-app notifications / إشعارات التطبيق المثبّت
+
+Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).

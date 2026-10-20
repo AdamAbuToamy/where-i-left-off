@@ -129,3 +129,8 @@ See [architecture decisions](docs/ARCHITECTURE.md) for domain objects, storage i
 ## More projects by Adam Abu Toamy
 
 [**DeskPages — Windows 11 desktop icon organizer**](https://github.com/AdamAbuToamy/DeskPages) organizes the original Windows desktop into pages while keeping file paths unchanged. [Downloads and release notes](https://github.com/AdamAbuToamy/DeskPages/releases).
+
+
+## Free installed-app notifications / إشعارات التطبيق المثبّت
+
+Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).

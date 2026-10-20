@@ -1,3 +1,5 @@
+import { useInstalledApp } from '../lib/pushNotifications'
+import { pushText } from '../pushText'
 import { isAdmin } from '../lib/admin'
 import { useState } from 'react'
 import type { User } from 'firebase/auth'
@@ -26,6 +28,7 @@ const labels = {
   he: { profile: 'פרופיל אישי', rest: 'מצב שינה ומדריך', extension: 'תוסף Chrome' },
 }
 export default function ProfileSettings({ user, language }: { user: User; language: Language }) {
+  const installed = useInstalledApp()
   const t = pageText[language], a = settingsText[language], l = labels[language], w = workflowText[language], support = supportText[language]
   const [name, setName] = useState(user.displayName || ''), [busy, setBusy] = useState(false), [saved, setSaved] = useState(false), [error, setError] = useState<unknown>(null)
   const [exporting, setExporting] = useState(false), [exportError, setExportError] = useState(false)
@@ -43,6 +46,7 @@ export default function ProfileSettings({ user, language }: { user: User; langua
     <SettingsGroup title={a.appearance}><ThemePicker uid={user.uid} language={language} /></SettingsGroup>
     <SettingsGroup title={w.workflow}><WorkflowSettings uid={user.uid} language={language} /></SettingsGroup>
     <SettingsGroup title={l.rest}><SleepPreference uid={user.uid} language={language} /><section className="settings-section tour-settings"><h3>{tourText[language].replay}</h3><button className="secondary-button tour-replay" onClick={() => window.dispatchEvent(new Event('replay-welcome-tour'))}>{tourText[language].replay}</button></section></SettingsGroup>
+    {installed && <SettingsGroup title={pushText[language].title}><section className="settings-section"><p>{pushText[language].intro}</p><a className="primary-button" href="#/notifications">{pushText[language].open}</a></section></SettingsGroup>}
     <SettingsGroup title={l.extension}><ExtensionInstall language={language} settings admin={isAdmin(user.email, user.emailVerified)} /></SettingsGroup>
     <SettingsGroup title={support.legal}><section className="settings-section"><h3>{support.legal}</h3><p>{support.exportHint}</p><button className="secondary-button" disabled={exporting} onClick={async () => {
       setExporting(true); setExportError(false)

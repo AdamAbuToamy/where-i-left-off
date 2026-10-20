@@ -1,3 +1,8 @@
+import CloudPushSync from './components/CloudPushSync'
+import NotificationSettings from './components/NotificationSettings'
+import PushLifecycle from './components/PushLifecycle'
+import { useInstalledApp, preparePushSignOut } from './lib/pushNotifications'
+import { pushText } from './pushText'
 import Workspace from './components/Workspace'
 import SideNavigation from './components/SideNavigation'
 import Support, { LegalLinks } from './components/Support'
@@ -43,6 +48,7 @@ function initialLanguage(): Language {
 }
 export default function App() {
   const { page, groupId } = usePage()
+  const installed = useInstalledApp()
   const [profileVersion, setProfileVersion] = useState(0)
   const [language, setLanguage] = useState<Language>(initialLanguage)
   const [user, setUser] = useState<User | null>(null)
@@ -62,12 +68,13 @@ export default function App() {
     return onAuthStateChanged(auth, current => { setUser(current); setLoading(false); if (current) { void flushLogs(); if (new URLSearchParams(location.search).has('groupInvite')) navigate('groups') } }, e => { setAuthError(e); setLoading(false); logEvent('auth.subscription', e) })
   }, [])
   return <IdleSleep key={user?.uid || 'signed-out'} uid={user?.uid} user={user || undefined} language={language}><main className={`workspace language-${language}`}>
-    <header className="page-header"><div className="heading-copy"><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', () => signOut(auth!)).catch(() => {})}>{c.logout}</button>}</div></header>
+    <PushLifecycle user={user} />
+    <header className="page-header"><div className="heading-copy"><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', async () => { try { await preparePushSignOut() } catch { /* Local delivery gate is already cleared. */ } await signOut(auth!) }).catch(() => {})}>{c.logout}</button>}</div></header>
     {emulatorMode && <p className="notice">{c.demo}</p>}
     {authError !== null && <p className="notice error" role="alert">{errorText(authError, language)}</p>}
     {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <p role="status">{c.loading}</p> : user ? page === 'support' ? <Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} /> : <AccountLifecycle key={user.uid} user={user} language={language}>
       {page !== 'settings' && <ExtensionInstall language={language} />}
-      <WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
+      <CloudPushSync key={user.uid} user={user}/><WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
       <WelcomeTour key={user.uid} user={user} language={language} />
       <SideNavigation language={language} page={page} admin={isAdmin(user.email, user.emailVerified)} />
       {!user.displayName?.trim() && page !== 'settings' && <section className="profile-prompt" aria-label={p.needsName}><span className="profile-prompt-icon" aria-hidden="true">✦</span><div className="profile-prompt-copy"><strong>{p.needsName}</strong><span>{p.profilePrompt}</span></div><a className="primary-button profile-prompt-action" href="#/settings">{p.editProfile} <span aria-hidden="true">↗</span></a></section>}
@@ -75,6 +82,7 @@ export default function App() {
       {page === 'resume' && <ContinueNow key={user.uid} user={user} language={language} />}
       {page === 'library' && <LibraryPage user={user} language={language}/>}
       {page === 'analytics' && <AnalyticsPage user={user} language={language}/>}
+      {page === 'notifications' && (installed ? <NotificationSettings key={user.uid} user={user} language={language} /> : <p>{pushText[language].notInstalled}</p>)}
       {page === 'settings' && <ProfileSettings key={user.uid} user={user} language={language} />}
       {page === 'logs' && isAdmin(user.email, user.emailVerified) && <AdminDashboard db={db!} language={language} user={user} />}
       {page === 'admin' && (isAdmin(user.email, user.emailVerified) ? <AdminDashboard db={db!} language={language} user={user} /> : <p role="alert">{c.signIn}</p>)}

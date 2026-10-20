@@ -61,6 +61,15 @@
             "value": "no-store"
           }
         ]
+      },
+      {
+        "source": "/push-config.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store"
+          }
+        ]
       }
     ]
   }

@@ -30,6 +30,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Install free push service dependencies
+        run: npm ci --prefix push-worker --no-audit --no-fund
+
+      - name: Test free push service
+        run: npm test --prefix push-worker
+
+      - name: Package Cloudflare Worker
+        run: npm exec --prefix push-worker -- wrangler deploy --config push-worker/wrangler.jsonc --dry-run --outdir /tmp/wilo-push-check
+
       - name: Check tracked credential patterns
         run: npm run check:credentials
 
