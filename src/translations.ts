@@ -52,7 +52,7 @@ type Translation = {
 
 export const translations: Record<Language, Translation> = {
   "ar": {
-    "appName": "وين وصلت؟",
+    "appName": "Where I Left Off",
     "workspace": "مساحة مشاريعك",
     "language": "اللغة",
     "active": "شغّال عليه",
@@ -101,7 +101,7 @@ export const translations: Record<Language, Translation> = {
     "deleteConfirmation": "هل تريد حذف هذا المشروع؟"
   },
   "he": {
-    "appName": "איפה עצרתי?",
+    "appName": "Where I Left Off",
     "workspace": "מרחב הפרויקטים שלך",
     "language": "שפה",
     "active": "בעבודה",

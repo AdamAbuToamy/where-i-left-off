@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test'
 import type {Page} from '@playwright/test'
 async function register(page:Page){
- await page.addInitScript(()=>localStorage.setItem('language','en'))
+ await page.addInitScript(()=>{if(!localStorage.getItem('language'))localStorage.setItem('language','en')})
  await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click()
  await page.getByLabel('Personal name',{exact:true}).fill('Notifications tester')
  await page.getByLabel('Email',{exact:true}).fill(`push-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`)
@@ -63,6 +63,8 @@ test('installed phone exposes explicit opt-in, category preferences and persiste
  expect(actions.filter(a=>a==='subscribe')).toHaveLength(before)
  await page.evaluate(()=>localStorage.setItem('language','ar'));await page.reload()
  await expect(page.getByRole('heading',{name:'الإشعارات',exact:true})).toBeVisible()
+ expect(await page.evaluate(()=>localStorage.getItem('language'))).toBe('ar')
+ await expect(page).toHaveTitle('Where I Left Off — Project Organizer')
  await page.screenshot({path:'test-results/notifications-review/mobile-ar.png',fullPage:true})
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true)
 })

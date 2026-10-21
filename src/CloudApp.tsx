@@ -43,8 +43,8 @@ import { applyTheme } from './lib/theme'
 import GroupSpaces from './components/GroupSpaces'
 
 function initialLanguage(): Language {
-  try { const value = localStorage.getItem('language'); if (value === 'en' || value === 'he') return value } catch { /* Optional preference. */ }
-  return 'ar'
+  try { const value = localStorage.getItem('language'); if (value === 'en' || value === 'he' || value === 'ar') return value } catch { /* Optional preference. */ }
+  return 'en'
 }
 export default function App() {
   const { page, groupId } = usePage()
@@ -60,7 +60,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = language
     document.documentElement.dir = language === 'en' ? 'ltr' : 'rtl'
-    document.title = t.appName
+    document.title = 'Where I Left Off — Project Organizer'
     try { localStorage.setItem('language', language) } catch { /* Optional preference. */ }
   }, [language, t.appName])
   useEffect(() => {
