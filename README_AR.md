@@ -82,3 +82,7 @@ npm run test:all
 ## Free installed-app notifications / إشعارات التطبيق المثبّت
 
 Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).
+
+## تجربة صفحة الجامعة — BGU
+
+كورسات ووظائف وامتحانات وملاحظات وجدول أسبوعي وخريطة متطلبات قابلة للتعديل. التجربة لحساب الإدارة الموثّق فقط، والحفظ محلي في المتصفح. استيراد Moodle يتم من جلسة الطالب وبموافقة صريحة، ولم يُتحقق منه على حساب BGU حقيقي بعد. [الإعداد والحدود والتذكيرات](docs/UNIVERSITY_PILOT_AR.md).

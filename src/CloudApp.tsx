@@ -11,7 +11,7 @@ import { supportText } from './supportText'
 import WorkflowAgent from './components/WorkflowAgent'
 import LibraryPage from './components/LibraryPage'
 import AnalyticsPage from './components/AnalyticsPage'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import LanguagePicker from './components/LanguagePicker'
@@ -41,6 +41,8 @@ import './Workspace.css'
 import './Backgrounds.css'
 import { applyTheme } from './lib/theme'
 import GroupSpaces from './components/GroupSpaces'
+
+const UniversityPage = lazy(() => import('./university/UniversityPage'))
 
 function initialLanguage(): Language {
   try { const value = localStorage.getItem('language'); if (value === 'en' || value === 'he' || value === 'ar') return value } catch { /* Optional preference. */ }
@@ -81,6 +83,7 @@ export default function App() {
             {(page === 'personal' || page === 'groups') && <GroupSpaces key={user.uid} user={user} language={language} page={page} groupId={groupId} profileVersion={profileVersion}>{(group, members) => <Workspace key={`${user.uid}/${group?.id || 'personal'}`} user={user} language={language} group={group} members={members} />}</GroupSpaces>}
       {page === 'resume' && <ContinueNow key={user.uid} user={user} language={language} />}
       {page === 'library' && <LibraryPage user={user} language={language}/>}
+      {page === 'university' && <Suspense fallback={<p role="status">جارٍ فتح صفحة الجامعة…</p>}><UniversityPage user={user} /></Suspense>}
       {page === 'analytics' && <AnalyticsPage user={user} language={language}/>}
       {page === 'notifications' && (installed ? <NotificationSettings key={user.uid} user={user} language={language} /> : <p>{pushText[language].notInstalled}</p>)}
       {page === 'settings' && <ProfileSettings key={user.uid} user={user} language={language} />}

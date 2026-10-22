@@ -134,3 +134,7 @@ See [architecture decisions](docs/ARCHITECTURE.md) for domain objects, storage i
 ## Free installed-app notifications / إشعارات التطبيق المثبّت
 
 Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).
+
+## BGU university pilot
+
+A private local study workspace for the verified pilot account: editable courses, task deadlines, weekly timetable and prerequisite map. A signed-in Moodle bookmark imports current courses and upcoming calendar events with review before saving. Import availability on BGU has not yet been verified with a real account. [Pilot setup and limits](docs/UNIVERSITY_PILOT_AR.md).
