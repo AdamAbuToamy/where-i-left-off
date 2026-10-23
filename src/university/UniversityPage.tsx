@@ -2,6 +2,7 @@ import { studyView } from '../lib/navigation'
 import { createClientId } from '../lib/clientId'
 import { translateStudyText, useStudyLanguage } from "./studyLocaleContext";
 import StudyLocalized from "./StudyLocale";
+import Timetable from "./Timetable";
 import WeeklyScheduleEditor from "./WeeklyScheduleEditor";
 import { sessionNames } from "./studyTools";
 import { courseTemplate, restoreStudyItem } from "./studyTools";
@@ -438,21 +439,7 @@ function Workspace({ user }: {
               أضف المحاضرات والتمارين حسب نظام الجدول الجامعي. التوقيت:{" "}
               {Intl.DateTimeFormat().resolvedOptions().timeZone}.
             </p>
-            <div className="study-week">
-              {days.map((day, i) => (<section key={day}>
-                  <h3>{day}</h3>
-                  {state.lessons
-                    .filter((l) => l.day === i && (!filter || l.courseId === filter))
-                    .sort((a, b) => a.start.localeCompare(b.start))
-                    .map((l) => (<button key={l.id} className={`study-lesson ${conflicts.has(l.id) ? "has-conflict" : ""}`} style={{ borderColor: courseColor(l.courseId) }} onClick={() => setEditing({ kind: "lesson", value: l })}>
-                        <time dir="ltr">
-                          {l.start} — {l.end}
-                        </time>
-                        <strong dir="auto">{courseName(l.courseId)}</strong>
-                        <small>{sessionNames[l.sessionType||'lecture']}</small><small dir="auto">{l.room || "بدون قاعة"}</small>{l.notes&&<small dir="auto">{l.notes}</small>}
-                      </button>))}
-                </section>))}
-            </div>
+            <Timetable lessons={state.lessons} courses={state.courses} courseFilter={filter} conflicts={conflicts} language={language} courseColor={courseColor} onEdit={lesson=>setEditing({kind:"lesson",value:lesson})}/>
           </>)}
         {tab === "map" && (<>
             <p className="study-hint">
