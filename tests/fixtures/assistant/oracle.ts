@@ -1,0 +1,46 @@
+import {parseAssistantReply,planAssistantChanges,resolveProposalControls} from '../../../src/assistant/actions';
+import type {AssistantData,Change} from '../../../src/assistant/actions';
+import {acceptanceContext} from './corpus.mjs';
+type Case={id:string;actions:{target:string;action:string;id:string;values?:Record<string,unknown>}[];controls:{kind:string;values:Record<string,unknown>}[];intents:unknown[]};
+/** Independent corpus oracle checks values after the real domain planner, not provider prose. */
+export function evaluateAcceptance(testCase:Case,text:string){
+ const data=acceptanceContext(testCase.id) as AssistantData,reply=parseAssistantReply(text),changes=planAssistantChanges(data,reply.actions,1792756800000,true);
+ const controls=resolveProposalControls(data,reply.actions,changes,reply.controls||[]);
+ const aliases=new Map<string,string>();
+ for(const action of testCase.actions.filter(a=>a.action==='create')){
+  const values=action.values||{},label=values.name??values.title;
+  const found=changes.filter(c=>c.target===action.target&&!c.before&&c.after&&(!label||(c.after as Record<string,unknown>).name===label||(c.after as Record<string,unknown>).title===label));
+  if(found.length!==1)throw new Error('oracle-create-identity:'+action.target);
+  aliases.set(action.id,found[0].id);
+ }
+ for(const action of testCase.actions){
+  const id=aliases.get(action.id)||action.id;
+  const change=changes.find(c=>c.target===action.target&&c.id===id);
+  if(action.action==='delete'){if(!change||change.after!==null)throw new Error('oracle-delete');continue;}
+  const baseline=action.target==='projects'||action.target==='sections'?data.scopes[0][action.target].find(r=>r.id===id):data.study[action.target as 'courses'|'tasks'|'lessons'].find(r=>r.id===id);
+  const actual=(change?.after||baseline) as Record<string,unknown>|undefined;
+  if(!actual)throw new Error('oracle-record-missing');
+  if(action.action==='trash'&&!(Number(actual.trashedAt)>0))throw new Error('oracle-trash');
+  for(const [field,value] of Object.entries(action.values||{})){
+   const expected=['courseId','sectionId'].includes(field)&&typeof value==='string'?aliases.get(value)||value:value;
+   if(['archivedAt','trashedAt'].includes(field)&&Number(expected)>0){if(!(Number(actual[field])>0))throw new Error('oracle-timestamp');continue;}
+   if(field==='due'&&typeof actual[field]==='string'&&expected){if(Date.parse(actual[field] as string)!==Date.parse(String(expected)))throw new Error('oracle-due');continue;}
+   if(JSON.stringify(actual[field])!==JSON.stringify(expected))throw new Error('oracle-field:'+action.target+'.'+field);
+  }
+ }
+ for(const expected of testCase.controls)if(!controls.some(c=>c.kind===expected.kind&&Object.entries(expected.values).every(([field,value])=>JSON.stringify(c.values[field])===JSON.stringify(value))))throw new Error('oracle-control');
+ if((reply.tasks?.length||0)<testCase.intents.length)throw new Error('oracle-request-omitted');
+ // Unrequested writes cannot hide among otherwise correct expected fields.
+ const allowed=new Set(testCase.actions.map(a=>[a.target,aliases.get(a.id)||a.id].join('/')));
+ if(changes.some(c=>!allowed.has([c.target,c.id].join('/'))))throw new Error('oracle-extra-record');
+ return {data,reply,changes,controls};
+}
+export function assertReloaded(changes:Change[],fresh:AssistantData){
+ for(const change of changes){
+  const list=change.target==='projects'||change.target==='sections'?fresh.scopes.find(s=>s.id===change.scope)?.[change.target]:fresh.study[change.target];
+  const saved=list?.find(r=>r.id===change.id) as unknown as Record<string,unknown>|undefined;
+  if(!change.after){if(saved)throw new Error('oracle-delete-not-persisted');continue;}
+  if(!saved)throw new Error('oracle-save-missing');
+  for(const [field,value] of Object.entries(change.after))if(field!=='revision'&&JSON.stringify(saved[field])!==JSON.stringify(value))throw new Error('oracle-reload:'+change.target+'.'+field);
+ }
+}

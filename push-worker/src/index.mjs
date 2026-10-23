@@ -162,7 +162,7 @@ export function createWorker(overrides={}){
     else result=await action(env,identity,data)
     console.info('push.http',{action:requestedAction,status:200})
     return new Response(JSON.stringify({result}),{headers})
-   }catch(error){const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed'}),{status,headers})}
+   }catch(error){const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed',...(error.message==='ai-incomplete-proposal'?{details:error.details}:{} )}),{status,headers})}
   },
   async scheduled(_controller,env){
    if(env.ASSISTANT_FREE_ONLY==='true')try{const cutoff=new Date(Date.now()-7*DAY).toISOString().slice(0,10);await env.DB.prepare('DELETE FROM ai_usage WHERE day<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM ai_budget WHERE day<?').bind(cutoff).run()}catch{console.warn('assistant.maintenance.failed')}

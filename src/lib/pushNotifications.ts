@@ -35,7 +35,7 @@ export async function pushCall<T=unknown>(data:Record<string,unknown>,options:{p
   const response=await fetch(options.path?new URL(options.path,endpoint).href:endpoint,{method:'POST',headers:{'content-type':'application/json',Authorization:`Bearer ${identity}`,'X-Firebase-AppCheck':appcheck.token},body:JSON.stringify(data),signal:AbortSignal.timeout(options.timeout||20000)})
   const body=await response.json()
   if(auth.currentUser?.uid!==uid)throw new Error('account-changed')
-  if(!response.ok)throw new Error(options.path&&/^ai-[a-z-]+$/.test(body.error)?body.error:'push-request-failed')
+  if(!response.ok){const error=new Error(options.path&&/^ai-[a-z-]+$/.test(body.error)?body.error:'push-request-failed');if(options.path&&body.error==='ai-incomplete-proposal')Object.assign(error,{details:body.details});throw error;}
   const result=body.result as T
   if(data.action==='save')window.dispatchEvent(new Event('push-preferences-changed'))
   return result

@@ -16,7 +16,8 @@
     "test:all": "npm run lint && npm test && npm run test:rules && npm run test:e2e && VITE_USE_EMULATORS=false npm run build",
     "test:e2e:failed": "VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true vite build && node scripts/generate-sw.mjs && firebase emulators:exec --project demo-where-i-left-off --only auth,firestore \"playwright test --last-failed --max-failures=1\"",
     "check:credentials": "node scripts/check-credentials.mjs",
-    "prebuild": "node scripts/check-credentials.mjs"
+    "prebuild": "node scripts/check-credentials.mjs",
+    "test:assistant:live": "node scripts/test-assistant-live.mjs --live"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

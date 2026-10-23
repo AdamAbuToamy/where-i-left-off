@@ -46,6 +46,7 @@ export function parseAssistantReply(text: string): AssistantReply {
   const files=value.files.map(raw=>{const f=object(raw);if(typeof f.name!=='string'||typeof f.content!=='string'||f.content.length>30000||!f.name.trim()||f.name.length>100)throw new Error();return {name:Array.from(f.name).map(c=>c==='/'||c==='\\'||c.charCodeAt(0)<32?'_':c).join('').replace(/\.[^.]+$/,'')+'.txt',content:f.content};});
   const controls=parseControls(value.controls);
   const tasks=parseTasks(value.tasks,value.actions.length,controls.length);
+  if(tasks.some(t=>t.outcome!=='proposed'&&t.controlIndexes.some(i=>controls[i].kind!=='navigate')))invalid('assistant-task-coverage');
   return {text:value.text,actions:value.actions as Action[],files,...(controls.length?{controls}:{}),...(tasks.length?{tasks}:{})};
  }catch(error) {if((error as Error).message==='assistant-format')throw error;throw new Error('assistant-invalid',{cause:error});}
 }
