@@ -6,7 +6,9 @@ const words = {
  en: {courses:'Your courses:',none:'You have no courses yet.',review:'Review the proposed change and click Apply to save it.',which:'Which course do you mean? Include its name, day, start and end time.',duplicate:'This session is already in your timetable.'},
  he: {courses:'הקורסים שלך:',none:'עדיין אין קורסים.',review:'יש לבדוק את השינוי המוצע ולאשר לשמירה.',which:'לאיזה קורס הכוונה? יש לציין שם, יום ושעת התחלה וסיום.',duplicate:'המפגש כבר מופיע במערכת השעות.'},
 };
-export const fold=(s:string)=>s.normalize('NFKC').toLowerCase().replace(/[أإآ]/g,'ا').replace(/[\u064b-\u065f\u0670\u0640]/g,'').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/[٠-٩]/g,d=>String(d.charCodeAt(0)-1632)).replace(/\s+/g,' ').trim();
+import { fold } from './text';
+import { bulkTimetableReply } from './bulkTimetable';
+export { fold } from './text';
 function originalPart(original:string,part:string,last=false):string {
  const normalized=fold(original),start=last?normalized.lastIndexOf(part):normalized.indexOf(part);if(start<0)return part;
  // Prefix lengths support Arabic diacritics and Latin case without altering saved user text.
@@ -34,6 +36,7 @@ const heSchedule=new RegExp(`^הוסף (.+?) למערכת (?:השעות )?ביו
 /** A narrow, fully matched command grammar. Unknown or compound requests go to AI.
  * It returns proposals only; the existing domain validator and Firebase transaction still apply. */
 export function quickAssistantReply(message:string,data:AssistantData,language:Language,history:{role:string;content:string}[]=[]):AssistantReply|null {
+ const bulk=bulkTimetableReply(message,data,language);if(bulk)return bulk;
  let text=fold(message);const t=words[language];
  const reply=(text:string):AssistantReply=>({text,actions:[],files:[]});
  if(/^(?:ما (?:هي )?الكورسات (?:التي عندي|عندي)|اذكر (?:اسماء )?الكورسات(?: الموجوده عندي)?(?: فقط)?|(?:list|show) my courses|what courses do i have|מה הקורסים שלי)[?؟.!]?$/.test(text))return reply(data.study.courses.length?t.courses+'\n'+data.study.courses.map(c=>'• '+c.name).join('\n'):t.none);

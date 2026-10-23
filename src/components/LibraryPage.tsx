@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { libraryView } from '../lib/navigation'
+import { useEffect, useState } from 'react'
 import type { User } from 'firebase/auth'
 import type { Language } from '../translations'
 import { workflowText } from '../workflowText'
@@ -14,7 +15,8 @@ import { logEvent } from '../lib/logging'
 import { translations } from '../translations'
 export default function LibraryPage({user,language}:{user:User;language:Language}){
  const t=workflowText[language],{allEntries,ready,suspended,cached}=useTaskOverview(user,language==='ar'?'مشاريعي':language==='he'?'הפרויקטים שלי':'My projects',true),prefs=useWorkflowPreferences(user.uid)
- const [view,setView]=useState<'archive'|'trash'|'review'|'ideas'>(()=>new URLSearchParams(location.hash.split('?')[1] || '').get('view')==='review'?'review':'archive'),[busy,setBusy]=useState(false),[failed,setFailed]=useState(false)
+ const [view,setView]=useState<'archive'|'trash'|'review'|'ideas'>(()=>libraryView()),[busy,setBusy]=useState(false),[failed,setFailed]=useState(false)
+ useEffect(()=>{const changed=()=>setView(libraryView());window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed)},[])
  const match=(entry:TaskEntry)=>{const p=entry.project;return view==='trash'?!!p.trashedAt:view==='archive'?!!p.archivedAt&&!p.trashedAt:view==='ideas'?currentCard(p)&&p.resourceType==='idea':needsReview(p,prefs.reviewDays)}
  const rows=allEntries.filter(match)
  async function run(action:()=>Promise<void>){if(busy)return;setBusy(true);setFailed(false);try{await action()}catch(error){setFailed(true);logEvent('library.action',error)}finally{setBusy(false)}}

@@ -119,7 +119,7 @@ npm audit --omit=dev --audit-level=high
 npm run test:all
 ```
 
-The latest local validation passed **229 unit/component tests, 52 Firestore/security and chat-acceptance tests, and 34 Worker tests**, along with ESLint and the production build. Chat acceptance tests use the actual Apply button and read saved results from a Firestore emulator; model-adapter tests use injected responses. See [assistant acceptance evidence](docs/AI_ACCEPTANCE_AR.md). [TEST_RESULTS.md](TEST_RESULTS.md) retains earlier validation history.
+The latest local validation passed **252 unit/component tests, 56 Firestore/security and chat-acceptance tests, and 35 Worker tests**, along with ESLint and the production build. Chat acceptance tests use the actual Apply button and read saved results from a Firestore emulator; model-adapter tests use injected responses. See [assistant acceptance evidence](docs/AI_ACCEPTANCE_AR.md). [TEST_RESULTS.md](TEST_RESULTS.md) retains earlier validation history.
 
 CI runs on pushes and pull requests using demo Firebase emulators, including browser tests and a dependency audit. It does not deploy or require production credentials. Check [GitHub Actions](https://github.com/AdamAbuToamy/where-i-left-off/actions) for the current browser and audit results. Do not run E2E and production builds concurrently: both write `dist`.
 
@@ -155,3 +155,10 @@ See [architecture decisions](docs/ARCHITECTURE.md) for domain objects, storage i
 ## Free installed-app notifications / إشعارات التطبيق المثبّت
 
 Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).
+
+
+### Assistant execution coverage
+
+The assistant can propose up to 50 domain operations and 20 reviewed site controls in one reply. This includes card ordering/archive/restore, section changes, courses/tasks/classes, appearance, language, sleep and workflow preferences, and opening existing views with filters. Multi-part replies can include a per-task execution ledger; only confirmed receipts produce a saved status. A missing action list never counts as a completed change. The Arabic/Hebrew 14-class timetable request has a direct validated import path with exact course matching and duplicate prevention.
+
+Browser permissions, account/security and group membership operations use their existing UI with an explicit handoff. Device settings are separate from the Firestore data transaction. The model is not guaranteed to understand every possible request. See the [execution contract, limits and verification notes](docs/ASSISTANT_CAPABILITIES_AR.md).

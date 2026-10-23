@@ -133,7 +133,7 @@ export function parsePlanBackup(raw: unknown): PlanPreview {
     out.tasks = array(r.tasks, 5000).map(v => { const t = obj(v); const due = text(t.due, 40); if (due && !Number.isFinite(Date.parse(due)))
         throw new Error('موعد غير صالح'); return { id: id(t.id), courseId: id(t.courseId), title: text(t.title, 500), kind: kind(text(t.kind, 20)), due: due ? new Date(due).toISOString() : '', notes: text(t.notes), done: bool(t.done), url: resourceUrl(t.url), sourceDescription: text(t.sourceDescription || '', 5000) }; });
     out.lessons = array(r.lessons, 2000).map(v => { const l = obj(v); const start = clock(l.start), end = clock(l.end), d = integer(l.day, 0, 6); if (!Number.isInteger(d) || end <= start)
-        throw new Error('محاضرة غير صالحة'); return { id: id(l.id), courseId: id(l.courseId), day: d, start, end, room: text(l.room, 200), sessionType: (['lecture','tutorial','lab'].includes(String(l.sessionType))?l.sessionType:'lecture') as Lesson['sessionType'] }; });
+        throw new Error('محاضرة غير صالحة'); return { id: id(l.id), courseId: id(l.courseId), day: d, start, end, room: text(l.room, 200), ...(l.notes?{notes:text(l.notes,1000)}:{}), sessionType: (['lecture','tutorial','lab'].includes(String(l.sessionType))?l.sessionType:'lecture') as Lesson['sessionType'] }; });
     for (const group of [out.courses, out.tasks, out.lessons])
         if (new Set(group.map(v => v.id)).size !== group.length)
             throw new Error('معرّفات مكررة في النسخة');

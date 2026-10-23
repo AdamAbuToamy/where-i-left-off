@@ -1,6 +1,6 @@
 import { createClientId } from './clientId'
 import { useEffect,useState } from 'react'
-import { doc,onSnapshot,setDoc,serverTimestamp } from 'firebase/firestore'
+import { doc,onSnapshot,setDoc,serverTimestamp,runTransaction,getDocFromServer } from 'firebase/firestore'
 import { db,auth } from './firebase'
 import { logEvent } from './logging'
 export type WorkflowPreferences={autoArchive:boolean;reminders:boolean;desktop:boolean;reviewDays:number}
@@ -46,4 +46,28 @@ export function useWorkflowPreferences(uid:string){
   return()=>{stop();window.removeEventListener('workflow-preferences-changed',local);window.removeEventListener('online',retry)}
  },[uid])
  return value
+}
+
+/** A reviewed assistant patch cannot overwrite an unrelated or unsynced settings edit. */
+export async function patchPreferences(uid:string,expected:WorkflowPreferences,patch:Partial<WorkflowPreferences>){
+ if(auth?.currentUser?.uid!==uid)throw new Error('account-changed')
+ if(pending(uid)||writes.has(uid))throw new Error('assistant-pending')
+ const ref=doc(db!,'users',uid,'preferences','workflow')
+ const saved=await runTransaction(db!,async tx=>{
+  const snapshot=await tx.get(ref)
+  if(auth?.currentUser?.uid!==uid)throw new Error('account-changed')
+  if(pending(uid)||writes.has(uid))throw new Error('assistant-pending')
+  const raw=snapshot.data()||{},current:WorkflowPreferences={autoArchive:raw.autoArchive===true,reminders:raw.reminders!==false,desktop:raw.desktop===true,reviewDays:[7,14,30,60,90].includes(raw.reviewDays)?raw.reviewDays:30}
+  for(const key of Object.keys(patch) as (keyof WorkflowPreferences)[])if(current[key]!==expected[key])throw new Error('assistant-conflict')
+  const value={...current,...patch}
+  tx.set(ref,{...value,updatedAt:serverTimestamp()})
+  return value
+ })
+ try{
+  const confirmed=(await getDocFromServer(ref)).data()
+  if(auth?.currentUser?.uid!==uid)throw new Error('account-changed')
+  for(const key of Object.keys(patch) as (keyof WorkflowPreferences)[])if(confirmed?.[key]!==saved[key])throw new Error('assistant-confirmation')
+ }catch(error){throw new Error('assistant-confirmation',{cause:error})}
+ if(!pending(uid))localStorage.setItem(key(uid),JSON.stringify(saved))
+ notify()
 }

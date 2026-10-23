@@ -32,7 +32,7 @@ export class AssistantRepository {
    const item=JSON.parse(r.payload);if(item.id!==r.id)throw new Error('assistant-invalid');
    data.study[r.kind as 'courses'|'tasks'|'lessons'].push(item);
   }}
-  for(const m of memberships.docs)data.scopes.push({id:m.id,name:String(m.data().groupName||m.id),projects:[],sections:[]});
+  for(const m of memberships.docs)data.scopes.push({id:m.id,name:String(m.data().groupName||m.id),role:m.data().role==='manager'?'manager':'member',projects:[],sections:[]});
   let pending=false;
   const journal=this.studyStore().loadSync() as {pending?:unknown[]}|null;
   if(journal?.pending?.length){pending=true;data.study=this.studyStore().load();}
@@ -40,6 +40,7 @@ export class AssistantRepository {
    const base=scope.id==='personal'?`users/${this.uid}`:`groups/${scope.id}`;
    const [projects,sections]=await Promise.all([getDocsFromServer(collection(db!,base,'projects')),getDocsFromServer(collection(db!,base,'sections'))]);
    this.check();
+   if(scope.id!=='personal'){const members=await getDocsFromServer(collection(db!,base,'members'));this.check();scope.members=members.docs.map(m=>({uid:m.id,name:String(m.data().name||m.id),role:String(m.data().role||'member')}));}
    scope.projects=projects.docs.map(d=>{raw.set(d.ref.path,d.data());return normalizedProject(d.id,d.data());});
    scope.sections=sections.docs.map(d=>{raw.set(d.ref.path,d.data());return normalizedSection(d.id,d.data());});
    const local=await new IndexedDbWorkspaceStore(`${db!.app.options.projectId}/${this.uid}${scope.id==='personal'?'':`/group/${scope.id}`}`).read();
@@ -49,7 +50,7 @@ export class AssistantRepository {
  }
  async apply(snapshot:AssistantSnapshot,changes:Change[]):Promise<AssistantReceipt>{
   this.check();
-  if(!changes.length||changes.length>20)throw new Error('assistant-invalid');
+  if(!changes.length||changes.length>50)throw new Error('assistant-invalid');
   // Refresh the local outboxes before committing. Never overwrite an unsent edit.
   const current=await this.read();
   if(current.pending||snapshot.pending)throw new Error('assistant-pending');
@@ -70,6 +71,7 @@ export class AssistantRepository {
    }
    for(let i=0;i<changes.length;i++){
     const c=changes[i],old=snapshot.raw.get(refs[i].path),revision=old?Number(old.revision||0)+1:0;
+    if(c.target==='sections'&&!c.after){tx.delete(refs[i]);continue;}
     const body=isStudy(c.target)?{kind:c.target,id:c.id,payload:c.after?JSON.stringify(c.after):'',deleted:!c.after,revision}: {...c.after as object,revision};
     if(!isStudy(c.target)){
      delete (body as Record<string,unknown>).id;
@@ -83,13 +85,13 @@ export class AssistantRepository {
   // A successful proposal is only announced after the server confirms every mutation.
   try{
    const saved=await Promise.all(refs.map(ref=>getDocFromServer(ref)));this.check();
-   if(saved.some((document,i)=>document.data()?.mutationId!==mutations.get(refs[i].path)))throw new Error('assistant-confirmation');
+   if(saved.some((document,i)=>changes[i].target==='sections'&&!changes[i].after?document.exists():document.data()?.mutationId!==mutations.get(refs[i].path)))throw new Error('assistant-confirmation');
   }catch(error){throw new Error('assistant-confirmation',{cause:error});}
   this.check();window.dispatchEvent(new Event('university-data-changed'));return {changes,mutations};
  }
  async undo(receipt:AssistantReceipt):Promise<void>{
   const snapshot=await this.read();
-  for(const c of receipt.changes)if(snapshot.raw.get(path(this.uid,c))?.mutationId!==receipt.mutations.get(path(this.uid,c)))throw new Error('assistant-conflict');
+  for(const c of receipt.changes)if(c.target==='sections'&&!c.after?snapshot.raw.has(path(this.uid,c)):snapshot.raw.get(path(this.uid,c))?.mutationId!==receipt.mutations.get(path(this.uid,c)))throw new Error('assistant-conflict');
   const reverse=receipt.changes.map(c=>({...c,before:c.after,after:c.before}));
   const study=structuredClone(snapshot.data.study);
   for(const c of reverse)if(isStudy(c.target)){

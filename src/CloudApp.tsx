@@ -47,6 +47,7 @@ export default function App() {
   const installed = useInstalledApp()
   const [profileVersion, setProfileVersion] = useState(0)
   const [language, setLanguage] = useState<Language>(initialLanguage)
+  useEffect(() => { const changed=(event:Event)=>{const next=(event as CustomEvent).detail;if(['ar','en','he'].includes(next))setLanguage(next)};window.addEventListener('language-changed',changed);return()=>window.removeEventListener('language-changed',changed) }, [])
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(configured)
   const [authError, setAuthError] = useState<unknown>(null)

@@ -1,3 +1,4 @@
+import { workspaceView } from '../lib/navigation'
 import { markCardViewed } from '../lib/pushNotifications'
 import { useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
@@ -35,9 +36,9 @@ export default function Workspace({ user, language, group, members }: { user: Us
   const membership = members.find(m => m.uid === user.uid)
   const canCreate = canManage || !!membership && membership.canCreate !== false
   const g = groupText[language]
-  const [onlyMine, setOnlyMine] = useState(false)
+  const [onlyMine, setOnlyMine] = useState(()=>workspaceView().mine)
   const [sections, setSections] = useState<Section[]>([])
-  const [sectionFilter, setSectionFilter] = useState('all')
+  const [sectionFilter, setSectionFilter] = useState(()=>workspaceView().section)
   const [projects, setProjects] = useState<Project[]>([])
   const [accountSuspended, setAccountSuspended] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -54,9 +55,10 @@ export default function Workspace({ user, language, group, members }: { user: Us
   const [capture, setCapture] = useState(() => parseTabCapture(window.location.search))
   const [newSection, setNewSection] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(() => parseTabCapture(window.location.search) !== null)
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('all')
-  const [view, setView] = useState<'board' | 'week'>('board')
+  const [search, setSearch] = useState(()=>workspaceView().search)
+  const [filter, setFilter] = useState(()=>workspaceView().filter)
+  const [view, setView] = useState<'board' | 'week'>(()=>workspaceView().view)
+  useEffect(()=>{const changed=()=>{const next=workspaceView();setView(next.view);setSearch(next.search);setFilter(next.filter);setSectionFilter(next.section);setOnlyMine(next.mine)};window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed)},[])
   const addButtonRef = useRef<HTMLButtonElement>(null)
   const autoCaptured = useRef(false)
   const workspaceMounted = useRef(true)

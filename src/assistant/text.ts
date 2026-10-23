@@ -1,0 +1,1 @@
+export const fold=(s:string)=>s.normalize('NFKC').toLowerCase().replace(/[أإآ]/g,'ا').replace(/[\u064b-\u065f\u0670\u0640]/g,'').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/[٠-٩]/g,d=>String(d.charCodeAt(0)-1632)).replace(/\s+/g,' ').trim();
