@@ -4,7 +4,7 @@
 
 **Save the link, remember where you stopped, and know what to do next.**
 
-A multilingual project and study organizer built with React, TypeScript and Firebase. Organize personal cards and shared work, plan university courses and weekly classes, and use a floating Qwen assistant to review and apply changes.
+A multilingual project and study organizer built with React, TypeScript and Firebase. Organize personal cards and shared work, plan university courses and weekly classes, and use a floating AI assistant to review and apply changes.
 
 **[Try the live app](https://where-i-left-off.web.app/)** · **[About Where I Left Off](https://where-i-left-off.web.app/about.html)** · **[العربية](README_AR.md)** · **[Test results](TEST_RESULTS.md)** · **[Security](SECURITY.md)**
 
@@ -51,13 +51,13 @@ University records synchronize through private, account-scoped Firestore records
 
 The current extension can recognize supported Moodle course/task pages that the user opens and explicitly chooses to capture. It does not establish a permanent Moodle account connection or automatically poll for new assignments. See [the university guide](docs/UNIVERSITY_PILOT_AR.md) and [extension instructions](browser-extension/README_AR.md).
 
-## Qwen assistant
+## AI assistant
 
 Open the floating assistant from the signed-in workspace to ask about saved data, request summaries or advice, download plain-text files, and propose changes to cards, courses, tasks, prerequisites and timetable sessions. Review the proposal and choose **Apply changes** to save it. Writes use the same Firebase permissions as the user, check for conflicting edits, and are confirmed from the server before success is shown. Supported undo operations also refuse to overwrite later edits. Tasks linked to phone reminders are edited in University to keep the reminder schedule consistent.
 
-- **Cloud mode:** Qwen3-30B-A3B through the existing Cloudflare Worker. Configure it with `node scripts/setup-free-assistant.mjs`. Provider free quotas apply; the app has a short anti-burst interval, not the former ten-attempt daily cap.
+- **Cloud mode:** GPT-OSS-120B through the existing Cloudflare Worker. Configure it with `node scripts/setup-free-assistant.mjs`. Provider free quotas apply; the app has a short anti-burst interval, not the former ten-attempt daily cap.
 - **Optional on-device mode:** choose **Run Qwen on this device** in the chat. Qwen2.5 1.5B runs through WebLLM in a Web Worker after an explicit, large first download (about 1 GB). It requires WebGPU and sufficient GPU memory (the model configuration lists about 1.6 GB). It has no AI-provider message quota; speed, output quality and context capacity depend on the device. Firebase connectivity is still needed to synchronize and save approved changes. Local-mode failures do not silently send the request to the cloud.
-- **Clear supported commands:** some course, card and timetable commands are handled directly without model inference. Other phrasing uses the selected model.
+- **Structured timetable lists:** standalone lists use validated parsing and cloud course matching. Free-form card/course edits and compound requests use the cloud model.
 
 Chat replies and UI follow Arabic, English or Hebrew. The panel includes animated waiting states for reading data, preparing a reply and saving, plus real model-download progress and reduced-motion support. The assistant uses saved content, does not browse linked pages, and does not execute generated code. See [assistant task acceptance evidence and limitations](docs/AI_ACCEPTANCE_AR.md) and [privacy](https://where-i-left-off.web.app/privacy.html). On-device GPU inference quality and speed have not been validated in the development environment; the tested persistence path and mocked model contracts do not establish that every natural-language request succeeds.
 
@@ -163,4 +163,8 @@ The assistant can propose up to 50 domain operations and 20 reviewed site contro
 
 Browser permissions, account/security and group membership operations use their existing UI with an explicit handoff. Device settings are separate from the Firestore data transaction. The model is not guaranteed to understand every possible request. See the [execution contract, limits and verification notes](docs/ASSISTANT_CAPABILITIES_AR.md).
 
-Course-name differences in timetable lists now use a compact cloud Qwen identity-resolution request instead of requiring an exact saved title. Only existing course IDs are accepted; class times and types remain under client validation. Cloud mode needs no local model download.
+Course-name differences in timetable lists now use a compact cloud model identity-resolution request instead of requiring an exact saved title. Only existing course IDs are accepted; class times and types remain under client validation. Cloud mode needs no local model download.
+
+Workspace requests now use an independent intent inventory before action generation. Each requested field is checked against the proposal, with one bounded semantic repair; incomplete task sets are rejected. Creating a card, assigning its due date and appending a note count as three requests even if implemented by one write. Card notes use the existing editable description field. Provider inference quality is separate from the injected-response persistence tests. See [the capability audit](docs/ASSISTANT_UI_AUDIT_AR.md).
+
+Cloudflare's free allowance is 10,000 neurons/day shared by the account, not unlimited per-user messages. The free-capable model needs no external API key and no model download; no paid-only fallback is configured. [Official model](https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b/) · [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
