@@ -5,7 +5,7 @@ it('allows only the companion origin and presence message without reading a page
  let handler:(message:unknown,sender:unknown,response:unknown)=>void=()=>{}
  const executeScript=vi.fn(),create=vi.fn()
  const chrome={action:{onClicked:{addListener:vi.fn()}},scripting:{executeScript},tabs:{create},runtime:{onMessageExternal:{addListener:(fn:typeof handler)=>{handler=fn}},getManifest:()=>({version:'0.2.2'})}}
- runInNewContext(readFileSync('browser-extension/service-worker.js','utf8'),{chrome,URL})
+ runInNewContext(readFileSync('browser-extension/service-worker.js','utf8').replace(/^import .*\n/, ''),{chrome,URL})
  const reply=vi.fn()
  for(const sender of [{url:'https://evil.test/'},{url:'https://where-i-left-off.web.app.evil.test/'},{url:'http://where-i-left-off.web.app/'},{}])handler({type:'WILO_PING'},sender,reply)
  handler({type:'CAPTURE'},{url:'https://where-i-left-off.web.app/'},reply)

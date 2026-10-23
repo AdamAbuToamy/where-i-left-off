@@ -58,3 +58,11 @@ test('unavailable accounts are erased with all their subscriptions and settings'
  assert.equal(f.env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n,0)
  assert.equal(f.env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM devices').get().n,0)
 })
+test('retired integration endpoint is gone and stale queue jobs never fetch or retry',async()=>{
+ const f=fixture();
+ const response=await f.worker.fetch(new Request('https://worker.test/moodle',{method:'POST',headers:{origin:'https://app.test','content-type':'application/json'},body:JSON.stringify({action:'connect',username:'ignored',password:'ignored'})}),f.env);
+ assert.equal(response.status,410);
+ let acked=false;
+ await f.worker.queue({messages:[{body:{type:'moodle',uid:'alice'},ack(){acked=true},retry(){assert.fail('obsolete job retried')}}]},f.env);
+ assert.equal(acked,true);assert.equal(f.sent.length,0);
+});

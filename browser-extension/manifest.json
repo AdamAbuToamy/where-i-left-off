@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Where I Left Off \u2014 Save this page",
-  "version": "0.2.2",
-  "description": "Save the current page and available video playback position with one click.",
+  "version": "0.4.0",
+  "description": "Save pages and video positions, or review Moodle courses and assignments before adding them to your study plan.",
   "permissions": [
     "activeTab",
     "scripting"
   ],
   "background": {
-    "service_worker": "service-worker.js"
+    "service_worker": "service-worker.js",
+    "type": "module"
   },
   "action": {
     "default_title": "Save this page to Where I Left Off",

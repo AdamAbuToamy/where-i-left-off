@@ -39,3 +39,8 @@ it('rejects malformed booleans, credential-bearing domains and invalid identifie
     { VITE_FIREBASE_PROJECT_ID: '../other-project' }, { VITE_FIREBASE_API_KEY: 'server-key' },
   ]) expect(() => readClientConfiguration({ ...configured, ...patch })).toThrow('invalid-configuration')
 })
+it('supports the provider registered in Firebase and rejects unknown providers',()=>{
+ expect(readClientConfiguration({...configured,VITE_APP_CHECK_PROVIDER:'recaptcha-v3'}).appCheckProvider).toBe('recaptcha-v3');
+ expect(readClientConfiguration(configured).appCheckProvider).toBe('recaptcha-enterprise');
+ expect(()=>readClientConfiguration({...configured,VITE_APP_CHECK_PROVIDER:'debug'})).toThrow('invalid-configuration');
+});

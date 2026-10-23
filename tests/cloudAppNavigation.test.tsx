@@ -1,0 +1,41 @@
+// @vitest-environment jsdom
+import {act} from 'react';import {createRoot} from 'react-dom/client';import {it,expect,vi} from 'vitest';
+const fake=vi.hoisted(()=>({crash:'',user:{uid:'same-user-key',displayName:'Tester',email:'tester@example.test',emailVerified:true}}));
+vi.mock('../src/lib/firebase',()=>({auth:{},db:{},configured:true,emulatorMode:false}));
+vi.mock('firebase/auth',()=>({onAuthStateChanged:(_auth:unknown,next:(user:unknown)=>void)=>{next(fake.user);return()=>{};},signOut:vi.fn()}));
+vi.mock('../src/lib/pushNotifications',()=>({useInstalledApp:()=>false,preparePushSignOut:async()=>{}}));
+vi.mock('../src/lib/logging',()=>({logEvent:vi.fn(),flushLogs:async()=>{},traced:async(_name:string,fn:()=>unknown)=>fn(),safeCode:()=>''}));
+vi.mock('../src/lib/theme',()=>({applyTheme:()=>{}}));
+vi.mock('../src/components/CloudPushSync',()=>({default:()=> <aside data-common="push"/>}));
+vi.mock('../src/components/WelcomeTour',()=>({default:()=> <aside data-common="tour"/>}));
+vi.mock('../src/components/WorkflowAgent',()=>({default:()=>null}));vi.mock('../src/components/AnnouncementInbox',()=>({default:()=>null}));vi.mock('../src/components/ExtensionInstall',()=>({default:()=>null}));vi.mock('../src/components/PushLifecycle',()=>({default:()=>null}));
+vi.mock('../src/components/SideNavigation',()=>({default:()=>null}));vi.mock('../src/assistant/AssistantWidget',()=>({default:()=>null}));vi.mock('../src/components/AuthPanel',()=>({default:()=>null}));
+vi.mock('../src/components/Support',()=>({default:()=>null,LegalLinks:()=> <footer data-footer="legal"/>}));
+vi.mock('../src/components/AccountDeletion',()=>({AccountLifecycle:({children}:{children:unknown})=>children}));
+vi.mock('../src/components/IdleSleep',()=>({default:({children}:{children:unknown})=>children}));
+vi.mock('../src/components/AccountPage',()=>({default:({page}:{page:string})=>{if(fake.crash===page)throw new Error('simulated-page-error');return <section data-screen={page}/>;} }));
+import CloudApp from '../src/CloudApp';
+it('the complete app shell works without randomUUID and keeps unique keys and one route through repeated navigation',async()=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const errors=vi.spyOn(console,'error').mockImplementation(()=>{}),node=document.createElement('div');document.body.append(node);const root=createRoot(node);
+ try{
+  vi.stubGlobal('crypto',{getRandomValues:globalThis.crypto.getRandomValues.bind(globalThis.crypto)});
+  await act(async()=>root.render(<CloudApp/>));
+  for(const page of ['personal','resume','university','settings','analytics','groups','admin','resume','personal']){
+   await act(async()=>{window.location.hash='/'+page;window.dispatchEvent(new HashChangeEvent('hashchange'));});
+   expect(node.querySelectorAll('[data-screen]')).toHaveLength(1);expect(node.querySelector('[data-screen]')?.getAttribute('data-screen')).toBe(page);expect(node.querySelectorAll('[data-common]')).toHaveLength(2);expect(node.querySelectorAll('[data-footer]')).toHaveLength(1);
+  }
+  expect(errors.mock.calls.filter(call=>String(call[0]).includes('same key'))).toEqual([]);
+ }finally{act(()=>root.unmount());node.remove();errors.mockRestore();vi.unstubAllGlobals();}
+});
+
+it('isolates a feature render error and lets navigation recover without reloading the entire site',async()=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const errors=vi.spyOn(console,'error').mockImplementation(()=>{}),node=document.createElement('div');document.body.append(node);const root=createRoot(node);
+ try {
+  window.location.hash='/personal';await act(async()=>root.render(<CloudApp/>));
+  fake.crash='university';await act(async()=>{window.location.hash='/university';window.dispatchEvent(new HashChangeEvent('hashchange'));});
+  expect(node.querySelector('.account-page-outlet [role=alert]')).not.toBeNull();
+  expect(node.querySelector('.header-signout')).not.toBeNull();expect(node.querySelectorAll('[data-common]')).toHaveLength(2);
+  await act(async()=>{window.location.hash='/analytics';window.dispatchEvent(new HashChangeEvent('hashchange'));});
+  expect(node.querySelector('[data-screen]')?.getAttribute('data-screen')).toBe('analytics');expect(node.querySelectorAll('[role=alert]')).toHaveLength(0);
+ } finally {fake.crash='';act(()=>root.unmount());node.remove();errors.mockRestore();vi.unstubAllGlobals();}
+});

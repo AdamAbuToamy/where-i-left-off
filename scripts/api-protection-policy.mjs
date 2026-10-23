@@ -1,0 +1,26 @@
+// Only Firebase services actually used by this site's Authentication, Firestore and App Check.
+export const REQUIRED_SERVICES = ['firebase.googleapis.com','logging.googleapis.com','firebaseappcheck.googleapis.com','identitytoolkit.googleapis.com','securetoken.googleapis.com','datastore.googleapis.com','firestore.googleapis.com'];
+export const PRODUCTION_ORIGINS = ['https://where-i-left-off.web.app','https://where-i-left-off.firebaseapp.com'];
+function matches(pattern, value) {
+ if(typeof pattern!=='string'||pattern.length>2000)return false;
+ const regex=pattern.split('*').map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*');
+ return new RegExp('^'+regex+'$').test(value);
+}
+export function inspectRestrictions(restrictions={}) {
+ const targets=restrictions.apiTargets||[];
+ const missingServices=targets.length?REQUIRED_SERVICES.filter(service=>!targets.some(t=>t.service===service)):[];
+ const methodRestricted=targets.filter(t=>REQUIRED_SERVICES.includes(t.service)&&t.methods?.length).map(t=>t.service);
+ const browser=restrictions.browserKeyRestrictions;
+ const incompatibleApplication=Boolean(restrictions.serverKeyRestrictions||restrictions.androidKeyRestrictions||restrictions.iosKeyRestrictions);
+ const missingOrigins=browser?PRODUCTION_ORIGINS.filter(origin=>!['','/','/index.html','/__/auth/handler'].every(path=>(browser.allowedReferrers||[]).some(pattern=>matches(pattern,origin+path)))):[];
+ return {apiRestricted:targets.length>0,applicationRestricted:Boolean(browser)||incompatibleApplication,missingServices,methodRestricted,missingOrigins,incompatibleApplication,unrelatedGenerativeApiAllowed:!targets.length||targets.some(t=>t.service==='generativelanguage.googleapis.com')};
+}
+export function repairRestrictions(restrictions={}) {
+ const report=inspectRestrictions(restrictions);
+ // Do not convert mobile/server keys, discard method limits or silently broaden unrestricted keys.
+ if(report.incompatibleApplication||report.methodRestricted.length)throw new Error('manual-restriction-review-required');
+ const next=structuredClone(restrictions);
+ if(report.missingServices.length)next.apiTargets=[...(next.apiTargets||[]),...report.missingServices.map(service=>({service}))];
+ if(report.missingOrigins.length)next.browserKeyRestrictions.allowedReferrers=[...(next.browserKeyRestrictions.allowedReferrers||[]),...report.missingOrigins.flatMap(origin=>[origin,origin+'/*'])];
+ return {report,changed:Boolean(report.missingServices.length||report.missingOrigins.length),restrictions:next};
+}

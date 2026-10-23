@@ -30,3 +30,11 @@ push-worker/wrangler.local.json
 push-worker/.push-private.json
 .dev.vars
 .dev.vars.*
+
+push-worker/.moodle-private.json
+
+app-check-repair-report.json
+
+api-protection-report.json
+
+push-worker/wrangler.local.json.backup-*

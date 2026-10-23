@@ -1,6 +1,6 @@
 import { readClientConfiguration } from './clientConfiguration'
 import { initializeApp } from 'firebase/app'
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, ReCaptchaV3Provider } from 'firebase/app-check'
 import { connectAuthEmulator, getAuth } from 'firebase/auth'
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 
@@ -12,7 +12,7 @@ const app = runtime.firebase ? initializeApp(runtime.firebase) : null
 const appCheckSiteKey = runtime.appCheckSiteKey
 export const appCheck = app && !emulatorMode && import.meta.env.PROD && appCheckSiteKey
   ? initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+    provider: runtime.appCheckProvider === 'recaptcha-v3' ? new ReCaptchaV3Provider(appCheckSiteKey) : new ReCaptchaEnterpriseProvider(appCheckSiteKey),
     isTokenAutoRefreshEnabled: true,
   }) : null
 export const auth = app ? getAuth(app) : null

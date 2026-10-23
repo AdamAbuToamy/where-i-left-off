@@ -8,7 +8,8 @@ import type { User } from 'firebase/auth'
 import LogViewer from './LogViewer'
 import { pageText } from '../pageText'
 import { isProtectedAdminAccount } from '../lib/admin'
-import { cloudText } from '../cloudTranslations'
+import { logEvent } from '../lib/logging'
+import { cloudText, errorText } from '../cloudTranslations'
 import { readUserMetrics, setUserSuspended } from '../lib/repository'
 import type { UserMetric } from '../lib/repository'
 import './AdminDashboard.css'
@@ -23,7 +24,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
   const [metrics, setMetrics] = useState<UserMetric[]>([])
   const [active, setActive] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<unknown>(null)
   const [attempt, setAttempt] = useState(0)
   const [confirming, setConfirming] = useState<string | null>(null)
   const [pending, setPending] = useState<string | null>(null)
@@ -35,7 +36,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
         setMetrics(result)
         setActive(result.filter(metric => metric.lastSeen?.toDate?.().getTime() >= recent).length)
       }
-    }).catch(() => { if (alive) setError(true) }).finally(() => { if (alive) setLoading(false) })
+    }).catch(error => { if (alive) {setError(error);logEvent('admin.accounts',error)} }).finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
   }, [db, attempt])
   const suspended = metrics.filter(metric => metric.suspended).length
@@ -52,7 +53,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
   return <section className="admin-dashboard">
     <h2>{t.adminTitle}</h2>
     <nav className="admin-sections" aria-label={t.adminTitle}><a className={section === 'accounts' ? 'is-current' : ''} aria-current={section === 'accounts' ? 'page' : undefined} href="#/admin">{p.adminAccounts}</a><a className={section === 'logs' ? 'is-current' : ''} aria-current={section === 'logs' ? 'page' : undefined} href="#/admin/logs">{p.logs}</a><a className={section === 'support' ? 'is-current' : ''} href="#/admin/support" aria-current={section === 'support' ? 'page' : undefined}>{supportText[language].admin}</a></nav>
-    {section === 'support' ? <FeedbackList user={user} language={language} admin /> : section === 'logs' ? <LogViewer user={user} language={language} /> : loading ? <p role="status">…</p> : error ? <div role="alert"><p>{c.error}</p><button className="secondary-button" onClick={() => { setError(false); setLoading(true); setAttempt(value => value + 1) }}>{c.retry}</button></div> : <>
+    {section === 'support' ? <FeedbackList user={user} language={language} admin /> : section === 'logs' ? <LogViewer user={user} language={language} /> : loading ? <p role="status">…</p> : error ? <div role="alert"><p>{errorText(error,language)}</p><button className="secondary-button" onClick={() => { setError(null); setLoading(true); setAttempt(value => value + 1) }}>{c.retry}</button></div> : <>
       <div className="admin-stats">
       <article><strong>{metrics.length}</strong><span>{t.accountsSeen}</span></article>
       <article><strong>{active}</strong><span>{t.activeThisWeek}</span></article>

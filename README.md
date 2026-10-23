@@ -134,3 +134,7 @@ See [architecture decisions](docs/ARCHITECTURE.md) for domain objects, storage i
 ## Free installed-app notifications / إشعارات التطبيق المثبّت
 
 Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).
+
+## University semester planner
+
+Verified students can organize courses, study-topic checklists, assignments, exams, weekly lessons and prerequisite maps. Paste spreadsheet rows with a preview, duplicate detection and timetable conflict warnings. University records remain in browser storage scoped to the account and project; export and restore JSON to move them between devices. Phone reminders require explicit opt-in. No institutional credentials or background LMS connection are used. See docs/UNIVERSITY_PILOT_AR.md.

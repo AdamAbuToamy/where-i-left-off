@@ -34,7 +34,7 @@ export function readLogs(uid = auth?.currentUser?.uid || ''): LogEntry[] {
 function notify() { window.dispatchEvent(new Event('diagnostics-updated')) }
 export function logEvent(event: string, error?: unknown, level: LogLevel = 'error', durationMs = 0): string {
   const uid = auth?.currentUser?.uid || '', code = error === undefined ? 'none' : safeCode(error)
-  const match = /^#\/(personal|groups|settings|logs|admin)(?:\/([A-Za-z0-9]{20}))?$/.exec(location.hash.split('?')[0])
+  const match = /^#\/(personal|groups|settings|logs|admin|resume|university|library|analytics|notifications|support)(?:\/([A-Za-z0-9]{20}))?$/.exec(location.hash.split('?')[0])
   const page = match ? `#/${match[1]}${match[2] ? '/:group' : ''}` : '/personal'
   const dedupe = `${uid}/${event}/${code}/${page}`
   const previous = recent.get(dedupe)

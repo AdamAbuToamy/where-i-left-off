@@ -1,3 +1,4 @@
+import { createClientId } from './clientId'
 import { useEffect,useState } from 'react'
 import { doc,onSnapshot,setDoc,serverTimestamp } from 'firebase/firestore'
 import { db,auth } from './firebase'
@@ -27,7 +28,7 @@ export function flushPreferences(uid:string):Promise<void>{
 export async function savePreferences(uid:string,value:WorkflowPreferences){
  if(auth?.currentUser?.uid!==uid)throw new Error('permission-denied')
  // Persist the outbox before writing so a reload cannot discard the choice.
- localStorage.setItem(pendingKey(uid),JSON.stringify({value,id:crypto.randomUUID()}))
+ localStorage.setItem(pendingKey(uid),JSON.stringify({value,id:createClientId()}))
  localStorage.setItem(key(uid),JSON.stringify(value));notify()
  await flushPreferences(uid)
 }

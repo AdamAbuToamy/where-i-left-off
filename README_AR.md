@@ -82,3 +82,7 @@ npm run test:all
 ## Free installed-app notifications / إشعارات التطبيق المثبّت
 
 Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).
+
+## خطة الفصل الجامعي
+
+تنظيم مستقل للكورسات، خطة المذاكرة، الوظائف، الامتحانات والجدول وخريطة المتطلبات. إدخال دفعات من Excel مع معاينة وكشف التكرار والتداخل. البيانات محلية لكل حساب، ويمكن نقلها بتصدير واستعادة نسخة احتياطية. تذكير الهاتف اختياري. لا يوجد ربط بمنصة جامعية أو طلب كلمة مرور الجامعة. التفاصيل في docs/UNIVERSITY_PILOT_AR.md.

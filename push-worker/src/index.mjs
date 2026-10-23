@@ -1,3 +1,4 @@
+import {assistant} from './assistant.mjs'
 import {defaults,preferences,clock,validSubscription,cardKey,candidate,quietNow,localParts} from '../policy.mjs'
 import {nextCheck,afterQuiet} from '../schedule.mjs'
 import * as firebase from './firebase.mjs'
@@ -146,6 +147,7 @@ export function createWorker(overrides={}){
    headers['access-control-allow-origin']=origin
    headers['access-control-allow-headers']='authorization,content-type,x-firebase-appcheck'
    headers['access-control-allow-methods']='POST,OPTIONS'
+   if(new URL(request.url).pathname==='/moodle')return new Response(JSON.stringify({error:'integration-removed'}),{status:410,headers})
    if(request.method==='OPTIONS')return new Response(null,{status:204,headers})
    if(request.method!=='POST')return new Response('{}',{status:405,headers})
    let requestedAction='unknown'
@@ -155,12 +157,15 @@ export function createWorker(overrides={}){
     const data=JSON.parse(text)
     if(['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase'].includes(data.action))requestedAction=data.action
     const identity=await f.verifyIdentity(request,env)
-    const result=await action(env,identity,data)
+    let result
+    if(new URL(request.url).pathname==='/assistant'){if(identity.emailVerified!==true)throw new Error('account-unavailable');await f.accountAvailable(env,identity.uid);await store.ensureAccount(env,identity.uid,defaults);result=await assistant(env,identity.uid,data)}
+    else result=await action(env,identity,data)
     console.info('push.http',{action:requestedAction,status:200})
     return new Response(JSON.stringify({result}),{headers})
-   }catch(error){const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':'request-failed'}),{status,headers})}
+   }catch(error){const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed'}),{status,headers})}
   },
   async scheduled(_controller,env){
+   if(env.ASSISTANT_FREE_ONLY==='true')try{const cutoff=new Date(Date.now()-7*DAY).toISOString().slice(0,10);await env.DB.prepare('DELETE FROM ai_usage WHERE day<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM ai_budget WHERE day<?').bind(cutoff).run()}catch{console.warn('assistant.maintenance.failed')}
    const now=Date.now(),due=await env.DB.prepare('SELECT s.uid,s.scope FROM scopes s JOIN accounts a ON a.uid=s.uid WHERE s.next_at<=? AND s.lease<=? AND a.enabled=1 ORDER BY s.next_at LIMIT 10').bind(now,now).all()
    for(const scope of due.results){
     const lock=await env.DB.prepare('UPDATE scopes SET lease=? WHERE uid=? AND scope=? AND lease<=? RETURNING uid').bind(now+120000,scope.uid,scope.scope,now).all()
@@ -170,6 +175,8 @@ export function createWorker(overrides={}){
   },
   async queue(batch,env){
    for(const message of batch.messages){
+    // A previous deployment may have left integration jobs on this shared push queue.
+    if(!['plan','deliver','test'].includes(message.body?.type)){message.ack();continue}
     try{console.info('push.queue.started',{type:['plan','deliver','test'].includes(message.body.type)?message.body.type:'unknown'});if(message.body.type==='plan')await plan(env,message.body);else await deliver(env,message.body);console.info('push.queue.completed');message.ack()}
     catch(error){
      if(error.message==='account-unavailable'){await store.erase(env,message.body.uid);message.ack()}

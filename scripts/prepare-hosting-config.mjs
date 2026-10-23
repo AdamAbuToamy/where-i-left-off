@@ -21,6 +21,7 @@ const env = {
   VITE_FIREBASE_PROJECT_ID: config.projectId,
   VITE_FIREBASE_APP_ID: config.appId,
   VITE_RECAPTCHA_ENTERPRISE_SITE_KEY: key,
+  VITE_APP_CHECK_PROVIDER: bundle.match(/VITE_APP_CHECK_PROVIDER\s*:\s*[`"'](recaptcha-enterprise|recaptcha-v3)[`"']/)?.[1] || 'recaptcha-enterprise',
   VITE_USE_EMULATORS: 'false',
   VITE_TEST_OFFLINE: 'false',
 }

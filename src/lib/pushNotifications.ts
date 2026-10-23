@@ -24,7 +24,7 @@ export function notificationEndpoint() {
     return url.href
   }).catch(error=>{pushEndpoint=undefined;throw error})
 }
-export async function pushCall<T=unknown>(data:Record<string,unknown>):Promise<T> {
+export async function pushCall<T=unknown>(data:Record<string,unknown>,options:{path?:'/assistant';timeout?:number}={}):Promise<T> {
   if (!db || !auth?.currentUser) throw new Error('Sign in first')
   const uid=auth.currentUser.uid
   const [endpoint,identity,appcheck]=await Promise.all([
@@ -32,9 +32,11 @@ export async function pushCall<T=unknown>(data:Record<string,unknown>):Promise<T
     emulatorMode?Promise.resolve({token:'local-browser-test-only'}):appCheck?getToken(appCheck,false):Promise.reject(new Error('app-check-required')),
   ])
   if(auth.currentUser?.uid!==uid)throw new Error('account-changed')
-  const response=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json',Authorization:`Bearer ${identity}`,'X-Firebase-AppCheck':appcheck.token},body:JSON.stringify(data),signal:AbortSignal.timeout(20000)})
-  if(!response.ok)throw new Error('push-request-failed')
-  const result=(await response.json()).result as T
+  const response=await fetch(options.path?new URL(options.path,endpoint).href:endpoint,{method:'POST',headers:{'content-type':'application/json',Authorization:`Bearer ${identity}`,'X-Firebase-AppCheck':appcheck.token},body:JSON.stringify(data),signal:AbortSignal.timeout(options.timeout||20000)})
+  const body=await response.json()
+  if(auth.currentUser?.uid!==uid)throw new Error('account-changed')
+  if(!response.ok)throw new Error(options.path&&/^ai-[a-z-]+$/.test(body.error)?body.error:'push-request-failed')
+  const result=body.result as T
   if(data.action==='save')window.dispatchEvent(new Event('push-preferences-changed'))
   return result
 }

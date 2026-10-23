@@ -3,7 +3,7 @@ import { ConfigurationError } from './appError.ts'
 export const PUBLIC_ENV_KEYS = [
   'VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_APP_ID',
   'VITE_RECAPTCHA_ENTERPRISE_SITE_KEY', 'VITE_USE_EMULATORS', 'VITE_EMULATOR_HOST', 'VITE_TEST_OFFLINE',
-  'VITE_REQUIRE_APP_CHECK', 'VITE_REQUIRE_FIREBASE_CONFIG',
+  'VITE_REQUIRE_APP_CHECK', 'VITE_REQUIRE_FIREBASE_CONFIG', 'VITE_APP_CHECK_PROVIDER',
 ] as const
 
 type Environment = Record<string, unknown>
@@ -13,6 +13,7 @@ export type ClientConfiguration = {
   emulatorMode: boolean
   emulatorHost: string
   appCheckSiteKey: string
+  appCheckProvider: 'recaptcha-enterprise' | 'recaptcha-v3'
 }
 
 /** VITE values are public. Reject new exposure until it is explicitly reviewed. */
@@ -47,12 +48,14 @@ export function readClientConfiguration(env: Environment): ClientConfiguration {
   const requireFirebase = flag(env, 'VITE_REQUIRE_FIREBASE_CONFIG')
   const emulatorHost = text(env, 'VITE_EMULATOR_HOST') || '127.0.0.1'
   if (!/^(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+$/.test(emulatorHost)) throw new ConfigurationError()
+  const appCheckProvider = text(env, 'VITE_APP_CHECK_PROVIDER') || 'recaptcha-enterprise'
+  if (appCheckProvider !== 'recaptcha-enterprise' && appCheckProvider !== 'recaptcha-v3') throw new ConfigurationError()
   const appCheckSiteKey = text(env, 'VITE_RECAPTCHA_ENTERPRISE_SITE_KEY')
   if (appCheckSiteKey && !/^[A-Za-z0-9_-]{20,200}$/.test(appCheckSiteKey)) throw new ConfigurationError()
   if (emulatorMode) {
     if (requireAppCheck || requireFirebase) throw new ConfigurationError()
     return {
-      emulatorMode, emulatorHost, appCheckSiteKey: '',
+      emulatorMode, emulatorHost, appCheckSiteKey: '', appCheckProvider,
       firebase: { apiKey: 'demo-key', authDomain: 'demo-where-i-left-off.firebaseapp.com', projectId: 'demo-where-i-left-off', appId: 'demo-app' },
     }
   }
@@ -71,5 +74,5 @@ export function readClientConfiguration(env: Environment): ClientConfiguration {
   }
   const configured = Object.values(firebase).every(Boolean)
   if ((requireFirebase && !configured) || (requireAppCheck && (!configured || !appCheckSiteKey))) throw new ConfigurationError()
-  return { firebase: configured ? firebase : null, emulatorMode, emulatorHost, appCheckSiteKey }
+  return { firebase: configured ? firebase : null, emulatorMode, emulatorHost, appCheckSiteKey, appCheckProvider }
 }

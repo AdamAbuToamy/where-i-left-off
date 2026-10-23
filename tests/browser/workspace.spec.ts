@@ -50,12 +50,20 @@ test('phone creation, two sessions, persistence, edits, ordering, isolation and 
   const email = `owner-${Date.now()}@example.test`
   await login(phone, email, true)
   await login(page, email)
-  const followUp = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)
+  const followUp = await page.evaluate(() => {
+    const date = new Date()
+    date.setDate(date.getDate() + 2)
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+  })
   await add(phone, 'Robot arm', { projectUrl: 'https://example.test/robot', attachmentUrl: 'https://example.test/robot-photo', dueDate: followUp })
   await expect(page.getByRole('heading', { name: 'Robot arm', exact: true })).toBeVisible()
   await expect(page.locator('a[href="https://example.test/robot"]')).toBeVisible()
   await expect(page.locator('a[href="https://example.test/robot-photo"]')).toBeVisible()
   await page.getByRole('button', { name: 'Week', exact: true }).click()
+  await expect(page.locator('.week-day')).toHaveCount(7)
+  const scheduledDay = page.locator(`.week-day time[datetime="${followUp}"]`)
+  if (await scheduledDay.count() === 0) await page.getByRole('button', { name: 'Next week', exact: true }).click()
+  await expect(scheduledDay).toBeVisible()
   await expect(page.locator('.week-item').filter({ hasText: 'Robot arm' })).toBeVisible()
   await page.getByRole('button', { name: 'Cards', exact: true }).click()
   await add(page, 'STOMP')

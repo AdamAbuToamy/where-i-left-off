@@ -6,6 +6,7 @@ import { workflowText } from '../workflowText'
 
 const labels = { en: 'Menu', ar: 'القائمة', he: 'תפריט' }
 const paths: Record<string, string> = {
+  university: 'M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3z M12 6v16',
   resume: 'm9 5 10 7-10 7z', personal: 'M3 7h7l2 2h9v11H3z M3 7V4h7l2 3',
   groups: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M17 4a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-4',
   library: 'M3 5h18v4H3z M5 9v12h14V9 M10 13h4', analytics: 'M4 20h17 M7 16V9 M12 16V4 M17 16v-5',
@@ -30,9 +31,9 @@ export default function SideNavigation({ language, page, admin }: { language: La
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={open ? 'm6 6 12 12 M18 6 6 18' : 'M4 6h16 M4 12h16 M4 18h16'} /></svg><span>{labels[language]}</span>
     </button>
     <nav id={id} className="page-navigation" aria-label={labels[language]} aria-hidden={!open} inert={!open} onFocus={() => setOpen(true)}>
-      {(['resume', 'personal', 'groups', 'library', 'analytics', 'settings', ...(admin ? ['admin'] : [])] as PageName[]).map(item => <a key={item} href={`#/${item}`} aria-current={page === item ? 'page' : undefined} onClick={() => { setOpen(false); toggle.current?.focus() }}>
+      {(['resume', 'personal', 'groups', 'library', 'analytics', 'university', 'settings', ...(admin ? ['admin'] : [])] as PageName[]).map(item => <a key={item} href={`#/${item}`} aria-current={page === item ? 'page' : undefined} onClick={() => { setOpen(false); toggle.current?.focus() }}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[item]} /></svg>
-        <span>{item === 'library' ? w.library : item === 'analytics' ? w.analytics : t[item as keyof typeof t]}</span>
+        <span>{item === 'university' ? ({ar:'الجامعة',en:'University',he:'אוניברסיטה'}[language]) : item === 'library' ? w.library : item === 'analytics' ? w.analytics : t[item as keyof typeof t]}</span>
       </a>)}
     </nav>
   </div>

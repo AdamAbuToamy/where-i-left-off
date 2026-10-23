@@ -1,7 +1,18 @@
+import { readMoodlePage } from './moodle-page.js'
 const APP_URL = 'https://where-i-left-off.web.app/'
 chrome.action.onClicked.addListener(async tab => {
  const pageUrl=tab.url || '',pageTitle=(tab.title || '').trim()
  if(!pageTitle||!/^https?:\/\//i.test(pageUrl))return
+ try {
+  const results = await chrome.scripting.executeScript({target:{tabId:tab.id},func:readMoodlePage});
+  const study = results[0]?.result;
+  if (study) {
+   const target = new URL(APP_URL);
+   target.hash = '/university?studyCapture=' + encodeURIComponent(JSON.stringify(study));
+   await chrome.tabs.create({url:target.href,active:true});
+   return;
+  }
+ } catch { /* Unknown layouts retain the ordinary page-saving flow. */ }
  let checkpoint='',capturedUrl=pageUrl,resource='project'
  try{
   const results=await chrome.scripting.executeScript({target:{tabId:tab.id},func:()=>{

@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 
 function sourceFiles() {
   try {
-    return execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\0').filter(Boolean)
+    return execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\0').filter(name => name && existsSync(name))
   } catch {
     // Downloaded source archives have no Git metadata. Local .env files are
     // expected here; their public values are validated separately by Vite.
@@ -24,7 +24,7 @@ function collect(directory) {
   })
 }
 const paths = [...new Set([...names, ...collect('src'), ...collect('public'), ...(process.argv.includes('--dist') ? collect('dist') : [])])]
-const credential = /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|"type"\s*:\s*"service_account"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|sk-(?:proj-)?[A-Za-z0-9_-]{40,}/
+const credential = /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|"type"\s*:\s*"service_account"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|(?<![A-Za-z0-9+/])AKIA[0-9A-Z]{16}(?![A-Za-z0-9+/])|sk-(?:proj-)?[A-Za-z0-9_-]{40,}/
 const failures = []
 for (const name of paths) {
   const base = name.split('/').at(-1)

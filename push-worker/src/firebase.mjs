@@ -9,7 +9,7 @@ export async function verifyIdentity(request,env,keys={auth:authKeys,app:appKeys
   jwtVerify(appcheck,keys.app,{issuer:`https://firebaseappcheck.googleapis.com/${env.FIREBASE_APP_ID.split(':')[1]}`,audience:`projects/${env.FIREBASE_APP_ID.split(':')[1]}`,algorithms:['RS256']})
  ])
  if(typeof identity.payload.exp!=='number' || typeof identity.payload.iat!=='number' || identity.payload.iat>Date.now()/1000 || typeof identity.payload.auth_time!=='number' || !identity.payload.sub || identity.payload.sub.length>128 || identity.payload.auth_time>Date.now()/1000 || !identity.payload.auth_time || app.payload.sub!==env.FIREBASE_APP_ID)throw new Error('unauthenticated')
- return {uid:identity.payload.sub,token:{auth:bearer.slice(7),appcheck}}
+ return {uid:identity.payload.sub,emailVerified:identity.payload.email_verified===true,token:{auth:bearer.slice(7),appcheck}}
 }
 let credentials,signingKey,oauth
 async function accessToken(env) {

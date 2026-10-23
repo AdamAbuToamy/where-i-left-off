@@ -77,11 +77,31 @@ service cloud.firestore {
           && (!d.keys().hasAny(['revision']) || d.revision is int && d.revision >= 0)
           && (!d.keys().hasAny(['mutationId']) || d.mutationId is string && d.mutationId.size() <= 100);
       }
+    match /users/{uid}/studyRecords/{recordId} {
+      function owner() { return signedActive() && request.auth.uid == uid && request.auth.token.email_verified == true; }
+      function validStudyRecord() {
+        let d=request.resource.data;
+        return d.keys().hasOnly(['kind','id','payload','deleted','revision','mutationId','updatedAt'])
+          && d.keys().hasAll(['kind','id','payload','deleted','revision','mutationId','updatedAt'])
+          && d.kind in ['courses','tasks','lessons']
+          && d.id is string && d.id.size()>0 && d.id.size()<=600 && d.id.matches('^[A-Za-z0-9_-]+$')
+          && recordId==d.kind+'_'+d.id && validText(d.payload,600000)
+          && d.deleted is bool && (!d.deleted || d.payload=='')
+          && validText(d.mutationId,100) && d.mutationId.size()>0
+          && d.revision is int && d.revision>=0 && d.updatedAt==request.time;
+      }
+      allow read: if owner();
+      allow create: if owner() && validStudyRecord() && request.resource.data.revision==0;
+      allow update: if owner() && validStudyRecord() && request.resource.data.revision==resource.data.revision+1;
+      // Tombstones keep another device from silently recreating a deleted item.
+      allow delete: if false;
+    }
+
     match /users/{uid}/projects/{projectId} {
       function owner() { return request.auth != null && request.auth.uid == uid; }
       function activeAccount() {
         let path = /databases/$(database)/documents/appMetrics/$(uid);
-        return (!exists(path) || get(path).data.suspended != true)
+        return (!exists(path) || get(path).data.get('suspended', false) != true)
           && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
       }
       allow read, delete: if owner() && activeAccount();
@@ -93,7 +113,7 @@ service cloud.firestore {
       function owner() { return request.auth != null && request.auth.uid == uid; }
       function activeAccount() {
         let path = /databases/$(database)/documents/appMetrics/$(uid);
-        return (!exists(path) || get(path).data.suspended != true)
+        return (!exists(path) || get(path).data.get('suspended', false) != true)
           && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
       }
       allow read, delete: if owner() && activeAccount();
@@ -106,7 +126,7 @@ service cloud.firestore {
 
     function signedActive() {
       return request.auth != null && (!exists(/databases/$(database)/documents/appMetrics/$(request.auth.uid))
-        || get(/databases/$(database)/documents/appMetrics/$(request.auth.uid)).data.suspended != true)
+        || get(/databases/$(database)/documents/appMetrics/$(request.auth.uid)).data.get('suspended', false) != true)
         && !exists(/databases/$(database)/documents/accountDeletions/$(request.auth.uid));
     }
     function groupMember(gid) {
@@ -383,8 +403,8 @@ service cloud.firestore {
         && request.resource.data.suspended == false;
       allow update: if (owner() && signedActive() && validOwnerMetric()
           && request.resource.data.firstSeen == resource.data.firstSeen
-          && request.resource.data.suspended == resource.data.suspended
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen', 'email']))
+          && request.resource.data.suspended == resource.data.get('suspended', false)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen', 'email', 'suspended']))
         || (admin() && resource.data.email != 'adam2002hosny@gmail.com'
           && request.resource.data.email != 'adam2002hosny@gmail.com'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended'])
