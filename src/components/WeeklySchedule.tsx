@@ -1,21 +1,21 @@
 import { useState } from 'react'
-import { localDateKey } from '../lib/projects'
+import { localDateKey, validDate } from '../lib/projects'
 import type { Project } from '../types'
 import type { Language } from '../translations'
 import { translations } from '../translations'
 import './WeeklySchedule.css'
 
-type Props = { projects: Project[]; language: Language }
+type Props = { projects: Project[]; language: Language; weekOf?: string }
 const weekdays: Record<Language, string[]> = {
   ar: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
   he: ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'],
   en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
 }
 
-export default function WeeklySchedule({ projects, language }: Props) {
+export default function WeeklySchedule({ projects, language, weekOf }: Props) {
   const t = translations[language]
   const [offset, setOffset] = useState(0)
-  const today = new Date()
+  const today = weekOf && validDate(weekOf) ? new Date(Number(weekOf.slice(0,4)), Number(weekOf.slice(5,7))-1, Number(weekOf.slice(8,10))) : new Date()
   const sunday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + offset * 7)
   const days = weekdays[language]
   const week = Array.from({ length: 7 }, (_, index) => {

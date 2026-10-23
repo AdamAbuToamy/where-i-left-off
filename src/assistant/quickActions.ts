@@ -7,16 +7,8 @@ const words = {
  he: {courses:'הקורסים שלך:',none:'עדיין אין קורסים.',review:'יש לבדוק את השינוי המוצע ולאשר לשמירה.',which:'לאיזה קורס הכוונה? יש לציין שם, יום ושעת התחלה וסיום.',duplicate:'המפגש כבר מופיע במערכת השעות.'},
 };
 import { fold } from './text';
-import { bulkTimetableReply } from './bulkTimetable';
+import { bulkTimetableReply, isStandaloneTimetableList } from './bulkTimetable';
 export { fold } from './text';
-function originalPart(original:string,part:string,last=false):string {
- const normalized=fold(original),start=last?normalized.lastIndexOf(part):normalized.indexOf(part);if(start<0)return part;
- // Prefix lengths support Arabic diacritics and Latin case without altering saved user text.
- let begin=0,end=original.length;
- for(let i=0;i<=original.length;i++){const length=fold(original.slice(0,i)).length;if(length>start){begin=i-1;if(begin>0&&original.charCodeAt(begin)>=0xdc00&&original.charCodeAt(begin)<=0xdfff)begin--;break;}}
- for(let i=begin;i<=original.length;i++)if(fold(original.slice(0,i)).length>=start+part.length){end=i;break;}
- return original.slice(begin,end).trim();
-}
 const arabicNumbers=['واحده','اثنتين','ثنتين','اثنين','ثنين','ثلاثه','اربعه','خمسه','سته','سبعه','ثمانيه','تسعه','عشره','احدي عشره','اثنتي عشره'];
 const numberValues=[1,2,2,2,2,3,4,5,6,7,8,9,10,11,12];
 const numberPattern='(?:\\d{1,2}(?::\\d{2})?|(?:ال)?(?:'+[...arabicNumbers].sort((a,b)=>b.length-a.length).join('|')+'))';
@@ -36,7 +28,7 @@ const heSchedule=new RegExp(`^הוסף (.+?) למערכת (?:השעות )?ביו
 /** A narrow, fully matched command grammar. Unknown or compound requests go to AI.
  * It returns proposals only; the existing domain validator and Firebase transaction still apply. */
 export function quickAssistantReply(message:string,data:AssistantData,language:Language,history:{role:string;content:string}[]=[]):AssistantReply|null {
- const bulk=bulkTimetableReply(message,data,language);if(bulk)return bulk;
+ if(message.includes('|'))return isStandaloneTimetableList(message)?bulkTimetableReply(message,data,language):null;
  let text=fold(message);const t=words[language];
  const reply=(text:string):AssistantReply=>({text,actions:[],files:[]});
  if(/^(?:ما (?:هي )?الكورسات (?:التي عندي|عندي)|اذكر (?:اسماء )?الكورسات(?: الموجوده عندي)?(?: فقط)?|(?:list|show) my courses|what courses do i have|מה הקורסים שלי)[?؟.!]?$/.test(text))return reply(data.study.courses.length?t.courses+'\n'+data.study.courses.map(c=>'• '+c.name).join('\n'):t.none);
@@ -45,25 +37,8 @@ export function quickAssistantReply(message:string,data:AssistantData,language:L
  const previous=history.slice(lastResolved+1).filter(m=>m.role==='user').map(m=>fold(m.content)).findLast(m=>arSchedule.test(m));
  if(previous&&/^(?:بس (?:عندي )?كورس واحد|عندي كورس واحد)(?: عندي)?[.!؟?]?$/.test(text))text=previous;
  if(previous&&/^(?:قلتلك|قلت لك) (?:يوم )?/.test(text))text='اضفه الي الجدول يوم '+text.replace(/^(?:قلتلك|قلت لك) (?:يوم )?/,'');
- // Whole-command matches only. Exact names are resolved against records, never database paths.
- const create=text.match(/^(?:اضف|انشئ|اعمل)(?: لي)? (بطاقه|كورس)(?: جديده?)? (?:باسم |اسمها |اسمه )?(.+?)(?: (?:والخطوه القادمه|والخطوه التاليه|الخطوه القادمه) (.+))?[.!؟?]?$/);
- const english=text.match(/^create (card|course) (.+?)(?: with next step (.+))?$/);
- const edit=text.match(/^(?:عدل|غير) بطاقه (.+?) (?:واجعل |وغير )?(?:الخطوه القادمه|الخطوه التاليه) (.+)$/);
- const enEdit=text.match(/^update card (.+?) next step to (.+)$/);
- const operation=create||english;
- if(operation){
-  const kind=operation[1],name=originalPart(message,operation[2]),next=operation[3]?originalPart(message,operation[3],true):'';
-  // Avoid swallowing compound instructions as a record title.
-  if(!name||/\b(?:and|then|delete)\b|(?:واحذف|ثم |واضف|وعدل)/.test(name+' '+next))return null;
-  const target=['كورس','course'].includes(kind)?'courses':'projects';
-  if(target==='courses'&&next)return null;
-  return {text:t.review,actions:[{target,action:'create',id:'new-record',...(target==='projects'?{scope:'personal'}:{}),values:target==='courses'?{name}:{name,nextStep:next}}],files:[]};
- }
- if(edit||enEdit){
-  const match=(edit||enEdit)!,cards=data.scopes.find(s=>s.id==='personal')?.projects.filter(p=>fold(p.name)===match[1])||[];
-  if(cards.length!==1)return null;
-  return {text:t.review,actions:[{target:'projects',action:'update',scope:'personal',id:cards[0].id,values:{nextStep:originalPart(message,match[2],true)}}],files:[]};
- }
+ // Free-form creation/editing always goes to the model. A title is open-ended text:
+ // a regex cannot know whether it also contains a second instruction in any language.
  let courseName:string,dayName:string,startRaw:string,endRaw:string,period:string;
  const ar=text.match(arSchedule),en=text.match(enSchedule),he=text.match(heSchedule);
  if(ar){courseName=ar.groups!.course||ar.groups!.named||'it';dayName=ar.groups!.day;startRaw=ar.groups!.start;endRaw=ar.groups!.end;period=ar.groups!.period||'';}

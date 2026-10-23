@@ -23,6 +23,13 @@ export function isTimetableList(message:string):boolean{
  if(message.split('\n').filter(line=>!line.includes('|')).some(line=>/(?:انشئ|أنشئ|احذف|أحذف|غير |غيّر|غيري|create (?:card|course)|delete |update |הוסף כרטיס|מחק |עדכן )/i.test(line)))return false;
  return true;
 }
+/** Only this closed, standalone list grammar may bypass conversational intent planning.
+ * Any prose outside rows/headings must reach AI intact, including unrelated requests. */
+export function isStandaloneTimetableList(message:string):boolean{
+ const lines=message.split('\n').map(line=>cleanCourseText(line).replace(/^\s*[-•]\s*/, '')).filter(Boolean);
+ if(!/^(?:اضف (?:الي )?(?:الجدول|البرنامج)(?: الاسبوعي)?|add (?:to )?(?:the )?(?:timetable|schedule)|הוסף למערכת השעות):?$/.test(lines[0]||''))return false;
+ return lines.slice(1).every(line=>line.includes('|')||days.some(names=>names.some(name=>line===name||line===name+':'||line.startsWith(name+' —')||line.startsWith(name+' -'))));
+}
 /** Explicit day headings and time | requested course name | type rows are imported atomically.
  * Prose is never interpreted as a database command; unresolved course names are delegated to the model, never rejected by spelling alone. */
 export function bulkTimetableReply(message:string,data:AssistantData,language:Language,bindings?:Map<string,string>):AssistantReply|null {

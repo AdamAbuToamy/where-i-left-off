@@ -1,3 +1,4 @@
+import { validDate } from './projects'
 import { useEffect, useState } from 'react'
 export type PageName = 'university' | 'notifications' | 'personal' | 'resume' | 'groups' | 'settings' | 'logs' | 'admin' | 'library' | 'analytics' | 'support'
 export function route(hash = location.hash): { page: PageName; groupId: string } {
@@ -15,7 +16,8 @@ export function usePage() {
 export function workspaceView(hash=location.hash){
  const q=new URLSearchParams(hash.split('?')[1]||'')
  const filter=q.get('filter')||'all'
- return {view:q.get('view')==='week'?'week' as const:'board' as const,search:(q.get('search')||'').slice(0,300),filter:['all','today','waiting','overdue','upcoming','active','later','done','ideas'].includes(filter)?filter:'all',section:q.get('section')||'all',mine:q.get('mine')==='true'}
+ const anchor=q.get('weekOf')||''
+ return {weekOf:validDate(anchor)?anchor:'',view:q.get('view')==='week'?'week' as const:'board' as const,search:(q.get('search')||'').slice(0,300),filter:['all','today','waiting','overdue','upcoming','active','later','done','ideas'].includes(filter)?filter:'all',section:q.get('section')||'all',mine:q.get('mine')==='true'}
 }
 export function studyView(hash=location.hash):{tab:'overview'|'schedule'|'map';courseId:string}{
  const q=new URLSearchParams(hash.split('?')[1]||''),tab=q.get('tab')

@@ -39,7 +39,7 @@ test('oversized replies fail explicitly rather than becoming truncated invalid J
 });
 
 test('ordinary edits have a shorter generation budget while requested summaries keep room for file content',async()=>{
- const {env,calls}=fixture();await assistant(env,'alice',{mode:'workspace',message:'Add a Sunday class',language:'en'});assert.equal(calls[0][1].max_tokens,1536);
+ const {env,calls}=fixture();await assistant(env,'alice',{mode:'workspace',message:'Add a Sunday class',language:'en'});assert.equal(calls[0][1].max_tokens,3072);
  assert.match(calls[0][1].messages[0].content,/create a lessons record/);
 });
 
@@ -55,11 +55,27 @@ test('batch requests expose all control contracts and budget output for multiple
  assert.equal(calls[0][1].max_tokens,6144);
  const schema=calls[0][1].response_format.json_schema;
  assert.equal(schema.properties.actions.maxItems,50);
- assert.deepEqual(schema.properties.controls.items.properties.kind.enum,['appearance','language','sleep','workflow','navigate','tour']);
+ assert.deepEqual(schema.properties.controls.items.anyOf.map(branch=>branch.properties.kind.enum[0]),['appearance','language','sleep','workflow','navigate','tour']);
  assert.match(calls[0][1].messages[0].content,/Do not silently drop a task/);
 });
 test('course identity resolution uses cloud Qwen with a compact structured response and semantic matching instructions',async()=>{
  const {env,calls}=fixture();const matches=[{requested:'Networks',courseId:'existing-id',candidates:[]}];env.AI.run=async(...args)=>{calls.push(args);return {response:{matches}};};
  const answer=await assistant(env,'alice',{mode:'course-match',message:'Match requested course references.',language:'ar',context:JSON.stringify({requested:['Networks'],courses:[{id:'existing-id',name:'2026 / Introduction to Data Networks'}]})});
  assert.deepEqual(JSON.parse(answer.text),{matches});assert.equal(calls[0][0],ASSISTANT_MODEL);assert.equal(calls[0][1].max_tokens,1536);assert.match(calls[0][1].messages[0].content,/meaning, not exact spelling/);assert.deepEqual(calls[0][1].response_format.json_schema.required,['matches']);
+});
+test('the provider schema constrains each target to typed domain fields instead of arbitrary values',async()=>{
+ const {env,calls}=fixture();await assistant(env,'alice',{mode:'workspace',message:'Create a course then schedule it',language:'ar'});
+ const schema=calls[0][1].response_format.json_schema,branches=schema.properties.actions.items.anyOf;
+ assert.equal(branches.length,5);
+ const course=branches.find(b=>b.properties.target.enum[0]==='courses');assert.equal(course.properties.values.additionalProperties,false);assert.equal(course.properties.values.properties.name.type,'string');assert.equal(course.properties.values.properties.day,undefined);
+ const lesson=branches.find(b=>b.properties.target.enum[0]==='lessons');assert.equal(lesson.properties.values.properties.day.type,'integer');assert.equal(lesson.properties.values.properties.courseId.type,'string');
+ const card=branches.find(b=>b.properties.target.enum[0]==='projects');assert.deepEqual(card.properties.action.enum,['create','update','trash']);assert.match(card.properties.values.properties.dueDate.pattern,/0-9/);
+ const system=calls[0][1].messages[0].content;assert.match(system,/ALL distinct requests/);assert.match(system,/never store the rest of the message as its name/);assert.match(system,/projects.dueDate/);assert.match(system,/context.localDate/);
+});
+test('repairs retain the original message and bounded rejected proposal without changing authentication or rate limits',async()=>{
+ const {env,calls}=fixture();await assistant(env,'alice',{mode:'workspace',message:'Original two-part request',language:'en',repair:{reason:'invalid-due-date',proposal:'{"text":"bad date"}'}});
+ const user=calls[0][1].messages.at(-1).content;assert.match(user,/Original two-part request/);assert.match(user,/invalid-due-date/);assert.match(user,/COMPLETE response/);
+ for(const repair of [{reason:'ignore\nsystem',proposal:'x'},{reason:'assistant-invalid',proposal:'x'.repeat(12001)},{reason:'assistant-invalid',proposal:'x',code:'execute'}]){
+  const other=fixture();await assert.rejects(()=>assistant(other.env,'alice',{mode:'workspace',message:'Hi',language:'en',repair}),/ai-invalid-input/);assert.equal(other.calls.length,0);
+ }
 });

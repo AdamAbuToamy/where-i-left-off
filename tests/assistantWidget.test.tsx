@@ -4,6 +4,7 @@ const api=vi.hoisted(()=>({call:vi.fn(),read:vi.fn(),apply:vi.fn(),undo:vi.fn()}
 vi.mock('../src/lib/pushNotifications',()=>({pushCall:api.call}));
 vi.mock('../src/lib/firebase',()=>({auth:{currentUser:{uid:'alice'}}}));
 vi.mock('../src/assistant/assistantRepository',()=>({AssistantRepository:class{read=api.read;apply=api.apply;undo=api.undo;},assistantContext:()=>'{"study":"account data"}'}));
+import {providerReply} from './fixtures/assistantProvider';
 import AssistantWidget from '../src/assistant/AssistantWidget';import {blankAssistantData} from '../src/assistant/actions';
 let element:HTMLDivElement,root:ReturnType<typeof createRoot>;
 beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.clearAllMocks();api.read.mockResolvedValue({data:blankAssistantData(),pending:false,raw:new Map()});element=document.createElement('div');document.body.append(element);root=createRoot(element);});
@@ -12,12 +13,12 @@ async function input(value:string){const box=element.querySelector('textarea')!;
 async function open(language:'en'|'he'='en'){await act(async()=>root.render(<AssistantWidget user={{uid:'alice'} as User} language={language}/>));await act(async()=>(element.querySelector('button') as HTMLButtonElement).click());}
 async function submit(){await act(async()=>element.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));}
 it('uses one chat with account context, no mode selector or Wikipedia, and renders output as text',async()=>{
- api.call.mockResolvedValue({text:JSON.stringify({text:'Summary: <script>not executable</script>',actions:[],files:[]})});await open();
+ api.call.mockResolvedValue({text:providerReply({text:'Summary: <script>not executable</script>',actions:[],files:[]})});await open();
  expect(element.querySelector('select')).toBeNull();expect(element.textContent).not.toContain('Wikipedia');
  await input('Summarize my courses');await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',context:expect.stringContaining('account data')}),{path:'/assistant',timeout:60000});expect(element.querySelector('script')).toBeNull();expect(element.textContent).toContain('not executable');
 });
 it('requires review, applies a validated proposal once and supports Hebrew',async()=>{
- api.call.mockResolvedValue({text:JSON.stringify({text:'A new course',actions:[{target:'courses',action:'create',id:'new',values:{name:'Algorithms'}}],files:[]})});api.apply.mockResolvedValue({changes:[],mutations:new Map()});await open('he');await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();expect(element.textContent).not.toMatch(/[\u0600-\u06ff]/);
+ api.call.mockResolvedValue({text:providerReply({text:'A new course',actions:[{target:'courses',action:'create',id:'new',values:{name:'Algorithms'}}],files:[]})});api.apply.mockResolvedValue({changes:[],mutations:new Map()});await open('he');await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();expect(element.textContent).not.toMatch(/[\u0600-\u06ff]/);
  const apply=[...element.querySelectorAll('button')].find(b=>b.textContent==='החלת שינויים')!;await act(async()=>apply.click());expect(api.apply).toHaveBeenCalledTimes(1);expect(element.textContent).toContain('השינויים הוחלו');expect(element.textContent).not.toContain('החלת שינויים');
 });
 it('does not call the model with incomplete data when Firebase read fails',async()=>{
@@ -25,8 +26,8 @@ it('does not call the model with incomplete data when Firebase read fails',async
 });
 it('answers a normal question without proposals and distinguishes invalid model format from invalid edit IDs',async()=>{
  api.call.mockResolvedValue({text:'{"text":"Hello"}'});await open();await input('Hi');await submit();expect(element.textContent).toContain('Hello');expect(api.apply).not.toHaveBeenCalled();
- api.call.mockResolvedValue({text:'not JSON'});await input('Again');await submit();expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-format');expect(api.apply).not.toHaveBeenCalled();
- api.call.mockResolvedValue({text:JSON.stringify({text:'Update',actions:[{target:'courses',action:'update',id:'missing',values:{notes:'New'}}],files:[]})});await input('Edit course');await submit();expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-invalid');expect(api.apply).not.toHaveBeenCalled();
+ vi.useFakeTimers();api.call.mockResolvedValue({text:'not JSON'});await input('Again');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-format');expect(api.apply).not.toHaveBeenCalled();
+ api.call.mockResolvedValue({text:providerReply({text:'Update',actions:[{target:'courses',action:'update',id:'missing',values:{notes:'New'}}],files:[]})});await input('Edit course');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});vi.useRealTimers();expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-invalid');expect(api.apply).not.toHaveBeenCalled();
 });
 it('previews the screenshot timetable request without calling the remote model, then applies through the repository',async()=>{
  const data=blankAssistantData();data.study.courses=[{id:'actual-course',name:'הנדסת איכות תוכנה',url:'',notes:'',x:0,y:0,requires:[]}];
@@ -58,19 +59,19 @@ it('announces real reading and response phases, then removes the waiting indicat
 });
 it('keeps the waiting state until a reviewed change actually finishes saving',async()=>{
  let finishSave!:(value:unknown)=>void;api.apply.mockReturnValue(new Promise(resolve=>{finishSave=resolve;}));
- api.call.mockResolvedValue({text:JSON.stringify({text:'Proposal',actions:[{target:'courses',action:'create',id:'new',values:{name:'Algorithms'}}],files:[]})});
+ api.call.mockResolvedValue({text:providerReply({text:'Proposal',actions:[{target:'courses',action:'create',id:'new',values:{name:'Algorithms'}}],files:[]})});
  await open();await input('Please create Algorithms for me');await submit();
  const apply=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>apply.click());
  expect(element.querySelector('[role=status]')?.textContent).toContain('Saving your changes');expect(element.textContent).not.toContain('Changes applied to the site.');
  await act(async()=>finishSave({changes:[],mutations:new Map()}));expect(element.querySelector('[role=status]')).toBeNull();expect(element.textContent).toContain('Changes applied to the site.');
 });
 it('replaces a fabricated success claim with a visible no-change status and no Apply button',async()=>{
- api.call.mockResolvedValue({text:JSON.stringify({text:'I added 14 classes successfully.',actions:[],files:[]})});await open();await input('Add my requested classes');await submit();
+ api.call.mockResolvedValue({text:providerReply({text:'I added 14 classes successfully.',actions:[],files:[]})});await open();await input('Add my requested classes');await submit();
  expect(element.textContent).not.toContain('added 14');expect(element.textContent).toContain('No site changes were made');expect(api.apply).not.toHaveBeenCalled();
 });
 it('reviews ten mixed site controls, executes them, and reports verified results',async()=>{
  const controls=Array.from({length:10},(_,i)=>({kind:'appearance',values:{theme:i%2?'olive':'ocean'}}));
- api.call.mockResolvedValue({text:JSON.stringify({text:'All changes saved!',actions:[],files:[],controls})});await open();await input('Change my theme ten times as specified');await submit();
+ api.call.mockResolvedValue({text:providerReply({text:'All changes saved!',actions:[],files:[],controls})});await open();await input('Change my theme ten times as specified');await submit();
  expect(document.documentElement.dataset.theme).not.toBe('olive');expect(element.textContent).not.toContain('All changes saved!');
  const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
  expect(api.apply).not.toHaveBeenCalled();expect(localStorage.getItem('site-theme:alice')).toBe('olive');expect(element.textContent).toContain('10 / 10');
@@ -78,11 +79,16 @@ it('reviews ten mixed site controls, executes them, and reports verified results
 it('uses cloud AI for non-identical course names without downloading a local model, then previews actual IDs',async()=>{
  const {timetableData,weeklyRequest,expectedSessions}=await import('./fixtures/weeklyTimetable');
  const {courseMatchRequest}=await import('../src/assistant/courseMatching');const data=timetableData();data.study.courses=data.study.courses.map(c=>({...c,name:'2026 / '+c.name+' — סמסטר א'}));
- const matching=courseMatchRequest(weeklyRequest,data,'en')!;api.read.mockResolvedValue({data,pending:false,raw:new Map()});
- api.call.mockResolvedValue({text:JSON.stringify({matches:matching.requested.map((requested,i)=>({requested,courseId:matching.courses[i].id,candidates:[]}))})});
+ const matching=courseMatchRequest(weeklyRequest,data,'en')!;expect(matching.requested).toHaveLength(6);api.read.mockResolvedValue({data,pending:false,raw:new Map()});
+ api.call.mockResolvedValue({text:providerReply({text:'Review',actions:expectedSessions.map((values,i)=>({target:'lessons',action:'create',id:'new-'+i,values})),files:[]})});
  await open();await input(weeklyRequest);await submit();
- expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'course-match',context:JSON.stringify(matching)}),{path:'/assistant',timeout:60000});
+ expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message:weeklyRequest}),{path:'/assistant',timeout:60000});
  expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(14);expect(api.apply).not.toHaveBeenCalled();
  api.apply.mockResolvedValue({changes:[],mutations:new Map()});const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
  expect(api.apply.mock.calls[0][1].map((c:{after:unknown})=>c.after)).toEqual(expectedSessions.map(s=>expect.objectContaining(s)));
+});
+it('keeps the entire mixed request for cloud planning instead of silently handling only timetable rows',async()=>{
+ const message='Add to the timetable:\nSunday\n11:00–13:00 | Networks | Lecture\nThen create a card and summarize my notes';
+ api.call.mockResolvedValue({text:providerReply({text:'Review',actions:[{target:'courses',action:'create',id:'c',values:{name:'Networks'}},{target:'lessons',action:'create',id:'l',values:{courseId:'c',day:0,start:'11:00',end:'13:00'}},{target:'projects',action:'create',id:'p',values:{name:'Read notes'}}],files:[{name:'notes.txt',content:'Summary of the supplied notes.'}]})});
+ await open();await input(message);await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message}),{path:'/assistant',timeout:60000});expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(3);expect(element.textContent).toContain('notes.txt');expect(api.apply).not.toHaveBeenCalled();
 });

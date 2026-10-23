@@ -33,3 +33,10 @@ it('opens only validated existing views and preserves literal search text as URL
  expect((await executor.apply(plans)).every(r=>r.ok)).toBe(true);expect(location.hash).toBe('#/university?tab=schedule');
  expect(()=>parseControls([{kind:'navigate',values:{page:'settings',tab:'schedule'}}])).toThrow();
 });
+it('opens the actual week of a requested card date and rejects impossible dates or irrelevant anchors',async()=>{
+ const executor=new AssistantControls('alice');const plans=executor.plan([{kind:'navigate',values:{page:'personal',view:'week',weekOf:'2026-10-25'}}],'en',['personal']);
+ expect((await executor.apply(plans))[0].ok).toBe(true);expect(location.hash).toBe('#/personal?view=week&weekOf=2026-10-25');
+ const {workspaceView}=await import('../src/lib/navigation');expect(workspaceView().weekOf).toBe('2026-10-25');
+ for(const values of [{page:'personal',view:'week',weekOf:'2026-02-30'},{page:'personal',view:'board',weekOf:'2026-10-25'},{page:'university',weekOf:'2026-10-25'}])expect(()=>parseControls([{kind:'navigate',values}])).toThrow();
+ expect(workspaceView('#/personal?view=week&weekOf=2026-02-30').weekOf).toBe('');
+});

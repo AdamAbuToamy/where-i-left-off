@@ -41,10 +41,19 @@ it('handles the natural wording and follow-ups in the new screenshot with one ex
  }
  expect(quickAssistantReply('قلتلك احد من الخمسة للستة مساء',data,'ar')).toBeNull();
 });
-it('creates and edits cards and creates courses while preserving original user spelling',()=>{
- const data=fixture();let reply=quickAssistantReply('أنشئ بطاقة باسم مراجعة الخوارزميات والخطوة القادمة حل تمرينين',data,'ar')!;
- const first=planAssistantChanges(data,reply.actions)[0];expect(first.after).toMatchObject({name:'مراجعة الخوارزميات',nextStep:'حل تمرينين'});data.scopes[0].projects.push(first.after as never);
- reply=quickAssistantReply('عدل بطاقة مراجعة الخوارزميات الخطوة القادمة حل خمسة تمارين',data,'ar')!;
- expect(planAssistantChanges(data,reply.actions)[0].after).toMatchObject({nextStep:'حل خمسة تمارين'});
- expect(quickAssistantReply('Create course Algorithms',data,'en')?.actions[0].values).toEqual({name:'Algorithms'});
+it.each([
+ 'اضف كورس اسمه محمد. وضعه في البرنامج ايام الاحد الساعة 00:00 حتى 1:00',
+ 'اضف بطاقة سمها عمار ثم اضفها للاسبوع بتاريخ 25 الشهر',
+ 'Create course Algorithms and schedule it on Sunday at 09:00–10:00',
+ 'צור קורס אלגוריתמים ואז הוסף אותו למערכת ביום ראשון',
+ 'أنشئ بطاقة باسم مراجعة الخوارزميات والخطوة القادمة حل تمرينين',
+ 'Create course Algorithms',
+ 'عدل بطاقة مراجعة الخوارزميات الخطوة القادمة حل خمسة تمارين',
+])('delegates free-form titles and compound instructions to AI rather than treating instructions as a title: %s',message=>{
+ expect(quickAssistantReply(message,fixture(),'ar')).toBeNull();
+});
+it('does not drop other requests mixed into a timetable list, including newlines and other languages',()=>{
+ const d=fixture();const table='Add to the timetable:\nSunday\n11:00–13:00 | הנדסת איכות תוכנה | Lecture';
+ expect(quickAssistantReply(table,d,'en')?.actions).toHaveLength(1);
+ for(const extra of ['اضف بطاقة سمها عمار','ولخص ملاحظاتي في ملف','Then change the background to grid','ושנה את השפה לעברית'])expect(quickAssistantReply(table+'\n'+extra,d,'ar')).toBeNull();
 });
