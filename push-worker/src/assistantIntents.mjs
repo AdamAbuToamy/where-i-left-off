@@ -55,7 +55,7 @@ function matches(actual,requirement,references=new Map()){
  * presentation, not proof of execution. This layer creates the authoritative task ledger. */
 export function reconcileIntentProposal(proposal,intents,context={}){
  const issues=[];
- if(!proposal||!Array.isArray(proposal.actions)||!Array.isArray(proposal.controls)||!Array.isArray(proposal.files)||proposal.actions.length>50||proposal.controls.length>20)return {proposal,issues:[{task:0,reason:'invalid-format',target:'',field:''}]};
+ if(!proposal||typeof proposal.text!=='string'||proposal.text.length>12000||!Array.isArray(proposal.actions)||!Array.isArray(proposal.controls)||!Array.isArray(proposal.files)||proposal.actions.length>50||proposal.controls.length>20)return {proposal,issues:[{task:0,reason:'invalid-format',target:'',field:''}]};
  const chains=new Map();
  proposal.actions.forEach((op,index)=>{
   if(!op||!Object.hasOwn(actionFields,op.target)||typeof op.id!=='string')return;
@@ -113,7 +113,9 @@ export function reconcileIntentProposal(proposal,intents,context={}){
     indexes.forEach(i=>{controlIndexes.add(i);coveredControls.add(i);});
    }
   }
-  return {title:intent.title,outcome:intent.outcome,actionIndexes:[...actionIndexes],controlIndexes:[...controlIndexes],detail:intent.outcome==='proposed'?'':(proposal.tasks?.find(t=>t.title===intent.title)?.detail??proposal.text??'')};
+  const metadata=Array.isArray(proposal.tasks)?proposal.tasks.find(t=>t?.title===intent.title):null;
+  const detail=typeof metadata?.detail==='string'?metadata.detail:proposal.text;
+  return {title:intent.title,outcome:intent.outcome,actionIndexes:[...actionIndexes],controlIndexes:[...controlIndexes],detail:intent.outcome==='proposed'?'':detail.slice(0,1500)};
  });
  // Opening the resulting view is an auxiliary action, never proof of a missing edit.
  proposal.controls.forEach((control,index)=>{

@@ -120,3 +120,8 @@ test('trash intent requires the final state to remain in trash',()=>{
  const p={text:'Review',actions:[{target:'projects',action:'trash',id:'card',values:{}},{target:'projects',action:'update',id:'card',values:{trashedAt:0}}],controls:[],files:[],tasks:[]};
  assert.ok(reconcileIntentProposal(p,[i],{scopes:[{id:'personal',projects:[{id:'card'}]}]}).issues.length);
 });
+test('incorrect display metadata cannot crash an otherwise valid effect reconciliation',()=>{
+ const p={text:'An answer',actions:[],controls:[],files:[],tasks:{not:'an array'}};
+ const i={title:'Question',subject:'question',outcome:'answer',requirements:[]};
+ const checked=reconcileIntentProposal(p,[i]);assert.deepEqual(checked.issues,[]);assert.equal(checked.proposal.tasks[0].detail,'An answer');
+});
