@@ -1,0 +1,2040 @@
+[
+ {
+  "id": "compound-card-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "إنشاء بطاقة جديدة باسم عمار",
+     "source": "أضف بطاقة باسم عمار وضعها في الاسبوع يوم 25 الشهر",
+     "subject": "newCard1",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "عمار",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "تحديد تاريخ الاستحقاق للبطاقة إلى 25 أكتوبر 2026",
+     "source": "أضف بطاقة باسم عمار وضعها في الاسبوع يوم 25 الشهر",
+     "subject": "newCard1",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "dueDate",
+       "expectedJson": "2026-10-25",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إضافة ملاحظة إلى البطاقة: مرحبا نجحت",
+     "source": "أضف اليها ملاحظة اكتب فيها: مرحبا نجحت",
+     "subject": "newCard1",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "مرحبا نجحت",
+       "match": "contains"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "compound-card-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Create a card named Ammar",
+     "source": "Create a card named Ammar",
+     "subject": "newCard",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Ammar",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Schedule the card for the week of the 25th of this month",
+     "source": "put it on the week of the 25th of this month",
+     "subject": "newCard",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "dueDate",
+       "expectedJson": "2026-10-25",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Add note to the card",
+     "source": "add the note: Hello, it worked",
+     "subject": "newCard",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "Hello, it worked",
+       "match": "contains"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "compound-card-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "צור כרטיס בשם עמר",
+     "source": "צור כרטיס בשם עמר",
+     "subject": "newCard",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "עמר",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "הצבת הכרטיס לשבוע של ה‑25 בחודש",
+     "source": "שים אותו בשבוע של ה-25 בחודש",
+     "subject": "newCard",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "dueDate",
+       "expectedJson": "2026-10-25",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "הוספת הערה לכרטיס",
+     "source": "הוסף הערה: שלום, הצליח",
+     "subject": "newCard",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "שלום, הצליח",
+       "match": "contains"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "new-course-lesson-ar",
+  "inventory": "{\n  \"intents\": [\n    {\n      \"title\": \"إضافة كورس Muhammad\",\n      \"source\": \"أضف كورس Muhammad\",\n      \"subject\": \"course_Muhammad\",\n      \"recordId\": \"\",\n      \"outcome\": \"proposed\",\n      \"requirements\": [\n        {\n          \"target\": \"courses\",\n          \"operation\": \"create\",\n          \"field\": \"name\",\n          \"expectedJson\": \"Muhammad\",\n          \"match\": \"equals\"\n        }\n      ]\n    },\n    {\n      \"title\": \"إضافة حصة لكورس Muhammad\",\n      \"source\": \"وحصة له الأحد 00:00–01:00\",\n      \"subject\": "
+ },
+ {
+  "id": "new-course-lesson-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Create course Muhammad",
+     "source": "Create course Muhammad",
+     "subject": "course-Muhammad",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Muhammad",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Sunday class 00:00–01:00 for course Muhammad",
+     "source": "Sunday class 00:00–01:00",
+     "subject": "lesson-Muhammad-Sunday-00-01",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "lessons",
+       "operation": "create",
+       "field": "day",
+       "expectedJson": "0",
+       "match": "equals"
+      },
+      {
+       "target": "lessons",
+       "operation": "create",
+       "field": "start",
+       "expectedJson": "00:00",
+       "match": "equals"
+      },
+      {
+       "target": "lessons",
+       "operation": "create",
+       "field": "end",
+       "expectedJson": "01:00",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "new-course-lesson-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "צור קורס Muhammad",
+     "source": "צור קורס Muhammad",
+     "subject": "newCourseMuhammad",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Muhammad",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "מפגש של הקורס ביום ראשון 00:00–01:00",
+     "source": "יום ראשון 00:00–01:00",
+     "subject": "newLessonMuhammad",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "lessons",
+       "operation": "create",
+       "field": "day",
+       "expectedJson": "0",
+       "match": "equals"
+      },
+      {
+       "target": "lessons",
+       "operation": "create",
+       "field": "start",
+       "expectedJson": "00:00",
+       "match": "equals"
+      },
+      {
+       "target": "lessons",
+       "operation": "create",
+       "field": "end",
+       "expectedJson": "01:00",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "ten-cards-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "إنشاء بطاقة Item 1",
+     "source": "Item 1",
+     "subject": "Item 1",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 1",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 2",
+     "source": "Item 2",
+     "subject": "Item 2",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 2",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 3",
+     "source": "Item 3",
+     "subject": "Item 3",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 3",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 4",
+     "source": "Item 4",
+     "subject": "Item 4",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 4",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 5",
+     "source": "Item 5",
+     "subject": "Item 5",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 5",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 6",
+     "source": "Item 6",
+     "subject": "Item 6",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 6",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 7",
+     "source": "Item 7",
+     "subject": "Item 7",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 7",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 8",
+     "source": "Item 8",
+     "subject": "Item 8",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 8",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 9",
+     "source": "Item 9",
+     "subject": "Item 9",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 9",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "إنشاء بطاقة Item 10",
+     "source": "Item 10",
+     "subject": "Item 10",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 10",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "ten-cards-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Create card Item 1",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 1",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 1",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 2",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 2",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 2",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 3",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 3",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 3",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 4",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 4",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 4",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 5",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 5",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 5",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 6",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 6",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 6",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 7",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 7",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 7",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 8",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 8",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 8",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 9",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 9",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 9",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create card Item 10",
+     "source": "Create ten separate cards named Item 1 through Item 10",
+     "subject": "Item 10",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 10",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "ten-cards-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Create Item 1",
+     "source": "Item 1",
+     "subject": "Item 1",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 1",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 2",
+     "source": "Item 2",
+     "subject": "Item 2",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 2",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 3",
+     "source": "Item 3",
+     "subject": "Item 3",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 3",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 4",
+     "source": "Item 4",
+     "subject": "Item 4",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 4",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 5",
+     "source": "Item 5",
+     "subject": "Item 5",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 5",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 6",
+     "source": "Item 6",
+     "subject": "Item 6",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 6",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 7",
+     "source": "Item 7",
+     "subject": "Item 7",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 7",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 8",
+     "source": "Item 8",
+     "subject": "Item 8",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 8",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 9",
+     "source": "Item 9",
+     "subject": "Item 9",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 9",
+       "match": "equals"
+      }
+     ]
+    },
+    {
+     "title": "Create Item 10",
+     "source": "Item 10",
+     "subject": "Item 10",
+     "recordId": "",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "create",
+       "field": "name",
+       "expectedJson": "Item 10",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-name-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تغيير اسم بطاقة عمار إلى Robot",
+     "source": "غيّر اسم بطاقة عمار إلى Robot",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "Robot",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-name-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Rename card عمار to Robot",
+     "source": "Rename card عمار to Robot",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "Robot",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-name-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "שינוי שם הכרטיס",
+     "source": "שנה את שם הכרטיס عمار ל-Robot",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "Robot",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-nextStep-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث الخطوة التالية لبطاقة عمار",
+     "source": "اجعل الخطوة التالية لبطاقة عمار Solve exercise 2",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "nextStep",
+       "expectedJson": "Solve exercise 2",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-nextStep-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set next step on عمار",
+     "source": "Set the next step on عمار to Solve exercise 2",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "nextStep",
+       "expectedJson": "Solve exercise 2",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-nextStep-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קביעת הצעד הבא בכרטיס عمار",
+     "source": "קבע את הצעד הבא בכרטיס عمار ל-Solve exercise 2",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "nextStep",
+       "expectedJson": "Solve exercise 2",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-status-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث حالة بطاقة عمار إلى انتظار",
+     "source": "ضع بطاقة عمار بحالة انتظار",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "status",
+       "expectedJson": "waiting",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-status-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set card عمار to waiting",
+     "source": "Set card عمار to waiting",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "status",
+       "expectedJson": "waiting",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-status-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "העבר את הכרטיס عمار למצב המתנה",
+     "source": "העבר את הכרטיס عمار למצב המתנה",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "status",
+       "expectedJson": "later",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-description-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "استبدال ملاحظات بطاقة عمار",
+     "source": "استبدل ملاحظات بطاقة عمار بالنص New notes",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "New notes",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-description-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Replace notes on card عمار",
+     "source": "Replace the notes on card عمار with New notes",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "“New notes”",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-description-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "החלפת ההערות בכרטיס עמר",
+     "source": "החלף את ההערות בכרטיס عمار ב-New notes",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "New notes",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-dueDate-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديد موعد بطاقة عمار",
+     "source": "موعد بطاقة عمار 25 أكتوبر 2026",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "dueDate",
+       "expectedJson": "2026-10-25",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-dueDate-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set card عمار due date",
+     "source": "Set card عمار due date to October 25, 2026",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "dueDate",
+       "expectedJson": "2026-10-25",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-dueDate-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קביעת תאריך יעד לכרטיס عمار",
+     "source": "קבע תאריך יעד לכרטיס عمار ל-25 באוקטובר 2026",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "dueDate",
+       "expectedJson": "2026-10-25",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-followUpDate-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث تاريخ المتابعة لبطاقة عمار",
+     "source": "تابع بطاقة عمار في 1 نوفمبر 2026",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "followUpDate",
+       "expectedJson": "2026-11-01",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-followUpDate-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set follow-up date for card عمار",
+     "source": "Follow up on card عمار on November 1, 2026",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "followUpDate",
+       "expectedJson": "2026-11-01",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-followUpDate-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קביעת מעקב לכרטיס عمار",
+     "source": "קבע מעקב לכרטיס عمار ב-1 בנובמבר 2026",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "followUpDate",
+       "expectedJson": "2026-11-01",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-checkpoint-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تسجيل توقف في بطاقة عمار عند Page 12",
+     "source": "سجل أنني توقفت في بطاقة عمار عند Page 12",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "Keep",
+       "match": "contains"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-checkpoint-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set checkpoint of card عمار",
+     "source": "Set the checkpoint of card عمار to Page 12",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "checkpoint",
+       "expectedJson": "Page 12",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-checkpoint-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "הוספת נקודת עצירה לכרטיס עמר",
+     "source": "רשום נקודת עצירה בכרטיס عمار: Page 12",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "description",
+       "expectedJson": "Page 12",
+       "match": "contains"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-checklist-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث قائمة بطاقة عمار",
+     "source": "قائمة بطاقة عمار: One غير مكتمل وTwo مكتمل",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "checklist",
+       "expectedJson": "[{“title”:“One”,“done”:false},{“title”:“Two”,“done”:true}]",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-checklist-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Update card عمار checklist",
+     "source": "Set card عمار checklist to unchecked One and checked Two",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "checklist",
+       "expectedJson": "[{“title”:“One”,“checked”:false},{“title”:“Two”,“checked”:true}]",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-checklist-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קבע רשימת בדיקה בכרטיס عمار",
+     "source": "קבע רשימת בדיקה בכרטיס عمار: One לא הושלם, Two הושלם",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "checklist",
+       "expectedJson": "[{​",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-sectionId-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "نقل بطاقة عمار إلى قسم Study",
+     "source": "انقل بطاقة عمار إلى قسم Study",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "sectionId",
+       "expectedJson": "section",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-sectionId-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Move card عمار to section Study",
+     "source": "Move card عمار to section Study",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "sectionId",
+       "expectedJson": "section",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-sectionId-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "העבר את הכרטיס عمار למדור Study",
+     "source": "העבר את הכרטיס عمار למדור Study",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "عمار",
+       "match": "equals"
+      },
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "sectionId",
+       "expectedJson": "section",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-projectUrl-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث رابط بطاقة عمار",
+     "source": "رابط بطاقة عمار https://example.test/project",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "projectUrl",
+       "expectedJson": "https://example.test/project",
+       "match": "equals"
+      },
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "عمار",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-projectUrl-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set card عمار link",
+     "source": "Set card عمار link to https://example.test/project",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "projectUrl",
+       "expectedJson": "https://example.test/project",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-projectUrl-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קביעת קישור לכרטיס عمار",
+     "source": "קבע קישור לכרטיס عمار: https://example.test/project",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "projectUrl",
+       "expectedJson": "https://example.test/project",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-attachmentUrl-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "إرفاق رابط للبطاقة عمار",
+     "source": "رابط المرفق لبطاقة عمار https://example.test/notes",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "attachmentUrl",
+       "expectedJson": "https://example.test/notes",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-attachmentUrl-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set card عمار attachment link",
+     "source": "Set card عمار attachment link to https://example.test/notes",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "attachmentUrl",
+       "expectedJson": "https://example.test/notes",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-attachmentUrl-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קביעת קישור לקובץ בכרטיס עמר",
+     "source": "קבע קישור לקובץ בכרטיס عمار: https://example.test/notes",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "attachmentUrl",
+       "expectedJson": "https://example.test/notes",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-links-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "إضافة رابط إلى بطاقة عمار",
+     "source": "ضع رابط بطاقة عمار الإضافي https://example.test/one",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "projectUrl",
+       "expectedJson": "https://example.test/one",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-links-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Update extra links on عمار",
+     "source": "Set the extra links on عمار to https://example.test/one",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "links",
+       "expectedJson": "[[`https://example.test/one`]]",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-links-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קביעת קישור נוסף בכרטיס عمار",
+     "source": "קבע קישורים נוספים בכרטיס عمار: https://example.test/one",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "links",
+       "expectedJson": "https://example.test/one",
+       "match": "contains"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-resourceType-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تغيير نوع مورد بطاقة عمار إلى كتاب",
+     "source": "غيّر نوع مورد بطاقة عمار إلى كتاب",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "resourceType",
+       "expectedJson": "book",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-resourceType-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Change card عمار resource type to book",
+     "source": "Change card عمار resource type to book",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "resourceType",
+       "expectedJson": "book",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-resourceType-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "שינוי סוג המשאב בכרטיס عمار",
+     "source": "שנה את סוג המשאב בכרטיס عمار לספר",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "resourceType",
+       "expectedJson": "book",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-kind-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Change card عمار kind to deadline",
+     "source": "Change card عمار kind to deadline",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "عمار",
+       "match": "equals"
+      },
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "kind",
+       "expectedJson": "deadline",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-assignedTo-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "إلغاء تعيين المسؤول عن بطاقة عمار",
+     "source": "ألغ تعيين المسؤول عن بطاقة عمار",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "عمار",
+       "match": "equals"
+      },
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "assignedTo",
+       "expectedJson": "",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-assignedTo-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Unassign card عمار",
+     "source": "Unassign card عمار",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "assignedTo",
+       "expectedJson": "",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-assignedTo-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "הסר שיוך אחראי מהכרטיס عمار",
+     "source": "הסר שיוך אחראי מהכרטיס عمار",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "assignedTo",
+       "expectedJson": "",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-coverUrl-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث صورة غلاف بطاقة عمار",
+     "source": "صورة بطاقة عمار https://example.test/cover.png",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "coverUrl",
+       "expectedJson": "https://example.test/cover.png",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-coverUrl-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set card عمار cover",
+     "source": "Set card عمار cover to https://example.test/cover.png",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "coverUrl",
+       "expectedJson": "https://example.test/cover.png",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-coverUrl-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קבע תמונה לכרטיס عمار",
+     "source": "קבע תמונה לכרטיס عمار: https://example.test/cover.png",
+     "subject": "card",
+     "recordId": "card",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "projects",
+       "operation": "update",
+       "field": "coverUrl",
+       "expectedJson": "https://example.test/cover.png",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-projects-archivedAt-ar",
+  "inventory": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+ },
+ {
+  "id": "update-courses-name-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث اسم الكورس",
+     "source": "سم كورس Algorithms باسم Algorithms II",
+     "subject": "course",
+     "recordId": "course",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "Algorithms II",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-courses-name-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Rename Algorithms to Algorithms II",
+     "source": "Rename Algorithms to Algorithms II",
+     "subject": "course",
+     "recordId": "course",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "Algorithms II",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-courses-name-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "שנה שם קורס",
+     "source": "שנה את שם הקורס אלגוריתמים ל-Algorithms II",
+     "subject": "course",
+     "recordId": "course",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "Algorithms II",
+       "match": "equals"
+      },
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "name",
+       "expectedJson": "אלגוריתמים",
+       "match": "contains"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-courses-url-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "تحديث رابط كورس Algorithms",
+     "source": "رابط كورس Algorithms هو https://example.test/course",
+     "subject": "course",
+     "recordId": "course",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "url",
+       "expectedJson": "https://example.test/course",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-courses-url-en",
+  "inventory": {
+   "intents": [
+    {
+     "title": "Set Algorithms URL",
+     "source": "Set Algorithms URL to https://example.test/course",
+     "subject": "course",
+     "recordId": "course",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "url",
+       "expectedJson": "https://example.test/course",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-courses-url-he",
+  "inventory": {
+   "intents": [
+    {
+     "title": "קביעת קישור לקורס אלגוריתמים",
+     "source": "קבע קישור לקורס אלגוריתמים: https://example.test/course",
+     "subject": "course",
+     "recordId": "course",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "url",
+       "expectedJson": "https://example.test/course",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-courses-notes-ar",
+  "inventory": {
+   "intents": [
+    {
+     "title": "استبدال ملاحظات كورس Algorithms",
+     "source": "استبدل ملاحظات كورس Algorithms بالنص New course notes",
+     "subject": "course",
+     "recordId": "course",
+     "outcome": "proposed",
+     "requirements": [
+      {
+       "target": "courses",
+       "operation": "update",
+       "field": "notes",
+       "expectedJson": "New course notes",
+       "match": "equals"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "id": "update-courses-notes-en",
+  "inventory": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+ }
+]

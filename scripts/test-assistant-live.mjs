@@ -6,16 +6,18 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import {createServer as createNetServer} from 'node:net';
 import {acceptanceCases} from '../tests/fixtures/assistant/corpus.mjs';
+import {acceptanceSummary,providerStop} from './lib/assistantAcceptance.mjs';
+import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
 import {ASSISTANT_MODEL} from '../push-worker/src/assistant.mjs';
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const args=process.argv.slice(2),limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):acceptanceCases.length;
 if(args.includes('--list')){console.log(JSON.stringify({requests:acceptanceCases.length,unique:new Set(acceptanceCases.map(c=>c.message)).size,languages:['ar','en','he'],model:ASSISTANT_MODEL,mode:'catalog-only; no inference'},null,2));process.exit(0);}
 if(!args.includes('--live')||!Number.isInteger(limit)||limit<1||limit>acceptanceCases.length)throw new Error('Use --live --limit=618 (or --list). Real inference consumes the existing Cloudflare allowance.');
 const fingerprint=createHash('sha256').update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
-const reportPath=resolve('assistant-acceptance-live-report.json'),old=args.includes('--resume')&&existsSync(reportPath)?JSON.parse(readFileSync(reportPath,'utf8')):null;
-if(old&&(old.model!==ASSISTANT_MODEL||old.fingerprint!==fingerprint))throw new Error('Resume suite/model mismatch. Move the old report before testing a different model.');
+const reportPath=resolve('assistant-acceptance-live-report.json');let old=args.includes('--resume')&&existsSync(reportPath)?JSON.parse(readFileSync(reportPath,'utf8')):null;
+if(old&&(old.model!==ASSISTANT_MODEL||old.fingerprint!==fingerprint)){writeFileSync(reportPath.replace('.json','.previous-'+Date.now()+'.json'),JSON.stringify(old,null,2)+'\n');old=null;console.log('Previous report archived; starting the updated suite.');}
 const report=old||{model:ASSISTANT_MODEL,fingerprint,kind:'live-provider-synthetic-data',startedAt:new Date().toISOString(),results:[]};
-const save=()=>{const done=report.results.filter(r=>r.status==='passed');report.summary={passed:done.length,failed:report.results.filter(r=>r.status==='failed').length,notRun:acceptanceCases.length-new Set(report.results.map(r=>r.id)).size,slowOver20s:done.filter(r=>r.elapsedMs>20000).length};report.updatedAt=new Date().toISOString();writeFileSync(reportPath,JSON.stringify(report,null,2)+'\n');};
+const save=()=>{report.summary=acceptanceSummary(report.results,acceptanceCases.length);report.updatedAt=new Date().toISOString();writeFileSync(reportPath,JSON.stringify(report,null,2)+'\n');};
 const cancellation=new AbortController();process.once('SIGINT',()=>cancellation.abort());process.once('SIGTERM',()=>cancellation.abort());
 const folder=mkdtempSync(join(tmpdir(),'wilo-ai-live-')),token=randomUUID();let child,vite;
 try{
@@ -36,18 +38,26 @@ try{
  }
  const {createServer}=await import('vite');vite=await createServer({server:{middlewareMode:true,hmr:false},appType:'custom'});
  const {evaluateAcceptance}=await vite.ssrLoadModule('/tests/fixtures/assistant/oracle.ts');
- let attempted=0;
+ let attempted=0,consecutiveUnavailable=0;
  // Diagnose the reported compound-card failure before spending quota on the larger matrix.
  const priority=id=>id.startsWith('compound-card')?0:id.startsWith('new-course-lesson')?1:id.startsWith('ten-cards')?2:3;
  const ordered=[...acceptanceCases].sort((a,b)=>priority(a.id)-priority(b.id));
  for(const testCase of ordered){
   if(report.results.some(r=>r.id===testCase.id&&r.status==='passed'))continue;if(attempted++>=limit)break;
   const response=await fetch(origin,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({id:testCase.id}),signal:AbortSignal.any([cancellation.signal,AbortSignal.timeout(120000)])}),result=await response.json();
-  if(result.error==='ai-provider-limit'){report.stopped='provider-free-quota';save();console.log('Stopped at provider quota; no upgrade or paid fallback. Resume after quota resets.');process.exitCode=2;break;}
+  if(blockedProviderCodes.has(result.error)){
+   const item={id:testCase.id,status:'blocked',reason:result.error,elapsedMs:result.elapsedMs,trace:result.trace,details:result.details};
+   report.results=report.results.filter(r=>r.id!==testCase.id);report.results.push(item);save();
+   consecutiveUnavailable++;
+   console.log(`${testCase.id}: blocked (${result.error})`);
+   if(providerStop(result.error,consecutiveUnavailable)){report.stopped=result.error;save();process.exitCode=2;break;}
+   continue;
+  }
+  consecutiveUnavailable=0;
   const item={id:testCase.id,status:'passed',elapsedMs:result.elapsedMs,trace:result.trace};
   try{if(result.error)throw new Error(result.error);evaluateAcceptance(testCase,result.text);}catch(error){item.status='failed';item.reason=error.message;item.details=result.details;}
   report.results=report.results.filter(r=>r.id!==testCase.id);report.results.push(item);save();
-  console.log(`${report.results.length}/${acceptanceCases.length} ${testCase.id}: ${item.status} (${result.elapsedMs}ms)`);
+  console.log(`${report.results.length}/${acceptanceCases.length} ${testCase.id}: ${item.status}${item.reason?' ['+item.reason+']':''} (${result.elapsedMs}ms)`);
  }
  save();if(report.summary.failed||report.summary.notRun)process.exitCode=2;
  console.log(JSON.stringify(report.summary));
