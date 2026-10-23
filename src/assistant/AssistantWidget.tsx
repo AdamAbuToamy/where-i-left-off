@@ -7,7 +7,7 @@ import type { LocalAssistantModel } from './localModel';
 import { assistantValidationHint } from './validationHint';
 import { quickAssistantReply } from './quickActions';
 import { proposalStatus, confirmedChangeCount } from './replyStatus';
-import { parseAssistantReply, planAssistantChanges } from './actions';
+import { parseAssistantReply, planAssistantProposal } from './actions';
 import type { AssistantReply, Change } from './actions';
 import { AssistantRepository, assistantContext } from './assistantRepository';
 import type { AssistantSnapshot, AssistantReceipt } from './assistantRepository';
@@ -65,7 +65,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    const reply=parseAssistantReply(result.text);
    const controlPlans=controls.plan(reply.controls||[],language,snapshot.data.scopes.map(s=>s.id));
    let changes:Change[];
-   try{changes=planAssistantChanges(snapshot.data,reply.actions,Date.now(),true);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
+   try{changes=planAssistantProposal(snapshot.data,reply.actions);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
    setMessages(old=>[...old,{role:'assistant',text:controlPlans.length?ct.review:quick?reply.text:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
   }catch(e){if(mounted.current){report(e);setText(current=>current||message);}}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}

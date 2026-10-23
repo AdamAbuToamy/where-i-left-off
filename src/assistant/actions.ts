@@ -115,3 +115,8 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
  return [...changed.values()].filter(c=>JSON.stringify(c.before)!==JSON.stringify(c.after));
 }
 export const blankAssistantData=():AssistantData=>({study:emptyUniversity(),scopes:[{id:'personal',name:'Personal',projects:[],sections:[]}]});
+
+/** Clock sampling and ledger metadata belong to the proposal adapter, outside React rendering. */
+export function planAssistantProposal(data:AssistantData,actions:Action[]):Change[]{
+ return planAssistantChanges(data,actions,Date.now(),true);
+}
