@@ -60,3 +60,10 @@ it('keeps every published capability attached to an executor mode or explicit UI
 it.each(['2026-02-30T10:00:00Z','2026-10-25T24:10:00Z','2026-10-25T12:00'])('rejects invalid or timezone-free university deadlines: %s',due=>{
  expect(()=>planAssistantChanges(fixture(),[{target:'tasks',action:'update',id:'task',values:{due}}])).toThrow('assistant-invalid');
 });
+it('resolves navigation to a course/section created in the same proposal and rejects deleted or foreign references',async()=>{
+ const {planAssistantProposal,resolveProposalControls}=await import('../src/assistant/actions');
+ const data=fixture(),actions:Action[]=[{target:'courses',action:'create',id:'new-course',values:{name:'New'}},{target:'sections',action:'create',id:'new-section',values:{name:'New'}}],changes=planAssistantProposal(data,actions);
+ const controls=resolveProposalControls(data,actions,changes,[{kind:'navigate',values:{page:'university',courseId:'new-course'}},{kind:'navigate',values:{page:'personal',section:'new-section'}}]);
+ expect(controls[0].values.courseId).toBe(changes[0].id);expect(controls[1].values.section).toBe(changes[1].id);
+ for(const values of [{page:'university',courseId:'missing'},{page:'personal',section:'foreign'}])expect(()=>resolveProposalControls(data,actions,changes,[{kind:'navigate',values}])).toThrow('assistant-invalid');
+});

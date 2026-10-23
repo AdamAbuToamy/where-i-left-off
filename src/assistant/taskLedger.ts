@@ -23,9 +23,11 @@ export function parseTasks(value:unknown,actions:number,controls:number):Assista
 export function taskState(task:AssistantTask,changes:Change[],receipt:Change[]|undefined,controls:ControlResult[]|undefined,resolved:boolean,undone=false):TaskState{
  if(undone&&task.outcome==='proposed'&&task.actionIndexes.length)return task.controlIndexes.length?'partially-undone':'undone';
  if(task.outcome!=='proposed')return task.outcome;
+ const relevant=changes.filter(c=>c.actionIndexes?.some(i=>task.actionIndexes.includes(i)));
+ // A duplicate/no-op has no Apply button. Do not leave it waiting forever.
+ if(!relevant.length&&!task.controlIndexes.length)return 'unchanged';
  if(!resolved)return 'pending';
  if(!receipt&&!controls)return 'cancelled';
- const relevant=changes.filter(c=>c.actionIndexes?.some(i=>task.actionIndexes.includes(i)));
  if(relevant.some(c=>!receipt?.some(saved=>saved.id===c.id&&saved.target===c.target&&saved.scope===c.scope)))return 'failed';
  if(task.controlIndexes.some(i=>!controls?.[i]?.ok))return 'failed';
  return relevant.length||task.controlIndexes.length?'saved':'unchanged';

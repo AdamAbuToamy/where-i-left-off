@@ -123,3 +123,25 @@ export const blankAssistantData=():AssistantData=>({study:emptyUniversity(),scop
 export function planAssistantProposal(data:AssistantData,actions:Action[]):Change[]{
  return planAssistantChanges(data,actions,Date.now(),true);
 }
+
+/** UI links must use generated IDs from the same proposal, never its temporary aliases. */
+export function resolveProposalControls(data:AssistantData,actions:Action[],changes:Change[],controls:AssistantControl[]):AssistantControl[]{
+ const aliases=new Map<string,string>();
+ for(const change of changes)for(const index of change.actionIndexes||[]){
+  const action=actions[index];
+  if(action?.action==='create'&&action.id)aliases.set(action.id,change.id);
+ }
+ return controls.map(control=>{
+  if(control.kind!=='navigate')return control;
+  const values={...control.values};
+  for(const [field,target] of [['courseId','courses'],['section','sections']] as const){
+   if(!(field in values))continue;
+   values[field]=aliases.get(String(values[field]))||values[field];
+   const scope=values.page==='groups'?String(values.groupId||''):'personal';
+   const ids=new Set(target==='courses'?data.study.courses.map(c=>c.id):data.scopes.find(s=>s.id===scope)?.sections.map(s=>s.id)||[]);
+   for(const change of changes)if(change.target===target&&change.scope===scope){if(change.after)ids.add(change.id);else ids.delete(change.id);}
+   if(!ids.has(String(values[field])))invalid('assistant-reference');
+  }
+  return {...control,values};
+ });
+}

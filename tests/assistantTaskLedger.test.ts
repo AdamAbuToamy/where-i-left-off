@@ -17,3 +17,8 @@ it('tracks several edits to the same record without confusing task count with do
 it('rejects fake completed task states and invalid operation references',()=>{
  for(const task of [{title:'Done',outcome:'saved',actionIndexes:[],controlIndexes:[],detail:''},{title:'Missing',outcome:'proposed',actionIndexes:[99],controlIndexes:[],detail:''},{title:'Pretend',outcome:'proposed',actionIndexes:[],controlIndexes:[],detail:''}])expect(()=>parseAssistantReply(JSON.stringify({text:'ok',tasks:[task],actions:[]}))).toThrow('assistant-invalid');
 });
+it('marks duplicate/no-op actions unchanged before Apply rather than leaving an impossible pending task',()=>{
+ const task={title:'Already present',outcome:'proposed' as const,actionIndexes:[0],controlIndexes:[],detail:''};
+ expect(taskState(task,[],undefined,undefined,false)).toBe('unchanged');
+ expect(taskState({...task,controlIndexes:[0]},[],undefined,undefined,false)).toBe('pending');
+});

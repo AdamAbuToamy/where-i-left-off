@@ -10,7 +10,7 @@ import { assistantValidationHint } from './validationHint';
 import { courseMatchRequest,resolvedTimetableReply,noCoursesReply } from './courseMatching';
 import { quickAssistantReply } from './quickActions';
 import { proposalStatus, confirmedChangeCount } from './replyStatus';
-import { parseAssistantReply, planAssistantProposal } from './actions';
+import { parseAssistantReply, planAssistantProposal, resolveProposalControls } from './actions';
 import type { AssistantReply, Change } from './actions';
 import { AssistantRepository, assistantContext } from './assistantRepository';
 import type { AssistantSnapshot, AssistantReceipt } from './assistantRepository';
@@ -68,9 +68,9 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    const validate=(text:string)=>{
     const reply=matching&&!quick?resolvedTimetableReply(message,snapshot.data,language,matching,text):parseAssistantReply(text);
     if(!quick&&request.mode==='workspace'&&(reply.actions.length||reply.controls?.length)&&!reply.tasks?.length)throw new Error('assistant-invalid',{cause:new Error('assistant-task-coverage')});
-    const controlPlans=controls.plan(reply.controls||[],language,snapshot.data.scopes.map(s=>s.id));
     let changes:Change[];
     try{changes=planAssistantProposal(snapshot.data,reply.actions);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
+    const controlPlans=controls.plan(resolveProposalControls(snapshot.data,reply.actions,changes,reply.controls||[]),language,snapshot.data.scopes.map(s=>s.id));
     return {reply,controlPlans,changes};
    };
    const prepared=quick?validate(JSON.stringify(quick)):localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
