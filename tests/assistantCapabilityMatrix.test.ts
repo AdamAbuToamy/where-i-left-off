@@ -67,3 +67,7 @@ it('resolves navigation to a course/section created in the same proposal and rej
  expect(controls[0].values.courseId).toBe(changes[0].id);expect(controls[1].values.section).toBe(changes[1].id);
  for(const values of [{page:'university',courseId:'missing'},{page:'personal',section:'foreign'}])expect(()=>resolveProposalControls(data,actions,changes,[{kind:'navigate',values}])).toThrow('assistant-invalid');
 });
+
+it('rejects unsupported lesson types instead of silently converting a tutorial typo into a lecture',()=>{
+ expect(()=>planAssistantChanges(fixture(),[{target:'lessons',action:'update',id:'lesson',values:{sessionType:'Tutorial'}}])).toThrow('assistant-invalid');
+});
