@@ -28,7 +28,7 @@ export function isTimetableList(message:string):boolean{
 export function isStandaloneTimetableList(message:string):boolean{
  const lines=message.split('\n').map(line=>cleanCourseText(line).replace(/^\s*[-•]\s*/, '')).filter(Boolean);
  if(!/^(?:اضف (?:الي )?(?:الجدول|البرنامج)(?: الاسبوعي)?|add (?:to )?(?:the )?(?:timetable|schedule)|הוסף למערכת השעות):?$/.test(lines[0]||''))return false;
- return lines.slice(1).every(line=>line.includes('|')||days.some(names=>names.some(name=>line===name||line===name+':'||line.startsWith(name+' —')||line.startsWith(name+' -'))));
+ return lines.slice(1).every(line=>line.includes('|')||days.some(names=>line.replace(/:$/,'').split(/\s+[—-]\s+/).every(part=>names.includes(part))));
 }
 /** Explicit day headings and time | requested course name | type rows are imported atomically.
  * Prose is never interpreted as a database command; unresolved course names are delegated to the model, never rejected by spelling alone. */

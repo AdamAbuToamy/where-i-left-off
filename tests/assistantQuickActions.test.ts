@@ -55,5 +55,6 @@ it.each([
 it('does not drop other requests mixed into a timetable list, including newlines and other languages',()=>{
  const d=fixture();const table='Add to the timetable:\nSunday\n11:00–13:00 | הנדסת איכות תוכנה | Lecture';
  expect(quickAssistantReply(table,d,'en')?.actions).toHaveLength(1);
+ expect(quickAssistantReply(table.replace('Sunday','Sunday — then add a card'),d,'en')).toBeNull();
  for(const extra of ['اضف بطاقة سمها عمار','ولخص ملاحظاتي في ملف','Then change the background to grid','ושנה את השפה לעברית'])expect(quickAssistantReply(table+'\n'+extra,d,'ar')).toBeNull();
 });
