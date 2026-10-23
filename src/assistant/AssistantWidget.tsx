@@ -61,7 +61,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    let quick=quickAssistantReply(message,snapshot.data,language,messages.map(m=>({role:m.role,content:m.text+(m.resolved?' [proposal resolved; do not repeat]':'')})));
    const matching=!preferLocal&&!localReady&&isStandaloneTimetableList(message)?courseMatchRequest(message,snapshot.data,language):null;
    if(matching&&!matching.courses.length)quick=noCoursesReply(language);
-   const request={mode:matching&&!quick?'course-match':'workspace',message:matching&&!quick?'Match requested course references to existing account courses.':message,language,context:quick?'':matching?JSON.stringify(matching):JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities.map(({id,mode})=>({id,mode}))}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
+   const request={mode:matching&&!quick?'course-match':'workspace',message:matching&&!quick?'Match requested course references to existing account courses.':message,language,context:quick?'':matching?JSON.stringify(matching):JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
    if(request.context.length>44000||JSON.stringify(request).length>65000)throw new Error('assistant-too-large');
    if(!quick&&preferLocal&&!localReady)throw new Error('assistant-local-not-ready');
    setPhase('thinking');

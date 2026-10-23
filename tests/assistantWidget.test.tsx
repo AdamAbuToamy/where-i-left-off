@@ -15,7 +15,7 @@ async function submit(){await act(async()=>element.querySelector('form')!.dispat
 it('uses one chat with account context, no mode selector or Wikipedia, and renders output as text',async()=>{
  api.call.mockResolvedValue({text:providerReply({text:'Summary: <script>not executable</script>',actions:[],files:[]})});await open();
  expect(element.querySelector('select')).toBeNull();expect(element.textContent).not.toContain('Wikipedia');
- await input('Summarize my courses');await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',context:expect.stringContaining('account data')}),{path:'/assistant',timeout:60000});expect(element.querySelector('script')).toBeNull();expect(element.textContent).toContain('not executable');
+ await input('Summarize my courses');await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',context:expect.stringContaining('account data')}),{path:'/assistant',timeout:60000});expect(JSON.parse(api.call.mock.calls[0][0].context).capabilities.every((c:{detail:string})=>typeof c.detail==='string'&&c.detail.length>30)).toBe(true);expect(element.querySelector('script')).toBeNull();expect(element.textContent).toContain('not executable');
 });
 it('requires review, applies a validated proposal once and supports Hebrew',async()=>{
  api.call.mockResolvedValue({text:providerReply({text:'A new course',actions:[{target:'courses',action:'create',id:'new',values:{name:'Algorithms'}}],files:[]})});api.apply.mockResolvedValue({changes:[],mutations:new Map()});await open('he');await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();expect(element.textContent).not.toMatch(/[\u0600-\u06ff]/);
