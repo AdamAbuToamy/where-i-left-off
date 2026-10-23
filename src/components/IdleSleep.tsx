@@ -8,6 +8,7 @@ import { featureText } from '../featureText'
 import { IDLE_SLEEP_MS,readSleepEnabled,saveSleepEnabled } from '../lib/idleSleep'
 export function SleepPreference({uid,language}:{uid:string;language:Language}){
  const [enabled,setEnabled]=useState(()=>readSleepEnabled(uid)),t=featureText[language]
+ useEffect(()=>{const changed=()=>setEnabled(readSleepEnabled(uid));window.addEventListener('idle-settings-changed',changed);return()=>window.removeEventListener('idle-settings-changed',changed)},[uid])
  return <section className="settings-section"><h3>{t.sleepTitle}</h3><p>{t.sleepHint}</p><label className="sleep-toggle"><input type="checkbox" checked={enabled} onChange={e=>{setEnabled(e.target.checked);saveSleepEnabled(uid,e.target.checked)}}/>{t.sleepEnable}</label></section>
 }
 export default function IdleSleep({uid,user,language,children}:{uid?:string;user?:User;language:Language;children:ReactNode}){

@@ -49,6 +49,7 @@ export type StudyTask = {
     reminderProjectId?: string;
 };
 export type Lesson = {
+    notes?: string;
     sessionType?: 'lecture'|'tutorial'|'lab';
     id: string;
     courseId: string;

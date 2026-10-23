@@ -5,13 +5,13 @@ import type { Lesson, UniversityState } from './model';
 import { lessonConflicts } from './planImport';
 const days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 import { sessionNames } from './studyTools';
-type Row={id:string;courseId:string;sessionType:NonNullable<Lesson['sessionType']>;days:number[];start:string;end:string;room:string};
+type Row={id:string;courseId:string;sessionType:NonNullable<Lesson['sessionType']>;days:number[];start:string;end:string;room:string;notes?:string};
 export default function WeeklyScheduleEditor({state,busy,save}:{state:UniversityState;busy:boolean;save:(lessons:Lesson[])=>void}){
  const blank=():Row=>({id:createClientId(),courseId:state.courses[0]?.id||'',sessionType:'lecture',days:[0],start:'09:00',end:'10:00',room:''});
  const [rows,setRows]=useState<Row[]>(()=>state.lessons.length?state.lessons.map(l=>({...l,sessionType:l.sessionType||'lecture',days:[l.day]})):[blank()]);
  const [error,setError]=useState('');
  function change(id:string,patch:Partial<Row>){setRows(old=>old.map(r=>r.id===id?{...r,...patch}:r));}
- const preview=useMemo(()=>rows.flatMap(r=>r.days.map((day,index)=>({id:index===0?r.id:r.id+'-'+day,courseId:r.courseId,sessionType:r.sessionType,day,start:r.start,end:r.end,room:r.room}))),[rows]);
+ const preview=useMemo(()=>rows.flatMap(r=>r.days.map((day,index)=>({id:index===0?r.id:r.id+'-'+day,courseId:r.courseId,sessionType:r.sessionType,day,start:r.start,end:r.end,room:r.room,...(r.notes?{notes:r.notes}:{})}))),[rows]);
  const conflicts=lessonConflicts(preview);
  return <StudyLocalized>{<form className="study-week-editor" onSubmit={e=>{e.preventDefault();try{
   if(rows.some(r=>!r.days.length||!state.courses.some(c=>c.id===r.courseId)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(r.start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(r.end)||r.end<=r.start))throw new Error('اختر كورسًا ويومًا لكل لقاء، وتأكد أن وقت النهاية بعد البداية.');

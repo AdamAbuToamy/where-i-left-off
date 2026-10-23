@@ -29,7 +29,7 @@ test('workspace requests structured JSON and accepts object replies without trun
  const {env,calls}=fixture();const reply={text:'مرحبا',actions:[],files:[{name:'summary.txt',content:'x'.repeat(13000)}]};
  env.AI.run=async(...args)=>{calls.push(args);return {response:reply};};
  const answer=await assistant(env,'alice',{mode:'workspace',message:'Summarize',language:'ar'});
- assert.deepEqual(JSON.parse(answer.text),reply);assert.equal(calls[0][0],ASSISTANT_MODEL);assert.equal(ASSISTANT_MODEL,'@cf/qwen/qwen3-30b-a3b-fp8');assert.equal(calls[0][1].max_tokens,4096);assert.equal(calls[0][1].response_format.type,'json_schema');assert.deepEqual(calls[0][1].response_format.json_schema.required,['text','actions','files']);
+ assert.deepEqual(JSON.parse(answer.text),reply);assert.equal(calls[0][0],ASSISTANT_MODEL);assert.equal(ASSISTANT_MODEL,'@cf/qwen/qwen3-30b-a3b-fp8');assert.equal(calls[0][1].max_tokens,4096);assert.equal(calls[0][1].response_format.type,'json_schema');assert.deepEqual(calls[0][1].response_format.json_schema.required,['text','actions','files','controls','tasks']);
  const other=fixture();other.env.AI.run=async()=>({response:JSON.stringify(reply)});
  assert.equal(JSON.parse((await assistant(other.env,'alice',{mode:'workspace',message:'Summarize',language:'ar'})).text).files[0].content.length,13000);
 });
@@ -48,4 +48,13 @@ test('accepts Qwen chat-completions replies and distinguishes real provider quot
  assert.equal(JSON.parse((await assistant(env,'alice',{mode:'workspace',message:'Hi',language:'en'})).text).text,'Ready');
  const other=fixture();other.env.AI.run=async()=>{throw Object.assign(new Error('quota exceeded'),{status:429});};
  await assert.rejects(()=>assistant(other.env,'alice',{mode:'workspace',message:'Hi',language:'en'}),/ai-provider-limit/);
+});
+
+test('batch requests expose all control contracts and budget output for multiple actions',async()=>{
+ const {env,calls}=fixture();await assistant(env,'alice',{mode:'workspace',message:'Do these 10 tasks\n1. Create a course\n2. Add a class',language:'en'});
+ assert.equal(calls[0][1].max_tokens,6144);
+ const schema=calls[0][1].response_format.json_schema;
+ assert.equal(schema.properties.actions.maxItems,50);
+ assert.deepEqual(schema.properties.controls.items.properties.kind.enum,['appearance','language','sleep','workflow','navigate','tour']);
+ assert.match(calls[0][1].messages[0].content,/Do not silently drop a task/);
 });

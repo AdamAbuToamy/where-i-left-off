@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Language } from '../translations'
 import { settingsText } from '../settingsText'
 import { backgroundText } from '../backgroundText'
@@ -8,6 +8,7 @@ export default function ThemePicker({ uid, language }: { uid: string; language: 
   const [theme, setTheme] = useState(() => readTheme(uid))
   const [background, setBackground] = useState(() => readBackground(uid))
   const t = settingsText[language], b = backgroundText[language]
+  useEffect(()=>{const changed=()=>{setTheme(readTheme(uid));setBackground(readBackground(uid))};window.addEventListener('appearance-changed',changed);return()=>window.removeEventListener('appearance-changed',changed)},[uid])
   return <section className="settings-section">
     <h3>{t.appearance}</h3><p>{t.appearanceHint}</p>
     <div className="theme-options" role="group" aria-label={t.appearance}>

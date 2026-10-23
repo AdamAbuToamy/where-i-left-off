@@ -47,3 +47,27 @@ it('accepts natural-language tasks through the actual chat Apply button and veri
   console.info('assistant.task.acceptance',timings.map(t=>({proposalMs:t.proposalMs,saveAndReadMs:t.saveAndReadMs})));
  }finally{await act(async()=>root.unmount());element.remove();}
 },30000);
+it('imports all fourteen real requested classes through Apply, remounts chat and reads persisted data without duplicates',async()=>{
+ const {weeklyRequest,timetableData,expectedSessions}=await import('./fixtures/weeklyTimetable');
+ const {planAssistantChanges}=await import('../src/assistant/actions');
+ await env.clearFirestore();localStorage.clear();
+ const repo=new AssistantRepository('acceptance');const snapshot=await repo.read();
+ const data=timetableData();
+ const receipt=await repo.apply(snapshot,planAssistantChanges(snapshot.data,data.study.courses.map(c=>({target:'courses' as const,action:'create' as const,id:c.id,values:{name:c.name}}))));
+ const actual=await repo.read();const ids=new Map(actual.data.study.courses.map(c=>[c.name,c.id]));
+ const element=document.createElement('div');document.body.append(element);let root=createRoot(element);
+ async function mount(){await act(async()=>root.render(<AssistantWidget user={{uid:'acceptance'} as User} language="ar"/>));await act(async()=>(element.querySelector('button') as HTMLButtonElement).click());}
+ async function idle(){const deadline=Date.now()+15000;while(element.querySelector('[role=dialog]')?.getAttribute('aria-busy')==='true'){if(Date.now()>deadline)throw new Error('Timed out saving timetable');await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10));});}}
+ async function ask(){const box=element.querySelector('textarea')!;await act(async()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(box,weeklyRequest);box.dispatchEvent(new Event('input',{bubbles:true}));});await act(async()=>element.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));await idle();}
+ try{
+  await mount();await ask();expect(element.querySelector('[role=alert]')).toBeNull();expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(14);
+  expect((await repo.read()).data.study.lessons.filter(l=>[...ids.values()].includes(l.courseId))).toHaveLength(0);
+  const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='تطبيق التغييرات')!;await act(async()=>button.click());await idle();
+  expect(element.querySelector('[role=alert]')).toBeNull();expect(element.textContent).toContain('الحصص التي أُضيفت وحُفظت: 14');
+  await act(async()=>root.unmount());root=createRoot(element);await mount();
+  const saved=await new AssistantRepository('acceptance').read();
+  const classes=saved.data.study.lessons.filter(l=>receipt.changes.some(c=>c.id===l.courseId));
+  expect(classes.map(({courseId,day,start,end,sessionType,room,notes})=>({courseId,day,start,end,sessionType,room,...(notes?{notes}:{})}))).toEqual(expect.arrayContaining(expectedSessions.map(s=>({...s,courseId:ids.get(data.study.courses.find(c=>c.id===s.courseId)!.name)}))));expect(classes).toHaveLength(14);
+  await ask();expect(element.querySelector('.assistant-proposal')).toBeNull();expect((await repo.read()).data.study.lessons.filter(l=>receipt.changes.some(c=>c.id===l.courseId))).toHaveLength(14);
+ }finally{await act(async()=>root.unmount());element.remove();}
+},45000);

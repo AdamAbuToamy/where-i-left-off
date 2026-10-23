@@ -14,7 +14,7 @@ async function submit(){await act(async()=>element.querySelector('form')!.dispat
 it('uses one chat with account context, no mode selector or Wikipedia, and renders output as text',async()=>{
  api.call.mockResolvedValue({text:JSON.stringify({text:'Summary: <script>not executable</script>',actions:[],files:[]})});await open();
  expect(element.querySelector('select')).toBeNull();expect(element.textContent).not.toContain('Wikipedia');
- await input('Summarize my courses');await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',context:'{"study":"account data"}'}),{path:'/assistant',timeout:60000});expect(element.querySelector('script')).toBeNull();expect(element.textContent).toContain('not executable');
+ await input('Summarize my courses');await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',context:expect.stringContaining('account data')}),{path:'/assistant',timeout:60000});expect(element.querySelector('script')).toBeNull();expect(element.textContent).toContain('not executable');
 });
 it('requires review, applies a validated proposal once and supports Hebrew',async()=>{
  api.call.mockResolvedValue({text:JSON.stringify({text:'A new course',actions:[{target:'courses',action:'create',id:'new',values:{name:'Algorithms'}}],files:[]})});api.apply.mockResolvedValue({changes:[],mutations:new Map()});await open('he');await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();expect(element.textContent).not.toMatch(/[\u0600-\u06ff]/);
@@ -63,4 +63,15 @@ it('keeps the waiting state until a reviewed change actually finishes saving',as
  const apply=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>apply.click());
  expect(element.querySelector('[role=status]')?.textContent).toContain('Saving your changes');expect(element.textContent).not.toContain('Changes applied to the site.');
  await act(async()=>finishSave({changes:[],mutations:new Map()}));expect(element.querySelector('[role=status]')).toBeNull();expect(element.textContent).toContain('Changes applied to the site.');
+});
+it('replaces a fabricated success claim with a visible no-change status and no Apply button',async()=>{
+ api.call.mockResolvedValue({text:JSON.stringify({text:'I added 14 classes successfully.',actions:[],files:[]})});await open();await input('Add my requested classes');await submit();
+ expect(element.textContent).not.toContain('added 14');expect(element.textContent).toContain('No site changes were made');expect(api.apply).not.toHaveBeenCalled();
+});
+it('reviews ten mixed site controls, executes them, and reports verified results',async()=>{
+ const controls=Array.from({length:10},(_,i)=>({kind:'appearance',values:{theme:i%2?'olive':'ocean'}}));
+ api.call.mockResolvedValue({text:JSON.stringify({text:'All changes saved!',actions:[],files:[],controls})});await open();await input('Change my theme ten times as specified');await submit();
+ expect(document.documentElement.dataset.theme).not.toBe('olive');expect(element.textContent).not.toContain('All changes saved!');
+ const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
+ expect(api.apply).not.toHaveBeenCalled();expect(localStorage.getItem('site-theme:alice')).toBe('olive');expect(element.textContent).toContain('10 / 10');
 });

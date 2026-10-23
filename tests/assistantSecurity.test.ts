@@ -80,3 +80,45 @@ it('creates and edits actual personal cards and courses with timetable sessions,
  await repository.apply(snapshot,planAssistantChanges(snapshot.data,[{target:'projects',action:'update',id:card.id,values:{name:'Review trees',nextStep:'Solve three problems'}},{target:'courses',action:'update',id:course.id,values:{notes:'Midterm revision'}},{target:'lessons',action:'update',id:lesson.id,values:{start:'18:00',end:'19:00',room:'104'}}]));
  const saved=await repository.read();expect(saved.data.scopes[0].projects.find(c=>c.id===card.id)).toMatchObject({name:'Review trees',nextStep:'Solve three problems'});expect(saved.data.study.lessons.find(l=>l.id===lesson.id)).toMatchObject({start:'18:00',end:'19:00',room:'104'});expect(saved.data.study.courses.find(c=>c.id===course.id)?.notes).toBe('Midterm revision');
 });
+it('executes ten dependent edits atomically and verifies every result after a fresh read',async()=>{
+ const repo=new AssistantRepository('alice'),snapshot=await repo.read();
+ const changes=planAssistantChanges(snapshot.data,[
+  {target:'sections',action:'create',id:'section-new',values:{name:'Semester'}},
+  {target:'projects',action:'create',id:'card-new',values:{name:'Read chapter',nextStep:'Read page 1',sectionId:'section-new',checklist:'[ ] Read\n[ ] Practice',dueDate:'2026-11-05',rank:512}},
+  {target:'courses',action:'create',id:'course-new',values:{name:'Networks',notes:'Revision',requires:['a'],topics:[{id:'topic-one',title:'Protocols',done:false}]}},
+  {target:'tasks',action:'create',id:'task-new',values:{courseId:'course-new',title:'Homework',kind:'assignment',due:'2026-11-01T20:00:00+02:00'}},
+  {target:'tasks',action:'create',id:'exam-new',values:{courseId:'course-new',title:'Final',kind:'exam',due:'2027-02-01T09:00:00+02:00'}},
+  {target:'lessons',action:'create',id:'lecture-new',values:{courseId:'course-new',day:0,start:'09:20',end:'12:00',sessionType:'lecture',room:'104'}},
+  {target:'lessons',action:'create',id:'tutorial-new',values:{courseId:'course-new',day:4,start:'11:00',end:'12:00',sessionType:'tutorial'}},
+  {target:'courses',action:'update',id:'a',values:{notes:'Prerequisite notes',topics:[{id:'topic',title:'Proofs',done:true}]}},
+  {target:'courses',action:'update',id:'b',values:{requires:['a']}},
+  {target:'projects',action:'create',id:'archived-card',values:{name:'Finished reading',nextStep:'',status:'done',archivedAt:Date.now(),resourceType:'book',progressUnits:40,totalUnits:40}},
+ ]);
+ expect(changes).toHaveLength(10);const receipt=await repo.apply(snapshot,changes);
+ const saved=await new AssistantRepository('alice').read(),course=saved.data.study.courses.find(c=>c.name==='Networks')!;
+ expect(saved.data.study.tasks.filter(t=>t.courseId===course.id)).toHaveLength(2);expect(saved.data.study.lessons.filter(l=>l.courseId===course.id)).toHaveLength(2);
+ const card=saved.data.scopes[0].projects.find(c=>c.name==='Read chapter')!;expect(saved.data.scopes[0].sections.find(s=>s.id===card.sectionId)?.name).toBe('Semester');
+ expect(saved.data.scopes[0].projects.find(c=>c.name==='Finished reading')?.archivedAt).toBeGreaterThan(0);expect(saved.data.study.courses.find(c=>c.id==='a')?.topics?.[0].done).toBe(true);
+ expect(receipt.mutations.size).toBe(10);
+});
+it('deletes an empty section and can undo it, but rejects deleting an occupied section without moving its cards',async()=>{
+ await env.withSecurityRulesDisabled(async ctx=>{
+  await setDoc(doc(ctx.firestore(),'users/alice/sections/section'),{name:'Old',revision:0,updatedAt:serverTimestamp()});
+  await setDoc(doc(ctx.firestore(),'users/alice/projects/card'),{name:'Card',nextStep:'',status:'active',sectionId:'section',rank:0,revision:0,updatedAt:serverTimestamp()});
+ });
+ const repo=new AssistantRepository('alice'),snapshot=await repo.read();
+ expect(()=>planAssistantChanges(snapshot.data,[{target:'sections',action:'delete',id:'section'}])).toThrow('assistant-invalid');
+ const changes=planAssistantChanges(snapshot.data,[{target:'sections',action:'delete',id:'section'},{target:'projects',action:'update',id:'card',values:{sectionId:''}}]);
+ const receipt=await repo.apply(snapshot,changes);expect((await repo.read()).data.scopes[0].sections).toEqual([]);
+ await repo.undo(receipt);expect((await repo.read()).data.scopes[0].sections[0].name).toBe('Old');
+});
+it('patches reviewed workflow settings without overwriting unrelated concurrent choices and confirms server values',async()=>{
+ const {patchPreferences,readPreferences}=await import('../src/lib/workflowPreferences');
+ const ref=doc(runtime.db as never,'users/alice/preferences/workflow');
+ const expected=readPreferences('alice');
+ await setDoc(ref,{autoArchive:false,reminders:false,desktop:false,reviewDays:30,updatedAt:serverTimestamp()});
+ await patchPreferences('alice',expected,{autoArchive:true,reviewDays:14});
+ const saved=(await getDoc(ref)).data()!;expect(saved).toMatchObject({autoArchive:true,reminders:false,reviewDays:14});
+ await expect(patchPreferences('alice',expected,{reviewDays:60})).rejects.toThrow('assistant-conflict');
+ expect((await getDoc(ref)).data()?.reviewDays).toBe(14);
+});

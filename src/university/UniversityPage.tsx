@@ -1,3 +1,4 @@
+import { studyView } from '../lib/navigation'
 import { createClientId } from '../lib/clientId'
 import { translateStudyText, useStudyLanguage } from "./studyLocaleContext";
 import StudyLocalized from "./StudyLocale";
@@ -96,7 +97,8 @@ function Workspace({ user }: {
     const [state, setState] = useState(initial.state), [error, setError] = useState(initial.error), [message, setMessage] = useState(""), [busy, setBusy] = useState(false);
     const [scheduleEdit,setScheduleEdit]=useState<UniversityState|null>(null);
     const [undo,setUndo] = useState<DeletedStudyItem|null>(null);
-    const [tab, setTab] = useState<"overview" | "schedule" | "map">("overview"), [filter, setFilter] = useState(""), [preview, setPreview] = useState<PlanPreview | null>(null), [batchOpen, setBatchOpen] = useState(false);
+    const [tab, setTab] = useState<"overview" | "schedule" | "map">(()=>studyView().tab), [filter, setFilter] = useState(()=>studyView().courseId), [preview, setPreview] = useState<PlanPreview | null>(null), [batchOpen, setBatchOpen] = useState(false);
+    useEffect(()=>{const changed=()=>{const next=studyView();setTab(next.tab);setFilter(next.courseId)};window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed)},[]);
     const [editing, setEditing] = useState<{
         kind: "course";
         value: Course;
@@ -447,7 +449,7 @@ function Workspace({ user }: {
                           {l.start} — {l.end}
                         </time>
                         <strong dir="auto">{courseName(l.courseId)}</strong>
-                        <small>{sessionNames[l.sessionType||'lecture']}</small><small dir="auto">{l.room || "بدون قاعة"}</small>
+                        <small>{sessionNames[l.sessionType||'lecture']}</small><small dir="auto">{l.room || "بدون قاعة"}</small>{l.notes&&<small dir="auto">{l.notes}</small>}
                       </button>))}
                 </section>))}
             </div>
@@ -625,6 +627,7 @@ function Workspace({ user }: {
                             start: String(f.get("start")),
                             end: String(f.get("end")),
                             room: String(f.get("room")),
+                            notes: String(f.get("notes")||""),
                         sessionType: String(f.get('sessionType')||'lecture') as Lesson['sessionType'],
                         };
                         if (lesson.end <= lesson.start)
@@ -738,7 +741,7 @@ function Workspace({ user }: {
                       <label>
                         المكان / القاعة
                         <input name="room" maxLength={200} defaultValue={editing.value.room}/>
-                      </label>
+                      </label><label>ملاحظات<textarea name="notes" maxLength={1000} defaultValue={editing.value.notes||""} dir="auto"/></label>
                     </>)}
                 </>)}
               <div className="study-form-actions">

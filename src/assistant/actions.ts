@@ -1,3 +1,7 @@
+import { parseTasks } from './taskLedger';
+import type { AssistantTask } from './taskLedger';
+import { parseControls } from './controlContract';
+import type { AssistantControl } from './controlContract';
 import { createClientId } from '../lib/clientId'
 import { ProjectEntity } from '../lib/projectEntity';
 import type { ProjectChanges } from '../lib/projectEntity';
@@ -5,15 +9,15 @@ import type { Project, Section } from '../types';
 import { emptyUniversity } from '../university/model';
 import type { UniversityState } from '../university/model';
 import { parsePlanBackup } from '../university/planImport';
-export type AssistantScope = { id: string; name: string; projects: Project[]; sections: Section[] };
+export type AssistantScope = { id: string; name: string; role?:'manager'|'member'; members?:{uid:string;name:string;role:string}[]; projects: Project[]; sections: Section[] };
 export type AssistantData = { study: UniversityState; scopes: AssistantScope[] };
 export type Action = { target: 'courses'|'tasks'|'lessons'|'projects'|'sections'; action: 'create'|'update'|'delete'|'trash'; id?: string; scope?: string; values?: Record<string, unknown> };
-export type Change = { target: Action['target']; scope: string; id: string; before: unknown; after: unknown };
-export type AssistantReply = { text: string; actions: Action[]; files: { name: string; content: string }[] };
+export type Change = { target: Action['target']; scope: string; id: string; before: unknown; after: unknown; actionIndexes?:number[] };
+export type AssistantReply = { tasks?:AssistantTask[]; controls?: AssistantControl[]; text: string; actions: Action[]; files: { name: string; content: string }[] };
 const fields = {
  courses: ['name','url','notes','requires','topics','x','y'], tasks: ['courseId','title','kind','due','done','notes','url'],
- lessons: ['courseId','sessionType','day','start','end','room'],
- projects: ['name','nextStep','status','description','dueDate','followUpDate','checkpoint','checklist','sectionId','projectUrl','attachmentUrl','links','resourceType','progressUnits','totalUnits','kind'], sections: ['name'],
+ lessons: ['courseId','sessionType','day','start','end','room','notes'],
+ projects: ['name','nextStep','status','description','dueDate','followUpDate','checkpoint','checklist','sectionId','projectUrl','attachmentUrl','links','resourceType','progressUnits','totalUnits','kind','rank','assignedTo','coverUrl','archivedAt','trashedAt'], sections: ['name'],
 };
 function invalid(reason:string):never{throw new Error('assistant-invalid',{cause:new Error(reason)});}
 function object(value: unknown): Record<string, unknown> {
@@ -29,7 +33,7 @@ export function parseAssistantReply(text: string): AssistantReply {
   // Omitted empty optional arrays are safe; malformed arrays remain an error.
   if(value.actions===undefined)value.actions=[];
   if(value.files===undefined)value.files=[];
-  if(typeof value.text!=='string'||value.text.length>12000||!Array.isArray(value.actions)||value.actions.length>20||!Array.isArray(value.files)||value.files.length>3)throw new Error('assistant-format');
+  if(typeof value.text!=='string'||value.text.length>12000||!Array.isArray(value.actions)||value.actions.length>50||!Array.isArray(value.files)||value.files.length>3)throw new Error('assistant-format');
   for(const raw of value.actions){
    const a=object(raw);
    if(!Object.hasOwn(fields,String(a.target))||!['create','update','delete','trash'].includes(String(a.action))||Object.keys(a).some(k=>!['target','action','id','scope','values'].includes(k)))throw new Error();
@@ -39,12 +43,14 @@ export function parseAssistantReply(text: string): AssistantReply {
    if(Object.keys(values).some(k=>!fields[a.target as Action['target']].includes(k)))invalid('assistant-fields');
   }
   const files=value.files.map(raw=>{const f=object(raw);if(typeof f.name!=='string'||typeof f.content!=='string'||f.content.length>30000||!f.name.trim()||f.name.length>100)throw new Error();return {name:Array.from(f.name).map(c=>c==='/'||c==='\\'||c.charCodeAt(0)<32?'_':c).join('').replace(/\.[^.]+$/,'')+'.txt',content:f.content};});
-  return {text:value.text,actions:value.actions as Action[],files};
+  const controls=parseControls(value.controls);
+  const tasks=parseTasks(value.tasks,value.actions.length,controls.length);
+  return {text:value.text,actions:value.actions as Action[],files,...(controls.length?{controls}:{}),...(tasks.length?{tasks}:{})};
  }catch(error) {if((error as Error).message==='assistant-format')throw error;throw new Error('assistant-invalid',{cause:error});}
 }
 /** Model output is a proposal. Only whitelisted domain changes reach the persistence adapter. */
-export function planAssistantChanges(data: AssistantData, actions: Action[], now=Date.now()): Change[] {
- if(actions.length>20)throw new Error('assistant-invalid');
+export function planAssistantChanges(data: AssistantData, actions: Action[], now=Date.now(), trackActions=false): Change[] {
+ if(actions.length>50)throw new Error('assistant-invalid');
  if(actions.length===0)return [];
  const working=structuredClone(data),aliases=new Map<string,string>();
  const changed=new Map<string,Change>();
@@ -54,7 +60,7 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
   aliases.set(a.id,createClientId());
  }
  const ref=(id:unknown)=>typeof id==='string'?(aliases.get(id)||id):id;
- for(const a of actions){
+ for(const [actionIndex,a] of actions.entries()){
   if(!Object.hasOwn(fields,a.target))throw new Error('assistant-invalid');
   const scope=a.target==='projects'||a.target==='sections'?(a.scope||'personal'):'personal';
   const workspace=working.scopes.find(s=>s.id===scope);
@@ -75,13 +81,14 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
   if('requires' in patch){if(!Array.isArray(patch.requires))throw new Error('assistant-invalid');patch.requires=patch.requires.map(ref);}
   let after:Record<string,unknown>|null;
   if(a.action==='delete'){
-   if(a.target==='projects'||a.target==='sections')throw new Error('assistant-invalid');
+   if(a.target==='projects')throw new Error('assistant-invalid');
    after=null;
   }else if(a.target==='projects'){
    if(a.action==='trash')patch.trashedAt=now;
    else if(!['create','update'].includes(a.action))throw new Error('assistant-invalid');
    after=(before?ProjectEntity.restore(before as unknown as Project).apply('edit',patch as ProjectChanges,(before as unknown as Project).revision,now)!:ProjectEntity.create(id,String(patch.name||''),String(patch.nextStep||''),now,patch as ProjectChanges,now)).snapshot() as unknown as Record<string,unknown>;
-   if(after.sectionId&&!workspace.sections.some(s=>s.id===after!.sectionId))throw new Error('assistant-invalid');
+
+   if(patch.assignedTo&&scope!=='personal'&&workspace.members&&!workspace.members.some(m=>m.uid===patch.assignedTo))invalid('assistant-reference');
    if(data.study.tasks.some(t=>t.reminderProjectId===id)&&scope==='personal')throw new Error('assistant-linked-reminder');
   }else if(a.target==='sections'){
    if(!['create','update'].includes(a.action)||typeof patch.name!=='string'||!patch.name.trim()||patch.name.length>60)throw new Error('assistant-invalid');
@@ -95,8 +102,9 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
   if(index>=0)list.splice(index,1);
   if(after)list.push(after as {id:string;[key:string]:unknown});
   const key=[a.target,scope,id].join('/'),existing=changed.get(key);
-  changed.set(key,{target:a.target,scope,id,before:existing?existing.before:before,after});
+  changed.set(key,{target:a.target,scope,id,before:existing?existing.before:before,after,...(trackActions?{actionIndexes:[...(existing?.actionIndexes||[]),actionIndex]}:{})});
  }
+ for(const workspace of working.scopes)for(const project of workspace.projects)if(project.sectionId&&!workspace.sections.some(s=>s.id===project.sectionId))invalid('assistant-reference');
  const parsed=parsePlanBackup(working.study);
  if(parsed.courses.some(c=>!c.name.trim())||parsed.tasks.some(t=>!t.title.trim()))throw new Error('assistant-invalid');
  for(const change of changed.values())if(change.after&&['courses','tasks','lessons'].includes(change.target)){
@@ -107,3 +115,8 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
  return [...changed.values()].filter(c=>JSON.stringify(c.before)!==JSON.stringify(c.after));
 }
 export const blankAssistantData=():AssistantData=>({study:emptyUniversity(),scopes:[{id:'personal',name:'Personal',projects:[],sections:[]}]});
+
+/** Clock sampling and ledger metadata belong to the proposal adapter, outside React rendering. */
+export function planAssistantProposal(data:AssistantData,actions:Action[]):Change[]{
+ return planAssistantChanges(data,actions,Date.now(),true);
+}
