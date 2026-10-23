@@ -58,3 +58,8 @@ test('batch requests expose all control contracts and budget output for multiple
  assert.deepEqual(schema.properties.controls.items.properties.kind.enum,['appearance','language','sleep','workflow','navigate','tour']);
  assert.match(calls[0][1].messages[0].content,/Do not silently drop a task/);
 });
+test('course identity resolution uses cloud Qwen with a compact structured response and semantic matching instructions',async()=>{
+ const {env,calls}=fixture();const matches=[{requested:'Networks',courseId:'existing-id',candidates:[]}];env.AI.run=async(...args)=>{calls.push(args);return {response:{matches}};};
+ const answer=await assistant(env,'alice',{mode:'course-match',message:'Match requested course references.',language:'ar',context:JSON.stringify({requested:['Networks'],courses:[{id:'existing-id',name:'2026 / Introduction to Data Networks'}]})});
+ assert.deepEqual(JSON.parse(answer.text),{matches});assert.equal(calls[0][0],ASSISTANT_MODEL);assert.equal(calls[0][1].max_tokens,1536);assert.match(calls[0][1].messages[0].content,/meaning, not exact spelling/);assert.deepEqual(calls[0][1].response_format.json_schema.required,['matches']);
+});
