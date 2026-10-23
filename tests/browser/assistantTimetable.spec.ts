@@ -46,6 +46,6 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  const sticky=await page.locator('.study-week > section h3').first().evaluate(el=>({header:el.getBoundingClientRect().top,container:el.closest('.study-timetable-scroll')!.getBoundingClientRect().top}));expect(Math.abs(sticky.header-sticky.container)).toBeLessThan(3);
  await timetable.evaluate(el=>{el.scrollTop=0;});await page.setViewportSize({width:1280,height:720});
 
- await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();await chat.getByLabel('رسالتك',{exact:true}).fill(weeklyRequest);await chat.getByRole('button',{name:'إرسال',exact:true}).click();await expect(chat.locator('.assistant-proposal')).toHaveCount(0);
+ await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();await chat.getByLabel('رسالتك',{exact:true}).fill(weeklyRequest);await chat.getByRole('button',{name:'إرسال',exact:true}).click();await expect.poll(()=>cloudMatches).toBe(2);await expect(chat).toHaveAttribute('aria-busy','false');await expect(chat.getByRole('alert')).toHaveCount(0);await expect(chat.locator('.assistant-proposal')).toHaveCount(0);
  await expect(page.locator('.study-lesson')).toHaveCount(14);expect(cloudMatches).toBe(2);
 });
