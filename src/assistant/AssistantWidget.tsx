@@ -1,3 +1,5 @@
+import { isStandaloneTimetableList } from './bulkTimetable';
+import { AssistantProposalClient } from './proposalClient';
 import { useEffect, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import type { Language } from '../translations';
@@ -8,7 +10,7 @@ import { assistantValidationHint } from './validationHint';
 import { courseMatchRequest,resolvedTimetableReply,noCoursesReply } from './courseMatching';
 import { quickAssistantReply } from './quickActions';
 import { proposalStatus, confirmedChangeCount } from './replyStatus';
-import { parseAssistantReply, planAssistantProposal } from './actions';
+import { parseAssistantReply, planAssistantProposal, resolveProposalControls } from './actions';
 import type { AssistantReply, Change } from './actions';
 import { AssistantRepository, assistantContext } from './assistantRepository';
 import type { AssistantSnapshot, AssistantReceipt } from './assistantRepository';
@@ -57,18 +59,26 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    const snapshot=await repository.read();
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    let quick=quickAssistantReply(message,snapshot.data,language,messages.map(m=>({role:m.role,content:m.text+(m.resolved?' [proposal resolved; do not repeat]':'')})));
-   const matching=!preferLocal&&!localReady?courseMatchRequest(message,snapshot.data,language):null;
+   const matching=!preferLocal&&!localReady&&isStandaloneTimetableList(message)?courseMatchRequest(message,snapshot.data,language):null;
    if(matching&&!matching.courses.length)quick=noCoursesReply(language);
-   const request={mode:matching&&!quick?'course-match':'workspace',message:matching&&!quick?'Match requested course references to existing account courses.':message,language,context:quick?'':matching?JSON.stringify(matching):JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities.map(({id,mode})=>({id,mode}))}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
+   const request={mode:matching&&!quick?'course-match':'workspace',message:matching&&!quick?'Match requested course references to existing account courses.':message,language,context:quick?'':matching?JSON.stringify(matching):JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
    if(request.context.length>44000||JSON.stringify(request).length>65000)throw new Error('assistant-too-large');
    if(!quick&&preferLocal&&!localReady)throw new Error('assistant-local-not-ready');
    setPhase('thinking');
-   const result=quick?{text:JSON.stringify(quick)}:localReady?await local.current!.answer(request):await pushCall<{text:string}>(request,{path:'/assistant',timeout:60000});
+   const validate=(text:string)=>{
+    const reply=matching&&!quick?resolvedTimetableReply(message,snapshot.data,language,matching,text):parseAssistantReply(text);
+    if(!quick&&request.mode==='workspace'&&(reply.actions.length||reply.controls?.length)&&!reply.tasks?.length)throw new Error('assistant-invalid',{cause:new Error('assistant-task-coverage')});
+    let changes:Change[];
+    try{changes=planAssistantProposal(snapshot.data,reply.actions);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
+    const controlPlans=controls.plan(resolveProposalControls(snapshot.data,reply.actions,changes,reply.controls||[]),language,snapshot.data.scopes.map(s=>s.id));
+    return {reply,controlPlans,changes};
+   };
+   const prepared=quick?validate(JSON.stringify(quick)):localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
+    if(!mounted.current||auth?.currentUser?.uid!==user.uid)throw new Error('account-changed');
+    return pushCall<{text:string}>(payload,{path:'/assistant',timeout});
+   }).prepare(request,validate,()=>{if(mounted.current)setPhase('repairing');});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
-   const reply=matching&&!quick?resolvedTimetableReply(message,snapshot.data,language,matching,result.text):parseAssistantReply(result.text);
-   const controlPlans=controls.plan(reply.controls||[],language,snapshot.data.scopes.map(s=>s.id));
-   let changes:Change[];
-   try{changes=planAssistantProposal(snapshot.data,reply.actions);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
+   const {reply,controlPlans,changes}=prepared;
    setMessages(old=>[...old,{role:'assistant',text:controlPlans.length?ct.review:quick||matching?reply.text:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
   }catch(e){if(mounted.current){report(e);setText(current=>current||message);}}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}

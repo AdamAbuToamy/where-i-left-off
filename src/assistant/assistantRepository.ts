@@ -1,3 +1,4 @@
+import { localDateKey } from '../lib/projects';
 import { createClientId } from '../lib/clientId'
 import { collection, doc, getDocsFromServer, getDocFromServer, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
@@ -112,7 +113,7 @@ export function assistantContext(snapshot:AssistantSnapshot,message?:string):str
  // while retaining IDs, notes, tasks and timetable for ordinary account operations.
  const needsSource=!message||/لخص|تلخيص|ملخص|محتو|اشرح|شرح|نصائح|نصيحه|نصيحة|summari[sz]|content|explain|advi[cs]|סכם|סיכום|תוכן|הסבר|עצה/i.test(message);
  const data=needsSource?snapshot.data:{...snapshot.data,study:{...snapshot.data.study,courses:snapshot.data.study.courses.map(c=>{const {source,...course}=c;return {...course,...(source?{sourceOmitted:true}:{})};})}};
- const context=JSON.stringify({now:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,...data,pending:snapshot.pending});
+ const context=JSON.stringify({now:new Date().toISOString(),localDate:localDateKey(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,...data,pending:snapshot.pending});
  if(context.length>44000)throw new Error('assistant-too-large');
  return context;
 }

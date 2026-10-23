@@ -1,6 +1,6 @@
 import type { Language } from '../translations';
 import { assistantPresentation } from './presentationWords';
-export type AssistantPhase='reading'|'thinking'|'saving'|'undoing'|'model';
+export type AssistantPhase='reading'|'repairing'|'thinking'|'saving'|'undoing'|'model';
 export function AssistantMark(){return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M12 3 14.7 9.3 21 12l-6.3 2.7L12 21l-2.7-6.3L3 12l6.3-2.7L12 3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/><path d="m20 2 .6 1.4L22 4l-1.4.6L20 6l-.6-1.4L18 4l1.4-.6L20 2Z" fill="currentColor"/></svg>;}
 export default function AssistantWaiting({phase,language,progress}:{phase:AssistantPhase;language:Language;progress:number}){
  const t=assistantPresentation[language];

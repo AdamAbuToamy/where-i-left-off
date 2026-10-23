@@ -1,8 +1,9 @@
+import { validDate } from '../lib/projects';
 import { backgrounds, themes } from '../lib/theme';
 export type AssistantControl={kind:'appearance'|'language'|'sleep'|'workflow'|'navigate'|'tour';values:Record<string,unknown>};
 export type ControlPlan={control:AssistantControl;before:Record<string,unknown>;after:Record<string,unknown>};
 export type ControlResult={plan:ControlPlan;ok:boolean;reason?:string};
-const fields={appearance:['theme','background'],language:['language'],sleep:['enabled'],workflow:['autoArchive','reminders','desktop','reviewDays'],navigate:['page','groupId','tab','courseId','view','filter','search','section','mine'],tour:[]};
+const fields={appearance:['theme','background'],language:['language'],sleep:['enabled'],workflow:['autoArchive','reminders','desktop','reviewDays'],navigate:['page','groupId','tab','courseId','view','filter','search','section','mine','weekOf'],tour:[]};
 const pages=['personal','resume','university','groups','settings','notifications','library','analytics','logs','support'];
 const invalid=()=>{throw new Error('assistant-invalid');};
 export function parseControls(raw:unknown):AssistantControl[]{
@@ -28,6 +29,7 @@ export function parseControls(raw:unknown):AssistantControl[]{
    if('filter' in v&&!['all','today','waiting','overdue','upcoming','active','later','done','ideas'].includes(String(v.filter)))return invalid();
    if('search' in v&&(typeof v.search!=='string'||v.search.length>300))return invalid();
    if('section' in v&&(typeof v.section!=='string'||!/^[-\w]{1,100}$/.test(v.section)))return invalid();
+   if('weekOf' in v&&(!['personal','groups'].includes(String(v.page))||v.view!=='week'||typeof v.weekOf!=='string'||!v.weekOf||!validDate(v.weekOf)))return invalid();
    if('mine' in v&&typeof v.mine!=='boolean')return invalid();
   }
   return {kind:c.kind,values:{...v}};

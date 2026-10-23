@@ -1,3 +1,4 @@
+import { validDate } from '../lib/projects';
 import { parseTasks } from './taskLedger';
 import type { AssistantTask } from './taskLedger';
 import { parseControls } from './controlContract';
@@ -56,7 +57,7 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
  const changed=new Map<string,Change>();
  const known=new Set([...data.study.courses,...data.study.tasks,...data.study.lessons,...data.scopes.flatMap(s=>[...s.projects,...s.sections])].map(x=>x.id));
  for(const a of actions)if(a.action==='create'){
-  if(!a.id||known.has(a.id)||aliases.has(a.id))throw new Error('assistant-invalid');
+  if(!a.id||known.has(a.id)||aliases.has(a.id))invalid('assistant-alias');
   aliases.set(a.id,createClientId());
  }
  const ref=(id:unknown)=>typeof id==='string'?(aliases.get(id)||id):id;
@@ -72,8 +73,10 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
   if(Object.keys(values).some(k=>!fields[a.target].includes(k)))invalid('assistant-fields');
   const patch={...values};
   for(const key of ['courseId','sectionId'])if(key in patch)patch[key]=ref(patch[key]);
-  if(a.target==='tasks'&&'due' in patch&&patch.due!==''&&(typeof patch.due!=='string'||!/(?:Z|[+-]\d{2}:\d{2})$/.test(patch.due)))throw new Error('assistant-invalid');
+  if(a.target==='tasks'&&'due' in patch&&patch.due!==''&&(typeof patch.due!=='string'||!/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/.test(patch.due)||!validDate(patch.due.slice(0,10))||!Number.isFinite(Date.parse(patch.due))))invalid('assistant-task-date');
   if(a.target==='lessons'){
+   if('sessionType' in patch&&!['lecture','tutorial','lab'].includes(patch.sessionType as string))invalid('assistant-fields');
+   if(a.action==='create'&&['courseId','day','start','end'].some(key=>!(key in patch)))invalid('assistant-clock');
    if('day' in patch&&(!Number.isInteger(patch.day)||Number(patch.day)<0||Number(patch.day)>6))invalid('assistant-clock');
    for(const key of ['start','end'])if(key in patch&&(typeof patch[key]!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(patch[key] as string)))invalid('assistant-clock');
   }
@@ -99,6 +102,7 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
    after={...defaults,...before,...patch,id};
   }
   if(a.target==='tasks'&&before?.reminderProjectId)throw new Error('assistant-linked-reminder');
+  if(a.target==='lessons'&&a.action==='create'&&working.study.lessons.some(l=>l.courseId===after?.courseId&&l.day===after?.day&&l.start===after?.start&&l.end===after?.end&&(l.sessionType||'lecture')===after?.sessionType))continue;
   if(index>=0)list.splice(index,1);
   if(after)list.push(after as {id:string;[key:string]:unknown});
   const key=[a.target,scope,id].join('/'),existing=changed.get(key);
@@ -119,4 +123,26 @@ export const blankAssistantData=():AssistantData=>({study:emptyUniversity(),scop
 /** Clock sampling and ledger metadata belong to the proposal adapter, outside React rendering. */
 export function planAssistantProposal(data:AssistantData,actions:Action[]):Change[]{
  return planAssistantChanges(data,actions,Date.now(),true);
+}
+
+/** UI links must use generated IDs from the same proposal, never its temporary aliases. */
+export function resolveProposalControls(data:AssistantData,actions:Action[],changes:Change[],controls:AssistantControl[]):AssistantControl[]{
+ const aliases=new Map<string,string>();
+ for(const change of changes)for(const index of change.actionIndexes||[]){
+  const action=actions[index];
+  if(action?.action==='create'&&action.id)aliases.set(action.id,change.id);
+ }
+ return controls.map(control=>{
+  if(control.kind!=='navigate')return control;
+  const values={...control.values};
+  for(const [field,target] of [['courseId','courses'],['section','sections']] as const){
+   if(!(field in values))continue;
+   values[field]=aliases.get(String(values[field]))||values[field];
+   const scope=values.page==='groups'?String(values.groupId||''):'personal';
+   const ids=new Set(target==='courses'?data.study.courses.map(c=>c.id):data.scopes.find(s=>s.id===scope)?.sections.map(s=>s.id)||[]);
+   for(const change of changes)if(change.target===target&&change.scope===scope){if(change.after)ids.add(change.id);else ids.delete(change.id);}
+   if(!ids.has(String(values[field])))invalid('assistant-reference');
+  }
+  return {...control,values};
+ });
 }

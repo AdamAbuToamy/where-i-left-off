@@ -58,7 +58,8 @@ export default function Workspace({ user, language, group, members }: { user: Us
   const [search, setSearch] = useState(()=>workspaceView().search)
   const [filter, setFilter] = useState(()=>workspaceView().filter)
   const [view, setView] = useState<'board' | 'week'>(()=>workspaceView().view)
-  useEffect(()=>{const changed=()=>{const next=workspaceView();setView(next.view);setSearch(next.search);setFilter(next.filter);setSectionFilter(next.section);setOnlyMine(next.mine)};window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed)},[])
+  const [weekOf,setWeekOf] = useState(()=>workspaceView().weekOf)
+  useEffect(()=>{const changed=()=>{const next=workspaceView();setWeekOf(next.weekOf);setView(next.view);setSearch(next.search);setFilter(next.filter);setSectionFilter(next.section);setOnlyMine(next.mine)};window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed)},[])
   const addButtonRef = useRef<HTMLButtonElement>(null)
   const autoCaptured = useRef(false)
   const workspaceMounted = useRef(true)
@@ -179,7 +180,7 @@ export default function Workspace({ user, language, group, members }: { user: Us
       </div>}
       {!projects.length && <p className="empty-state">{c.empty}</p>}
       {!!projects.length && !visible.length && <p className="empty-state">{r.empty}</p>}
-      {view === 'week' && <WeeklySchedule projects={visible} language={language} />}
+      {view === 'week' && <WeeklySchedule key={weekOf} projects={visible} language={language} weekOf={weekOf} />}
       <fieldset className="workspace-fields" disabled={pending} aria-busy={pending}>
         {view === 'board' && <ProjectBoard groupId={group?.id} members={group ? members : undefined} currentUid={user.uid} canManage={canManage} projects={visible} sections={sections} language={language} onReorder={(activeId, overId) => {
           void run(async () => {
