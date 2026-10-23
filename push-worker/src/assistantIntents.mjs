@@ -76,7 +76,7 @@ export function reconcileIntentProposal(proposal,intents,context={}){
   const intent=intents[r.intentIndex];
   if(intent.recordId&&chain.id!==intent.recordId)return false;
   if(r.operation==='delete')return chain.deleted;
-  if(r.operation==='trash')return chain.trashed||Number(chain.values.trashedAt)>0;
+  if(r.operation==='trash')return !chain.deleted&&Number(chain.values.trashedAt)>0;
   if(chain.deleted||!['create','update'].includes(r.operation))return false;
   // A new record may be built by one create or by create + subsequent edits.
   if(r.operation==='create'&&!chain.created)return false;

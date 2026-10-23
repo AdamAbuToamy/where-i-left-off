@@ -115,3 +115,8 @@ test('safe diagnostics never include raw values, names or provider payloads',asy
  const {safeCoverageIssues}=await import('./src/assistantIntents.mjs');
  assert.deepEqual(safeCoverageIssues([{task:1,reason:'missing-effect',target:'projects',field:'description',value:'secret'},{task:2,reason:'missing-effect',target:'private raw value',field:'token'}]),[{task:1,reason:'missing-effect',target:'projects',field:'description'},{task:2,reason:'missing-effect',target:'',field:''}]);
 });
+test('trash intent requires the final state to remain in trash',()=>{
+ const i={title:'Trash',subject:'card',recordId:'card',outcome:'proposed',requirements:[{target:'projects',operation:'trash',field:'',expectedJson:'null',match:'equals'}]};
+ const p={text:'Review',actions:[{target:'projects',action:'trash',id:'card',values:{}},{target:'projects',action:'update',id:'card',values:{trashedAt:0}}],controls:[],files:[],tasks:[]};
+ assert.ok(reconcileIntentProposal(p,[i],{scopes:[{id:'personal',projects:[{id:'card'}]}]}).issues.length);
+});

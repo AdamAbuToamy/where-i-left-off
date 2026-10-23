@@ -37,7 +37,10 @@ try{
  const {createServer}=await import('vite');vite=await createServer({server:{middlewareMode:true,hmr:false},appType:'custom'});
  const {evaluateAcceptance}=await vite.ssrLoadModule('/tests/fixtures/assistant/oracle.ts');
  let attempted=0;
- for(const testCase of acceptanceCases){
+ // Diagnose the reported compound-card failure before spending quota on the larger matrix.
+ const priority=id=>id.startsWith('compound-card')?0:id.startsWith('new-course-lesson')?1:id.startsWith('ten-cards')?2:3;
+ const ordered=[...acceptanceCases].sort((a,b)=>priority(a.id)-priority(b.id));
+ for(const testCase of ordered){
   if(report.results.some(r=>r.id===testCase.id&&r.status==='passed'))continue;if(attempted++>=limit)break;
   const response=await fetch(origin,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({id:testCase.id}),signal:AbortSignal.any([cancellation.signal,AbortSignal.timeout(120000)])}),result=await response.json();
   if(result.error==='ai-provider-limit'){report.stopped='provider-free-quota';save();console.log('Stopped at provider quota; no upgrade or paid fallback. Resume after quota resets.');process.exitCode=2;break;}
