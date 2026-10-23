@@ -125,3 +125,9 @@ test('incorrect display metadata cannot crash an otherwise valid effect reconcil
  const i={title:'Question',subject:'question',outcome:'answer',requirements:[]};
  const checked=reconcileIntentProposal(p,[i]);assert.deepEqual(checked.issues,[]);assert.equal(checked.proposal.tasks[0].detail,'An answer');
 });
+test('append prerequisite subset preserves existing graph edges',()=>{
+ const i={title:'Append prerequisite',subject:'c',recordId:'c',outcome:'proposed',requirements:[{target:'courses',operation:'update',field:'requires',expectedJson:'["b"]',match:'contains'}]};
+ const p={text:'Review',actions:[{target:'courses',action:'update',id:'c',values:{requires:['a','b']}}],controls:[],files:[],tasks:[]};
+ const context={study:{courses:[{id:'c',requires:['a']},{id:'a'},{id:'b'}]}};
+ assert.deepEqual(reconcileIntentProposal(p,[i],context).issues,[]);p.actions[0].values.requires=['b'];assert.ok(reconcileIntentProposal(p,[i],context).issues.length);
+});

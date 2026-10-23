@@ -45,7 +45,7 @@ function matches(actual,requirement,references=new Map()){
  if(['courseId','sectionId'].includes(requirement.field)&&typeof expected==='string')expected=references.get((requirement.field==='courseId'?'courses:':'sections:')+expected)||expected;
  if(requirement.field==='requires'&&Array.isArray(expected))expected=expected.map(id=>references.get('courses:'+id)||id);
  if(['archivedAt','trashedAt'].includes(requirement.field)&&typeof expected==='number'&&expected>0)return typeof actual==='number'&&actual>0;
- if(requirement.field==='requires'&&Array.isArray(actual)&&Array.isArray(expected))return actual.length===expected.length&&expected.every(id=>actual.includes(id));
+ if(requirement.field==='requires'&&Array.isArray(actual)&&Array.isArray(expected))return (requirement.match==='contains'||actual.length===expected.length)&&expected.every(id=>actual.includes(id));
  if(requirement.match==='positive')return typeof actual==='number'&&Number.isFinite(actual)&&actual>0;
  if(requirement.target==='tasks'&&requirement.field==='due'&&typeof actual==='string'&&typeof expected==='string'&&actual&&expected&&/(Z|[+-]\d{2}:\d{2})$/.test(actual)&&/(Z|[+-]\d{2}:\d{2})$/.test(expected)&&Number.isFinite(Date.parse(actual)))return Date.parse(actual)===Date.parse(expected);
  if(requirement.match==='equals')return same(actual,expected);
