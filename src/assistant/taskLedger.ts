@@ -10,7 +10,7 @@ export function parseTasks(value:unknown,actions:number,controls:number):Assista
   if(typeof task.title!=='string'||!task.title.trim()||task.title.length>300||typeof task.detail!=='string'||task.detail.length>1500||!['proposed','answer','needs-input','unsupported'].includes(task.outcome))throw new Error('assistant-invalid');
   for(const [key,size] of [['actionIndexes',actions],['controlIndexes',controls]] as const)if(!Array.isArray(task[key])||task[key].some((n:unknown)=>!Number.isInteger(n)||Number(n)<0||Number(n)>=size)||new Set(task[key]).size!==task[key].length)throw new Error('assistant-invalid');
   const references=task.actionIndexes.length+task.controlIndexes.length;
-  if(task.outcome==='proposed'?!references:references>0)throw new Error('assistant-invalid');
+  if(task.outcome==='proposed'?!references:task.actionIndexes.length>0||task.outcome==='answer'&&task.controlIndexes.length>0)throw new Error('assistant-invalid');
   return task as AssistantTask;
  });
  if(parsed.length){

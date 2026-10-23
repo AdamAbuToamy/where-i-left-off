@@ -38,3 +38,5 @@ app-check-repair-report.json
 api-protection-report.json
 
 push-worker/wrangler.local.json.backup-*
+
+assistant-acceptance-live-report.json

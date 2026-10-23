@@ -1,5 +1,5 @@
 import { WORKSPACE_REPLY_FORMAT } from './assistantContract.mjs';
-import {INTENT_FORMAT,INTENT_SYSTEM,readIntents,verifyIntentCoverage} from './assistantIntents.mjs';
+import {INTENT_FORMAT,INTENT_SYSTEM,readIntents,reconcileIntentProposal,safeCoverageIssues} from './assistantIntents.mjs';
 
 export function assistantResponseText(result){
  const content=result?.response??result?.choices?.[0]?.message?.content??result?.output_text;
@@ -49,14 +49,15 @@ export async function assistant(env,uid,data){
  const input={messages:[{role:'system',content:system+' Reasoning effort: low.'},...(['chat','workspace'].includes(data.mode)?history.map(x=>({role:x.role,content:x.content})):[]),{role:'user',content:message}],max_tokens:matching?1536:workspace?(/\n|(?:10|عشر|عدة|several|multiple|batch|כמה|מספר)/i.test(data.message)?6144:longAnswer?4096:3072):2200,temperature:0.2,...(matching?{response_format:COURSE_MATCH_FORMAT}:workspace?{response_format:WORKSPACE_REPLY_FORMAT}:{})};
  let text=assistantResponseText(await invoke(input));
  if(workspace){
+  let context={};try{context=JSON.parse(data.context||'{}');}catch{/* Input context remains subject to domain checks. */}
   const parse=()=>{try{return JSON.parse(text);}catch{return null;}};
-  let proposal=parse();
-  if(proposal&&!verifyIntentCoverage(proposal,intents)){
+  let proposal=parse(),checked=proposal?reconcileIntentProposal(proposal,intents,context):null;
+  if(checked?.issues.length){
    // One bounded semantic repair; incomplete proposals are never shown as successful.
-   text=assistantResponseText(await invoke({...input,messages:[...input.messages,{role:'assistant',content:text.slice(0,48000)},{role:'user',content:'The proposal omitted or contradicted inventoried requests. Regenerate the COMPLETE proposal, in inventory order, with every required field and original task count. No writes have occurred.'}]}));
-   proposal=parse();
+   text=assistantResponseText(await invoke({...input,messages:[...input.messages,{role:'assistant',content:text.slice(0,48000)},{role:'user',content:'Fix these specific missing effects: '+JSON.stringify(checked.issues)+'. Regenerate the COMPLETE proposal with all original requests. Task grouping/order is rebuilt by the app; focus on correct record IDs and actual field values. No writes have occurred.'}]}));
+   proposal=parse();checked=proposal?reconcileIntentProposal(proposal,intents,context):null;
   }
-  if(proposal){if(!verifyIntentCoverage(proposal,intents))throw new Error('ai-incomplete-proposal');text=JSON.stringify(proposal);}
+  if(checked){if(checked.issues.length){const error=new Error('ai-incomplete-proposal');error.details=safeCoverageIssues(checked.issues);console.info('assistant.coverage.failed',{issues:error.details});throw error;}text=JSON.stringify(checked.proposal);}
  }
  if(!text)throw new Error('ai-empty-response');
  if(text.length>48000)throw new Error('ai-response-too-large');
