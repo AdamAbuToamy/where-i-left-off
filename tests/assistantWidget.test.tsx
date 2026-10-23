@@ -75,3 +75,14 @@ it('reviews ten mixed site controls, executes them, and reports verified results
  const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
  expect(api.apply).not.toHaveBeenCalled();expect(localStorage.getItem('site-theme:alice')).toBe('olive');expect(element.textContent).toContain('10 / 10');
 });
+it('uses cloud AI for non-identical course names without downloading a local model, then previews actual IDs',async()=>{
+ const {timetableData,weeklyRequest,expectedSessions}=await import('./fixtures/weeklyTimetable');
+ const {courseMatchRequest}=await import('../src/assistant/courseMatching');const data=timetableData();data.study.courses=data.study.courses.map(c=>({...c,name:'2026 / '+c.name+' — סמסטר א'}));
+ const matching=courseMatchRequest(weeklyRequest,data,'en')!;api.read.mockResolvedValue({data,pending:false,raw:new Map()});
+ api.call.mockResolvedValue({text:JSON.stringify({matches:matching.requested.map((requested,i)=>({requested,courseId:matching.courses[i].id,candidates:[]}))})});
+ await open();await input(weeklyRequest);await submit();
+ expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'course-match',context:JSON.stringify(matching)}),{path:'/assistant',timeout:60000});
+ expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(14);expect(api.apply).not.toHaveBeenCalled();
+ api.apply.mockResolvedValue({changes:[],mutations:new Map()});const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
+ expect(api.apply.mock.calls[0][1].map((c:{after:unknown})=>c.after)).toEqual(expectedSessions.map(s=>expect.objectContaining(s)));
+});

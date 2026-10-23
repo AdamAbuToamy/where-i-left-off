@@ -5,6 +5,7 @@ import { auth } from '../lib/firebase';
 import { pushCall } from '../lib/pushNotifications';
 import type { LocalAssistantModel } from './localModel';
 import { assistantValidationHint } from './validationHint';
+import { courseMatchRequest,resolvedTimetableReply,noCoursesReply } from './courseMatching';
 import { quickAssistantReply } from './quickActions';
 import { proposalStatus, confirmedChangeCount } from './replyStatus';
 import { parseAssistantReply, planAssistantProposal } from './actions';
@@ -55,18 +56,20 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   try{
    const snapshot=await repository.read();
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
-   const quick=quickAssistantReply(message,snapshot.data,language,messages.map(m=>({role:m.role,content:m.text+(m.resolved?' [proposal resolved; do not repeat]':'')})));
-   const request={mode:'workspace',message,language,context:quick?'':JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities.map(({id,mode})=>({id,mode}))}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
+   let quick=quickAssistantReply(message,snapshot.data,language,messages.map(m=>({role:m.role,content:m.text+(m.resolved?' [proposal resolved; do not repeat]':'')})));
+   const matching=!preferLocal&&!localReady?courseMatchRequest(message,snapshot.data,language):null;
+   if(matching&&!matching.courses.length)quick=noCoursesReply(language);
+   const request={mode:matching&&!quick?'course-match':'workspace',message:matching&&!quick?'Match requested course references to existing account courses.':message,language,context:quick?'':matching?JSON.stringify(matching):JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities.map(({id,mode})=>({id,mode}))}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
    if(request.context.length>44000||JSON.stringify(request).length>65000)throw new Error('assistant-too-large');
    if(!quick&&preferLocal&&!localReady)throw new Error('assistant-local-not-ready');
    setPhase('thinking');
    const result=quick?{text:JSON.stringify(quick)}:localReady?await local.current!.answer(request):await pushCall<{text:string}>(request,{path:'/assistant',timeout:60000});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
-   const reply=parseAssistantReply(result.text);
+   const reply=matching&&!quick?resolvedTimetableReply(message,snapshot.data,language,matching,result.text):parseAssistantReply(result.text);
    const controlPlans=controls.plan(reply.controls||[],language,snapshot.data.scopes.map(s=>s.id));
    let changes:Change[];
    try{changes=planAssistantProposal(snapshot.data,reply.actions);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
-   setMessages(old=>[...old,{role:'assistant',text:controlPlans.length?ct.review:quick?reply.text:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
+   setMessages(old=>[...old,{role:'assistant',text:controlPlans.length?ct.review:quick||matching?reply.text:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
   }catch(e){if(mounted.current){report(e);setText(current=>current||message);}}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
  }
@@ -98,6 +101,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   <button ref={button} className="assistant-launcher" aria-label={t.open} aria-expanded={open} aria-controls="wilo-assistant" onClick={()=>open?close():setOpen(true)}><span className="assistant-launcher-mark"><AssistantMark/></span><span>{t.name}</span><span className="assistant-launcher-dot" aria-hidden="true"/></button>
   {open&&<section id="wilo-assistant" role="dialog" aria-label={t.name} className="assistant-panel" aria-busy={busy} onKeyDown={e=>{if(e.key==='Escape')close();}}>
    <header className="assistant-header"><span className="assistant-brand-mark"><AssistantMark/></span><div className="assistant-heading"><strong>{t.name}</strong><span><i aria-hidden="true"/>{localReady?ui.local:preferLocal?ui.notReady:ui.cloud}</span></div><button type="button" className="assistant-close" aria-label={t.close} onClick={close}><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg></button></header>
+   {preferLocal&&!localReady&&<div className="assistant-intro"><p>{ui.notReady}</p><button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button></div>}
    <div ref={conversation} className="assistant-messages" role="log" aria-live="polite" aria-relevant="additions text"><div className="assistant-intro"><span className="assistant-intro-title">{ui.welcome}</span><p>{t.intro}</p><span className="assistant-review-hint">{ui.hint}</span></div>{messages.map((m,i)=><article className={'assistant-message is-'+m.role} key={i}><span className="assistant-message-author">{m.role==='user'?ui.you:ui.assistant}</span><p dir="auto">{m.text}</p>
     {m.reply?.tasks?.map((task,index)=><p key={'task-'+index}><strong>{task.title}</strong> · {taskStateWords[language][taskState(task,m.changes||[],m.receipt?.changes,m.controlResults,!!m.resolved,!!m.undone)]}{task.outcome!=='proposed'&&task.detail?' · '+proposalStatus(task.detail,[],language):''}</p>)}
     {m.reply?.files.map((file,index)=><button type="button" key={index} onClick={()=>download(file.name,file.content)}>{t.download}: {file.name}</button>)}

@@ -71,7 +71,7 @@ export function quickAssistantReply(message:string,data:AssistantData,language:L
  else return null;
  // Without a named course we resolve only when the account has exactly one course.
  const candidates=/^(?:it|هذا الكورس|الكورس|אותו)$/.test(courseName)?data.study.courses:data.study.courses.filter(c=>fold(c.name)===courseName);
- if(candidates.length!==1)return reply(t.which);
+ if(candidates.length!==1)return /^(?:it|هذا الكورس|الكورس|אותו)$/.test(courseName)?reply(t.which):null;
  // Bare 5–6 is ambiguous (morning/evening). Let the assistant clarify rather than guess.
  if(!period&&(!startRaw.includes(':')||!endRaw.includes(':')))return null;
  const start=clock(startRaw,period),end=clock(endRaw,period),day=days.findIndex(names=>names.includes(dayName));
