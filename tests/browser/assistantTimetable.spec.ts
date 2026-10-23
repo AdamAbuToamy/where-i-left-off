@@ -36,6 +36,15 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  await page.reload();await page.getByRole('button',{name:'الجدول الأسبوعي',exact:true}).click();await expect(page.locator('.study-lesson')).toHaveCount(14);
  const counts=[2,3,1,3,5,0,0];for(let day=0;day<7;day++)await expect(page.locator('.study-week > section').nth(day).locator('.study-lesson')).toHaveCount(counts[day]);
  await expect(page.locator('.study-lesson').filter({hasText:'כיתה הפוכה'})).toHaveCount(1);
+ const timetable=page.locator('.study-timetable-scroll');await expect(timetable).toBeVisible();await expect(page.locator('.study-hour-label').first()).toHaveText('08:00');
+ const offset=await page.locator('.study-lesson').filter({hasText:'13:20'}).evaluate(el=>({top:(el as HTMLElement).style.top,height:(el as HTMLElement).style.height}));expect(offset).toEqual({top:'450px',height:'220px'});
+ await page.screenshot({path:'test-results/layout-review/university-hourly-desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ expect(await timetable.evaluate(el=>el.scrollWidth>el.clientWidth)).toBe(true);await page.screenshot({path:'test-results/layout-review/university-hourly-phone.png',fullPage:true});
+ await timetable.evaluate(el=>{el.scrollTop=300;});
+ const sticky=await page.locator('.study-week > section h3').first().evaluate(el=>({header:el.getBoundingClientRect().top,container:el.closest('.study-timetable-scroll')!.getBoundingClientRect().top}));expect(Math.abs(sticky.header-sticky.container)).toBeLessThan(3);
+ await timetable.evaluate(el=>{el.scrollTop=0;});await page.setViewportSize({width:1280,height:720});
+
  await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();await chat.getByLabel('رسالتك',{exact:true}).fill(weeklyRequest);await chat.getByRole('button',{name:'إرسال',exact:true}).click();await expect(chat).toContainText('حصص مطابقة موجودة بالفعل: 14');await expect(chat.locator('.assistant-proposal')).toHaveCount(0);
  await expect(page.locator('.study-lesson')).toHaveCount(14);expect(cloudMatches).toBe(semantic?2:0);
 });

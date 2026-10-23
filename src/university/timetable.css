@@ -1,0 +1,104 @@
+.study-timetable-scroll {
+  overflow: auto;
+  min-width: 0;
+  max-width: 100%;
+  max-height: min(78dvh, 900px);
+  border: 1px solid var(--study-border);
+  border-radius: 14px;
+  background: var(--panel-bg, var(--study-paper));
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  isolation: isolate;
+}
+.study-timetable-scroll:focus-visible {outline: 2px solid var(--site-accent, #385c4b);outline-offset: 3px}
+.study-week.study-time-grid {
+  display: grid;
+  grid-template-columns: 62px repeat(7, minmax(145px, 1fr));
+  min-width: 1077px;
+  gap: 0;
+  overflow: visible;
+  padding: 0 0 16px;
+}
+.study-week.study-time-grid > section {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-inline-start: 1px solid var(--study-border);
+  border-radius: 0;
+  background: transparent;
+}
+.study-week.study-time-grid h3 {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 50px;
+  margin: 0;
+  padding: 8px;
+  border-bottom: 1px solid var(--study-border);
+  background: var(--panel-bg, var(--study-paper));
+  color: var(--site-text, var(--study-ink));
+  font-size: 13px;
+}
+.study-time-axis {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 7;
+  background: var(--panel-bg, var(--study-paper));
+}
+.study-time-axis-track, .study-day-track {position: relative}
+.study-hour-label {
+  position: absolute;
+  inset-inline: 0;
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--site-text, var(--study-ink));
+  line-height: 14px;
+}
+.study-day-track {
+  background-image: linear-gradient(to bottom, var(--study-border) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--study-border) 45%, transparent) 1px, transparent 1px);
+  background-size: 100% var(--study-hour-height), 100% var(--study-half-hour-height);
+}
+.study-week.study-time-grid .study-hour-lesson {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 2px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-inline-start: 4px solid;
+  border-radius: 7px;
+  background: var(--site-soft, #e9ecdf);
+  text-align: start;
+  line-height: 1.25;
+  cursor: pointer;
+}
+.study-week.study-time-grid .study-hour-lesson time {font-size: 11px;font-variant-numeric: tabular-nums;white-space: nowrap}
+.study-week.study-time-grid .study-hour-lesson strong {font-size: 12px;display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;overflow: hidden;flex-shrink: 0}
+.study-week.study-time-grid .study-hour-lesson small {font-size: 11px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;flex-shrink: 0}
+.study-week.study-time-grid .study-hour-lesson.has-conflict {border-width: 2px;border-inline-start-width: 4px}
+.study-week.study-time-grid .study-hour-lesson:focus-visible {outline: 3px solid var(--site-accent, #385c4b);outline-offset: 1px;z-index: 4}
+.study-week.study-time-grid .study-hour-lesson:hover {filter: brightness(.97)}
+.study-week.study-time-grid .study-hour-lesson.is-short {padding: 3px;gap: 1px}
+@media (max-width: 600px) {
+  .study-timetable-scroll {max-height: 76dvh}
+  .study-week.study-time-grid {grid-template-columns: 52px repeat(7, 145px);min-width: 1067px}
+  .study-week.study-time-grid h3 {font-size: 12px}
+}
+@media print {
+  .study-timetable-scroll {max-height: none;overflow: visible}
+  .study-week.study-time-grid {min-width: 0;grid-template-columns: 48px repeat(7, minmax(0, 1fr))}
+}
