@@ -3,7 +3,7 @@ import { ConfigurationError } from './appError.ts'
 export const PUBLIC_ENV_KEYS = [
   'VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_APP_ID',
   'VITE_RECAPTCHA_ENTERPRISE_SITE_KEY', 'VITE_USE_EMULATORS', 'VITE_EMULATOR_HOST', 'VITE_TEST_OFFLINE',
-  'VITE_REQUIRE_APP_CHECK', 'VITE_REQUIRE_FIREBASE_CONFIG', 'VITE_APP_CHECK_PROVIDER', 'VITE_ASSISTANT_ENABLED',
+  'VITE_REQUIRE_APP_CHECK', 'VITE_REQUIRE_FIREBASE_CONFIG', 'VITE_APP_CHECK_PROVIDER', 'VITE_ASSISTANT_ENABLED', 'VITE_WILO_PILOT',
 ] as const
 
 type Environment = Record<string, unknown>
@@ -47,6 +47,7 @@ export function readClientConfiguration(env: Environment): ClientConfiguration {
   const requireAppCheck = flag(env, 'VITE_REQUIRE_APP_CHECK')
   const requireFirebase = flag(env, 'VITE_REQUIRE_FIREBASE_CONFIG')
   flag(env, 'VITE_ASSISTANT_ENABLED')
+  flag(env, 'VITE_WILO_PILOT')
   const emulatorHost = text(env, 'VITE_EMULATOR_HOST') || '127.0.0.1'
   if (!/^(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+$/.test(emulatorHost)) throw new ConfigurationError()
   const appCheckProvider = text(env, 'VITE_APP_CHECK_PROVIDER') || 'recaptcha-enterprise'

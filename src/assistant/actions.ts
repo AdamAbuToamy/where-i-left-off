@@ -89,7 +89,7 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
   if('requires' in patch){if(!Array.isArray(patch.requires))throw new Error('assistant-invalid');patch.requires=patch.requires.map(ref);}
   let after:Record<string,unknown>|null;
   if(a.action==='delete'){
-   if(a.target==='projects')throw new Error('assistant-invalid');
+   if(a.target==='projects'&&(scope!=='personal'||!before?.trashedAt||Object.keys(patch).length))invalid('assistant-permanent-delete');
    after=null;
   }else if(a.target==='projects'){
    if(a.action==='trash')patch.trashedAt=now;
