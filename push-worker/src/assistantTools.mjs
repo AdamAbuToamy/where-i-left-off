@@ -1,3 +1,4 @@
+import {clarifyMinimalCreation} from './assistantClarification.mjs';
 import {ASSISTANT_DIALOGUE_POLICY} from '../../shared/assistantDialogue.mjs';
 import {WORKSPACE_READ_TOOL,workspaceOverview,readWorkspaceContext} from './assistantContext.mjs';
 import {WORKSPACE_REPLY_FORMAT,actionFields,controlFields} from './assistantContract.mjs';
@@ -74,7 +75,7 @@ export async function runWorkspaceTools(data,history,invoke){
   try{
    const result=await invoke(input,signal);
    const batch=result?.contextRequests||(result?.contextRequest?[result]:null);
-   if(!batch)return readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response));
+   if(!batch){const checked=JSON.parse(readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response)));return JSON.stringify(clarifyMinimalCreation(checked,data.language,data.context));}
    if(!Array.isArray(batch)||!batch.length||reads+batch.length>3)throw new Error('ai-context-read-limit');
    const pendingIds=new Set();
    // Commit protocol state only after every read in the batch has been authorized and validated.
