@@ -18,3 +18,12 @@ test('upstream text diagnostics require an explicit synthetic runner callback an
   assert.equal(captured,1);
  }finally{globalThis.fetch=previous;}
 });
+test('malformed synthetic tool proposals retain bounded diagnostic arguments without changing ordinary failure handling',async()=>{
+ const previous=globalThis.fetch;let captured;
+ globalThis.fetch=async()=>Response.json({choices:[{message:{tool_calls:[{type:'function',function:{name:'unexpected',arguments:'{"actions":[]}'}}]}}]});
+ try{
+  const p=assistantProvider({ASSISTANT_PROVIDER:'gemini',GEMINI_API_KEY:'test-only-key'},{onSyntheticDiagnostic:d=>{captured=d;}});
+  await assert.rejects(p.run({messages:[],max_tokens:30,tools:[],tool_choice:'required'}),/ai-incomplete-proposal/);
+  assert.equal(captured.status,200);assert.equal(JSON.parse(captured.body).callCount,1);assert.equal(JSON.parse(captured.body).calls[0].name,'unexpected');
+ }finally{globalThis.fetch=previous;}
+});

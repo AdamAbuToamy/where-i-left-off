@@ -38,7 +38,10 @@ class CompatibleInference {
   }
   const result=await response.json(),choice=result?.choices?.[0];
   if(choice?.finish_reason==='length')throw new Error('ai-response-too-large');
-  if(input.tools)return workspaceToolStep(choice);
+  if(input.tools){try{return workspaceToolStep(choice);}catch(error){
+   if(typeof this.onSyntheticDiagnostic==='function'){const calls=Array.isArray(choice?.message?.tool_calls)?choice.message.tool_calls:[];this.onSyntheticDiagnostic({status:200,body:JSON.stringify({parseError:error.message,finishReason:choice?.finish_reason,callCount:calls.length,calls:calls.map(c=>{let args;try{args=JSON.parse(c?.function?.arguments);}catch{args='unparseable';}return {name:c?.function?.name,args};})})});}
+   throw error;
+  }}
   if(typeof choice?.message?.content!=='string'||!choice.message.content.trim())throw new Error('ai-empty-response');
   return {response:choice.message.content};
   }
