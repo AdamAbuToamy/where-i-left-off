@@ -19,6 +19,10 @@ export function clarifyMinimalCreation(plan,language,context,history=[],message=
   question=w.extras(name);
   let data;try{data=JSON.parse(context||'{}');}catch{return plan;}
   const sections=data.scopes?.find(s=>s.id===(action.scope||'personal'))?.sections||[];
+  // A follow-up that explicitly supplies a section is not an invitation to ask for
+  // optional fields again. Only accept a verified existing section reference.
+  const explicitSection=/\\bsection\\b|\\bgroup\\b|قسم|מדור/i.test(message);
+  if(explicitSection&&typeof v.sectionId==='string'&&sections.some(s=>s.id===v.sectionId))return plan;
   const section=sections.find(s=>s.id===v.sectionId);
   if(section&&typeof section.name==='string'&&message.normalize('NFKC').toLowerCase().includes(section.name.normalize('NFKC').toLowerCase()))return plan;
   const names=sections.slice(0,6).map(s=>typeof s.name==='string'?s.name.slice(0,60):'').filter(Boolean);
