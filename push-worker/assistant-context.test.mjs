@@ -28,3 +28,26 @@ test('pagination and oversized content are explicit; selected fields stay exact'
 test('unbounded reading stops without producing or applying a partial plan',async()=>{
  let calls=0;await assert.rejects(runWorkspaceTools(data,[],async()=>{calls++;return {contextRequest:{requests:[{target:'projects',view:'catalog'}]},toolCall:{id:'read-'+calls,type:'function',function:{name:'read_workspace',arguments:'{}'}}};}),/ai-context-read-limit/);assert.equal(calls,4);
 });
+
+const readCall=(id,target)=>({id,type:'function',function:{name:'read_workspace',arguments:JSON.stringify({requests:[{target,view:'catalog'}]})}});
+test('independent course and card reads in one response receive all tool results before the next model turn',async()=>{
+ let calls=0;const result=await runWorkspaceTools(data,[],async input=>{
+  if(++calls===1)return workspaceToolStep({message:{tool_calls:[readCall('courses','courses'),readCall('cards','projects')]}});
+  const replies=input.messages.slice(-2);assert.deepEqual(replies.map(r=>r.tool_call_id),['courses','cards']);
+  assert.equal(JSON.parse(replies[0].content).results[0].items[0].id,'c');assert.equal(JSON.parse(replies[1].content).results[0].items[0].id,'p');
+  return {response:JSON.stringify(plan)};
+ });assert.equal(calls,2);assert.deepEqual(JSON.parse(result).actions,plan.actions);
+});
+test('parallel reads reject duplicate call IDs, unknown calls, mixed proposals, and over-budget batches',()=>{
+ for(const calls of [[readCall('same','courses'),readCall('same','projects')],[readCall('a','courses'),{id:'b',type:'function',function:{name:'propose_workspace_actions',arguments:JSON.stringify(plan)}}],[readCall('a','courses'),{id:'b',type:'function',function:{name:'execute_code',arguments:'{}'}}]])assert.throws(()=>workspaceToolStep({message:{tool_calls:calls}}),/ai-incomplete-proposal/);
+ assert.throws(()=>workspaceToolStep({message:{tool_calls:['a','b','c','d'].map(id=>readCall(id,'courses'))}}),/ai-context-read-limit/);
+});
+test('repeated tool-call IDs across model turns fail rather than attaching data to an old call',async()=>{
+ await assert.rejects(runWorkspaceTools(data,[],async()=>workspaceToolStep({message:{tool_calls:[readCall('same','courses')]}})),/ai-incomplete-proposal/);
+});
+test('one invalid scope in a parallel read batch prevents the next model invocation',async()=>{
+ let calls=0;await assert.rejects(runWorkspaceTools(data,[],async()=>{
+  calls++;const invalid=readCall('foreign','projects');invalid.function.arguments=JSON.stringify({requests:[{target:'projects',view:'details',scope:'another-account'}]});
+  return workspaceToolStep({message:{tool_calls:[readCall('course','courses'),invalid]}});
+ }),/ai-incomplete-proposal/);assert.equal(calls,1);
+});

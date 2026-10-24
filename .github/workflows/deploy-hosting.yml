@@ -46,6 +46,9 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Preserve public production configuration and App Check
         run: node scripts/prepare-hosting-config.mjs
+      - name: Diagnose public Auth origins without administrative permissions
+        continue-on-error: true
+        run: node scripts/diagnose-auth.mjs
       - name: Check and repair only the same-project Auth handler referrer
         continue-on-error: true
         env:
@@ -56,7 +59,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: auth-origin-report
-          path: auth-origin-report.json
+          path: |
+            auth-origin-report.json
+            auth-browser-report.json
           if-no-files-found: ignore
           retention-days: 7
       - name: Build production application

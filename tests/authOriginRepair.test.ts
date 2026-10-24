@@ -2,12 +2,13 @@ import {it,expect} from 'vitest';
 import {generateKeyPairSync} from 'node:crypto';import {mkdtempSync,mkdirSync,copyFileSync,writeFileSync,readFileSync,rmSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';import {spawnSync} from 'node:child_process';
 const {privateKey}=generateKeyPairSync('rsa',{modulusLength:2048}),pem=privateKey.export({type:'pkcs8',format:'pem'});
 for(const mode of ['read','fix','denied','wrong-origin'])it(`Auth origin deployment audit is scoped and secret-safe: ${mode}`,()=>{
- const dir=mkdtempSync(join(tmpdir(),'wilo-auth-origin-'));mkdirSync(join(dir,'scripts'));
+ const dir=mkdtempSync(join(tmpdir(),'wilo-auth-origin-'));mkdirSync(join(dir,'scripts/lib'),{recursive:true});copyFileSync('scripts/lib/firebase-auth-probe.mjs',join(dir,'scripts/lib/firebase-auth-probe.mjs'));
  try{
   for(const f of ['repair-auth-origin.mjs','api-protection-policy.mjs'])copyFileSync('scripts/'+f,join(dir,'scripts',f));
   const preload=join(dir,'preload.mjs');writeFileSync(preload,`import {writeFileSync} from 'node:fs';let next;const original={apiTargets:[{service:'identitytoolkit.googleapis.com',methods:['ExistingMethod']}],browserKeyRestrictions:{allowedReferrers:['https://where-i-left-off.web.app/*']}};
   globalThis.fetch=async(url,options={})=>{
-   if(url==='https://where-i-left-off.web.app/__/firebase/init.json')return Response.json({projectId:'where-i-left-off-b5683',appId:'1:166135877928:web:test',authDomain:'${mode==='wrong-origin'?'attacker.example':'where-i-left-off-b5683.firebaseapp.com'}',apiKey:'public-test-key'});
+   if(url==='https://where-i-left-off.web.app/__/firebase/init.json')return Response.json({projectId:'where-i-left-off-b5683',appId:'1:166135877928:web:test',authDomain:'${mode==='wrong-origin'?'attacker.example':'where-i-left-off-b5683.firebaseapp.com'}',apiKey:'AIza'+'t'.repeat(35)});
+   if(url.startsWith('https://identitytoolkit.googleapis.com/v1/projects?'))return Response.json({projectId:'166135877928',authorizedDomains:['where-i-left-off.web.app','where-i-left-off-b5683.firebaseapp.com']});
    if(url==='https://oauth2.googleapis.com/token')return Response.json({access_token:'test-secret-access-token'});
    if(!url.startsWith('https://apikeys.googleapis.com/'))throw new Error('forbidden-host');
    if(${mode==='denied'})return Response.json({error:'private upstream body'},{status:403});
