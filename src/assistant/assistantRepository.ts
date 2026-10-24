@@ -72,7 +72,7 @@ export class AssistantRepository {
    }
    for(let i=0;i<changes.length;i++){
     const c=changes[i],old=snapshot.raw.get(refs[i].path),revision=old?Number(old.revision||0)+1:0;
-    if(c.target==='sections'&&!c.after){tx.delete(refs[i]);continue;}
+    if(!c.after&&!isStudy(c.target)){if(c.target==='projects'&&(c.scope!=='personal'||!(c.before as {trashedAt?:number}|null)?.trashedAt))throw new Error('assistant-permanent-delete');tx.delete(refs[i]);continue;}
     const body=isStudy(c.target)?{kind:c.target,id:c.id,payload:c.after?JSON.stringify(c.after):'',deleted:!c.after,revision}: {...c.after as object,revision};
     if(!isStudy(c.target)){
      delete (body as Record<string,unknown>).id;
@@ -86,13 +86,13 @@ export class AssistantRepository {
   // A successful proposal is only announced after the server confirms every mutation.
   try{
    const saved=await Promise.all(refs.map(ref=>getDocFromServer(ref)));this.check();
-   if(saved.some((document,i)=>changes[i].target==='sections'&&!changes[i].after?document.exists():document.data()?.mutationId!==mutations.get(refs[i].path)))throw new Error('assistant-confirmation');
+   if(saved.some((document,i)=>!changes[i].after&&!isStudy(changes[i].target)?document.exists():document.data()?.mutationId!==mutations.get(refs[i].path)))throw new Error('assistant-confirmation');
   }catch(error){throw new Error('assistant-confirmation',{cause:error});}
   this.check();window.dispatchEvent(new Event('university-data-changed'));return {changes,mutations};
  }
  async undo(receipt:AssistantReceipt):Promise<void>{
   const snapshot=await this.read();
-  for(const c of receipt.changes)if(c.target==='sections'&&!c.after?snapshot.raw.has(path(this.uid,c)):snapshot.raw.get(path(this.uid,c))?.mutationId!==receipt.mutations.get(path(this.uid,c)))throw new Error('assistant-conflict');
+  for(const c of receipt.changes)if(!c.after&&!isStudy(c.target)?snapshot.raw.has(path(this.uid,c)):snapshot.raw.get(path(this.uid,c))?.mutationId!==receipt.mutations.get(path(this.uid,c)))throw new Error('assistant-conflict');
   const reverse=receipt.changes.map(c=>({...c,before:c.after,after:c.before}));
   const study=structuredClone(snapshot.data.study);
   for(const c of reverse)if(isStudy(c.target)){
