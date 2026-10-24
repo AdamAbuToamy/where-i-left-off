@@ -1,4 +1,5 @@
 import {conversationHistory} from './conversationHistory';
+import {quickTrashPurge} from './quickTrashPurge';
 import {AssistantFailure} from './failure';
 import {failureWords,failureMessage} from './failureWords';
 import {coverageHint} from './coverageHint';
@@ -77,7 +78,8 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
     const controlPlans=controls.plan(resolveProposalControls(snapshot.data,reply.actions,changes,reply.controls||[]),language,snapshot.data.scopes.map(s=>s.id));
     return {reply,controlPlans,changes};
    };
-   const prepared=localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
+   const quick=quickTrashPurge(message,snapshot.data,language);
+   const prepared=quick?validate(JSON.stringify(quick)):localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
     if(!mounted.current||auth?.currentUser?.uid!==user.uid)throw new Error('account-changed');
     return assistantRequest<{text:string}>(payload,timeout);
    }).prepare(request,validate,()=>{if(mounted.current)setPhase('repairing');});
@@ -93,7 +95,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   try{
    let receipt:AssistantReceipt|undefined;let controlResults:ControlResult[]=[];
    if(undo)await repository.undo(m.receipt!);
-   else {if(m.changes?.length)receipt=await repository.apply(m.snapshot!,m.changes);controlResults=await controls.apply(m.controlPlans||[]);}
+   else {if(m.changes?.some(c=>c.target==='projects'&&!c.after)&&!window.confirm(language==='ar'?'تأكيد أخير: حذف بطاقات سلة المهملات نهائيًا ولا يمكن استعادتها؟':language==='he'?'אישור סופי: למחוק לצמיתות את הכרטיסים ללא אפשרות שחזור?':'Final confirmation: permanently delete these Trash cards without recovery?'))return;if(m.changes?.length)receipt=await repository.apply(m.snapshot!,m.changes);controlResults=await controls.apply(m.controlPlans||[]);}
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    setMessages(old=>old.map((value,i)=>i===index?{...value,resolved:true,undone:undo,receipt,controlResults:undo?value.controlResults:controlResults,text:undo?t.undone+(value.controlPlans?.length?' '+ct.dataOnlyUndo:''):(receipt||controlResults.some(r=>r.ok)?t.applied:'')}:value));
    if(undo&&m.receipt?.changes.length){const first=m.receipt.changes[0];showChange({...first,before:first.after,after:first.before});}
