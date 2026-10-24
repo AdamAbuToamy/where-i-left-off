@@ -73,6 +73,7 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
   const values=object(a.values||{});
   if(Object.keys(values).some(k=>!fields[a.target].includes(k)))invalid('assistant-fields');
   const patch={...values};
+  if(a.action==='create'&&a.target!=='lessons'){const key=a.target==='tasks'?'title':'name';if(typeof patch[key]!=='string'||!String(patch[key]).trim())invalid('assistant-missing-name');}
   for(const key of ['courseId','sectionId'])if(key in patch)patch[key]=ref(patch[key]);
   if(a.target==='tasks'&&'due' in patch&&patch.due!==''&&(typeof patch.due!=='string'||!/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/.test(patch.due)||!validDate(patch.due.slice(0,10))||!Number.isFinite(Date.parse(patch.due))))invalid('assistant-task-date');
   if(a.target==='lessons'){

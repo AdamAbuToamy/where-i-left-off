@@ -108,3 +108,10 @@ it('keeps ordinary replies free of role labels, task ledgers and no-change notic
  expect(element.querySelector('.assistant-message-author')).toBeNull();expect(element.querySelector('.assistant-message.is-assistant')?.textContent).toBe('Happy to help!');
  const close=element.querySelector<HTMLButtonElement>('.assistant-close')!;await act(async()=>close.click());expect(document.body.classList.contains('assistant-docked')).toBe(false);
 });
+it('asks for missing details and retains the entire follow-up conversation before offering Apply',async()=>{
+ const clarify=(text:string)=>JSON.stringify({text,actions:[],controls:[],files:[],tasks:[{title:'Create card',outcome:'needs-input',actionIndexes:[],controlIndexes:[],detail:text}]});
+ api.call.mockResolvedValueOnce({text:clarify('What should I call the card?')}).mockResolvedValueOnce({text:clarify('A date, section, notes or link? You can skip them.')}).mockResolvedValueOnce({text:clarify('Which section?')}).mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'projects',action:'create',id:'new',scope:'personal',values:{name:'Algorithms',description:'Read chapter 1'}}],files:[]})});
+ await open();await input('Add a card');await submit();expect(element.querySelector('.assistant-proposal')).toBeNull();expect(element.textContent).toContain('What should I call the card?');
+ await input('Algorithms');await submit();expect(element.querySelector('.assistant-proposal')).toBeNull();await input('No date');await submit();await input('No section; note Read chapter 1');await submit();
+ const last=api.call.mock.calls.at(-1)![0];expect(last.history).toHaveLength(6);expect(last.history[0].content).toBe('Add a card');expect(last.history[2].content).toBe('Algorithms');expect(last.history[4].content).toBe('No date');expect(api.apply).not.toHaveBeenCalled();expect(element.querySelector('.assistant-proposal')).not.toBeNull();
+});

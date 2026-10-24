@@ -1,3 +1,4 @@
+import {conversationHistory} from './conversationHistory';
 import {AssistantFailure} from './failure';
 import {failureWords,failureMessage} from './failureWords';
 import {coverageHint} from './coverageHint';
@@ -56,15 +57,15 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
  function useCloud(){local.current?.dispose();local.current=null;setLocalReady(false);setPreferLocal(false);try{localStorage.removeItem('wilo-assistant-local');}catch{/* Optional preference. */}}
  function openPanel(){setPresent(true);setOpen(true);}
  function close(){setOpen(false);button.current?.focus();}
- function report(e:unknown,stage:'request'|'save'='request'){const failed=AssistantFailure.from(e,stage);setFailure(failed);setCopied(false);e=failed;const code=(e as {code?:string}).code?.replace(/^firestore\//,'')||(e as Error).message;setError(failed.stage==='read'?failureMessage(failed,language,fw.stage.read+': '+t.unavailable):code==='permission-denied'?t.permission:code==='assistant-confirmation'?t.confirmation:code==='ai-rate-limit'?t.rate:code==='ai-provider-context'?t.providerContext:code==='ai-provider-access'?t.providerAccess:code==='ai-provider-limit'?t.providerLimit:code==='assistant-local-unsupported'?t.localUnsupported:code==='assistant-local-context'?t.localContext:/^assistant-local-/.test(code)?t.localLoadError:code==='ai-incomplete-proposal'||code==='ai-intent-format'?[t.incomplete,coverageHint(e,language)].filter(Boolean).join(' '):code==='ai-not-configured'?t.setup:/ai-(?:user|daily)-limit/.test(code)?t.limit:code==='assistant-format'||code==='ai-response-too-large'?t.format:code==='assistant-invalid'?[t.invalid,assistantValidationHint(e,language)].filter(Boolean).join(' '):code==='assistant-conflict'?t.conflict:code==='assistant-pending'?t.pending:code==='assistant-linked-reminder'?t.linked:code==='assistant-too-large'?t.large:failureMessage(failed,language,t.unavailable));}
+ function report(e:unknown,stage:'request'|'save'='request'){const failed=AssistantFailure.from(e,stage);setFailure(failed);setCopied(false);e=failed;const code=(e as {code?:string}).code?.replace(/^firestore\//,'')||(e as Error).message;setError(failed.stage==='read'?failureMessage(failed,language,fw.stage.read+': '+t.unavailable):code==='permission-denied'?t.permission:code==='assistant-conversation-full'?ui.conversationFull:code==='assistant-confirmation'?t.confirmation:code==='ai-rate-limit'?t.rate:code==='ai-provider-context'?t.providerContext:code==='ai-provider-access'?t.providerAccess:code==='ai-provider-limit'?t.providerLimit:code==='assistant-local-unsupported'?t.localUnsupported:code==='assistant-local-context'?t.localContext:/^assistant-local-/.test(code)?t.localLoadError:code==='ai-incomplete-proposal'||code==='ai-intent-format'?[t.incomplete,coverageHint(e,language)].filter(Boolean).join(' '):code==='ai-not-configured'?t.setup:/ai-(?:user|daily)-limit/.test(code)?t.limit:code==='assistant-format'||code==='ai-response-too-large'?t.format:code==='assistant-invalid'?[t.invalid,assistantValidationHint(e,language)].filter(Boolean).join(' '):code==='assistant-conflict'?t.conflict:code==='assistant-pending'?t.pending:code==='assistant-linked-reminder'?t.linked:code==='assistant-too-large'?t.large:failureMessage(failed,language,t.unavailable));}
  async function send(){
   if(lock.current||!text.trim())return;
   const message=text.trim();lock.current=true;setBusy(true);setPhase('reading');setError('');setFailure(null);setHealth(null);setCopied(false);
-  setMessages(old=>[...old.slice(-15),{role:'user',text:message}]);setText('');
+  setMessages(old=>[...old,{role:'user',text:message}]);setText('');
   try{
    const snapshot=await repository.read().catch(error=>{throw AssistantFailure.from(error,'read');});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
-   const request={mode:'workspace',message,language,context:JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
+   const request={mode:'workspace',message,language,context:JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities}),history:conversationHistory(messages)};
    if(request.context.length>44000||JSON.stringify(request).length>65000)throw new Error('assistant-too-large');
    if(preferLocal&&!localReady)throw new Error('assistant-local-not-ready');
    setPhase('thinking');
@@ -82,7 +83,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    }).prepare(request,validate,()=>{if(mounted.current)setPhase('repairing');});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    const {reply,controlPlans,changes}=prepared;
-   setMessages(old=>[...old,{role:'assistant',text:changes.length||controlPlans.length?ui.reviewReady:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
+   setMessages(old=>[...old.map(m=>m.role==='assistant'&&!m.resolved&&((m.changes?.length||0)+(m.controlPlans?.length||0))>0?{...m,resolved:true}:m),{role:'assistant',text:reply.tasks?.some(task=>task.outcome==='needs-input')?proposalStatus(reply.text,[],language):changes.length||controlPlans.length?ui.reviewReady:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
   }catch(e){if(mounted.current){report(e);setText(current=>current||message);}}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
  }

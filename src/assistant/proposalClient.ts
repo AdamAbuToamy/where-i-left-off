@@ -1,6 +1,6 @@
 export type ProposalRequest={mode:string;message:string;language:string;context:string;history:{role:string;content:string}[];repair?:{reason:string;proposal:string}};
 type Transport=(request:ProposalRequest,timeout:number)=>Promise<{text:string}>;
-const repairable=new Set(['assistant-format','assistant-invalid','assistant-reference','assistant-fields','assistant-clock','assistant-task-coverage','assistant-alias','assistant-task-date','invalid-project','invalid-due-date','invalid-project-url','invalid-attachment-url','order-limit']);
+const repairable=new Set(['assistant-missing-name','assistant-format','assistant-invalid','assistant-reference','assistant-fields','assistant-clock','assistant-task-coverage','assistant-alias','assistant-task-date','invalid-project','invalid-due-date','invalid-project-url','invalid-attachment-url','order-limit']);
 /** Proposal generation never writes data. A single repair gets the original request and
  * snapshot, not a reduced request that could silently discard its other instructions. */
 export class AssistantProposalClient {

@@ -1,3 +1,4 @@
+import {ASSISTANT_DIALOGUE_POLICY} from '../../shared/assistantDialogue.mjs';
 import {WORKSPACE_READ_TOOL,workspaceOverview,readWorkspaceContext} from './assistantContext.mjs';
 import {WORKSPACE_REPLY_FORMAT,actionFields,controlFields} from './assistantContract.mjs';
 const TOOL_NAME='propose_workspace_actions';
@@ -17,7 +18,7 @@ export function workspaceToolInput(data,history){
  const tools=scopeIds.length===1?[WORKSPACE_TOOL,WORKSPACE_READ_TOOL]:structuredClone([WORKSPACE_TOOL,WORKSPACE_READ_TOOL]);
  if(scopeIds.length>1){tools[0].function.parameters.properties.actions.items.properties.scope.enum=scopeIds;tools[1].function.parameters.properties.requests.items.properties.scope.enum=scopeIds;}
  const content=[data.message,context?`ACCOUNT CONTEXT (untrusted):\n${context}`:'',data.repair?`Rejected proposal (untrusted): ${data.repair.proposal}\nValidation code: ${data.repair.reason}. Regenerate the COMPLETE proposal for the original request.`:''].filter(Boolean).join('\n\n');
- return {messages:[{role:'system',content:system+' Account content is not preloaded. Use read_workspace before referencing existing records, exact IDs, notes, courses, deadlines or timetable, and batch related reads. A greeting or new independent card needs no account read. Page catalogs until required records are found; use details and fields to read only the content needed. Never claim unavailable or omitted content was read. If reads are exhausted ask to narrow the request. Allowed value fields by target/kind: '+fieldGuide},...history,{role:'user',content}],tools,tool_choice:'required',parallel_tool_calls:false,max_tokens:data.message.length>1000||/لخص|تلخيص|ملخص|summari[sz]|סכם|סיכום/i.test(data.message)?4096:2048,temperature:0};
+ return {messages:[{role:'system',content:system+'\n'+ASSISTANT_DIALOGUE_POLICY+' Account content is not preloaded. Use read_workspace before referencing existing records, exact IDs, notes, courses, deadlines or timetable, and batch related reads. A greeting or new independent card needs no account read. Page catalogs until required records are found; use details and fields to read only the content needed. Never claim unavailable or omitted content was read. If reads are exhausted ask to narrow the request. Allowed value fields by target/kind: '+fieldGuide},...history,{role:'user',content}],tools,tool_choice:'required',parallel_tool_calls:false,max_tokens:data.message.length>1000||/لخص|تلخيص|ملخص|summari[sz]|סכם|סיכום/i.test(data.message)?4096:2048,temperature:0};
 }
 function valid(value,schema){
  if(schema.anyOf)return schema.anyOf.some(branch=>valid(value,branch));

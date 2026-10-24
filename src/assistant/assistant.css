@@ -149,3 +149,16 @@ body {--assistant-dock-width:clamp(400px,36vw,560px)}
  #root,body.assistant-docked .side-navigation {transition:none}
  .assistant-change-highlight {animation:none!important}
 }
+
+/* Dock follows reading direction; switching language moves it without resetting chat. */
+html[dir=ltr] .assistant-root {left:auto;right:22px}
+@media(min-width:1100px) {
+ #root {transition:padding-left .28s cubic-bezier(.2,.8,.2,1),padding-right .28s cubic-bezier(.2,.8,.2,1)}
+ html[dir=ltr] body.assistant-docked #root {padding-left:0;padding-right:var(--assistant-dock-width)}
+ html[dir=ltr] .assistant-panel {left:auto;right:16px;transform-origin:bottom right}
+ html[dir=ltr] body.assistant-docked .side-navigation {left:0}
+ html[dir=ltr] .assistant-panel.is-closing {animation-name:assistant-close-right}
+}
+@media(max-width:600px) {html[dir=ltr] .assistant-root {right:12px}}
+@keyframes assistant-close-right {to {opacity:0;transform:translateX(24px) scale(.98)}}
+@media(prefers-reduced-motion:reduce) {#root {transition:none}}

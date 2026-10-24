@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: firebase-production-hosting
   cancel-in-progress: false
@@ -30,6 +31,19 @@ jobs:
           node --input-type=module <<'JS'
           const r=await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/git/ref/heads/main`,{headers:{authorization:`Bearer ${process.env.GH_TOKEN}`,accept:'application/vnd.github+json'}});
           if(!r.ok||(await r.json()).object.sha!==process.env.DEPLOY_SHA)throw new Error('Refusing to deploy a superseded or non-main commit.');
+          JS
+      - name: Require requested dialogue canary before deploying its behavior
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          import {execFileSync} from 'node:child_process';
+          if(execFileSync('git',['log','-1','--format=%B'],{encoding:'utf8'}).includes('[assistant-dialogue-canary]')){
+            const r=await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/runs?head_sha=${process.env.DEPLOY_SHA}&per_page=30`,{headers:{authorization:`Bearer ${process.env.GH_TOKEN}`,accept:'application/vnd.github+json'}});
+            if(!r.ok)throw new Error('Cannot verify the requested live dialogue canary.');
+            const runs=(await r.json()).workflow_runs.filter(run=>run.name==='Assistant live validation');
+            if(!runs.some(run=>run.conclusion==='success'))throw new Error('Live dialogue canary has not passed; existing site was not changed.');
+          }
           JS
       - name: Check existing deployment credential
         env:

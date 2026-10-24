@@ -50,4 +50,12 @@ test('compound Arabic requests use the cloud, repair malformed proposals, save r
  await expect(page.locator('.week-day').filter({has:page.locator(`time[datetime="${date}"]`)})).toContainText('عمار');expect(calls).toBe(4);
  await page.goto('/#/personal');await expect(page.getByRole('heading',{name:'عمار',exact:true})).toHaveCount(1);const card=page.locator('.project-card').filter({has:page.getByRole('heading',{name:'عمار',exact:true})});await card.getByText('الملاحظات والوصف',{exact:true}).click();await expect(card).toContainText('مرحبا');
  await page.screenshot({path:'test-results/layout-review/assistant-compound-card-week.png',fullPage:true});
+ await page.setViewportSize({width:1440,height:900});await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('language-changed',{detail:'en'})));await expect(page.locator('html')).toHaveAttribute('dir','ltr');
+ await expect.poll(()=>page.evaluate(()=>document.querySelector('#wilo-assistant')!.getBoundingClientRect().left-document.querySelector('main.workspace')!.getBoundingClientRect().right)).toBeGreaterThanOrEqual(0);
+ await page.screenshot({path:'test-results/layout-review/assistant-dock-english-right.png',fullPage:false});
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('language-changed',{detail:'he'})));await expect(page.locator('html')).toHaveAttribute('dir','rtl');
+ await expect.poll(()=>page.evaluate(()=>document.querySelector('main.workspace')!.getBoundingClientRect().left-document.querySelector('#wilo-assistant')!.getBoundingClientRect().right)).toBeGreaterThanOrEqual(0);
+ await page.screenshot({path:'test-results/layout-review/assistant-dock-hebrew-left.png',fullPage:false});
+
 });
