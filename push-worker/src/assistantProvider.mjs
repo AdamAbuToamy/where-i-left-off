@@ -14,7 +14,7 @@ class CompatibleInference {
  constructor(key,signal,name,model,endpoint,onSyntheticDiagnostic){Object.assign(this,{key,signal,name,model,endpoint,onSyntheticDiagnostic,workspaceTools:true});}
  async run(input,{compactOutput=false,signal:requestSignal}={}){
   const body={model:this.model,messages:input.messages,temperature:input.temperature,max_completion_tokens:compactOutput?Math.min(input.max_tokens,3072):input.max_tokens,reasoning_effort:'low'};
-  if(this.name==='gemini'){body.max_tokens=body.max_completion_tokens;delete body.max_completion_tokens;body.reasoning_effort='minimal';}
+  if(this.name==='gemini'){body.max_tokens=body.max_completion_tokens;delete body.max_completion_tokens;delete body.reasoning_effort;}
   if(input.tools){body.tools=this.name==='gemini'?geminiTools(input.tools):input.tools;body.tool_choice=input.tool_choice;if(this.name==='groq')body.parallel_tool_calls=false;}
   if(input.response_format)body.response_format=input.response_format.type==='json_schema'
    ?{type:'json_object'}

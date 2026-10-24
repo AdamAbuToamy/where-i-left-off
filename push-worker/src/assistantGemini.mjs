@@ -11,12 +11,24 @@ function fieldsUnion(groups){
  }
  return fields;
 }
+function googleSchema(schema){
+ // OpenAI compatibility translates to Google's OpenAPI Schema subset, not arbitrary JSON Schema.
+ const next={type:schema.type};
+ if(schema.description)next.description=schema.description;
+ if(schema.enum?.every(v=>typeof v==='string'))next.enum=schema.enum;
+ if(schema.properties)next.properties=Object.fromEntries(Object.entries(schema.properties).map(([name,value])=>[name,googleSchema(value)]));
+ if(schema.required)next.required=schema.required;
+ if(schema.items)next.items=googleSchema(schema.items);
+ return next;
+}
 export function geminiTools(tools){
  return tools.map(tool=>{
-  if(tool.function?.name!=='propose_workspace_actions')return tool;
-  const result=structuredClone(tool),properties=result.function.parameters.properties;
+  const result=structuredClone(tool);
+  if(tool.function?.name!=='propose_workspace_actions'){result.function.parameters=googleSchema(result.function.parameters);return result;}
+  const properties=result.function.parameters.properties;
   properties.actions.items.properties.values={type:'object',additionalProperties:false,properties:fieldsUnion(actionFields)};
   properties.controls.items.properties.values={type:'object',additionalProperties:false,properties:fieldsUnion(controlFields)};
+  result.function.parameters=googleSchema(result.function.parameters);
   return result;
  });
 }

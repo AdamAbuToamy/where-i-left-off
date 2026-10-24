@@ -25,7 +25,7 @@ for(const [choice,code] of [[{finish_reason:'length',message:{content:'partial'}
 
 test('Gemini selects Google directly with the existing native batched tool contract',async()=>withFetch(async(url,options)=>{
  assert.equal(url,'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');assert.equal(options.headers.authorization,'Bearer test-google-key');
- const sent=JSON.parse(options.body);assert.equal(sent.model,GEMINI_MODEL);assert.equal(sent.max_tokens,2048);assert.equal(sent.max_completion_tokens,undefined);assert.equal(sent.parallel_tool_calls,undefined);assert.equal(sent.reasoning_effort,'minimal');assert.equal(sent.tools.length,2);
+ const sent=JSON.parse(options.body);assert.equal(sent.model,GEMINI_MODEL);assert.equal(sent.max_tokens,2048);assert.equal(sent.max_completion_tokens,undefined);assert.equal(sent.parallel_tool_calls,undefined);assert.equal(sent.reasoning_effort,undefined);assert.equal(sent.tools.length,2);
  return Response.json({choices:[{finish_reason:'tool_calls',message:{tool_calls:[{type:'function',function:{name:'propose_workspace_actions',arguments:JSON.stringify({text:'Review',actions:[{target:'projects',action:'create',id:'new-card',scope:'personal',values:{name:'Test',dueDate:'2026-10-25',description:'Exact note'}}],controls:[],files:[],tasks:[{title:'Card, date and note',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''}]})}}]}}]});
 },async()=>{
  const {workspaceToolInput}=await import('./src/assistantTools.mjs');const p=assistantProvider({ASSISTANT_PROVIDER:'gemini',GEMINI_API_KEY:'test-google-key'});assert.equal(p.name,'gemini');
