@@ -1,5 +1,8 @@
 # Where I Left Off
 
+> Recovery status: the assistant is disabled in production and available only in emulator experiments. See [the recovery report](docs/AUTH_ASSISTANT_RECOVERY_AR.md) for the confirmed Firebase Auth referrer issue and owner repair steps.
+
+
 [![Quality checks](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml)
 
 **Save the link, remember where you stopped, and know what to do next.**

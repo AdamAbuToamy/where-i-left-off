@@ -1,5 +1,8 @@
 # Where I Left Off — وين وصلت؟
 
+> حالة الاستعادة: المساعد معطّل في الإنتاج ومتاح فقط للتجربة بالمحاكيات. تشخيص الدخول الحالي وخطوات إصلاح نطاق Firebase Auth موثقة في [دليل الاستعادة](docs/AUTH_ASSISTANT_RECOVERY_AR.md).
+
+
 [![فحوص الجودة](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml)
 
 **احفظ الرابط، سجّل وين وقفت، وارجع وأنت عارف الخطوة الجاية.**

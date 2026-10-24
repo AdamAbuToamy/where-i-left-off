@@ -1,5 +1,6 @@
 import {createSign} from 'node:crypto';
 import {writeFileSync} from 'node:fs';
+import {probeFirebaseAuth} from './lib/firebase-auth-probe.mjs';
 import {firebaseOrigins,repairAuthOrigin} from './api-protection-policy.mjs';
 const PROJECT='where-i-left-off-b5683',SITE='https://where-i-left-off.web.app',fix=process.argv.includes('--fix');
 let phase='credentials',status=0;
@@ -14,6 +15,7 @@ try{
  phase='public-config';const sdk=await request(SITE+'/__/firebase/init.json');
  if(sdk.projectId!==PROJECT||typeof sdk.apiKey!=='string'||!/^1:\d+:web:/.test(sdk.appId||''))throw new Error('project-mismatch');
  const number=sdk.appId.split(':')[1];firebaseOrigins(sdk.authDomain,PROJECT);report.authDomain=sdk.authDomain;
+ phase='public-auth-probe';report.browserProbe=await probeFirebaseAuth(sdk);
  const json=value=>Buffer.from(JSON.stringify(value)).toString('base64url'),now=Math.floor(Date.now()/1000);
  const unsigned=json({alg:'RS256',typ:'JWT'})+'.'+json({iss:key.client_email,scope:'https://www.googleapis.com/auth/cloud-platform',aud:'https://oauth2.googleapis.com/token',iat:now,exp:now+3600});
  phase='service-auth';const jwt=unsigned+'.'+createSign('RSA-SHA256').update(unsigned).sign(key.private_key,'base64url');
@@ -38,5 +40,5 @@ try{
  report.status=plan.changed&&!fix?'needs-repair':'configuration-checked';console.log(JSON.stringify(report));
 }catch{
  report.status='needs-owner-review';report.phase=phase;report.httpStatus=status;
- console.error(JSON.stringify({status:report.status,phase,httpStatus:status}));process.exitCode=1;
+ console.error(JSON.stringify({status:report.status,phase,httpStatus:status,browserProbe:report.browserProbe}));process.exitCode=1;
 }finally{writeFileSync('auth-origin-report.json',JSON.stringify(report,null,2)+'\n');}

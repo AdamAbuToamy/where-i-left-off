@@ -49,21 +49,32 @@ export function workspaceToolArguments(choice){
 /** Read requests are protocol steps, never mutations or a user-facing success. */
 export function workspaceToolStep(choice){
  const calls=choice?.message?.tool_calls;
- if(Array.isArray(calls)&&calls.length===1&&calls[0]?.type==='function'&&calls[0].function?.name==='read_workspace'){
-  let request;try{request=JSON.parse(calls[0].function.arguments);}catch{throw new Error('ai-incomplete-proposal');}
-  if(typeof calls[0].id!=='string'||!calls[0].id||calls[0].id.length>200)throw new Error('ai-incomplete-proposal');
-  return {contextRequest:request,toolCall:calls[0]};
+ if(Array.isArray(calls)&&calls.length&&calls.every(call=>call?.type==='function'&&call.function?.name==='read_workspace')){
+  if(calls.length>3)throw new Error('ai-context-read-limit');
+  const ids=new Set();
+  const requests=calls.map(call=>{
+   if(typeof call.id!=='string'||!call.id||call.id.length>200||ids.has(call.id))throw new Error('ai-incomplete-proposal');ids.add(call.id);
+   let request;try{request=JSON.parse(call.function.arguments);}catch{throw new Error('ai-incomplete-proposal');}
+   return {contextRequest:request,toolCall:call};
+  });
+  return requests.length===1?requests[0]:{contextRequests:requests};
  }
  return {response:workspaceToolArguments(choice)};
 }
 
 export async function runWorkspaceTools(data,history,invoke){
- const signal=AbortSignal.timeout(45000);let input=workspaceToolInput(data,history);
- for(let reads=0;;reads++){
+ const signal=AbortSignal.timeout(45000);let input=workspaceToolInput(data,history),reads=0;const callIds=new Set();
+ for(;;){
   const result=await invoke(input,signal);
-  if(!result?.contextRequest)return readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response));
-  if(reads>=3)throw new Error('ai-context-read-limit');
-  const records=readWorkspaceContext(data.context,result.contextRequest);
-  input={...input,messages:[...input.messages,{role:'assistant',content:null,tool_calls:[result.toolCall]},{role:'tool',tool_call_id:result.toolCall.id,content:JSON.stringify(records)}]};
+  const batch=result?.contextRequests||(result?.contextRequest?[result]:null);
+  if(!batch)return readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response));
+  if(!Array.isArray(batch)||!batch.length||reads+batch.length>3)throw new Error('ai-context-read-limit');
+  // Validate the whole batch before returning any account content; mixed read/write calls never execute.
+  const replies=batch.map(step=>{
+   const id=step.toolCall?.id;if(typeof id!=='string'||!id||callIds.has(id))throw new Error('ai-incomplete-proposal');callIds.add(id);
+   return {role:'tool',tool_call_id:id,content:JSON.stringify(readWorkspaceContext(data.context,step.contextRequest))};
+  });
+  reads+=batch.length;
+  input={...input,messages:[...input.messages,{role:'assistant',content:null,tool_calls:batch.map(step=>step.toolCall)},...replies]};
  }
 }
