@@ -15,10 +15,12 @@ export function clarifyMinimalCreation(plan,language,context,history=[],message=
  if(action.target!=='lessons'&&(typeof name!=='string'||!name.trim()))question=w.name;
  else if(action.target==='projects'){
   const fields=['sectionId','dueDate','description','projectUrl'];
-  // Explicitly supplied section/date/notes/link is enough to create the card.\n  // Do not ask again about already-specified fields or require extra optional data.\n  if(fields.some(k=>v[k]!==undefined&&v[k]!==null&&v[k]!==''))return plan;
+  // Explicitly supplied section/date/notes/link is enough to create the card.\n  // Do not ask again about already-specified fields or require extra optional data.\n  if(['dueDate','description','projectUrl'].some(k=>v[k]!==undefined&&v[k]!==null&&v[k]!==''))return plan;
   question=w.extras(name);
   let data;try{data=JSON.parse(context||'{}');}catch{return plan;}
   const sections=data.scopes?.find(s=>s.id===(action.scope||'personal'))?.sections||[];
+  const section=sections.find(s=>s.id===v.sectionId);
+  if(section&&typeof section.name==='string'&&message.normalize('NFKC').toLowerCase().includes(section.name.normalize('NFKC').toLowerCase()))return plan;
   const names=sections.slice(0,6).map(s=>typeof s.name==='string'?s.name.slice(0,60):'').filter(Boolean);
   if(names.length)question+=' '+w.sections+names.join('، ')+(sections.length>6?'…':'')+'.';
  }else if(action.target==='tasks'&&(!Object.hasOwn(v,'due')||!Object.hasOwn(v,'kind')))question=w.study(name);
