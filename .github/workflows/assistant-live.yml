@@ -1,0 +1,104 @@
+name: Assistant live validation
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/assistant-live.yml', 'scripts/test-assistant-live.mjs']
+  workflow_dispatch:
+    inputs:
+      provider:
+        type: choice
+        options: [gemini, groq]
+        default: gemini
+        required: true
+      scope:
+        description: 'Smoke tests use 3 synthetic prompts; the full suite uses the provider allowance.'
+        type: choice
+        options: [smoke, full]
+        default: smoke
+        required: true
+      case_id:
+        description: 'Optional exact case ID; runs only that request.'
+        type: string
+        default: ''
+      confirm_free_project:
+        description: 'I confirm this key belongs to a free project with no paid billing enabled.'
+        type: boolean
+        default: false
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: assistant-live-validation
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check readiness without exposing the key or invoking AI
+        id: readiness
+        env:
+          PROVIDER: ${{ inputs.provider || 'gemini' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          EVENT_NAME: ${{ github.event_name }}
+          FREE_CONFIRMED: ${{ inputs.confirm_free_project }}
+        run: |
+          node --input-type=module <<'JS'
+          import {appendFileSync,writeFileSync} from 'node:fs';
+          const provider=process.env.PROVIDER;
+          if(!['gemini','groq'].includes(provider))throw new Error('Invalid provider.');
+          const present=Boolean(process.env[provider==='gemini'?'GEMINI_API_KEY':'GROQ_API_KEY']?.trim());
+          const ready=present&&process.env.EVENT_NAME==='workflow_dispatch'&&process.env.FREE_CONFIRMED==='true';
+          const reason=!present?provider+'-key-required':process.env.EVENT_NAME!=='workflow_dispatch'?'manual-run-required':process.env.FREE_CONFIRMED!=='true'?'free-project-confirmation-required':'ready';
+          appendFileSync(process.env.GITHUB_OUTPUT,'ready='+ready+'\n');
+          if(!ready){
+            writeFileSync('assistant-acceptance-live-report.json',JSON.stringify({status:'not-run',reason,provider,inferenceRequests:0,productionWrites:0},null,2));
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY,'No live inference ran. Reason: '+reason+'. A green readiness job is not an AI test pass.\n');
+            if(process.env.EVENT_NAME==='workflow_dispatch')process.exitCode=1;
+          }
+          JS
+      - name: Install the synthetic test harness
+        if: steps.readiness.outputs.ready == 'true'
+        run: npm ci --no-audit --no-fund
+      - name: Run actual model inference with synthetic account data
+        if: steps.readiness.outputs.ready == 'true'
+        env:
+          PROVIDER: ${{ inputs.provider }}
+          TEST_SCOPE: ${{ inputs.scope }}
+          CASE_ID: ${{ inputs.case_id }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          import {spawnSync} from 'node:child_process';
+          const args=['scripts/test-assistant-live.mjs','--live','--provider='+process.env.PROVIDER];
+          if(process.env.CASE_ID)args.push('--case='+process.env.CASE_ID);
+          else if(process.env.TEST_SCOPE==='smoke')args.push('--case=compound-card-ar','--case=compound-card-en','--case=compound-card-he');
+          const r=spawnSync(process.execPath,args,{stdio:'inherit',env:process.env});
+          process.exitCode=r.status??1;
+          JS
+      - name: Prepare Java for local Firestore only
+        if: steps.readiness.outputs.ready == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Apply the actual model replies to Firestore emulator and reread
+        if: steps.readiness.outputs.ready == 'true'
+        env:
+          ASSISTANT_LIVE_REPORT: assistant-acceptance-live-report.json
+        run: npx firebase emulators:exec --project demo-where-i-left-off --only firestore "env TEST_SUITE=security npx vitest run tests/assistantCorpusSecurity.test.ts"
+      - name: Keep the result including blocked or partial runs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: assistant-live-report
+          path: assistant-acceptance-live-report.json
+          if-no-files-found: error
+          retention-days: 7
