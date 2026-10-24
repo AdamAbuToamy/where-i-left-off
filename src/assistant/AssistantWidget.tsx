@@ -97,7 +97,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
  async function checkConnection(){
   if(lock.current)return;lock.current=true;setBusy(true);setPhase('reading');setCopied(false);
   try{await repository.read().catch(error=>{throw AssistantFailure.from(error,'read');});const result=await pushCall<{status:string;provider:string;protocol:string;inferenceTested:boolean}>({mode:'health'},{path:'/assistant',timeout:20000});
-   if(result.status!=='ready'||!['groq','cloudflare'].includes(result.provider)||result.inferenceTested!==false||!/^wilo-assistant-[a-z0-9-]{1,40}$/.test(result.protocol))throw new AssistantFailure('assistant-server-response','request');
+   if(result.status!=='ready'||!['groq','cloudflare','gemini'].includes(result.provider)||result.inferenceTested!==false||!/^wilo-assistant-[a-z0-9-]{1,40}$/.test(result.protocol))throw new AssistantFailure('assistant-server-response','request');
    if(mounted.current)setHealth({provider:result.provider,protocol:result.protocol});
   }catch(e){if(mounted.current)report(e);}finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
  }
