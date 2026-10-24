@@ -15,7 +15,7 @@ export function clarifyMinimalCreation(plan,language,context,history=[],message=
  if(action.target!=='lessons'&&(typeof name!=='string'||!name.trim()))question=w.name;
  else if(action.target==='projects'){
   const fields=['sectionId','dueDate','description','projectUrl'];
-  // Explicitly supplied section/date/notes/link is enough to create the card.\n  // Do not ask again about already-specified fields or require extra optional data.\n  if(fields.filter(k=>v[k]).length>=2)return plan;
+  // Ask only when no reliable optional detail was provided.\n  if(fields.filter(k=>v[k]).length>=2||['dueDate','description','projectUrl'].some(k=>typeof v[k]==='string'&&v[k].trim()))return plan;
   question=w.extras(name);
   let data;try{data=JSON.parse(context||'{}');}catch{return plan;}
   const sections=data.scopes?.find(s=>s.id===(action.scope||'personal'))?.sections||[];
