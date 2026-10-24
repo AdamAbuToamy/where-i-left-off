@@ -26,3 +26,5 @@ it('routes delete-it to one confirmed recent card, not an unrelated project',asy
  expect(quickFollowUp('احذفها',d,[])).toBeNull();
  expect(quickFollowUp('احذفها',d,[{role:'assistant',receipt:{changes:[...turns[0].receipt.changes,{target:'projects',scope:'personal',id:'card-2',before:null,after:{name:'other'}}]}}])).toBeNull();
 });
+
+it('preserves section mismatch failure code in user diagnostics',async()=>{const {AssistantFailure}=await import('../src/assistant/failure');const {friendlyFailure}=await import('../src/assistant/friendlyFailure');const failure=AssistantFailure.from(new Error('assistant-reference'),'request');expect(failure.diagnostic().code).toBe('assistant-reference');expect(friendlyFailure(failure,'ar')).toContain('القسم');});
