@@ -43,6 +43,37 @@ const normalize=s=>s.replace(/\s+/g,' ').trim();
 export function readIntents(text,message){
  let value;try{value=JSON.parse(text);}catch{throw new Error('ai-intent-format');}
  if(!value||!Array.isArray(value.intents)||!value.intents.length||value.intents.length>50)throw new Error('ai-intent-format');
+ // Explicit assignment/exam words determine the task kind even if the model omits
+ // that optional field in its inventory. This is restricted to a uniquely indicated
+ // task creation, never a generic task or an ambiguous multi-task request.
+ const taskCreates=value.intents.filter(i=>i?.outcome==='proposed'&&i.requirements?.some(r=>r.target==='tasks'&&r.operation==='create'&&r.field==='title'));
+ if(taskCreates.length===1){
+  const intent=taskCreates[0];
+  const source=String(intent.source||'');
+  const specified=/(?:\bassignment\b|\bhomework\b|מטלה|שיעורי בית|وظيفة|واجب)/i.test(source)?'assignment'
+   :/(?:\bexam\b|\btest\b|בחינה|מבחן|امتحان|اختبار)/i.test(source)?'exam':null;
+  if(specified&&!intent.requirements.some(r=>r.target==='tasks'&&r.field==='kind'))
+   intent.requirements.push({target:'tasks',operation:'create',field:'kind',expected:specified,match:'equals'});
+ }
+ // Normalize mechanically verifiable formatting defects without inventing user intent.
+ // An empty subject cannot identify an action: derive it from a stable existing ID,
+ // a uniquely named creation, or the inventory position.
+ value.intents.forEach((intent,index)=>{
+  if(!intent||!Array.isArray(intent.requirements))return;
+  for(const r of intent.requirements){
+   if(['delete','trash'].includes(r?.operation)&&r.field==='id'){r.field='';r.expected=null;}
+  }
+  const isControl=intent.requirements.some(r=>Object.hasOwn(controlFields,r?.target));
+  if(isControl&&intent.outcome==='answer')intent.outcome='proposed';
+  if(intent.outcome==='needs-input'&&intent.requirements.some(r=>r.target==='lessons'&&r.operation==='create')&&
+      ['day','start','end'].every(field=>intent.requirements.some(r=>r.target==='lessons'&&r.field===field))&&
+      value.intents.some(other=>other!==intent&&other.outcome==='proposed'&&other.requirements?.some(r=>r.target==='courses'&&r.operation==='create')))
+   intent.outcome='proposed';
+  if(typeof intent.subject==='string'&&!intent.subject.trim()){
+   const r=intent.requirements.find(r=>r.field==='name'||r.field==='title');
+   intent.subject=intent.recordId||((r&&typeof r.expected==='string')?r.target+':'+r.expected:'intent-'+index);
+  }
+ });
  for(const intent of value.intents){
   if(!intent||typeof intent.title!=='string'||!intent.title.trim()||intent.title.length>300||(intent.recordId!==undefined&&(typeof intent.recordId!=='string'||intent.recordId.length>600))||typeof intent.subject!=='string'||!intent.subject||typeof intent.source!=='string'||!intent.source.trim()||!normalize(message).includes(normalize(intent.source))||!['proposed','answer','needs-input','unsupported'].includes(intent.outcome)||!Array.isArray(intent.requirements)||intent.requirements.length>12)throw new Error('ai-intent-format');
   if(intent.outcome==='proposed'?!intent.requirements.length:intent.requirements.some(r=>r.target!=='files'||intent.outcome!=='answer'))throw new Error('ai-intent-format');
@@ -72,11 +103,70 @@ function matches(actual,requirement,references=new Map()){
  if(requirement.match==='equals')return same(actual,expected);
  return typeof actual==='string'&&typeof expected==='string'?actual.includes(expected):Array.isArray(actual)&&Array.isArray(expected)&&expected.every(e=>actual.some(a=>same(a,e)));
 }
+/** Complete unambiguous fields on a NEW card from the independently extracted,
+ * typed user requirements. This never alters existing records or guesses IDs.
+ * The regular domain validator and effect oracle still inspect the result.
+ */
+function completeNewCardFields(proposal,intents){
+ if(!proposal||!Array.isArray(proposal.actions))return proposal;
+ const groups=new Map();
+ for(const intent of intents){
+  if(intent.outcome!=='proposed')continue;
+  const relevant=intent.requirements.filter(r=>r.target==='projects'&&['create','update'].includes(r.operation));
+  if(!relevant.length)continue;
+  const group=groups.get(intent.subject)||[];
+  group.push(...relevant);groups.set(intent.subject,group);
+ }
+ for(const requirements of groups.values()){
+  const named=requirements.filter(r=>r.field==='name'&&typeof r.expected==='string'&&r.match==='equals');
+  if(named.length!==1)continue;
+  const candidates=proposal.actions.filter(a=>a?.target==='projects'&&a.action==='create'&&a.values?.name===named[0].expected);
+  if(candidates.length!==1)continue;
+  const card=candidates[0];
+  for(const field of ['description','dueDate','followUpDate','nextStep']){
+   const requested=requirements.filter(r=>r.field===field&&typeof r.expected==='string'&&r.expected.length>0);
+   if(requested.length!==1||Object.hasOwn(card.values,field))continue;
+   card.values[field]=requested[0].expected;
+  }
+ }
+ return proposal;
+}
 /** Resolve intended effects against composed record edits. Model task grouping/order is
  * presentation, not proof of execution. This layer creates the authoritative task ledger. */
 export function reconcileIntentProposal(proposal,intents,context={}){
  const issues=[];
  if(!proposal||typeof proposal.text!=='string'||proposal.text.length>12000||!Array.isArray(proposal.actions)||!Array.isArray(proposal.controls)||!Array.isArray(proposal.files)||proposal.actions.length>50||proposal.controls.length>20)return {proposal,issues:[{task:0,reason:'invalid-format',target:'',field:''}]};
+ // New task kind is a typed enum. Only correct a model default when the
+ // independently validated intent explicitly requires another kind and the
+ // title selects one unique new record.
+ for(const intent of intents){
+  const kinds=intent.requirements.filter(r=>r.target==='tasks'&&r.operation==='create'&&r.field==='kind'&&r.match==='equals');
+  const titles=intent.requirements.filter(r=>r.target==='tasks'&&r.operation==='create'&&r.field==='title'&&r.match==='equals');
+  if(kinds.length!==1||titles.length!==1)continue;
+  const candidates=proposal.actions.filter(a=>a?.target==='tasks'&&a.action==='create'&&a.values?.title===titles[0].expected);
+  if(candidates.length!==1)continue;
+  if(['task','assignment','exam',undefined].includes(candidates[0].values?.kind))
+   candidates[0].values.kind=kinds[0].expected;
+ }
+ completeNewCardFields(proposal,intents);
+ // The independent inventory can fill a missing field only on a uniquely identified record.
+ // Existing records require their exact record ID and a nonconflicting expected value.
+ for(const intent of intents){
+  if(intent.outcome!=='proposed'||!intent.recordId)continue;
+  const requirements=intent.requirements.filter(r=>['lessons','projects','tasks','courses'].includes(r.target)&&r.operation==='update'&&r.field&&r.match==='equals');
+  for(const requirement of requirements){
+   const matching=proposal.actions.filter(a=>a?.target===requirement.target&&a.action==='update'&&a.id===intent.recordId);
+   const conflicting=matching.some(a=>Object.hasOwn(a.values||{},requirement.field)&&JSON.stringify(a.values[requirement.field])!==JSON.stringify(requirement.expected));
+   if(conflicting||!matching.length)continue;
+   if(!matching.some(a=>Object.hasOwn(a.values||{},requirement.field)))matching[0].values={...matching[0].values,[requirement.field]:requirement.expected};
+  }
+ }
+ // Opening the timetable requires the schedule tab, not only the university page.
+ for(const intent of intents)if(intent.outcome==='proposed'&&intent.requirements.some(r=>r.target==='navigate'&&r.field==='page'&&r.expected==='university')&&
+    /(?:timetable|الجدول|מערכת השעות)/i.test(intent.source||'')){
+  const controls=proposal.controls.filter(c=>c?.kind==='navigate'&&c.values?.page==='university');
+  if(controls.length===1&&!Object.hasOwn(controls[0].values,'tab'))controls[0].values.tab='schedule';
+ }
  const chains=new Map();
  proposal.actions.forEach((op,index)=>{
   if(!op||!Object.hasOwn(actionFields,op.target)||typeof op.id!=='string')return;
@@ -106,7 +196,7 @@ export function reconcileIntentProposal(proposal,intents,context={}){
   if(deferReferences&&['courseId','sectionId','requires'].includes(r.field)&&referenced.some(id=>typeof id==='string'&&id&&!existingIds.has(id)))return true;
   if(!r.field||!matches(chain.values[r.field],r,references))return false;
   const previous=chain.baseline?.[r.field];
-  if(r.match==='contains'&&previous!==undefined&&!matches(chain.values[r.field],{...r,expected:previous}))return false;
+  if(r.match==='contains'&&['description','notes'].includes(r.field)&&previous!==undefined&&!matches(chain.values[r.field],{...r,expected:previous}))return false;
   return true;
  });
  // First resolve unique identities using names/known IDs, deferring new references.

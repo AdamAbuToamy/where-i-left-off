@@ -1,4 +1,5 @@
 import {clarifyMinimalCreation} from './assistantClarification.mjs';
+import {normalizeExplicitStudyTaskKind} from './assistantStudyTaskKind.mjs';
 import {ASSISTANT_DIALOGUE_POLICY} from '../../shared/assistantDialogue.mjs';
 import {WORKSPACE_READ_TOOL,workspaceOverview,readWorkspaceContext} from './assistantContext.mjs';
 import {WORKSPACE_REPLY_FORMAT,actionFields,controlFields} from './assistantContract.mjs';
@@ -58,6 +59,31 @@ function canonicalToolFields(plan){
 export function readWorkspaceToolProposal(text){
  let plan;try{plan=JSON.parse(text);}catch{throw new Error('ai-incomplete-proposal');}
  canonicalToolFields(plan);
+ // Providers sometimes emit every optional create field with null or an
+ // empty enum placeholder. These are omissions, not user-requested values.
+ // Never normalize updates/deletes or unknown fields: validation must reject.
+ if(Array.isArray(plan?.actions))for(const action of plan.actions){
+  if(action?.action!=='create'||!action.values||typeof action.values!=='object'||Array.isArray(action.values))continue;
+  const fields=actionFields[action.target];
+  if(!fields)continue;
+  for(const [name,value] of Object.entries(action.values)){
+   const schema=fields[name];
+   if(!schema)continue;
+   if(value===null||(value===''&&Array.isArray(schema.enum)&&!schema.enum.includes('')))delete action.values[name];
+  }
+ }
+ // A create's id is a batch-local alias (not a database ID). Some providers
+ // emit an empty string for new records. Supply a unique valid alias without
+ // changing existing IDs, operation types, or any user-supplied record values.
+ if(Array.isArray(plan?.actions)){
+  const used=new Set(plan.actions.map(a=>a?.id).filter(id=>typeof id==='string'&&id.length>0));
+  plan.actions.forEach((action,index)=>{
+   if(action?.action!=='create'||action.id!=='')return;
+   let alias='new-'+action.target+'-'+(index+1),serial=1;
+   while(used.has(alias))alias='new-'+action.target+'-'+(index+1)+'-'+(++serial);
+   action.id=alias;used.add(alias);
+  });
+ }
  if(!valid(plan,TOOL_SCHEMA))throw new Error('ai-incomplete-proposal');
  // Mutating effects are always proposals; their status is derived from validated references, not model prose.
  for(const task of plan.tasks)if(task.outcome==='answer'&&(task.actionIndexes.length||task.controlIndexes.some(i=>plan.controls[i]&&plan.controls[i].kind!=='navigate')))task.outcome='proposed';
@@ -99,7 +125,7 @@ export async function runWorkspaceTools(data,history,invoke){
   try{
    const result=await invoke(input,signal);
    const batch=result?.contextRequests||(result?.contextRequest?[result]:null);
-   if(!batch){const checked=JSON.parse(readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response)));return JSON.stringify(clarifyMinimalCreation(checked,data.language,data.context,history,data.message));}
+   if(!batch){const checked=JSON.parse(readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response)));return JSON.stringify(clarifyMinimalCreation(normalizeExplicitStudyTaskKind(checked,data.message),data.language,data.context,history,data.message));}
    if(!Array.isArray(batch)||!batch.length||reads+batch.length>3)throw new Error('ai-context-read-limit');
    const pendingIds=new Set();
    // Commit protocol state only after every read in the batch has been authorized and validated.
