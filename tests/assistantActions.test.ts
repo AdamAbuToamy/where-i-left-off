@@ -52,3 +52,13 @@ it('only permits permanent deletion of already-trashed personal cards',async()=>
  expect(allowed).toMatchObject([{id:'trashed',after:null}]);
  expect(()=>planAssistantProposal(state,[{target:'projects',action:'delete',id:'live',values:{}}])).toThrow();
 });
+
+
+it('plans trash card then delete its section as one safe proposal',()=>{
+ const state=blankAssistantData();
+ state.scopes[0].sections=[{id:'section-a',name:'Ayush',revision:0}];
+ state.scopes[0].projects=[{id:'card-a',name:'Card',sectionId:'section-a',nextStep:'',rank:0,revision:0,trashedAt:0,status:'active'}] as typeof state.scopes[0]['projects'];
+ const plan=planAssistantProposal(state,[{target:'projects',action:'trash',id:'card-a',scope:'personal',values:{}},{target:'sections',action:'delete',id:'section-a',scope:'personal',values:{}}]);
+ expect(plan).toEqual(expect.arrayContaining([expect.objectContaining({target:'projects',id:'card-a',after:expect.objectContaining({sectionId:'',trashedAt:expect.any(Number)})}),expect.objectContaining({target:'sections',id:'section-a',after:null})]));
+ expect(plan.filter(c=>c.target==='projects')).toHaveLength(1);
+});
