@@ -88,7 +88,7 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
   if(['tasks','lessons'].includes(a.target)&&'courseId' in patch&&!working.study.courses.some(c=>c.id===patch.courseId)&&!aliases.has(String(values.courseId)))invalid('assistant-reference');
   if('requires' in patch){if(!Array.isArray(patch.requires))throw new Error('assistant-invalid');patch.requires=patch.requires.map(ref);}
   let after:Record<string,unknown>|null;
-  if(a.action==='delete'){
+  if(a.action==='delete'&&a.target!=='sections'){
    if(a.target==='projects'&&(scope!=='personal'||!before?.trashedAt||Object.keys(patch).length))invalid('assistant-permanent-delete');
    after=null;
   }else if(a.target==='projects'){
