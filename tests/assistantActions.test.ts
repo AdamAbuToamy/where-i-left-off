@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {blankAssistantData,parseAssistantReply,planAssistantChanges} from '../src/assistant/actions';
+import {blankAssistantData,parseAssistantReply,planAssistantChanges,planAssistantProposal} from '../src/assistant/actions';
 import type {Action} from '../src/assistant/actions';
 const fixture=()=>{const d=blankAssistantData();d.study.courses=[{id:'a',name:'A',url:'',notes:'keep',requires:[],x:0,y:0},{id:'b',name:'B',url:'',notes:'',requires:[],x:300,y:0}];return d;};
 it('links courses using exact IDs and preserves notes; rejects cycles and missing dependencies',()=>{
