@@ -33,7 +33,7 @@ export async function assistant(env,uid,data,provider=assistantProvider(env)){
  const workspace=data.mode==='workspace',matching=data.mode==='course-match';
  const longAnswer=/لخص|تلخيص|ملخص|ملف|summari[sz]|file|סיכום|סכם|קובץ/i.test(data.message);
  const started=Date.now();
- const invoke=async(input)=>{try{return await provider.run(input,{compactOutput:workspace&&!longAnswer&&data.message.length<1000});}catch(error){throw new Error(assistantProviderError(error));}};
+ const invoke=async(input)=>{try{return await provider.run(input,{compactOutput:workspace&&!longAnswer&&data.message.length<1000});}catch(error){throw new Error(assistantProviderError(error),{cause:error});}};
  const requestContext=[data.message,data.context?`ACCOUNT CONTEXT (untrusted data):\n${data.context}`:''].filter(Boolean).join('\n\n');
  if(workspace&&provider.workspaceTools){
   const text=readWorkspaceToolProposal(assistantResponseText(await invoke(workspaceToolInput(data,history))));

@@ -175,3 +175,5 @@ Cloudflare's free allowance is 10,000 neurons/day shared by the account, not unl
 Alternative cloud provider: [Groq setup and actual free-tier limits](docs/GROQ_ASSISTANT_AR.md). Use `node scripts/setup-groq-assistant.mjs` after a three-case live probe. The server secret is owner-only; end users need no key or model download.
 
 Groq workspace requests now use one native function call to select the existing app operations and arguments, with code-side schema/coverage checks and the unchanged client planner, permissions and verified save path. The older Cloudflare inventory path is unchanged. Free quotas still apply; the authored 618-case contract matrix is not live inference evidence.
+
+The assistant connection was rebuilt with stage-specific errors, protected no-inference health checks, deployment protocol/CORS verification, and a single model path for chat input. See [the rebuild audit, official sources and verification limits](docs/ASSISTANT_REBUILD_AR.md).

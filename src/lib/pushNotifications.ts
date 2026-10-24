@@ -1,3 +1,4 @@
+import {assistantRequest} from '../assistant/api'
 import { getToken } from 'firebase/app-check'
 import { useEffect, useState } from 'react'
 import { auth, db, emulatorMode, appCheck } from './firebase'
@@ -25,6 +26,7 @@ export function notificationEndpoint() {
   }).catch(error=>{pushEndpoint=undefined;throw error})
 }
 export async function pushCall<T=unknown>(data:Record<string,unknown>,options:{path?:'/assistant';timeout?:number}={}):Promise<T> {
+  if(options.path)return assistantRequest<T>(data,options.timeout)
   if (!db || !auth?.currentUser) throw new Error('Sign in first')
   const uid=auth.currentUser.uid
   const [endpoint,identity,appcheck]=await Promise.all([
@@ -32,10 +34,10 @@ export async function pushCall<T=unknown>(data:Record<string,unknown>,options:{p
     emulatorMode?Promise.resolve({token:'local-browser-test-only'}):appCheck?getToken(appCheck,false):Promise.reject(new Error('app-check-required')),
   ])
   if(auth.currentUser?.uid!==uid)throw new Error('account-changed')
-  const response=await fetch(options.path?new URL(options.path,endpoint).href:endpoint,{method:'POST',headers:{'content-type':'application/json',Authorization:`Bearer ${identity}`,'X-Firebase-AppCheck':appcheck.token},body:JSON.stringify(data),signal:AbortSignal.timeout(options.timeout||20000)})
+  const response=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json',Authorization:`Bearer ${identity}`,'X-Firebase-AppCheck':appcheck.token},body:JSON.stringify(data),signal:AbortSignal.timeout(options.timeout||20000)})
   const body=await response.json()
   if(auth.currentUser?.uid!==uid)throw new Error('account-changed')
-  if(!response.ok){const error=new Error(options.path&&/^ai-[a-z-]+$/.test(body.error)?body.error:'push-request-failed');if(options.path&&body.error==='ai-incomplete-proposal')Object.assign(error,{details:body.details});throw error;}
+  if(!response.ok)throw new Error('push-request-failed')
   const result=body.result as T
   if(data.action==='save')window.dispatchEvent(new Event('push-preferences-changed'))
   return result

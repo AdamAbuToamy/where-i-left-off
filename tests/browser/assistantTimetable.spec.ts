@@ -6,6 +6,7 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  test.setTimeout(90000);
  const account=await prepareUniversityPilot(request,`timetable-${Date.now()}@example.test`);
  await page.addInitScript(()=>localStorage.setItem('language','ar'));
+ await page.route('**/assistant-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-course-test.workers.dev/assistant'})}));
  await page.route('**/push-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-course-test.workers.dev/'})}));
  let cloudMatches=0;
  await page.route('https://wilo-course-test.workers.dev/assistant',async route=>{

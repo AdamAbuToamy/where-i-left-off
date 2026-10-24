@@ -33,7 +33,7 @@ it('persists injected provider proposals through the actual chat Apply button an
    const start=performance.now();const box=element.querySelector('textarea')!;
    await act(async()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(box,message);box.dispatchEvent(new Event('input',{bubbles:true}));});
    await act(async()=>element.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
-   await idle();expect(element.querySelector('[role=alert]')).toBeNull();
+   await idle();expect(element.querySelector('[role=alert]')).toBeNull();expect(runtime.call).toHaveBeenLastCalledWith(expect.objectContaining({mode:'workspace',message}),{path:'/assistant',timeout:60000});
    const buttons=[...element.querySelectorAll('button')].filter(b=>b.textContent==='تطبيق التغييرات');expect(buttons).toHaveLength(1);
    const proposalMs=performance.now()-start,saveStart=performance.now();await act(async()=>buttons[0].click());await idle();
    expect(element.querySelector('[role=alert]')).toBeNull();expect(element.textContent).toContain('تم تطبيق التغييرات في الموقع.');
@@ -41,12 +41,13 @@ it('persists injected provider proposals through the actual chat Apply button an
   }
   runtime.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'courses',action:'create',id:'new-course',values:{name:'Algorithms'}}]})});
   await run('انشئ كورس باسم Algorithms',data=>expect(data.study.courses[0].name).toBe('Algorithms'));
+  runtime.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'lessons',action:'create',id:'new-class',values:{courseId:(await repo.read()).data.study.courses[0].id,day:0,start:'17:00',end:'18:00',sessionType:'lecture',room:''}}]})});
   await run('اضف الكورس اللي عندي الى البرنامج يوم احد من الخمسة للستة مساء',data=>expect(data.study.lessons).toEqual([expect.objectContaining({day:0,start:'17:00',end:'18:00',courseId:data.study.courses[0].id})]));
   runtime.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'projects',action:'create',id:'new-card',scope:'personal',values:{name:'مراجعة الخوارزميات',nextStep:'حل تمرينين'}}]})});
   await run('أنشئ بطاقة باسم مراجعة الخوارزميات والخطوة القادمة حل تمرينين',data=>expect(data.scopes[0].projects[0]).toMatchObject({name:'مراجعة الخوارزميات',nextStep:'حل تمرينين'}));
   runtime.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'projects',action:'update',id:(await repo.read()).data.scopes[0].projects[0].id,scope:'personal',values:{nextStep:'حل خمسة تمارين'}}]})});
   await run('عدل بطاقة مراجعة الخوارزميات الخطوة القادمة حل خمسة تمارين',data=>expect(data.scopes[0].projects[0].nextStep).toBe('حل خمسة تمارين'));
-  expect(runtime.call).toHaveBeenCalledTimes(3);
+  expect(runtime.call).toHaveBeenCalledTimes(4);
   writeFileSync('/tmp/wilo-task-benchmark.json',JSON.stringify({environment:'jsdom chat UI + real local Firestore emulator; injected provider responses; no model inference or production network',tasks:timings},null,2));
   console.info('assistant.task.acceptance',timings.map(t=>({proposalMs:t.proposalMs,saveAndReadMs:t.saveAndReadMs})));
  }finally{await act(async()=>root.unmount());element.remove();}

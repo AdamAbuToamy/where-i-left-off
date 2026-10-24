@@ -1,3 +1,4 @@
+import {ASSISTANT_PROTOCOL,assistantFailure,assistantHealth} from './assistantEndpoint.mjs'
 import {assistant} from './assistant.mjs'
 import {defaults,preferences,clock,validSubscription,cardKey,candidate,quietNow,localParts} from '../policy.mjs'
 import {nextCheck,afterQuiet} from '../schedule.mjs'
@@ -141,28 +142,30 @@ export function createWorker(overrides={}){
  }
  return {
   async fetch(request,env){
+   const isAssistant=new URL(request.url).pathname==='/assistant',requestId=crypto.randomUUID();let stage='request'
    const origin=request.headers.get('origin'),allowed=(env.APP_ORIGINS || '').split(',').includes(origin)
    const headers={'content-type':'application/json','cache-control':'no-store','vary':'Origin'}
    if(!allowed)return new Response(JSON.stringify({error:'origin-not-allowed'}),{status:403,headers})
+   if(isAssistant){headers['x-wilo-assistant-version']=ASSISTANT_PROTOCOL;headers['x-wilo-request-id']=requestId;headers['access-control-expose-headers']='x-wilo-assistant-version,x-wilo-request-id'}
    headers['access-control-allow-origin']=origin
    headers['access-control-allow-headers']='authorization,content-type,x-firebase-appcheck'
    headers['access-control-allow-methods']='POST,OPTIONS'
    if(new URL(request.url).pathname==='/moodle')return new Response(JSON.stringify({error:'integration-removed'}),{status:410,headers})
    if(request.method==='OPTIONS')return new Response(null,{status:204,headers})
    if(request.method!=='POST')return new Response('{}',{status:405,headers})
-   let requestedAction='unknown'
+   let requestedAction=isAssistant?'assistant':'unknown'
    try{
     const text=await request.text()
     if(text.length>65536)throw new Error('invalid-size')
     const data=JSON.parse(text)
-    if(['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase'].includes(data.action))requestedAction=data.action
-    const identity=await f.verifyIdentity(request,env)
+    if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase'].includes(data.action))requestedAction=data.action
+    stage='identity';const identity=await f.verifyIdentity(request,env)
     let result
-    if(new URL(request.url).pathname==='/assistant'){if(identity.emailVerified!==true)throw new Error('account-unavailable');await f.accountAvailable(env,identity.uid);await store.ensureAccount(env,identity.uid,defaults);result=await assistant(env,identity.uid,data)}
+    if(isAssistant){stage='account';if(identity.emailVerified!==true)throw new Error('ai-email-unverified');await f.accountAvailable(env,identity.uid);stage='database';await store.ensureAccount(env,identity.uid,defaults);const readiness=await assistantHealth(env);stage='provider';result=data.mode==='health'?readiness:await assistant(env,identity.uid,data)}
     else result=await action(env,identity,data)
-    console.info('push.http',{action:requestedAction,status:200})
+    console.info(isAssistant?'assistant.http':'push.http',{action:requestedAction,status:200,...(isAssistant?{requestId,protocol:ASSISTANT_PROTOCOL}:{})})
     return new Response(JSON.stringify({result}),{headers})
-   }catch(error){const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed',...(error.message==='ai-incomplete-proposal'?{details:error.details}:{} )}),{status,headers})}
+   }catch(error){if(isAssistant){const failure=assistantFailure(error,stage,requestId);console.warn('assistant.http.failed',{status:failure.status,...failure.body.diagnostic,code:failure.body.error});return new Response(JSON.stringify(failure.body),{status:failure.status,headers})}const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed',...(error.message==='ai-incomplete-proposal'?{details:error.details}:{} )}),{status,headers})}
   },
   async scheduled(_controller,env){
    if(env.ASSISTANT_FREE_ONLY==='true')try{const cutoff=new Date(Date.now()-7*DAY).toISOString().slice(0,10);await env.DB.prepare('DELETE FROM ai_usage WHERE day<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM ai_budget WHERE day<?').bind(cutoff).run()}catch{console.warn('assistant.maintenance.failed')}

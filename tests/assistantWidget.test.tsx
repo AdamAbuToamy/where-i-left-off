@@ -2,7 +2,7 @@
 import {act} from 'react';import {createRoot} from 'react-dom/client';import {afterEach,beforeEach,expect,it,vi} from 'vitest';import type {User} from 'firebase/auth';
 const api=vi.hoisted(()=>({call:vi.fn(),read:vi.fn(),apply:vi.fn(),undo:vi.fn()}));
 vi.mock('../src/lib/pushNotifications',()=>({pushCall:api.call}));
-vi.mock('../src/lib/firebase',()=>({auth:{currentUser:{uid:'alice'}}}));
+vi.mock('../src/lib/firebase',()=>({auth:{currentUser:{uid:'alice'}},db:null,emulatorMode:true}));
 vi.mock('../src/assistant/assistantRepository',()=>({AssistantRepository:class{read=api.read;apply=api.apply;undo=api.undo;},assistantContext:()=>'{"study":"account data"}'}));
 import {providerReply} from './fixtures/assistantProvider';
 import AssistantWidget from '../src/assistant/AssistantWidget';import {blankAssistantData} from '../src/assistant/actions';
@@ -29,11 +29,11 @@ it('answers a normal question without proposals and distinguishes invalid model 
  vi.useFakeTimers();api.call.mockResolvedValue({text:'not JSON'});await input('Again');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-format');expect(api.apply).not.toHaveBeenCalled();
  api.call.mockResolvedValue({text:providerReply({text:'Update',actions:[{target:'courses',action:'update',id:'missing',values:{notes:'New'}}],files:[]})});await input('Edit course');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});vi.useRealTimers();expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-invalid');expect(api.apply).not.toHaveBeenCalled();
 });
-it('previews the screenshot timetable request without calling the remote model, then applies through the repository',async()=>{
+it('sends the original simple timetable request through AI and applies its validated function arguments',async()=>{
  const data=blankAssistantData();data.study.courses=[{id:'actual-course',name:'הנדסת איכות תוכנה',url:'',notes:'',x:0,y:0,requires:[]}];
- api.read.mockResolvedValue({data,pending:false,raw:new Map()});api.apply.mockResolvedValue({changes:[],mutations:new Map()});await open();
+ api.read.mockResolvedValue({data,pending:false,raw:new Map()});api.apply.mockResolvedValue({changes:[],mutations:new Map()});api.call.mockResolvedValue({text:providerReply({text:'Review',actions:[{target:'lessons',action:'create',id:'new-session',values:{courseId:'actual-course',day:0,start:'17:00',end:'18:00',sessionType:'lecture',room:''}}]})});await open();
  await input('اضفه الى البرنامج يوم احد من الساعة خمسة للستة مساء');await submit();
- expect(api.call).not.toHaveBeenCalled();expect(api.apply).not.toHaveBeenCalled();expect(element.textContent).toContain('17:00');expect(element.textContent).toContain('18:00');
+ expect(api.call).toHaveBeenCalledTimes(1);expect(api.call.mock.calls[0][0].message).toBe('اضفه الى البرنامج يوم احد من الساعة خمسة للستة مساء');expect(api.apply).not.toHaveBeenCalled();expect(element.textContent).toContain('17:00');expect(element.textContent).toContain('18:00');
  const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
  expect(api.apply).toHaveBeenCalledWith(expect.objectContaining({data}),[expect.objectContaining({target:'lessons',after:expect.objectContaining({courseId:'actual-course',day:0,start:'17:00',end:'18:00'})})]);
 });
@@ -91,4 +91,12 @@ it('keeps the entire mixed request for cloud planning instead of silently handli
  const message='Add to the timetable:\nSunday\n11:00–13:00 | Networks | Lecture\nThen create a card and summarize my notes';
  api.call.mockResolvedValue({text:providerReply({text:'Review',actions:[{target:'courses',action:'create',id:'c',values:{name:'Networks'}},{target:'lessons',action:'create',id:'l',values:{courseId:'c',day:0,start:'11:00',end:'13:00'}},{target:'projects',action:'create',id:'p',values:{name:'Read notes'}}],files:[{name:'notes.txt',content:'Summary of the supplied notes.'}]})});
  await open();await input(message);await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message}),{path:'/assistant',timeout:60000});expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(3);expect(element.textContent).toContain('notes.txt');expect(api.apply).not.toHaveBeenCalled();
+});
+
+it('keeps the server failure stage visible and runs a no-inference connection check without losing the original error',async()=>{
+ const {AssistantFailure}=await import('../src/assistant/failure');
+ api.call.mockRejectedValueOnce(new AssistantFailure('ai-service-permission','account',{status:503,requestId:'11111111-1111-1111-1111-111111111111'}));
+ await open();await input('Add a card');await submit();expect(element.querySelector('[role=alert]')?.textContent).toContain('Firebase Auth lookup');expect(element.textContent).toContain('HTTP 503');
+ api.call.mockResolvedValueOnce({status:'ready',provider:'groq',protocol:'wilo-assistant-2026-10-v2',inferenceTested:false});
+ const check=[...element.querySelectorAll('button')].find(b=>b.textContent==='Check assistant connection')!;await act(async()=>check.click());expect(api.call).toHaveBeenLastCalledWith({mode:'health'},{path:'/assistant',timeout:20000});expect(element.textContent).toContain('This check used no AI request');expect(api.apply).not.toHaveBeenCalled();
 });

@@ -3,12 +3,14 @@ const authKeys=createRemoteJWKSet(new URL('https://www.googleapis.com/service_ac
 const appKeys=createRemoteJWKSet(new URL('https://firebaseappcheck.googleapis.com/v1/jwks'))
 export async function verifyIdentity(request,env,keys={auth:authKeys,app:appKeys}) {
  const bearer=request.headers.get('authorization') || '',appcheck=request.headers.get('x-firebase-appcheck')
- if(!bearer.startsWith('Bearer ') || !appcheck)throw new Error('unauthenticated')
+ if(!bearer.startsWith('Bearer '))throw Object.assign(new Error('unauthenticated'),{authStage:'identity'})
+ if(!appcheck)throw Object.assign(new Error('unauthenticated'),{authStage:'app-check'})
  const [identity,app]=await Promise.all([
-  jwtVerify(bearer.slice(7),keys.auth,{issuer:`https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`,audience:env.FIREBASE_PROJECT_ID,algorithms:['RS256']}),
-  jwtVerify(appcheck,keys.app,{issuer:`https://firebaseappcheck.googleapis.com/${env.FIREBASE_APP_ID.split(':')[1]}`,audience:`projects/${env.FIREBASE_APP_ID.split(':')[1]}`,algorithms:['RS256']})
+  jwtVerify(bearer.slice(7),keys.auth,{issuer:`https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`,audience:env.FIREBASE_PROJECT_ID,algorithms:['RS256']}).catch(error=>{error.authStage='identity';throw error;}),
+  jwtVerify(appcheck,keys.app,{issuer:`https://firebaseappcheck.googleapis.com/${env.FIREBASE_APP_ID.split(':')[1]}`,audience:`projects/${env.FIREBASE_APP_ID.split(':')[1]}`,algorithms:['RS256']}).catch(error=>{error.authStage='app-check';throw error;})
  ])
- if(typeof identity.payload.exp!=='number' || typeof identity.payload.iat!=='number' || identity.payload.iat>Date.now()/1000 || typeof identity.payload.auth_time!=='number' || !identity.payload.sub || identity.payload.sub.length>128 || identity.payload.auth_time>Date.now()/1000 || !identity.payload.auth_time || app.payload.sub!==env.FIREBASE_APP_ID)throw new Error('unauthenticated')
+ if(app.payload.sub!==env.FIREBASE_APP_ID)throw Object.assign(new Error('unauthenticated'),{authStage:'app-check'})
+ if(typeof identity.payload.exp!=='number' || typeof identity.payload.iat!=='number' || identity.payload.iat>Date.now()/1000 || typeof identity.payload.auth_time!=='number' || !identity.payload.sub || identity.payload.sub.length>128 || identity.payload.auth_time>Date.now()/1000 || !identity.payload.auth_time)throw new Error('unauthenticated')
  return {uid:identity.payload.sub,emailVerified:identity.payload.email_verified===true,token:{auth:bearer.slice(7),appcheck}}
 }
 let credentials,signingKey,oauth

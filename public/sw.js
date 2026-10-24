@@ -8,7 +8,7 @@ self.addEventListener('activate', event => {
 });
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
-  if (new URL(event.request.url).pathname.startsWith('/__/') || ['/extension-config.json','/push-config.json'].includes(new URL(event.request.url).pathname)) return;
+  if (new URL(event.request.url).pathname.startsWith('/__/') || ['/extension-config.json','/push-config.json','/assistant-config.json'].includes(new URL(event.request.url).pathname)) return;
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request).then(response => {
       if (!response.ok) throw new Error('Navigation unavailable');
