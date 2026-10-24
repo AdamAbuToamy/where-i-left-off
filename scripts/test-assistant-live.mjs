@@ -10,13 +10,18 @@ import {acceptanceSummary,providerStop} from './lib/assistantAcceptance.mjs';
 import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
 import {ASSISTANT_MODEL} from '../push-worker/src/assistant.mjs';
 import {runAcceptanceCase} from '../tests/fixtures/assistant/runCase.mjs';
-import {assistantProvider,GROQ_MODEL} from '../push-worker/src/assistantProvider.mjs';
+import {assistantProvider,GROQ_MODEL,GEMINI_MODEL} from '../push-worker/src/assistantProvider.mjs';
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
-const args=process.argv.slice(2),provider=args.find(a=>a.startsWith('--provider='))?.split('=')[1]||'cloudflare',model=provider==='groq'?GROQ_MODEL:ASSISTANT_MODEL,limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):acceptanceCases.length;
-if(args.includes('--list')){console.log(JSON.stringify({requests:acceptanceCases.length,unique:new Set(acceptanceCases.map(c=>c.message)).size,languages:['ar','en','he'],model,mode:'catalog-only; no inference'},null,2));process.exit(0);}
+const args=process.argv.slice(2),provider=args.find(a=>a.startsWith('--provider='))?.split('=')[1]||'cloudflare';
+const settings={cloudflare:{model:ASSISTANT_MODEL},groq:{model:GROQ_MODEL,key:'GROQ_API_KEY',label:'Groq'},gemini:{model:GEMINI_MODEL,key:'GEMINI_API_KEY',label:'Gemini'}}[provider];
+if(!settings)throw new Error('Unknown provider.');
+const model=settings.model,requestedIds=args.filter(a=>a.startsWith('--case=')).map(a=>a.slice(7));
+if(requestedIds.some(id=>!acceptanceCases.some(c=>c.id===id)))throw new Error('Unknown case ID. Use --list to see the case catalog.');
+const selected=requestedIds.length?acceptanceCases.filter(c=>requestedIds.includes(c.id)):acceptanceCases;
+const limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):selected.length;
+if(args.includes('--list')){console.log(JSON.stringify({requests:selected.length,total:acceptanceCases.length,cases:selected.map(c=>c.id),unique:new Set(selected.map(c=>c.message)).size,languages:['ar','en','he'],provider,model,mode:'catalog-only; no inference'},null,2));process.exit(0);}
 if(!args.includes('--live')||!Number.isInteger(limit)||limit<1||limit>acceptanceCases.length)throw new Error('Use --live --limit=618 (or --list). Real inference consumes the selected provider allowance.');
-if(!['cloudflare','groq'].includes(provider))throw new Error('Unknown provider.');
-const fingerprint=createHash('sha256').update(provider).update(readFileSync('scripts/test-assistant-live.mjs')).update(readFileSync('tests/fixtures/assistant/runCase.mjs')).update(readFileSync('push-worker/src/assistantProvider.mjs')).update(readFileSync('push-worker/src/assistantTools.mjs')).update(readFileSync('push-worker/src/assistantContract.mjs')).update(readFileSync('push-worker/src/groqLimits.mjs')).update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
+const fingerprint=createHash('sha256').update(provider).update(readFileSync('scripts/test-assistant-live.mjs')).update(readFileSync('tests/fixtures/assistant/runCase.mjs')).update(readFileSync('push-worker/src/assistantProvider.mjs')).update(readFileSync('push-worker/src/assistantTools.mjs')).update(readFileSync('push-worker/src/assistantContext.mjs')).update(readFileSync('tests/fixtures/assistant/corpus.mjs')).update(readFileSync('push-worker/src/assistantContract.mjs')).update(readFileSync('push-worker/src/groqLimits.mjs')).update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
 const reportPath=resolve('assistant-acceptance-live-report.json');let old=args.includes('--resume')&&existsSync(reportPath)?JSON.parse(readFileSync(reportPath,'utf8')):null;
 if(old&&(old.model!==model||old.provider!==provider||old.fingerprint!==fingerprint)){writeFileSync(reportPath.replace('.json','.previous-'+Date.now()+'.json'),JSON.stringify(old,null,2)+'\n');old=null;console.log('Previous report archived; starting the updated suite.');}
 const report=old||{model,fingerprint,provider,kind:'live-provider-synthetic-data',startedAt:new Date().toISOString(),results:[]};
@@ -24,12 +29,12 @@ const save=()=>{report.summary=acceptanceSummary(report.results,acceptanceCases.
 const cancellation=new AbortController();process.once('SIGINT',()=>cancellation.abort());process.once('SIGTERM',()=>cancellation.abort());
 const folder=mkdtempSync(join(tmpdir(),'wilo-ai-live-')),token=randomUUID();let child,vite;
 try{
- if(provider==='groq'&&!process.env.GROQ_API_KEY?.trim())throw new Error('groq-key-required');
+ if(settings.key&&!process.env[settings.key]?.trim())throw new Error(provider+'-key-required');
  let executeCase;
- if(provider==='groq'){
-  const inference=assistantProvider({ASSISTANT_PROVIDER:'groq',GROQ_API_KEY:process.env.GROQ_API_KEY},{signal:cancellation.signal});
+ if(settings.key){
+  const inference=assistantProvider({ASSISTANT_PROVIDER:provider,[settings.key]:process.env[settings.key]},{signal:cancellation.signal});
   executeCase=testCase=>runAcceptanceCase(testCase,inference);
-  console.log('Groq transport: direct Node HTTPS; no local Worker or secret file.');
+  console.log(settings.label+' transport: direct Node HTTPS; no local Worker or secret file.');
  }else{
  const cli=resolve('push-worker/node_modules/wrangler/bin/wrangler.js');if(!existsSync(cli))throw new Error('Install push-worker dependencies first.');
  const identity=spawnSync(process.execPath,[cli,'whoami'],{encoding:'utf8',env:{...process.env,WRANGLER_SEND_METRICS:'false'},timeout:15000});
@@ -38,7 +43,7 @@ try{
  const server=createNetServer();await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});const port=server.address().port;await new Promise(yes=>server.close(yes));
  const config=join(folder,'wrangler.json');
  writeFileSync(config,JSON.stringify({name:'wilo-local-ai-acceptance',main:resolve('tests/fixtures/assistant/live-worker.mjs'),compatibility_date:'2026-10-23',ai:{binding:'AI',remote:true},vars:{TEST_TOKEN:token}}));
- const childEnv={...process.env,WRANGLER_SEND_METRICS:'false'};delete childEnv.GROQ_API_KEY;
+ const childEnv={...process.env,WRANGLER_SEND_METRICS:'false'};delete childEnv.GROQ_API_KEY;delete childEnv.GEMINI_API_KEY;
  child=spawn(process.execPath,[cli,'dev','--config',config,'--ip','127.0.0.1','--port',String(port),'--show-interactive-dev-session=false'],{stdio:['ignore','pipe','pipe'],env:childEnv});
  let diagnostics='';for(const stream of [child.stdout,child.stderr])stream.on('data',d=>{diagnostics=(diagnostics+d).slice(-6000);});
  const origin=`http://127.0.0.1:${port}`,deadline=Date.now()+30000;
@@ -54,7 +59,7 @@ try{
  let attempted=0,consecutiveUnavailable=0;
  // Diagnose the reported compound-card failure before spending quota on the larger matrix.
  const priority=id=>id.startsWith('compound-card')?0:id.startsWith('new-course-lesson')?1:id.startsWith('ten-cards')?2:3;
- const ordered=[...acceptanceCases].sort((a,b)=>priority(a.id)-priority(b.id));
+ const ordered=[...selected].sort((a,b)=>priority(a.id)-priority(b.id));
  for(const testCase of ordered){
   if(report.results.some(r=>r.id===testCase.id&&r.status==='passed'))continue;if(attempted++>=limit)break;
   cancellation.signal.throwIfAborted();
@@ -68,12 +73,13 @@ try{
    continue;
   }
   consecutiveUnavailable=0;
-  const item={id:testCase.id,status:'passed',elapsedMs:result.elapsedMs,trace:result.trace};
+  const item={id:testCase.id,status:'passed',elapsedMs:result.elapsedMs,trace:result.trace,reply:result.text};
   try{if(result.error)throw new Error(result.error);evaluateAcceptance(testCase,result.text);}catch(error){item.status='failed';item.reason=error.message;item.details=result.details;}
   report.results=report.results.filter(r=>r.id!==testCase.id);report.results.push(item);save();
   console.log(`${report.results.length}/${acceptanceCases.length} ${testCase.id}: ${item.status}${item.reason?' ['+item.reason+']':''} (${result.elapsedMs}ms)`);
  }
- save();if(report.summary.failed||report.summary.notRun)process.exitCode=2;
+ report.selection={ids:selected.map(c=>c.id),summary:acceptanceSummary(report.results.filter(r=>selected.some(c=>c.id===r.id)),selected.length)};
+ save();if(report.selection.summary.failed||report.selection.summary.blocked||report.selection.summary.notRun)process.exitCode=2;
  console.log(JSON.stringify(report.summary));
-}catch(error){report.stopped=cancellation.signal.aborted?'interrupted':/^cloudflare-|^live-worker-|^groq-key-required$/.test(error.message)?error.message:'local-harness-unavailable';save();console.error(report.stopped);process.exitCode=cancellation.signal.aborted?130:2;}
+}catch(error){report.stopped=cancellation.signal.aborted?'interrupted':/^cloudflare-|^live-worker-|^(groq|gemini)-key-required$/.test(error.message)?error.message:'local-harness-unavailable';save();console.error(report.stopped);process.exitCode=cancellation.signal.aborted?130:2;}
 finally{await vite?.close();child?.kill('SIGTERM');rmSync(folder,{recursive:true,force:true});}
