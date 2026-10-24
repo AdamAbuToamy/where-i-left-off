@@ -1,5 +1,5 @@
 name: Deploy Firebase Hosting
-# Recovery deployment keeps the production assistant disabled; emulator tests opt in explicitly.
+# Production assistant pilot is restricted to the verified owner in the client and Worker.
 on:
   workflow_run:
     workflows: [Quality checks]
@@ -44,6 +44,27 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Check owner pilot deployment credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          const required=['CLOUDFLARE_API_TOKEN','CLOUDFLARE_WORKER_CONFIG','GEMINI_API_KEY'];
+          const missing=required.filter(name=>!process.env[name]?.trim());
+          if(missing.length)throw new Error('Missing repository secrets: '+missing.join(', ')+'. Existing production site was not changed.');
+          JS
+      - name: Install existing Worker dependencies
+        run: npm ci --prefix push-worker --no-audit --no-fund
+      - name: Deploy Gemini pilot restricted to the verified owner
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/deploy-assistant-pilot.mjs
+      - name: Verify deployed Worker protocol and CORS
+        run: node scripts/check-assistant-deployment.mjs
       - name: Preserve public production configuration and App Check
         run: node scripts/prepare-hosting-config.mjs
       - name: Diagnose public Auth origins without administrative permissions

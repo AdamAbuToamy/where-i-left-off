@@ -18,9 +18,10 @@ jobs:
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
           FIREBASE_CREDENTIAL: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          if [ -n "$CF_TOKEN" ] && [ -n "$CF_CONFIG" ] && [ -n "$FIREBASE_CREDENTIAL" ]; then
+          if [ -n "$CF_TOKEN" ] && [ -n "$CF_CONFIG" ] && [ -n "$FIREBASE_CREDENTIAL" ] && [ -n "$GEMINI_KEY" ]; then
             echo 'ready=true' >> "$GITHUB_OUTPUT"
           else
             echo 'ready=false' >> "$GITHUB_OUTPUT"
@@ -53,21 +54,12 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm ci --prefix push-worker --no-audit --no-fund
-      - name: Restore existing Worker configuration
-        env:
-          WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
-        run: |
-          node --input-type=module <<'JS'
-          import {writeFileSync} from 'node:fs';
-          const c=JSON.parse(process.env.WORKER_CONFIG);
-          if(c.name!=='wilo-free-push'||!/^[a-f0-9]{32}$/.test(c.account_id||'')||c.vars?.FIREBASE_PROJECT_ID!=='where-i-left-off-b5683'||c.vars?.ASSISTANT_FREE_ONLY!=='true'||!c.d1_databases?.some(d=>d.binding==='DB'&&d.database_id!=='SET_BY_SETUP_SCRIPT'))throw new Error('Invalid existing production Worker configuration.');
-          writeFileSync('push-worker/wrangler.local.json',JSON.stringify(c));
-          JS
-      - name: Deploy existing Worker with its stored secrets
+      - name: Deploy the owner-only Gemini pilot
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          WRANGLER_SEND_METRICS: 'false'
-        run: node push-worker/node_modules/wrangler/bin/wrangler.js deploy --config push-worker/wrangler.local.json
+          CLOUDFLARE_WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/deploy-assistant-pilot.mjs
       - name: Verify Worker connection and prepare public Firebase configuration
         run: |
           node scripts/check-assistant-deployment.mjs

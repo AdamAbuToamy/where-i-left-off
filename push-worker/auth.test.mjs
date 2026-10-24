@@ -30,3 +30,10 @@ test('forwards the verified App Check token to Firestore REST, preserving enforc
   assert.equal(result.name,'Task');assert.equal(headers.Authorization,'Bearer id-token');assert.equal(headers['X-Firebase-AppCheck'],'app-token')
  }finally{globalThis.fetch=original}
 })
+
+test('pilot identity uses the signed email claim, never request body or an unverified flag',async()=>{
+ const result=await verifyIdentity(await request({email:'Adam2002hosny@gmail.com',email_verified:true}),env,keys);
+ assert.equal(result.email,'adam2002hosny@gmail.com');assert.equal(result.emailVerified,true);
+ const unverified=await verifyIdentity(await request({email:'adam2002hosny@gmail.com'}),env,keys);
+ assert.equal(unverified.emailVerified,false);
+});

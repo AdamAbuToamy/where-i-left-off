@@ -13,3 +13,10 @@ test('failure diagnostics show stage and safe reason without logging tokens or r
   for(const secret of ['secret-value-must-not-appear','private-auth-token','private-app-token','private-card-text'])assert.equal(text.includes(secret),false)
  }finally{console.warn=original}
 })
+
+test('owner pilot rejects other verified accounts before database reads or inference',async()=>{
+ let touched=false;
+ const worker=createWorker({verifyIdentity:async()=>({uid:'other',email:'other@example.test',emailVerified:true}),accountAvailable:async()=>{touched=true;}});
+ const response=await worker.fetch(new Request('https://worker.test/assistant',{method:'POST',headers:{origin:'https://app.test'},body:JSON.stringify({mode:'health',email:'adam2002hosny@gmail.com'})}),{APP_ORIGINS:'https://app.test',ASSISTANT_PILOT_EMAIL:'adam2002hosny@gmail.com'});
+ assert.equal(response.status,403);assert.equal(touched,false);assert.equal((await response.json()).error,'ai-account-unavailable');
+});

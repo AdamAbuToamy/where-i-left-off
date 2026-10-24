@@ -9,7 +9,7 @@ vi.mock('../src/lib/theme',()=>({applyTheme:()=>{}}));
 vi.mock('../src/components/CloudPushSync',()=>({default:()=> <aside data-common="push"/>}));
 vi.mock('../src/components/WelcomeTour',()=>({default:()=> <aside data-common="tour"/>}));
 vi.mock('../src/components/WorkflowAgent',()=>({default:()=>null}));vi.mock('../src/components/AnnouncementInbox',()=>({default:()=>null}));vi.mock('../src/components/ExtensionInstall',()=>({default:()=>null}));vi.mock('../src/components/PushLifecycle',()=>({default:()=>null}));
-vi.mock('../src/components/SideNavigation',()=>({default:()=>null}));vi.mock('../src/assistant/AssistantWidget',()=>{fake.assistantImports++;return {default:()=>null};});vi.mock('../src/components/AuthPanel',()=>({default:()=>null}));
+vi.mock('../src/components/SideNavigation',()=>({default:()=>null}));vi.mock('../src/assistant/AssistantWidget',()=>{fake.assistantImports++;return {default:()=> <aside data-assistant="pilot"/>};});vi.mock('../src/components/AuthPanel',()=>({default:()=>null}));
 vi.mock('../src/components/Support',()=>({default:()=>null,LegalLinks:()=> <footer data-footer="legal"/>}));
 vi.mock('../src/components/AccountDeletion',()=>({AccountLifecycle:({children}:{children:unknown})=>children}));
 vi.mock('../src/components/IdleSleep',()=>({default:({children}:{children:unknown})=>children}));
@@ -44,4 +44,15 @@ it('production navigation never loads the assistant module even when the emulato
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.stubEnv('VITE_ASSISTANT_ENABLED','true');const node=document.createElement('div');document.body.append(node);const root=createRoot(node);
  try{await act(async()=>root.render(<CloudApp/>));expect(node.querySelector('[data-screen]')).not.toBeNull();expect(fake.assistantImports).toBe(0);}
  finally{act(()=>root.unmount());node.remove();vi.unstubAllGlobals();vi.unstubAllEnvs();}
+});
+
+
+it('exposes the isolated production pilot only to the verified owner',async()=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const node=document.createElement('div');document.body.append(node);const root=createRoot(node),prior={...fake.user};
+ try{
+  fake.user.email='adam2002hosny@gmail.com';fake.user.emailVerified=false;
+  await act(async()=>root.render(<CloudApp key="unverified"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
+  fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="verified"/>));expect(node.querySelector('[data-assistant]')).not.toBeNull();
+  fake.user.email='other@example.test';await act(async()=>root.render(<CloudApp key="other"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
+ }finally{Object.assign(fake.user,prior);act(()=>root.unmount());node.remove();vi.unstubAllGlobals();}
 });
