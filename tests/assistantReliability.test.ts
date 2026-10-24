@@ -8,7 +8,7 @@ it('routes exact Arabic full trash purge locally without contacting AI',()=>{
  const reply=quickTrashPurge('احذف جميع بطاقات سلة المهملات حذف نهائي',state,'ar');
  expect(reply?.actions).toEqual([{target:'projects',action:'delete',scope:'personal',id:'trash-1',values:{}}]);
  expect(reply?.tasks?.[0].outcome).toBe('proposed');
- expect(quickTrashPurge('احذف بطاقة','ar' as never,'ar')).toBeNull();
+ expect(quickTrashPurge('احذف بطاقة',state,'ar')).toBeNull();
 });
 it('does not turn ordinary or negated deletion requests into irreversible changes',()=>{
  const state=blankAssistantData();
