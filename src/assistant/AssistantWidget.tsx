@@ -58,6 +58,14 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   finally{lock.current=false;if(mounted.current){setLocalLoading(false);setBusy(false);setPhase(null);}}
  }
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+ // Once enabled, initialize from the browser's WebLLM cache on future visits.
+ // Never begin a first-time download without an explicit activation click.
+ useEffect(()=>{
+  if(!preferLocal)return;
+  void activateLocal();
+  // Deliberately initial-mount-only; later changes are controlled by buttons.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[]);
  useEffect(()=>{if(open&&present)input.current?.focus();else if(!open&&present)button.current?.focus();},[open,present]);
  function useCloud(){local.current?.dispose();local.current=null;setLocalReady(false);setPreferLocal(false);try{localStorage.removeItem('wilo-assistant-local');}catch{/* Optional preference. */}}
  function openPanel(){setPresent(true);setOpen(true);}
