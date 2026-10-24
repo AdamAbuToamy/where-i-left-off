@@ -20,6 +20,14 @@ function path(uid:string,c:Pick<Change,'target'|'scope'|'id'>){
  return isStudy(c.target)?`users/${uid}/studyRecords/${c.target}_${c.id}`:`${c.scope==='personal'?'users/'+uid:'groups/'+c.scope}/${c.target}/${c.id}`;
 }
 /** The caller can only use scopes discovered from this account's memberships. Firestore enforces roles. */
+/** Retry a single transient read once; never retry permissions or unconfirmed writes. */
+export async function reliableAssistantRead<T>(operation:()=>Promise<T>,pause:(ms:number)=>Promise<void>=(ms)=>new Promise(resolve=>setTimeout(resolve,ms))):Promise<T>{
+ try{return await operation();}catch(error){
+  const code=String((error as {code?:string})?.code||'');
+  if(!['unavailable','deadline-exceeded','resource-exhausted','firestore/unavailable','firestore/deadline-exceeded'].includes(code))throw error;
+  await pause(250);return operation();
+ }
+}
 export class AssistantRepository {
  private uid:string;
  constructor(uid:string){this.uid=uid;}
@@ -27,7 +35,7 @@ export class AssistantRepository {
  private studyStore(){return new UniversityStore(this.uid,db!.app.options.projectId||'local');}
  async read():Promise<AssistantSnapshot>{
   this.check();const data=blankAssistantData(),raw=new Map<string,DocumentData>();
-  const [study,memberships]=await Promise.all([getDocsFromServer(collection(db!,'users',this.uid,'studyRecords')),getDocsFromServer(collection(db!,'users',this.uid,'groupMemberships'))]);
+  const [study,memberships]=await Promise.all([reliableAssistantRead(()=>getDocsFromServer(collection(db!,'users',this.uid,'studyRecords'))),reliableAssistantRead(()=>getDocsFromServer(collection(db!,'users',this.uid,'groupMemberships')))]);
   this.check();
   for(const document of study.docs){const r=document.data();raw.set(document.ref.path,r);if(!r.deleted&&['courses','tasks','lessons'].includes(r.kind)){
    const item=JSON.parse(r.payload);if(item.id!==r.id)throw new Error('assistant-invalid');
@@ -39,9 +47,9 @@ export class AssistantRepository {
   if(journal?.pending?.length){pending=true;data.study=this.studyStore().load();}
   await Promise.all(data.scopes.map(async scope=>{
    const base=scope.id==='personal'?`users/${this.uid}`:`groups/${scope.id}`;
-   const [projects,sections]=await Promise.all([getDocsFromServer(collection(db!,base,'projects')),getDocsFromServer(collection(db!,base,'sections'))]);
+   const [projects,sections]=await Promise.all([reliableAssistantRead(()=>getDocsFromServer(collection(db!,base,'projects'))),reliableAssistantRead(()=>getDocsFromServer(collection(db!,base,'sections')))]);
    this.check();
-   if(scope.id!=='personal'){const members=await getDocsFromServer(collection(db!,base,'members'));this.check();scope.members=members.docs.map(m=>({uid:m.id,name:String(m.data().name||m.id),role:String(m.data().role||'member')}));}
+   if(scope.id!=='personal'){const members=await reliableAssistantRead(()=>getDocsFromServer(collection(db!,base,'members')));this.check();scope.members=members.docs.map(m=>({uid:m.id,name:String(m.data().name||m.id),role:String(m.data().role||'member')}));}
    scope.projects=projects.docs.map(d=>{raw.set(d.ref.path,d.data());return normalizedProject(d.id,d.data());});
    scope.sections=sections.docs.map(d=>{raw.set(d.ref.path,d.data());return normalizedSection(d.id,d.data());});
    const local=await new IndexedDbWorkspaceStore(`${db!.app.options.projectId}/${this.uid}${scope.id==='personal'?'':`/group/${scope.id}`}`).read();
@@ -72,7 +80,7 @@ export class AssistantRepository {
    }
    for(let i=0;i<changes.length;i++){
     const c=changes[i],old=snapshot.raw.get(refs[i].path),revision=old?Number(old.revision||0)+1:0;
-    if(c.target==='sections'&&!c.after){tx.delete(refs[i]);continue;}
+    if(!c.after&&!isStudy(c.target)){if(c.target==='projects'&&(c.scope!=='personal'||!(c.before as {trashedAt?:number}|null)?.trashedAt))throw new Error('assistant-permanent-delete');tx.delete(refs[i]);continue;}
     const body=isStudy(c.target)?{kind:c.target,id:c.id,payload:c.after?JSON.stringify(c.after):'',deleted:!c.after,revision}: {...c.after as object,revision};
     if(!isStudy(c.target)){
      delete (body as Record<string,unknown>).id;
@@ -86,13 +94,14 @@ export class AssistantRepository {
   // A successful proposal is only announced after the server confirms every mutation.
   try{
    const saved=await Promise.all(refs.map(ref=>getDocFromServer(ref)));this.check();
-   if(saved.some((document,i)=>changes[i].target==='sections'&&!changes[i].after?document.exists():document.data()?.mutationId!==mutations.get(refs[i].path)))throw new Error('assistant-confirmation');
+   if(saved.some((document,i)=>!changes[i].after&&!isStudy(changes[i].target)?document.exists():document.data()?.mutationId!==mutations.get(refs[i].path)))throw new Error('assistant-confirmation');
   }catch(error){throw new Error('assistant-confirmation',{cause:error});}
   this.check();window.dispatchEvent(new Event('university-data-changed'));return {changes,mutations};
  }
  async undo(receipt:AssistantReceipt):Promise<void>{
   const snapshot=await this.read();
-  for(const c of receipt.changes)if(c.target==='sections'&&!c.after?snapshot.raw.has(path(this.uid,c)):snapshot.raw.get(path(this.uid,c))?.mutationId!==receipt.mutations.get(path(this.uid,c)))throw new Error('assistant-conflict');
+  for(const c of receipt.changes)if(!c.after&&!isStudy(c.target)?snapshot.raw.has(path(this.uid,c)):snapshot.raw.get(path(this.uid,c))?.mutationId!==receipt.mutations.get(path(this.uid,c)))throw new Error('assistant-conflict');
+  if(receipt.changes.some(c=>c.target==='projects'&&!c.after))throw new Error('assistant-undo-permanent');
   const reverse=receipt.changes.map(c=>({...c,before:c.after,after:c.before}));
   const study=structuredClone(snapshot.data.study);
   for(const c of reverse)if(isStudy(c.target)){
