@@ -15,6 +15,17 @@ it('does not relabel a server service-account permission failure as a model or g
  const {api}=fixture(vi.fn(async()=>Response.json({error:'ai-service-permission',diagnostic:{stage:'account',requestId:'11111111-1111-1111-1111-111111111111',protocol:'wilo-assistant-2026-10-v2'}},{status:503})) as typeof fetch);
  await expect(api.request({mode:'workspace'})).rejects.toMatchObject({code:'ai-service-permission',stage:'account',status:503,requestId:'11111111-1111-1111-1111-111111111111'});
 });
+it('preserves a Gemini HTTP 400 provider error and only approved diagnostics',async()=>{
+ const response={error:'ai-provider-request',diagnostic:{stage:'provider',providerFailure:{status:400,code:'invalid_argument',parameter:'tools',hint:'unsupported-tool-schema',network:'untrusted',secret:'PRIVATE'}}};
+ const {api}=fixture(vi.fn(async()=>Response.json(response,{status:400})) as typeof fetch);
+ try{await api.request({mode:'workspace'});throw new Error('expected provider rejection');}
+ catch(error){
+  const failure=error as AssistantFailure;
+  expect(failure).toMatchObject({code:'ai-provider-request',stage:'provider',status:400});
+  expect(failure.diagnostic().providerFailure).toEqual({status:400,code:'invalid_argument',parameter:'tools',hint:'unsupported-tool-schema'});
+  expect(JSON.stringify(failure.diagnostic())).not.toMatch(/PRIVATE|untrusted|secret/);
+ }
+});
 it.each([429,403,503])('never retries a non-auth HTTP failure %s',async status=>{
  const fetcher=vi.fn(async()=>Response.json({error:'ai-provider-limit'},{status})),{api}=fixture(fetcher as typeof fetch);await expect(api.request({})).rejects.toBeInstanceOf(AssistantFailure);expect(fetcher).toHaveBeenCalledTimes(1);
 });
