@@ -1,6 +1,6 @@
 {
-  "requestId": "request-200-constrained-scopes",
+  "requestId": "request-wilo-model-smoke-20261025",
   "provider": "gemini",
   "freeProjectConfirmed": true,
-  "sample": 200
+  "sample": 12
 }
