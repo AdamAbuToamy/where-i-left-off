@@ -1,5 +1,6 @@
 import {expect,it,vi} from 'vitest';
 vi.mock('../src/lib/firebase',()=>({auth:null,db:null,appCheck:null,emulatorMode:false}));
+import {assistantValidationHint} from '../src/assistant/validationHint';
 import {AssistantApi} from '../src/assistant/api';import {AssistantFailure} from '../src/assistant/failure';
 function fixture(fetcher:typeof fetch){const uid={value:'alice'},identity=vi.fn<(refresh:boolean)=>Promise<string>>().mockResolvedValue('test-identity-secret'),attestation=vi.fn<(refresh:boolean)=>Promise<string>>().mockResolvedValue('test-appcheck-secret');return {uid,identity,attestation,api:new AssistantApi({uid:()=>uid.value,identity,attestation,endpoint:async()=> 'https://worker.test/assistant',fetch:fetcher})};}
 it('sends the unchanged request with separate identity and App Check headers',async()=>{
@@ -28,4 +29,11 @@ it('rejects a reply after account change and never exports credentials or server
 it('distinguishes an HTML/malformed server response from a transport failure',async()=>{
  await expect(fixture(vi.fn(async()=>new Response('<html>error</html>',{status:502})) as typeof fetch).api.request({})).rejects.toMatchObject({code:'assistant-server-response',status:502});
  await expect(fixture(vi.fn(async()=>{throw new TypeError('private URL');}) as typeof fetch).api.request({})).rejects.toMatchObject({code:'assistant-network'});
+});
+
+it('preserves fixed validation hints internally while keeping the original cause out of exported diagnostics',()=>{
+ const original=new Error('assistant-invalid',{cause:new Error('invalid-due-date',{cause:new Error('private request text')})});
+ const failure=AssistantFailure.from(original,'validation');
+ expect(assistantValidationHint(failure,'en')).toContain('real calendar dates');
+ expect(JSON.stringify(failure.diagnostic())).not.toMatch(/private request text|invalid-due-date/);
 });

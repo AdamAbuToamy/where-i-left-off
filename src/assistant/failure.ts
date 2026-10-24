@@ -14,7 +14,7 @@ export class AssistantFailure extends Error {
  static from(error:unknown,stage:AssistantStage):AssistantFailure{
   if(error instanceof AssistantFailure)return error;
   const e=error as {code?:unknown;message?:unknown;details?:unknown},raw=typeof e?.code==='string'?e.code.replace(/^firestore\//,''):typeof e?.message==='string'?e.message:'';
-  const failure=new AssistantFailure(raw,stage);failure.details=e?.details;return failure;
+  const failure=new AssistantFailure(raw,stage);failure.details=e?.details;failure.cause=error;return failure;
  }
  static remote(body:Record<string,unknown>,status:number,requestId:string|null,protocol:string|null){
   const diagnostic=body.diagnostic as Record<string,unknown>|undefined,stage=typeof diagnostic?.stage==='string'&&stages.has(diagnostic.stage as AssistantStage)?diagnostic.stage as AssistantStage:'request';
