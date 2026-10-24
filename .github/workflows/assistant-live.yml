@@ -81,6 +81,10 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import {spawnSync} from 'node:child_process';
+          if(process.env.PROVIDER==='gemini'&&process.env.FREE_CANARY==='true'){
+            const catalog=spawnSync(process.execPath,['scripts/check-gemini-catalog.mjs'],{stdio:'inherit',env:process.env});
+            if(catalog.status!==0)process.exit(catalog.status??1);
+          }
           const args=['scripts/test-assistant-live.mjs','--live','--provider='+process.env.PROVIDER];
           if(process.env.FREE_CANARY==='true')args.push('--case=compound-card-ar','--case=compound-card-en','--case=compound-card-he','--stop-on-failure');
           else if(process.env.CASE_ID)args.push('--case='+process.env.CASE_ID);
@@ -104,6 +108,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: assistant-live-report
-          path: assistant-acceptance-live-report.json
+          path: |
+            assistant-acceptance-live-report.json
+            gemini-catalog-report.json
           if-no-files-found: error
           retention-days: 7

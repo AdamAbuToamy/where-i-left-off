@@ -48,3 +48,5 @@ assistant-acceptance-live-report.previous-*.json
 /auth-origin-report.json
 
 /auth-browser-report.json
+
+/gemini-catalog-report.json
