@@ -22,12 +22,12 @@ it('requires review, applies a validated proposal once and supports Hebrew',asyn
  const apply=[...element.querySelectorAll('button')].find(b=>b.textContent==='החלת שינויים')!;await act(async()=>apply.click());expect(api.apply).toHaveBeenCalledTimes(1);expect(element.textContent).toContain('השינויים הוחלו');expect(element.textContent).not.toContain('החלת שינויים');
 });
 it('does not call the model with incomplete data when Firebase read fails',async()=>{
- api.read.mockRejectedValue(new Error('permission-denied'));await open();await input('Summarize');await submit();expect(api.call).not.toHaveBeenCalled();expect(api.apply).not.toHaveBeenCalled();expect(element.querySelector('[role=alert]')?.textContent).toContain('permission-denied');
+ api.read.mockRejectedValue(new Error('permission-denied'));await open();await input('Summarize');await submit();expect(api.call).not.toHaveBeenCalled();expect(api.apply).not.toHaveBeenCalled();expect(element.querySelector('.assistant-message.is-assistant')?.textContent).toContain('permissions');
 });
 it('answers a normal question without proposals and distinguishes invalid model format from invalid edit IDs',async()=>{
- api.call.mockResolvedValue({text:'{"text":"Hello"}'});await open();await input('Hi');await submit();expect(element.textContent).toContain('Hello');expect(api.apply).not.toHaveBeenCalled();
- vi.useFakeTimers();api.call.mockResolvedValue({text:'not JSON'});await input('Again');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-format');expect(api.apply).not.toHaveBeenCalled();
- api.call.mockResolvedValue({text:providerReply({text:'Update',actions:[{target:'courses',action:'update',id:'missing',values:{notes:'New'}}],files:[]})});await input('Edit course');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});vi.useRealTimers();expect(element.querySelector('[role=alert]')?.textContent).toContain('assistant-invalid');expect(api.apply).not.toHaveBeenCalled();
+ api.call.mockResolvedValue({text:'{"text":"Hello"}'});await open();await input('What is a summary?');await submit();expect(element.textContent).toContain('Hello');expect(api.apply).not.toHaveBeenCalled();
+ vi.useFakeTimers();api.call.mockResolvedValue({text:'not JSON'});await input('Again');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});expect(element.querySelectorAll('.assistant-message.is-assistant')[1]?.textContent).toContain('technical issue');expect(api.apply).not.toHaveBeenCalled();
+ api.call.mockResolvedValue({text:providerReply({text:'Update',actions:[{target:'courses',action:'update',id:'missing',values:{notes:'New'}}],files:[]})});await input('Edit course');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});vi.useRealTimers();expect(element.querySelectorAll('.assistant-message.is-assistant')[2]?.textContent).toContain('failed validation');expect(api.apply).not.toHaveBeenCalled();
 });
 it('sends the original simple timetable request through AI and applies its validated function arguments',async()=>{
  const data=blankAssistantData();data.study.courses=[{id:'actual-course',name:'הנדסת איכות תוכנה',url:'',notes:'',x:0,y:0,requires:[]}];
@@ -39,13 +39,13 @@ it('sends the original simple timetable request through AI and applies its valid
 });
 it('distinguishes a burst limit, provider quota and failed save confirmation',async()=>{
  await open();
- for(const [code,expected] of [['ai-rate-limit','few seconds'],['ai-provider-limit','AI provider'],['assistant-confirmation','server confirmation']]){
-  api.call.mockRejectedValue(new Error(code));await input('Tell me something useful');await submit();expect(element.querySelector('[role=alert]')?.textContent).toContain(expected);
+ for(const [code,expected] of [['ai-rate-limit','Too many requests'],['ai-provider-limit','usage limit'],['assistant-confirmation','confirm the save result']]){
+  api.call.mockRejectedValue(new Error(code));await input('Tell me something useful');await submit();expect(element.querySelectorAll('.assistant-message.is-assistant').length).toBeGreaterThan(0);expect(element.textContent).toContain(expected);
  }
 });
 it('preserves local-only preference across reloads and never silently sends a request to the cloud',async()=>{
  localStorage.setItem('wilo-assistant-local','true');
- try{await open();await input('Give me advice on studying');await submit();expect(api.call).not.toHaveBeenCalled();expect(element.querySelector('[role=alert]')?.textContent).toContain('not automatically sent');
+ try{await open();await input('Give me advice on studying');await submit();expect(api.call).not.toHaveBeenCalled();expect(element.textContent).toContain('not ready');
   const cloud=[...element.querySelectorAll('button')].find(b=>b.textContent==='Use cloud assistant')!;expect(cloud).toBeDefined();await act(async()=>cloud.click());expect(localStorage.getItem('wilo-assistant-local')).toBeNull();
  }finally{localStorage.removeItem('wilo-assistant-local');}
 });
@@ -96,7 +96,7 @@ it('keeps the entire mixed request for cloud planning instead of silently handli
 it('keeps the server failure stage visible and runs a no-inference connection check without losing the original error',async()=>{
  const {AssistantFailure}=await import('../src/assistant/failure');
  api.call.mockRejectedValueOnce(new AssistantFailure('ai-service-permission','account',{status:503,requestId:'11111111-1111-1111-1111-111111111111'}));
- await open();await input('Add a card');await submit();expect(element.querySelector('[role=alert]')?.textContent).toContain('Firebase Auth lookup');expect(element.textContent).toContain('HTTP 503');
+ await open();await input('Add a card');await submit();expect(element.textContent).toContain('technical issue');expect(element.textContent).toContain('Connection details');
  api.call.mockResolvedValueOnce({status:'ready',provider:'groq',protocol:'wilo-assistant-2026-10-v2',inferenceTested:false});
  const check=[...element.querySelectorAll('button')].find(b=>b.textContent==='Check assistant connection')!;await act(async()=>check.click());expect(api.call).toHaveBeenLastCalledWith({mode:'health'},20000);expect(element.textContent).toContain('This check used no AI request');expect(api.apply).not.toHaveBeenCalled();
 });

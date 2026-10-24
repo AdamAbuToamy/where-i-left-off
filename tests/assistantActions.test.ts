@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {blankAssistantData,parseAssistantReply,planAssistantChanges} from '../src/assistant/actions';
+import {blankAssistantData,parseAssistantReply,planAssistantChanges,planAssistantProposal} from '../src/assistant/actions';
 import type {Action} from '../src/assistant/actions';
 const fixture=()=>{const d=blankAssistantData();d.study.courses=[{id:'a',name:'A',url:'',notes:'keep',requires:[],x:0,y:0},{id:'b',name:'B',url:'',notes:'',requires:[],x:300,y:0}];return d;};
 it('links courses using exact IDs and preserves notes; rejects cycles and missing dependencies',()=>{
@@ -51,4 +51,14 @@ it('only permits permanent deletion of already-trashed personal cards',async()=>
  const allowed=planAssistantProposal(state,[{target:'projects',action:'delete',id:'trashed',scope:'personal',values:{}}]);
  expect(allowed).toMatchObject([{id:'trashed',after:null}]);
  expect(()=>planAssistantProposal(state,[{target:'projects',action:'delete',id:'live',values:{}}])).toThrow();
+});
+
+
+it('plans trash card then delete its section as one safe proposal',()=>{
+ const state=blankAssistantData();
+ state.scopes[0].sections=[{id:'section-a',name:'Ayush',revision:0}];
+ state.scopes[0].projects=[{id:'card-a',name:'Card',sectionId:'section-a',nextStep:'',rank:0,revision:0,trashedAt:0,status:'active'}] as typeof state.scopes[0]['projects'];
+ const plan=planAssistantProposal(state,[{target:'projects',action:'trash',id:'card-a',scope:'personal',values:{}},{target:'sections',action:'delete',id:'section-a',scope:'personal',values:{}}]);
+ expect(plan).toEqual(expect.arrayContaining([expect.objectContaining({target:'projects',id:'card-a',after:expect.objectContaining({sectionId:'',trashedAt:expect.any(Number)})}),expect.objectContaining({target:'sections',id:'section-a',after:null})]));
+ expect(plan.filter(c=>c.target==='projects')).toHaveLength(1);
 });

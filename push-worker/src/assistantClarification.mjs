@@ -15,10 +15,17 @@ export function clarifyMinimalCreation(plan,language,context,history=[],message=
  if(action.target!=='lessons'&&(typeof name!=='string'||!name.trim()))question=w.name;
  else if(action.target==='projects'){
   const fields=['sectionId','dueDate','description','projectUrl'];
-  if(fields.filter(k=>v[k]).length>=2)return plan;
+  // Ask only when no reliable optional detail was provided.
+  if(fields.filter(k=>v[k]).length>=2||['dueDate','description','projectUrl'].some(k=>typeof v[k]==='string'&&v[k].trim()))return plan;
   question=w.extras(name);
   let data;try{data=JSON.parse(context||'{}');}catch{return plan;}
   const sections=data.scopes?.find(s=>s.id===(action.scope||'personal'))?.sections||[];
+  // A follow-up that explicitly supplies a section is not an invitation to ask for
+  // optional fields again. Only accept a verified existing section reference.
+  const explicitSection=/\\bsection\\b|\\bgroup\\b|قسم|מדור/i.test(message);
+  if(explicitSection&&typeof v.sectionId==='string'&&sections.some(s=>s.id===v.sectionId))return plan;
+  const section=sections.find(s=>s.id===v.sectionId);
+  if(section&&typeof section.name==='string'&&message.normalize('NFKC').toLowerCase().includes(section.name.normalize('NFKC').toLowerCase()))return plan;
   const names=sections.slice(0,6).map(s=>typeof s.name==='string'?s.name.slice(0,60):'').filter(Boolean);
   if(names.length)question+=' '+w.sections+names.join('، ')+(sections.length>6?'…':'')+'.';
  }else if(action.target==='tasks'&&(!Object.hasOwn(v,'due')||!Object.hasOwn(v,'kind')))question=w.study(name);

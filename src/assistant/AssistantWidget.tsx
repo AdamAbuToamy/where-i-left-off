@@ -1,4 +1,6 @@
 import {conversationHistory} from './conversationHistory';
+import {friendlyFailure} from './friendlyFailure';
+import {quickGreeting} from './quickGreeting';
 import {quickTrashPurge} from './quickTrashPurge';
 import {AssistantFailure} from './failure';
 import {failureWords,failureMessage} from './failureWords';
@@ -26,7 +28,7 @@ import { AssistantChangeReveal } from './changeReveal';
 import { assistantCapabilities } from './capabilities';
 import { assistantPresentation } from './presentationWords';
 import './assistant.css';
-type Message={role:'user'|'assistant';text:string;reply?:AssistantReply;changes?:Change[];snapshot?:AssistantSnapshot;receipt?:AssistantReceipt;controlPlans?:ControlPlan[];controlResults?:ControlResult[];resolved?:boolean;undone?:boolean};
+type Message={role:'user'|'assistant';text:string;reply?:AssistantReply;changes?:Change[];snapshot?:AssistantSnapshot;receipt?:AssistantReceipt;controlPlans?:ControlPlan[];controlResults?:ControlResult[];resolved?:boolean;undone?:boolean;failed?:boolean};
 function download(name:string,content:string){const url=URL.createObjectURL(new Blob(['\uFEFF'+content],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 export default function AssistantWidget({user,language}:{user:User;language:Language}){
  const [open,setOpen]=useState(false),[present,setPresent]=useState(false),[messages,setMessages]=useState<Message[]>([]),[text,setText]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
@@ -64,6 +66,8 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   const message=(override??text).trim();lock.current=true;setBusy(true);setPhase('reading');setError('');setFailure(null);setHealth(null);setCopied(false);
   setMessages(old=>[...old,{role:'user',text:message}]);setText('');
   try{
+   const greeting=quickGreeting(message,language);
+   if(greeting){setMessages(old=>[...old,{role:'assistant',text:greeting,resolved:true}]);return;}
    const snapshot=await repository.read().catch(error=>{throw AssistantFailure.from(error,'read');});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    const request={mode:'workspace',message,language,context:JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities}),history:conversationHistory(messages)};
@@ -86,7 +90,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    const {reply,controlPlans,changes}=prepared;
    setMessages(old=>[...old.map(m=>m.role==='assistant'&&!m.resolved&&(((m.changes?.length||0)+(m.controlPlans?.length||0))>0||m.reply?.clarification)?{...m,resolved:true}:m),{role:'assistant',text:reply.tasks?.some(task=>task.outcome==='needs-input')?proposalStatus(reply.text,[],language):changes.length||controlPlans.length?ui.reviewReady:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
-  }catch(e){if(mounted.current){report(e);setText(current=>current||message);}}
+  }catch(e){if(mounted.current){const failed=AssistantFailure.from(e,'request');setFailure(failed);setCopied(false);setError('');setMessages(old=>[...old.map((m,i)=>i===old.length-1&&m.role==='user'&&m.text===message?{...m,failed:true}:m),{role:'assistant',text:friendlyFailure(failed,language),resolved:true,failed:true}]);}}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
  }
  async function apply(index:number,undo=false){

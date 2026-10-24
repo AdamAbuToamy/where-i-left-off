@@ -107,7 +107,7 @@ it('deletes an empty section and can undo it, but rejects deleting an occupied s
   await setDoc(doc(ctx.firestore(),'users/alice/projects/card'),{name:'Card',nextStep:'',status:'active',sectionId:'section',rank:0,revision:0,updatedAt:serverTimestamp()});
  });
  const repo=new AssistantRepository('alice'),snapshot=await repo.read();
- expect(()=>planAssistantChanges(snapshot.data,[{target:'sections',action:'delete',id:'section'}])).toThrow('assistant-invalid');
+ expect(planAssistantChanges(snapshot.data,[{target:'sections',action:'delete',id:'section'}])).toEqual(expect.arrayContaining([expect.objectContaining({target:'projects',after:expect.objectContaining({sectionId:''})}),expect.objectContaining({target:'sections',after:null})]));
  const changes=planAssistantChanges(snapshot.data,[{target:'sections',action:'delete',id:'section'},{target:'projects',action:'update',id:'card',values:{sectionId:''}}]);
  const receipt=await repo.apply(snapshot,changes);expect((await repo.read()).data.scopes[0].sections).toEqual([]);
  await repo.undo(receipt);expect((await repo.read()).data.scopes[0].sections[0].name).toBe('Old');

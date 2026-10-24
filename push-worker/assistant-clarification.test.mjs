@@ -15,3 +15,7 @@ test('empty model defaults do not count as user choices, but an actual follow-up
  const p=plan({name:'Algorithms',sectionId:'section',dueDate:'',description:'',projectUrl:''});const question=clarifyMinimalCreation(p,'en','{}',[],'Call it Algorithms');assert.equal(question.actions.length,0);
  const history=[{role:'assistant',content:JSON.stringify({status:'pending',proposal:{clarification:question.clarification}})}];assert.equal(clarifyMinimalCreation(p,'en','{}',history,'Study please'),p);
 });
+
+test('explicit Arabic section already named in the request skips redundant follow-up',()=>{const p=plan({name:'آيه',sectionId:'s'});const context=JSON.stringify({scopes:[{id:'personal',sections:[{id:'s',name:'أيوش'}]}]});assert.equal(clarifyMinimalCreation(p,'ar',context,[],'أضف بطاقة اسمها آيه ثم ضعها في قسم أيوش'),p);});
+
+test('section follow-up with verified ID proceeds without another optional-details question',()=>{const p=plan({name:'آيه',sectionId:'s'});const ctx=JSON.stringify({scopes:[{id:'personal',sections:[{id:'s',name:'أيوش'}]}]});assert.equal(clarifyMinimalCreation(p,'ar',ctx,[],'ضعها في قسم أيوش'),p);});

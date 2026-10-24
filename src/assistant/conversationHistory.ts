@@ -1,5 +1,5 @@
 import type { AssistantReply,Change } from './actions';
-type Turn={role:'user'|'assistant';text:string;reply?:AssistantReply;changes?:Change[];resolved?:boolean;undone?:boolean;receipt?:{changes:Change[]};controlResults?:{ok:boolean}[]};
+type Turn={role:'user'|'assistant';text:string;reply?:AssistantReply;changes?:Change[];resolved?:boolean;undone?:boolean;failed?:boolean;receipt?:{changes:Change[]};controlResults?:{ok:boolean}[]};
 /** Retain the complete unfinished dialogue, plus the last resolved reference. Never silently truncate it. */
 export function conversationHistory(turns:Turn[]):{role:'user'|'assistant';content:string}[]{
  let boundary=-1;
@@ -7,7 +7,7 @@ export function conversationHistory(turns:Turn[]):{role:'user'|'assistant';conte
   const turn=turns[i];
   if(turn.role==='assistant'&&(turn.resolved||(!turn.reply?.tasks?.some(t=>t.outcome==='needs-input')&&!turn.changes?.length&&!turn.reply?.controls?.length)))boundary=i;
  }
- const selected=turns.slice(Math.max(0,boundary-1));
+ const selected=turns.slice(Math.max(0,boundary-1)).filter(turn=>!turn.failed);
  const result=selected.map(turn=>{
   if(turn.role==='user')return {role:turn.role,content:turn.text};
   const status=turn.undone?'undone':turn.resolved?(turn.receipt||turn.controlResults?.some(r=>r.ok)?'saved':'cancelled'):'pending';
