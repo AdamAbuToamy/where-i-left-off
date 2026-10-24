@@ -6,8 +6,8 @@ const state=blankAssistantData();
 state.scopes[0].sections=[{id:'jobs',name:'Job applications',revision:0}];
 const reply=(sectionId:string):AssistantReply=>({text:'Review',actions:[{target:'projects',action:'create',id:'card',scope:'personal',values:{name:'آيه',sectionId,dueDate:'2026-10-28'}}],controls:[],files:[],tasks:[{title:'Create card',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''}]});
 it('rejects choosing an unrelated existing section for an explicitly named Arabic section',()=>{
- expect(()=>checkExplicitSection('أضف بطاقة آيه في قسم أيوش بتاريخ 28 الشهر',state,reply('jobs'))).toThrow('assistant-reference');
- expect(()=>checkExplicitSection('أضف بطاقة آيه لقسم أيوش بتاريخ 28 الشهر',state,reply('jobs'))).toThrow('assistant-reference');
+ const proposed=reply('jobs');checkExplicitSection('أضف بطاقة آيه في قسم أيوش بتاريخ 28 الشهر',state,proposed);expect(proposed.actions).toHaveLength(2);expect(proposed.actions[0]).toMatchObject({target:'sections',action:'create',values:{name:'أيوش'}});expect(proposed.actions[1].values?.sectionId).toBe(proposed.actions[0].id);
+ const second=reply('jobs');checkExplicitSection('أضف بطاقة آيه لقسم أيوش بتاريخ 28 الشهر',state,second);expect(second.actions[0]).toMatchObject({target:'sections',action:'create',values:{name:'أيوش'}});
 });
 it('accepts named existing section, and requires new section action when missing',()=>{
  state.scopes[0].sections.push({id:'ayush',name:'أيوش',revision:0});
