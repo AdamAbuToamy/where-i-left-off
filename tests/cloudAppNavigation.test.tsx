@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import {act} from 'react';import {createRoot} from 'react-dom/client';import {it,expect,vi} from 'vitest';
-const fake=vi.hoisted(()=>({crash:'',user:{uid:'same-user-key',displayName:'Tester',email:'tester@example.test',emailVerified:true}}));
+const fake=vi.hoisted(()=>({crash:'',assistantImports:0,user:{uid:'same-user-key',displayName:'Tester',email:'tester@example.test',emailVerified:true}}));
 vi.mock('../src/lib/firebase',()=>({auth:{},db:{},configured:true,emulatorMode:false}));
 vi.mock('firebase/auth',()=>({onAuthStateChanged:(_auth:unknown,next:(user:unknown)=>void)=>{next(fake.user);return()=>{};},signOut:vi.fn()}));
 vi.mock('../src/lib/pushNotifications',()=>({useInstalledApp:()=>false,preparePushSignOut:async()=>{}}));
@@ -9,7 +9,7 @@ vi.mock('../src/lib/theme',()=>({applyTheme:()=>{}}));
 vi.mock('../src/components/CloudPushSync',()=>({default:()=> <aside data-common="push"/>}));
 vi.mock('../src/components/WelcomeTour',()=>({default:()=> <aside data-common="tour"/>}));
 vi.mock('../src/components/WorkflowAgent',()=>({default:()=>null}));vi.mock('../src/components/AnnouncementInbox',()=>({default:()=>null}));vi.mock('../src/components/ExtensionInstall',()=>({default:()=>null}));vi.mock('../src/components/PushLifecycle',()=>({default:()=>null}));
-vi.mock('../src/components/SideNavigation',()=>({default:()=>null}));vi.mock('../src/assistant/AssistantWidget',()=>({default:()=>null}));vi.mock('../src/components/AuthPanel',()=>({default:()=>null}));
+vi.mock('../src/components/SideNavigation',()=>({default:()=>null}));vi.mock('../src/assistant/AssistantWidget',()=>{fake.assistantImports++;return {default:()=>null};});vi.mock('../src/components/AuthPanel',()=>({default:()=>null}));
 vi.mock('../src/components/Support',()=>({default:()=>null,LegalLinks:()=> <footer data-footer="legal"/>}));
 vi.mock('../src/components/AccountDeletion',()=>({AccountLifecycle:({children}:{children:unknown})=>children}));
 vi.mock('../src/components/IdleSleep',()=>({default:({children}:{children:unknown})=>children}));
@@ -38,4 +38,10 @@ it('isolates a feature render error and lets navigation recover without reloadin
   await act(async()=>{window.location.hash='/analytics';window.dispatchEvent(new HashChangeEvent('hashchange'));});
   expect(node.querySelector('[data-screen]')?.getAttribute('data-screen')).toBe('analytics');expect(node.querySelectorAll('[role=alert]')).toHaveLength(0);
  } finally {fake.crash='';act(()=>root.unmount());node.remove();errors.mockRestore();vi.unstubAllGlobals();}
+});
+
+it('production navigation never loads the assistant module even when the emulator-only feature is requested',async()=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.stubEnv('VITE_ASSISTANT_ENABLED','true');const node=document.createElement('div');document.body.append(node);const root=createRoot(node);
+ try{await act(async()=>root.render(<CloudApp/>));expect(node.querySelector('[data-screen]')).not.toBeNull();expect(fake.assistantImports).toBe(0);}
+ finally{act(()=>root.unmount());node.remove();vi.unstubAllGlobals();vi.unstubAllEnvs();}
 });

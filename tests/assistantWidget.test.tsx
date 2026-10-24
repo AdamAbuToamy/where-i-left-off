@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import {act} from 'react';import {createRoot} from 'react-dom/client';import {afterEach,beforeEach,expect,it,vi} from 'vitest';import type {User} from 'firebase/auth';
 const api=vi.hoisted(()=>({call:vi.fn(),read:vi.fn(),apply:vi.fn(),undo:vi.fn()}));
-vi.mock('../src/lib/pushNotifications',()=>({pushCall:api.call}));
+vi.mock('../src/assistant/api',()=>({assistantRequest:api.call}));
 vi.mock('../src/lib/firebase',()=>({auth:{currentUser:{uid:'alice'}},db:null,emulatorMode:true}));
 vi.mock('../src/assistant/assistantRepository',()=>({AssistantRepository:class{read=api.read;apply=api.apply;undo=api.undo;},assistantContext:()=>'{"study":"account data"}'}));
 import {providerReply} from './fixtures/assistantProvider';
@@ -15,7 +15,7 @@ async function submit(){await act(async()=>element.querySelector('form')!.dispat
 it('uses one chat with account context, no mode selector or Wikipedia, and renders output as text',async()=>{
  api.call.mockResolvedValue({text:providerReply({text:'Summary: <script>not executable</script>',actions:[],files:[]})});await open();
  expect(element.querySelector('select')).toBeNull();expect(element.textContent).not.toContain('Wikipedia');
- await input('Summarize my courses');await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',context:expect.stringContaining('account data')}),{path:'/assistant',timeout:60000});expect(JSON.parse(api.call.mock.calls[0][0].context).capabilities.every((c:{detail:string})=>typeof c.detail==='string'&&c.detail.length>30)).toBe(true);expect(element.querySelector('script')).toBeNull();expect(element.textContent).toContain('not executable');
+ await input('Summarize my courses');await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',context:expect.stringContaining('account data')}),60000);expect(JSON.parse(api.call.mock.calls[0][0].context).capabilities.every((c:{detail:string})=>typeof c.detail==='string'&&c.detail.length>30)).toBe(true);expect(element.querySelector('script')).toBeNull();expect(element.textContent).toContain('not executable');
 });
 it('requires review, applies a validated proposal once and supports Hebrew',async()=>{
  api.call.mockResolvedValue({text:providerReply({text:'A new course',actions:[{target:'courses',action:'create',id:'new',values:{name:'Algorithms'}}],files:[]})});api.apply.mockResolvedValue({changes:[],mutations:new Map()});await open('he');await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();expect(element.textContent).not.toMatch(/[\u0600-\u06ff]/);
@@ -82,7 +82,7 @@ it('uses cloud AI for non-identical course names without downloading a local mod
  const matching=courseMatchRequest(weeklyRequest,data,'en')!;expect(matching.requested).toHaveLength(6);api.read.mockResolvedValue({data,pending:false,raw:new Map()});
  api.call.mockResolvedValue({text:providerReply({text:'Review',actions:expectedSessions.map((values,i)=>({target:'lessons',action:'create',id:'new-'+i,values})),files:[]})});
  await open();await input(weeklyRequest);await submit();
- expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message:weeklyRequest}),{path:'/assistant',timeout:60000});
+ expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message:weeklyRequest}),60000);
  expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(14);expect(api.apply).not.toHaveBeenCalled();
  api.apply.mockResolvedValue({changes:[],mutations:new Map()});const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
  expect(api.apply.mock.calls[0][1].map((c:{after:unknown})=>c.after)).toEqual(expectedSessions.map(s=>expect.objectContaining(s)));
@@ -90,7 +90,7 @@ it('uses cloud AI for non-identical course names without downloading a local mod
 it('keeps the entire mixed request for cloud planning instead of silently handling only timetable rows',async()=>{
  const message='Add to the timetable:\nSunday\n11:00–13:00 | Networks | Lecture\nThen create a card and summarize my notes';
  api.call.mockResolvedValue({text:providerReply({text:'Review',actions:[{target:'courses',action:'create',id:'c',values:{name:'Networks'}},{target:'lessons',action:'create',id:'l',values:{courseId:'c',day:0,start:'11:00',end:'13:00'}},{target:'projects',action:'create',id:'p',values:{name:'Read notes'}}],files:[{name:'notes.txt',content:'Summary of the supplied notes.'}]})});
- await open();await input(message);await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message}),{path:'/assistant',timeout:60000});expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(3);expect(element.textContent).toContain('notes.txt');expect(api.apply).not.toHaveBeenCalled();
+ await open();await input(message);await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message}),60000);expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(3);expect(element.textContent).toContain('notes.txt');expect(api.apply).not.toHaveBeenCalled();
 });
 
 it('keeps the server failure stage visible and runs a no-inference connection check without losing the original error',async()=>{
@@ -98,5 +98,5 @@ it('keeps the server failure stage visible and runs a no-inference connection ch
  api.call.mockRejectedValueOnce(new AssistantFailure('ai-service-permission','account',{status:503,requestId:'11111111-1111-1111-1111-111111111111'}));
  await open();await input('Add a card');await submit();expect(element.querySelector('[role=alert]')?.textContent).toContain('Firebase Auth lookup');expect(element.textContent).toContain('HTTP 503');
  api.call.mockResolvedValueOnce({status:'ready',provider:'groq',protocol:'wilo-assistant-2026-10-v2',inferenceTested:false});
- const check=[...element.querySelectorAll('button')].find(b=>b.textContent==='Check assistant connection')!;await act(async()=>check.click());expect(api.call).toHaveBeenLastCalledWith({mode:'health'},{path:'/assistant',timeout:20000});expect(element.textContent).toContain('This check used no AI request');expect(api.apply).not.toHaveBeenCalled();
+ const check=[...element.querySelectorAll('button')].find(b=>b.textContent==='Check assistant connection')!;await act(async()=>check.click());expect(api.call).toHaveBeenLastCalledWith({mode:'health'},20000);expect(element.textContent).toContain('This check used no AI request');expect(api.apply).not.toHaveBeenCalled();
 });

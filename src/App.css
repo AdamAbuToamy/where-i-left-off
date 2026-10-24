@@ -271,9 +271,7 @@ main {
   visibility: hidden;
 
   transition:
-    grid-template-rows 280ms ease,
-    opacity 220ms ease,
-    visibility 280ms ease;
+    opacity 180ms ease; /* Keep form geometry stable while inputs are focused and submitted. */
 }
 
 .form-reveal.is-open {

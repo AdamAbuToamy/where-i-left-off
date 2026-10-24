@@ -5,7 +5,7 @@ import {afterAll,beforeAll,expect,it,vi} from 'vitest';
 import {initializeTestEnvironment} from '@firebase/rules-unit-testing';import type {RulesTestEnvironment} from '@firebase/rules-unit-testing';import type {User} from 'firebase/auth';
 const runtime=vi.hoisted(()=>({db:null as unknown,auth:{currentUser:{uid:'acceptance'}},call:vi.fn()}));
 vi.mock('../src/lib/firebase',()=>({get db(){return runtime.db;},auth:runtime.auth}));
-vi.mock('../src/lib/pushNotifications',()=>({pushCall:runtime.call}));
+vi.mock('../src/assistant/api',()=>({assistantRequest:runtime.call}));
 vi.mock('../src/lib/indexedDbWorkspaceStore',()=>({IndexedDbWorkspaceStore:class{read=async()=>({projects:[],sections:[],operations:[]});}}));
 import {providerReply} from './fixtures/assistantProvider';
 import AssistantWidget from '../src/assistant/AssistantWidget';import {AssistantRepository} from '../src/assistant/assistantRepository';
@@ -33,7 +33,7 @@ it('persists injected provider proposals through the actual chat Apply button an
    const start=performance.now();const box=element.querySelector('textarea')!;
    await act(async()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(box,message);box.dispatchEvent(new Event('input',{bubbles:true}));});
    await act(async()=>element.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
-   await idle();expect(element.querySelector('[role=alert]')).toBeNull();expect(runtime.call).toHaveBeenLastCalledWith(expect.objectContaining({mode:'workspace',message}),{path:'/assistant',timeout:60000});
+   await idle();expect(element.querySelector('[role=alert]')).toBeNull();expect(runtime.call).toHaveBeenLastCalledWith(expect.objectContaining({mode:'workspace',message}),60000);
    const buttons=[...element.querySelectorAll('button')].filter(b=>b.textContent==='تطبيق التغييرات');expect(buttons).toHaveLength(1);
    const proposalMs=performance.now()-start,saveStart=performance.now();await act(async()=>buttons[0].click());await idle();
    expect(element.querySelector('[role=alert]')).toBeNull();expect(element.textContent).toContain('تم تطبيق التغييرات في الموقع.');

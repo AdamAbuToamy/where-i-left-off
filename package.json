@@ -10,14 +10,16 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project demo-where-i-left-off --only firestore \"env TEST_SUITE=security vitest run\"",
-    "test:e2e": "VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true vite build && node scripts/generate-sw.mjs && firebase emulators:exec --project demo-where-i-left-off --only auth,firestore \"playwright test\"",
+    "test:e2e": "node scripts/run-browser-tests.mjs",
     "emulators": "firebase emulators:start --project demo-where-i-left-off --only auth,firestore",
     "dev:emulator": "VITE_USE_EMULATORS=true vite --host 127.0.0.1",
     "test:all": "npm run lint && npm test && npm run test:rules && npm run test:e2e && VITE_USE_EMULATORS=false npm run build",
-    "test:e2e:failed": "VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true vite build && node scripts/generate-sw.mjs && firebase emulators:exec --project demo-where-i-left-off --only auth,firestore \"playwright test --last-failed --max-failures=1\"",
+    "test:e2e:failed": "node scripts/run-browser-tests.mjs --last-failed --max-failures=1",
     "check:credentials": "node scripts/check-credentials.mjs",
     "prebuild": "node scripts/check-credentials.mjs",
-    "test:assistant:live": "node scripts/test-assistant-live.mjs --live"
+    "test:assistant:live": "node scripts/test-assistant-live.mjs --live",
+    "test:auth:recovery": "firebase emulators:exec --project demo-where-i-left-off --only auth \"env TEST_SUITE=auth vitest run\"",
+    "test:e2e:layout": "node scripts/run-browser-tests.mjs tests/browser/layout.spec.ts --grep 'ar desktop|he desktop' --repeat-each=5 --max-failures=1"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
