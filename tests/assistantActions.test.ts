@@ -44,3 +44,11 @@ it('accepts ordinary JSON chat replies without optional arrays, without validati
  expect(()=>parseAssistantReply('{"text":"x","actions":null,"files":[]}')).toThrow('assistant-format');
  expect(()=>parseAssistantReply('{"text":"x","actions":[')).toThrow('assistant-format');
 });
+
+it('only permits permanent deletion of already-trashed personal cards',async()=>{
+ const {blankAssistantData,planAssistantProposal}=await import('../src/assistant/actions');
+ const state=blankAssistantData();state.scopes[0].projects=[{id:'trashed',name:'Old',trashedAt:123,revision:0},{id:'live',name:'Live',trashedAt:0,revision:0}] as typeof state.scopes[0]['projects'];
+ const allowed=planAssistantProposal(state,[{target:'projects',action:'delete',id:'trashed',scope:'personal',values:{}}]);
+ expect(allowed).toMatchObject([{id:'trashed',after:null}]);
+ expect(()=>planAssistantProposal(state,[{target:'projects',action:'delete',id:'live',values:{}}])).toThrow();
+});
