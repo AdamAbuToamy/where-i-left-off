@@ -48,7 +48,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           EVENT_NAME: ${{ github.event_name }}
           FREE_CONFIRMED: ${{ inputs.confirm_free_project }}
-          FREE_CANARY: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[gemini-free-canary]') }}
+          FREE_CANARY: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[gemini-free-canary]') || contains(github.event.head_commit.message, '[gemini-free-acceptance]')) }}
         run: |
           node --input-type=module <<'JS'
           import {appendFileSync,writeFileSync} from 'node:fs';
@@ -74,8 +74,9 @@ jobs:
         env:
           PROVIDER: ${{ inputs.provider || 'gemini' }}
           TEST_SCOPE: ${{ inputs.scope }}
+          FREE_ACCEPTANCE: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[gemini-free-acceptance]') }}
           CASE_ID: ${{ inputs.case_id }}
-          FREE_CANARY: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[gemini-free-canary]') }}
+          FREE_CANARY: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[gemini-free-canary]') || contains(github.event.head_commit.message, '[gemini-free-acceptance]')) }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
@@ -86,7 +87,8 @@ jobs:
             if(catalog.status!==0)process.exit(catalog.status??1);
           }
           const args=['scripts/test-assistant-live.mjs','--live','--provider='+process.env.PROVIDER];
-          if(process.env.FREE_CANARY==='true')args.push('--case=compound-card-ar','--case=compound-card-en','--case=compound-card-he','--stop-on-failure');
+          if(process.env.FREE_ACCEPTANCE==='true')args.push('--sample=200','--stop-on-failure');
+          else if(process.env.FREE_CANARY==='true')args.push('--case=compound-card-ar','--case=compound-card-en','--case=compound-card-he','--stop-on-failure');
           else if(process.env.CASE_ID)args.push('--case='+process.env.CASE_ID);
           else if(process.env.TEST_SCOPE==='smoke')args.push('--case=compound-card-ar','--case=compound-card-en','--case=compound-card-he');
           const r=spawnSync(process.execPath,args,{stdio:'inherit',env:process.env});

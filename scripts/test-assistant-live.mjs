@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import {createServer as createNetServer} from 'node:net';
 import {acceptanceCases} from '../tests/fixtures/assistant/corpus.mjs';
+import {assistantSample} from './lib/assistantSample.mjs';
 import {syntheticProviderDiagnostic} from './lib/providerDiagnostic.mjs';
 import {acceptanceSummary,providerStop} from './lib/assistantAcceptance.mjs';
 import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
@@ -18,7 +19,9 @@ const settings={cloudflare:{model:ASSISTANT_MODEL},groq:{model:GROQ_MODEL,key:'G
 if(!settings)throw new Error('Unknown provider.');
 const model=settings.model,requestedIds=args.filter(a=>a.startsWith('--case=')).map(a=>a.slice(7));
 if(requestedIds.some(id=>!acceptanceCases.some(c=>c.id===id)))throw new Error('Unknown case ID. Use --list to see the case catalog.');
-const selected=requestedIds.length?acceptanceCases.filter(c=>requestedIds.includes(c.id)):acceptanceCases;
+const sampleArg=args.find(a=>a.startsWith('--sample='));
+if(sampleArg&&requestedIds.length)throw new Error('Use either --sample or --case.');
+const selected=sampleArg?assistantSample(acceptanceCases,Number(sampleArg.slice(9))):requestedIds.length?acceptanceCases.filter(c=>requestedIds.includes(c.id)):acceptanceCases;
 const limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):selected.length;
 if(args.includes('--list')){console.log(JSON.stringify({requests:selected.length,total:acceptanceCases.length,cases:selected.map(c=>c.id),unique:new Set(selected.map(c=>c.message)).size,languages:['ar','en','he'],provider,model,mode:'catalog-only; no inference'},null,2));process.exit(0);}
 if(!args.includes('--live')||!Number.isInteger(limit)||limit<1||limit>acceptanceCases.length)throw new Error('Use --live --limit=618 (or --list). Real inference consumes the selected provider allowance.');

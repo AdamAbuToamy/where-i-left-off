@@ -1,9 +1,13 @@
 name: Quality checks
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: quality-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   unit-and-worker:
     runs-on: ubuntu-24.04
