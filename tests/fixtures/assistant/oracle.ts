@@ -29,7 +29,17 @@ export function evaluateAcceptance(testCase:Case,text:string){
   }
  }
  for(const expected of testCase.controls)if(!controls.some(c=>c.kind===expected.kind&&Object.entries(expected.values).every(([field,value])=>JSON.stringify(c.values[field])===JSON.stringify(value))))throw new Error('oracle-control');
- if((reply.tasks?.length||0)<testCase.intents.length)throw new Error('oracle-request-omitted');
+ // Expected mutations/controls above, not model presentation grouping, prove effects.
+ // Non-mutation obligations still need explicit answer/handoff ledger entries.
+ for(const outcome of ['answer','needs-input','unsupported']){
+  const expected=testCase.intents.filter(i=>i&&typeof i==='object'&&'outcome' in i&&i.outcome===outcome).length;
+  if((reply.tasks||[]).filter(t=>t.outcome===outcome).length<expected)throw new Error('oracle-request-omitted');
+ }
+
+ for(const actual of controls.filter(c=>c.kind!=='navigate')){
+  const allowedValues=Object.assign({},...testCase.controls.filter(c=>c.kind===actual.kind).map(c=>c.values));
+  if(Object.entries(actual.values).some(([field,value])=>JSON.stringify(allowedValues[field])!==JSON.stringify(value)))throw new Error('oracle-extra-control');
+ }
  // Unrequested writes cannot hide among otherwise correct expected fields.
  const allowed=new Set(testCase.actions.map(a=>[a.target,aliases.get(a.id)||a.id].join('/')));
  if(changes.some(c=>!allowed.has([c.target,c.id].join('/'))))throw new Error('oracle-extra-record');

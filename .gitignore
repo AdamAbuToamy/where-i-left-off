@@ -42,3 +42,5 @@ push-worker/wrangler.local.json.backup-*
 assistant-acceptance-live-report.json
 
 assistant-acceptance-live-report.previous-*.json
+
+/assistant-acceptance-rechecked-report.json
