@@ -1,0 +1,37 @@
+name: WILO owner preview (Hosting only)
+on:
+  push:
+    branches: [fix/wilo-safe-purge-reliability-20261024]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint && npm test
+      - name: Preserve existing Firebase public config (no production mutations)
+        run: node scripts/prepare-hosting-config.mjs
+      - name: Build owner-gated pilot
+        run: VITE_WILO_PILOT=true VITE_USE_EMULATORS=false VITE_TEST_OFFLINE=false VITE_REQUIRE_APP_CHECK=true VITE_REQUIRE_FIREBASE_CONFIG=true npm run build
+      - name: Deploy non-live Firebase Hosting channel
+        id: preview
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: where-i-left-off-b5683
+          channelId: wilo-owner-pilot
+          expires: 7d
+          target: production
+          firebaseToolsVersion: 15.33.0
+      - name: Record preview address and important API limitation
+        run: |
+          echo "Preview URL(s): ${{ steps.preview.outputs.urls }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "The production assistant Worker does not currently allow preview-site origins. This Hosting-only preview is NOT a fully working cloud AI pilot until a separate preview Worker, App Check origin and isolated D1 are configured." >> "$GITHUB_STEP_SUMMARY"
