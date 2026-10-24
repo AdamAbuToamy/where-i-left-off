@@ -72,11 +72,40 @@ function matches(actual,requirement,references=new Map()){
  if(requirement.match==='equals')return same(actual,expected);
  return typeof actual==='string'&&typeof expected==='string'?actual.includes(expected):Array.isArray(actual)&&Array.isArray(expected)&&expected.every(e=>actual.some(a=>same(a,e)));
 }
+/** Complete unambiguous fields on a NEW card from the independently extracted,
+ * typed user requirements. This never alters existing records or guesses IDs.
+ * The regular domain validator and effect oracle still inspect the result.
+ */
+function completeNewCardFields(proposal,intents){
+ if(!proposal||!Array.isArray(proposal.actions))return proposal;
+ const groups=new Map();
+ for(const intent of intents){
+  if(intent.outcome!=='proposed')continue;
+  const relevant=intent.requirements.filter(r=>r.target==='projects'&&['create','update'].includes(r.operation));
+  if(!relevant.length)continue;
+  const group=groups.get(intent.subject)||[];
+  group.push(...relevant);groups.set(intent.subject,group);
+ }
+ for(const requirements of groups.values()){
+  const named=requirements.filter(r=>r.field==='name'&&typeof r.expected==='string'&&r.match==='equals');
+  if(named.length!==1)continue;
+  const candidates=proposal.actions.filter(a=>a?.target==='projects'&&a.action==='create'&&a.values?.name===named[0].expected);
+  if(candidates.length!==1)continue;
+  const card=candidates[0];
+  for(const field of ['description','dueDate','followUpDate','nextStep']){
+   const requested=requirements.filter(r=>r.field===field&&typeof r.expected==='string'&&r.expected.length>0);
+   if(requested.length!==1||Object.hasOwn(card.values,field))continue;
+   card.values[field]=requested[0].expected;
+  }
+ }
+ return proposal;
+}
 /** Resolve intended effects against composed record edits. Model task grouping/order is
  * presentation, not proof of execution. This layer creates the authoritative task ledger. */
 export function reconcileIntentProposal(proposal,intents,context={}){
  const issues=[];
  if(!proposal||typeof proposal.text!=='string'||proposal.text.length>12000||!Array.isArray(proposal.actions)||!Array.isArray(proposal.controls)||!Array.isArray(proposal.files)||proposal.actions.length>50||proposal.controls.length>20)return {proposal,issues:[{task:0,reason:'invalid-format',target:'',field:''}]};
+ completeNewCardFields(proposal,intents);
  const chains=new Map();
  proposal.actions.forEach((op,index)=>{
   if(!op||!Object.hasOwn(actionFields,op.target)||typeof op.id!=='string')return;
