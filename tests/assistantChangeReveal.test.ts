@@ -10,6 +10,7 @@ it('routes every data kind through existing views, including deleted records and
  expect(changeDestination({...course,target:'tasks',after:{courseId:'c'}}).attribute).toBe('data-study-task');
  expect(changeDestination({...course,target:'sections',scope:'group123'}).hash).toContain('#/groups/group123');
  expect(changeDestination({...course,target:'projects',after:{archivedAt:5}}).hash).toBe('#/library?view=archive');
+ expect(changeDestination({...course,target:'projects',scope:'group123',after:{trashedAt:5}}).hash).toBe('#/library?view=trash');
  expect(changeDestination({...course,after:null,before:{name:'Removed'}}).attribute).toBeUndefined();
 });
 it('waits for the saved element, highlights it, and restores its original focus attributes',async()=>{

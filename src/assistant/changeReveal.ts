@@ -10,7 +10,7 @@ export function changeDestination(change:Change):ChangeDestination{
   return {hash:'#/university?'+q,attribute:change.after?'data-study-'+({courses:'course',tasks:'task',lessons:'lesson'} as const)[change.target as 'courses'|'tasks'|'lessons']:undefined,id:change.id,container:change.target==='lessons'?'.study-time-grid':change.target==='tasks'?'.study-task-list':'.study-layout aside'};
  }
  const project=item as {trashedAt?:number;archivedAt?:number};
- if(change.target==='projects'&&(project.trashedAt||project.archivedAt)&&change.scope==='personal')return {hash:'#/library?view='+(project.trashedAt?'trash':'archive'),attribute:'data-project',id:change.id,container:'.account-page-outlet'};
+ if(change.target==='projects'&&(project.trashedAt||project.archivedAt))return {hash:'#/library?view='+(project.trashedAt?'trash':'archive'),attribute:'data-project',id:change.id,container:'.account-page-outlet'};
  q.set('view','board');q.set('filter','all');
  if(change.target==='projects')q.set('search',String(item.name||''));
  return {hash:(change.scope==='personal'?'#/personal':'#/groups/'+encodeURIComponent(change.scope))+'?'+q,attribute:change.after?(change.target==='projects'?'data-project':'data-section'):undefined,id:change.id,container:change.target==='sections'?'.sections-panel':'.account-page-outlet'};
