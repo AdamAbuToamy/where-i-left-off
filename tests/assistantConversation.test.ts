@@ -16,3 +16,23 @@ it('fails explicitly rather than silently dropping a pending dialogue beyond its
 for(const target of ['projects','courses','tasks','sections'] as const)it(`blocks unnamed ${target} even if a malformed model omits the title`,()=>{
  expect(()=>planAssistantProposal(blankAssistantData(),[{target,action:'create',id:'new',values:{}}])).toThrow('assistant-invalid');
 });
+
+
+it('excludes failed requests and failed assistant replies from future model context',()=>{
+ const turns=[{role:'user' as const,text:'احذف القسم',failed:true},{role:'assistant' as const,text:'لم أنفذ الطلب',failed:true,resolved:true},{role:'user' as const,text:'مرحبا'}];
+ expect(conversationHistory(turns)).toEqual([{role:'user',content:'مرحبا'}]);
+});
+it('greetings are answered locally without inference or a data mutation',async()=>{
+ const {quickGreeting}=await import('../src/assistant/quickGreeting');
+ expect(quickGreeting('مرحبا','ar')).toContain('أهلًا');
+ expect(quickGreeting('שלום','he')).not.toBeNull();
+ expect(quickGreeting('احذف القسم','ar')).toBeNull();
+});
+it('incomplete proposals get natural-language feedback without implying a save',async()=>{
+ const {AssistantFailure}=await import('../src/assistant/failure');
+ const {friendlyFailure}=await import('../src/assistant/friendlyFailure');
+ const reply=friendlyFailure(new AssistantFailure('ai-incomplete-proposal','provider'),'ar');
+ expect(reply).toContain('لم أحفظ أي تغييرات');
+ expect(reply).not.toContain('ai-incomplete-proposal');
+ expect(friendlyFailure(new AssistantFailure('assistant-confirmation','save'),'ar')).toContain('ربما');
+});
