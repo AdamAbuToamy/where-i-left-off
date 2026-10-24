@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - run: npm ci --no-audit --no-fund
       - run: npm ci --prefix push-worker --no-audit --no-fund
       - name: Run synthetic WILO stress and failure tests
         run: node --test push-worker/assistant-stress.test.mjs
