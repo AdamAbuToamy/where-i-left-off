@@ -1,7 +1,6 @@
 import type {AssistantData,AssistantReply,Change,Action} from './actions';
 type Recent={role:'user'|'assistant';receipt?:{changes:Change[]};failed?:boolean;undone?:boolean};
 const create=(change:Change)=>!change.before&&!!change.after;
-const nameOf=(c:Change)=>String(((c.after||c.before) as {name?:string}|null)?.name||'');
 function reply(text:string,actions:Action[]):AssistantReply {
  return {text,actions,controls:[],files:[],tasks:actions.map((a,i)=>({title:a.target==='projects'?'حذف البطاقة':'حذف القسم',outcome:'proposed' as const,actionIndexes:[i],controlIndexes:[],detail:''}))};
 }
