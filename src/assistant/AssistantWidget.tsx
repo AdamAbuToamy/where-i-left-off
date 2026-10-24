@@ -1,4 +1,5 @@
 import {conversationHistory} from './conversationHistory';
+import {quickTrashPurge} from './quickTrashPurge';
 import {AssistantFailure} from './failure';
 import {failureWords,failureMessage} from './failureWords';
 import {coverageHint} from './coverageHint';
@@ -77,7 +78,8 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
     const controlPlans=controls.plan(resolveProposalControls(snapshot.data,reply.actions,changes,reply.controls||[]),language,snapshot.data.scopes.map(s=>s.id));
     return {reply,controlPlans,changes};
    };
-   const prepared=localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
+   const quick=quickTrashPurge(message,snapshot.data,language);
+   const prepared=quick?validate(JSON.stringify(quick)):localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
     if(!mounted.current||auth?.currentUser?.uid!==user.uid)throw new Error('account-changed');
     return assistantRequest<{text:string}>(payload,timeout);
    }).prepare(request,validate,()=>{if(mounted.current)setPhase('repairing');});
@@ -93,7 +95,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   try{
    let receipt:AssistantReceipt|undefined;let controlResults:ControlResult[]=[];
    if(undo)await repository.undo(m.receipt!);
-   else {if(m.changes?.length)receipt=await repository.apply(m.snapshot!,m.changes);controlResults=await controls.apply(m.controlPlans||[]);}
+   else {if(m.changes?.some(c=>c.target==='projects'&&!c.after)&&!window.confirm(language==='ar'?'تأكيد أخير: حذف بطاقات سلة المهملات نهائيًا ولا يمكن استعادتها؟':language==='he'?'אישור סופי: למחוק לצמיתות את הכרטיסים ללא אפשרות שחזור?':'Final confirmation: permanently delete these Trash cards without recovery?'))return;if(m.changes?.length)receipt=await repository.apply(m.snapshot!,m.changes);controlResults=await controls.apply(m.controlPlans||[]);}
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    setMessages(old=>old.map((value,i)=>i===index?{...value,resolved:true,undone:undo,receipt,controlResults:undo?value.controlResults:controlResults,text:undo?t.undone+(value.controlPlans?.length?' '+ct.dataOnlyUndo:''):(receipt||controlResults.some(r=>r.ok)?t.applied:'')}:value));
    if(undo&&m.receipt?.changes.length){const first=m.receipt.changes[0];showChange({...first,before:first.after,after:first.before});}
@@ -141,7 +143,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
      })}{m.controlPlans?.map((plan,index)=><details key={'control-'+index}><summary>{ct.kind[plan.control.kind]}</summary><p dir="auto">{JSON.stringify(plan.control.values)}</p></details>)}<button type="button" disabled={busy} onClick={()=>void apply(i)}>{t.apply}</button><button type="button" disabled={busy} onClick={()=>setMessages(old=>old.map((v,index)=>index===i?{...v,resolved:true}:v))}>{t.cancel}</button></div>:null}
     {!!m.receipt?.changes.length&&!m.undone&&<details className="assistant-saved"><summary>{ui.showChanges} ({m.receipt.changes.length})</summary>{m.receipt.changes.map((change,index)=><button type="button" key={index} onClick={()=>showChange(change)}>{name(change.after,m.snapshot)||name(change.before,m.snapshot)||t.titles[change.target]} <span aria-hidden="true">↗</span></button>)}</details>}
     {m.controlResults&&m.controlPlans?.map((plan,index)=>{const result=m.controlResults![index];return result?.ok?null:<p key={'result-'+index} role={result&&!result.ok?'alert':undefined}>{ct.kind[plan.control.kind]}: {result?(result.ok?ct.done:ct.failed+(result.reason==='assistant-browser-permission'?' · '+ct.permission:' · '+(result.reason==='assistant-conflict'?t.conflict:t.unavailable))):ct.pending}</p>;})}
-    {m.receipt&&!m.undone&&!m.receipt.changes.some(c=>!c.before&&['projects','sections'].includes(c.target))&&<button type="button" disabled={busy} onClick={()=>void apply(i,true)}>{m.controlPlans?.length?ct.dataOnlyUndo:t.undo}</button>}
+    {m.receipt&&!m.undone&&!m.receipt.changes.some(c=>c.target==='projects'&&(!c.before||!c.after)||!c.before&&c.target==='sections')&&<button type="button" disabled={busy} onClick={()=>void apply(i,true)}>{m.controlPlans?.length?ct.dataOnlyUndo:t.undo}</button>}
    </article>)}{busy&&phase&&<AssistantWaiting phase={phase} language={language} progress={progress}/>}</div>
    <form onSubmit={e=>{e.preventDefault();void send();}}>
     <label>{t.input}<textarea ref={input} value={text} maxLength={6000} rows={2} placeholder={ui.placeholder} onChange={e=>setText(e.target.value)}/></label>
