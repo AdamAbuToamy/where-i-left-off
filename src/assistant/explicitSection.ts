@@ -17,7 +17,18 @@ export function checkExplicitSection(message:string,data:AssistantData,reply:Ass
  const expected=section?.id||creates[0]?.id;
  // If the section is missing, creating it is part of the request. Don't silently
  // attach the card to a different section or ignore its requested destination.
- if(!expected)throw new Error('assistant-reference');
+ if(!expected){
+  // When the user explicitly names a missing section, a single new personal
+  // card may safely be completed with a new section. Do not guess if the
+  // model suggested multiple cards, existing-card edits, or section operations.
+  const cards=reply.actions.filter(a=>a.target==='projects'&&a.action==='create'&&(a.scope||'personal')==='personal');
+  if(cards.length!==1||reply.actions.length!==1)throw new Error('assistant-reference');
+  const alias='wilo-section-'+Math.random().toString(36).slice(2,12);
+  reply.actions.unshift({target:'sections',action:'create',id:alias,scope:'personal',values:{name:match[1].trim().replace(/[«»"']/g,'')}});
+  cards[0].values={...cards[0].values,sectionId:alias};
+  for(const task of reply.tasks||[])if(task.actionIndexes.length)task.actionIndexes=[0,...task.actionIndexes.map(i=>i+1)];
+  return;
+ }
  const cards=reply.actions.filter(a=>a.target==='projects'&&['create','update'].includes(a.action));
  if(!cards.length||!cards.some(a=>a.values?.sectionId===expected))throw new Error('assistant-reference');
 }
