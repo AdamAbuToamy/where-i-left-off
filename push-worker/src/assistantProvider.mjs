@@ -1,3 +1,4 @@
+import {geminiTools,geminiFailure} from './assistantGemini.mjs';
 import {workspaceToolStep} from './assistantTools.mjs';
 import {groqRateLimit,minuteRetry} from './groqLimits.mjs';
 export const CLOUDFLARE_MODEL='@cf/openai/gpt-oss-120b';
@@ -14,7 +15,7 @@ class CompatibleInference {
  async run(input,{compactOutput=false,signal:requestSignal}={}){
   const body={model:this.model,messages:input.messages,temperature:input.temperature,max_completion_tokens:compactOutput?Math.min(input.max_tokens,3072):input.max_tokens,reasoning_effort:'low'};
   if(this.name==='gemini'){body.max_tokens=body.max_completion_tokens;delete body.max_completion_tokens;body.reasoning_effort='minimal';}
-  if(input.tools){body.tools=input.tools;body.tool_choice=input.tool_choice;if(this.name==='groq')body.parallel_tool_calls=false;}
+  if(input.tools){body.tools=this.name==='gemini'?geminiTools(input.tools):input.tools;body.tool_choice=input.tool_choice;if(this.name==='groq')body.parallel_tool_calls=false;}
   if(input.response_format)body.response_format=input.response_format.type==='json_schema'
    ?{type:'json_object'}
    :input.response_format;
@@ -30,7 +31,8 @@ class CompatibleInference {
    const rate=this.name==='groq'&&[429,413].includes(response.status)?groqRateLimit(failure?.message,response.headers.get('retry-after')):undefined;
    if(response.status===429&&attempt===0&&rate&&minuteRetry(rate)){await waitForRetry(rate.retryAfterSeconds,signal);continue;}
    const error=new Error(response.status===413||rate?.oversized?'ai-provider-context':'provider-request-failed');error.providerRate=rate;
-   error.status=response.status;error.providerCode=failure?.code;error.providerParameter=failure?.param;throw error;
+   const diagnostic=this.name==='gemini'?geminiFailure(failure):{};
+   error.status=response.status;error.providerCode=diagnostic.code||failure?.code;error.providerParameter=diagnostic.parameter||failure?.param;error.providerHint=diagnostic.hint;throw error;
   }
   const result=await response.json(),choice=result?.choices?.[0];
   if(choice?.finish_reason==='length')throw new Error('ai-response-too-large');
