@@ -63,18 +63,25 @@ export function workspaceToolStep(choice){
 }
 
 export async function runWorkspaceTools(data,history,invoke){
- const signal=AbortSignal.timeout(45000);let input=workspaceToolInput(data,history),reads=0;const callIds=new Set();
+ const signal=AbortSignal.timeout(45000);let input=workspaceToolInput(data,history),reads=0,repaired=false;const callIds=new Set();
  for(;;){
-  const result=await invoke(input,signal);
-  const batch=result?.contextRequests||(result?.contextRequest?[result]:null);
-  if(!batch)return readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response));
-  if(!Array.isArray(batch)||!batch.length||reads+batch.length>3)throw new Error('ai-context-read-limit');
-  // Validate the whole batch before returning any account content; mixed read/write calls never execute.
-  const replies=batch.map(step=>{
-   const id=step.toolCall?.id;if(typeof id!=='string'||!id||callIds.has(id))throw new Error('ai-incomplete-proposal');callIds.add(id);
-   return {role:'tool',tool_call_id:id,content:JSON.stringify(readWorkspaceContext(data.context,step.contextRequest))};
-  });
-  reads+=batch.length;
-  input={...input,messages:[...input.messages,{role:'assistant',content:null,tool_calls:batch.map(step=>step.toolCall)},...replies]};
+  try{
+   const result=await invoke(input,signal);
+   const batch=result?.contextRequests||(result?.contextRequest?[result]:null);
+   if(!batch)return readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response));
+   if(!Array.isArray(batch)||!batch.length||reads+batch.length>3)throw new Error('ai-context-read-limit');
+   const pendingIds=new Set();
+   // Commit protocol state only after every read in the batch has been authorized and validated.
+   const replies=batch.map(step=>{
+    const id=step.toolCall?.id;if(typeof id!=='string'||!id||callIds.has(id)||pendingIds.has(id))throw new Error('ai-incomplete-proposal');pendingIds.add(id);
+    return {role:'tool',tool_call_id:id,content:JSON.stringify(readWorkspaceContext(data.context,step.contextRequest))};
+   });
+   for(const id of pendingIds)callIds.add(id);reads+=batch.length;
+   input={...input,messages:[...input.messages,{role:'assistant',content:null,tool_calls:batch.map(step=>step.toolCall)},...replies]};
+  }catch(error){
+   if(repaired||error.message!=='ai-incomplete-proposal')throw error;
+   repaired=true;console.info('assistant.tool.repair',{reason:'ai-incomplete-proposal'});
+   input={...input,messages:[...input.messages,{role:'user',content:'Your previous tool invocation failed validation. Regenerate the COMPLETE response for the original request. Use exactly one propose_workspace_actions call for the whole batch, or read_workspace for needed records. Include text, actions, controls, files and tasks; use empty arrays rather than null. Every action/control must have matching task indexes. Use only declared fields and actual account IDs; new course/class references must use the same new course alias inside the batch. Preserve every requested task and never claim a save.'}]};
+  }
  }
 }

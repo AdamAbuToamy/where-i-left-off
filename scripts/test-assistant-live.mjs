@@ -78,7 +78,7 @@ try{
   }
   consecutiveUnavailable=0;
   const item={id:testCase.id,status:'passed',elapsedMs:result.elapsedMs,trace:result.trace,reply:result.text};
-  try{if(result.error)throw new Error(result.error);evaluateAcceptance(testCase,result.text);}catch(error){item.status='failed';item.reason=error.message;item.details=result.details;}
+  try{if(result.error)throw new Error(result.error);evaluateAcceptance(testCase,result.text);}catch(error){item.status='failed';item.reason=error.message;item.details=result.details;if(result.text&&settings.key)console.error('synthetic-plan-rejected',JSON.stringify(syntheticProviderDiagnostic({status:200,body:result.text},process.env[settings.key])));}
   report.results=report.results.filter(r=>r.id!==testCase.id);report.results.push(item);save();
   console.log(`${report.results.length}/${acceptanceCases.length} ${testCase.id}: ${item.status}${item.reason?' ['+item.reason+']':''} (${result.elapsedMs}ms)`);
   if(item.status==='failed'&&args.includes('--stop-on-failure')){report.stopped='case-failed';save();process.exitCode=2;break;}

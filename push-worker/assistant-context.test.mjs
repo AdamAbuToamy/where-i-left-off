@@ -45,9 +45,22 @@ test('parallel reads reject duplicate call IDs, unknown calls, mixed proposals, 
 test('repeated tool-call IDs across model turns fail rather than attaching data to an old call',async()=>{
  await assert.rejects(runWorkspaceTools(data,[],async()=>workspaceToolStep({message:{tool_calls:[readCall('same','courses')]}})),/ai-incomplete-proposal/);
 });
-test('one invalid scope in a parallel read batch prevents the next model invocation',async()=>{
- let calls=0;await assert.rejects(runWorkspaceTools(data,[],async()=>{
-  calls++;const invalid=readCall('foreign','projects');invalid.function.arguments=JSON.stringify({requests:[{target:'projects',view:'details',scope:'another-account'}]});
+test('invalid parallel read scopes remain blocked through the bounded repair without forwarding records',async()=>{
+ let calls=0;await assert.rejects(runWorkspaceTools(data,[],async input=>{
+  assert.equal(input.messages.some(m=>m.role==='tool'),false);calls++;const invalid=readCall('foreign','projects');invalid.function.arguments=JSON.stringify({requests:[{target:'projects',view:'details',scope:'another-account'}]});
   return workspaceToolStep({message:{tool_calls:[readCall('course','courses'),invalid]}});
- }),/ai-incomplete-proposal/);assert.equal(calls,1);
+ }),/ai-incomplete-proposal/);assert.equal(calls,2);
+});
+
+test('an invalid native tool response gets one bounded format repair before returning a complete valid plan',async()=>{
+ let calls=0;const text=await runWorkspaceTools(data,[],async input=>{
+  calls++;if(calls===1)throw new Error('ai-incomplete-proposal');
+  assert.ok(input.messages.at(-1).content.includes('COMPLETE response'));assert.ok(input.messages.some(m=>m.content.includes(data.message)));
+  return {response:JSON.stringify(plan)};
+ });assert.equal(calls,2);assert.deepEqual(JSON.parse(text).actions,plan.actions);
+});
+test('persistent malformed plans stop after one repair; provider access and quota failures are never format-retried',async()=>{
+ for(const reason of ['ai-incomplete-proposal','ai-provider-limit','ai-provider-access','ai-provider-request']){
+  let calls=0;await assert.rejects(runWorkspaceTools(data,[],async()=>{calls++;throw new Error(reason);}),new RegExp(reason));assert.equal(calls,reason==='ai-incomplete-proposal'?2:1);
+ }
 });
