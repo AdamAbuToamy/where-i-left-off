@@ -62,7 +62,11 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
  // Never begin a first-time download without an explicit activation click.
  useEffect(()=>{
   if(!preferLocal)return;
-  void activateLocal();
+  // Start after the initial React effect has committed. This avoids synchronous
+  // state updates inside the effect and allows unmount to cancel startup.
+  let cancelled=false;
+  queueMicrotask(()=>{if(!cancelled&&mounted.current)void activateLocal();});
+  return ()=>{cancelled=true;};
   // Deliberately initial-mount-only; later changes are controlled by buttons.
   // eslint-disable-next-line react-hooks/exhaustive-deps
  },[]);
