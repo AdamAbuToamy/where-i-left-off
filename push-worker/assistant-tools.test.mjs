@@ -45,3 +45,11 @@ test('model history carries questions and saved IDs without copying private app 
  const input=workspaceToolInput({message:'No date',language:'en',context:'{}'},history);
  assert.ok(input.messages[1].content.includes('A date, section, notes or link?'));assert.equal(input.messages[1].content.includes('creation-details'),false);assert.equal(input.messages[1].content.includes('clarification'),false);
 });
+test('normalizes equivalent card title/notes tool fields without changing requested values',()=>{
+ const p=good();p.actions[0].values={title:'مراجعة خوارزميات',notes:'راجع الفصل الأول',sectionId:'section',projectUrl:'https://example.test/algorithms'};
+ const result=JSON.parse(readWorkspaceToolProposal(JSON.stringify(p)));
+ assert.deepEqual(result.actions[0].values,{name:'مراجعة خوارزميات',description:'راجع الفصل الأول',sectionId:'section',projectUrl:'https://example.test/algorithms'});
+});
+test('never silently resolves conflicting alias values or accepts unrelated unknown fields',()=>{
+ for(const values of [{name:'A',title:'B'},{description:'A',notes:'B'},{name:'A',execute:'bad'}]){const p=good();p.actions[0].values=values;assert.throws(()=>readWorkspaceToolProposal(JSON.stringify(p)),/ai-incomplete-proposal/);}
+});

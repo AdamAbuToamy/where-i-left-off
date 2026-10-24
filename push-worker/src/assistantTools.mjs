@@ -42,9 +42,22 @@ function valid(value,schema){
  if(schema.type==='object')return value&&typeof value==='object'&&!Array.isArray(value)&&(schema.required||[]).every(key=>Object.hasOwn(value,key))&&Object.keys(value).every(key=>Object.hasOwn(schema.properties,key)&&valid(value[key],schema.properties[key]));
  return false;
 }
+/** Providers may use semantic field aliases from another domain branch; normalize only exact equivalents. */
+function canonicalToolFields(plan){
+ const aliases={projects:{title:'name',notes:'description'},courses:{title:'name',description:'notes'},tasks:{name:'title',description:'notes'},sections:{title:'name'},lessons:{description:'notes'}};
+ if(!Array.isArray(plan?.actions))return;
+ for(const action of plan.actions){
+  if(!action||!Object.hasOwn(aliases,action.target)||!action.values||typeof action.values!=='object'||Array.isArray(action.values))continue;
+  for(const [alias,field] of Object.entries(aliases[action.target]))if(Object.hasOwn(action.values,alias)){
+   if(Object.hasOwn(action.values,field)&&JSON.stringify(action.values[field])!==JSON.stringify(action.values[alias]))throw new Error('ai-incomplete-proposal');
+   action.values[field]=action.values[alias];delete action.values[alias];
+  }
+ }
+}
 /** Tool calls only propose data; the existing client planner and Firestore enforce effects. */
 export function readWorkspaceToolProposal(text){
  let plan;try{plan=JSON.parse(text);}catch{throw new Error('ai-incomplete-proposal');}
+ canonicalToolFields(plan);
  if(!valid(plan,TOOL_SCHEMA))throw new Error('ai-incomplete-proposal');
  // Mutating effects are always proposals; their status is derived from validated references, not model prose.
  for(const task of plan.tasks)if(task.outcome==='answer'&&(task.actionIndexes.length||task.controlIndexes.some(i=>plan.controls[i]&&plan.controls[i].kind!=='navigate')))task.outcome='proposed';
