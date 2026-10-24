@@ -28,7 +28,7 @@ npm run test:assistant:live -- --provider=groq --limit=3 --resume
 node scripts/setup-groq-assistant.mjs
 ```
 
-يرفع السكربت المفتاح عبر stdin إلى Cloudflare Worker Secret، ويحفظ نسخة من الإعداد، ثم يحدد `ASSISTANT_PROVIDER=groq` وينشر Worker الحالي. يحافظ على D1 والطوابير وأسرار Firebase وApp Check. لا يشغّل ترحيل SQL ولا يفعّل فوترة. يحتاج تسجيل دخول Wrangler السابق؛ المفتاح لا يُحفظ في ملف إعداد النشر. يتوقف قبل تغيير المزود إذا فشل رفع السر.
+يرفع السكربت المفتاح عبر stdin إلى Cloudflare Worker Secret، ويحفظ نسخة من الإعداد، ثم يحدد `ASSISTANT_PROVIDER=groq` وينشر Worker الحالي. يحافظ على D1 والطوابير وأسرار Firebase وApp Check. يجهّز جداول المساعد بأوامر CREATE IF NOT EXISTS دون حذف بيانات، ولا يفعّل فوترة. يحتاج تسجيل دخول Wrangler السابق؛ المفتاح لا يُحفظ في ملف إعداد النشر. يتوقف قبل تغيير المزود إذا فشل تجهيز الجداول أو رفع السر، ويتحقق من إصدار Worker وCORS بعد النشر.
 
 انشر الواجهة بالطريقة المعتادة لتحديث رسائل الخطأ وسياسة الخصوصية، ثم احذف المتغير من جلسة الطرفية:
 
@@ -68,3 +68,6 @@ node scripts/recheck-assistant-report.mjs
 ```
 
 يقرأ `assistant-acceptance-live-report.json` ويكتب نتيجة منفصلة في `assistant-acceptance-rechecked-report.json`، مع `liveInferenceCalls:0`. لا يعدّل التقرير الأصلي، ولا يكتب في حسابك أو يحفظ بيانات الإنتاج. يمكن تمرير مسار تقرير سابق كأول معامل. إذا نجح فحص المقترح، انتقل إلى إعداد النشر ثم جرّب التطبيق والحفظ وإعادة الفتح في الموقع نفسه.
+
+
+تحديث الربط الإنتاجي: [إعادة البناء والمصادر والتحقق](ASSISTANT_REBUILD_AR.md). إعداد Groq الآن يجهز جداول المساعد ويتحقق من إصدار Worker وCORS قبل تجهيز عنوان API للواجهة. بعد النشر، فحص الاتصال في تفاصيل أي خطأ لا يستهلك طلب نموذج ويحدد المرحلة.

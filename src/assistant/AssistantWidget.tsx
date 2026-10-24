@@ -1,5 +1,6 @@
+import {AssistantFailure} from './failure';
+import {failureWords,failureMessage} from './failureWords';
 import {coverageHint} from './coverageHint';
-import { isStandaloneTimetableList } from './bulkTimetable';
 import { AssistantProposalClient } from './proposalClient';
 import { useEffect, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
@@ -8,8 +9,6 @@ import { auth } from '../lib/firebase';
 import { pushCall } from '../lib/pushNotifications';
 import type { LocalAssistantModel } from './localModel';
 import { assistantValidationHint } from './validationHint';
-import { courseMatchRequest,resolvedTimetableReply,noCoursesReply } from './courseMatching';
-import { quickAssistantReply } from './quickActions';
 import { proposalStatus, confirmedChangeCount } from './replyStatus';
 import { parseAssistantReply, planAssistantProposal, resolveProposalControls } from './actions';
 import type { AssistantReply, Change } from './actions';
@@ -29,6 +28,8 @@ type Message={role:'user'|'assistant';text:string;reply?:AssistantReply;changes?
 function download(name:string,content:string){const url=URL.createObjectURL(new Blob(['\uFEFF'+content],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 export default function AssistantWidget({user,language}:{user:User;language:Language}){
  const [open,setOpen]=useState(false),[messages,setMessages]=useState<Message[]>([]),[text,setText]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [failure,setFailure]=useState<AssistantFailure|null>(null),[health,setHealth]=useState<{provider:string;protocol:string}|null>(null),[copied,setCopied]=useState(false);
+ const fw=failureWords[language];
  const button=useRef<HTMLButtonElement>(null),input=useRef<HTMLTextAreaElement>(null),mounted=useRef(true),lock=useRef(false);
  const [repository]=useState(()=>new AssistantRepository(user.uid));
  const [controls]=useState(()=>new AssistantControls(user.uid));
@@ -51,36 +52,33 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
  useEffect(()=>{if(open)input.current?.focus();},[open]);
  function useCloud(){local.current?.dispose();local.current=null;setLocalReady(false);setPreferLocal(false);try{localStorage.removeItem('wilo-assistant-local');}catch{/* Optional preference. */}}
  function close(){setOpen(false);button.current?.focus();}
- function report(e:unknown){const code=(e as {code?:string}).code?.replace(/^firestore\//,'')||(e as Error).message;setError(code==='permission-denied'?t.permission:code==='assistant-confirmation'?t.confirmation:code==='ai-rate-limit'?t.rate:code==='ai-provider-context'?t.providerContext:code==='ai-provider-access'?t.providerAccess:code==='ai-provider-limit'?t.providerLimit:code==='assistant-local-unsupported'?t.localUnsupported:code==='assistant-local-context'?t.localContext:/^assistant-local-/.test(code)?t.localLoadError:code==='ai-incomplete-proposal'||code==='ai-intent-format'?[t.incomplete,coverageHint(e,language)].filter(Boolean).join(' '):code==='ai-not-configured'?t.setup:/ai-(?:user|daily)-limit/.test(code)?t.limit:code==='assistant-format'||code==='ai-response-too-large'?t.format:code==='assistant-invalid'?[t.invalid,assistantValidationHint(e,language)].filter(Boolean).join(' '):code==='assistant-conflict'?t.conflict:code==='assistant-pending'?t.pending:code==='assistant-linked-reminder'?t.linked:code==='assistant-too-large'?t.large:t.unavailable);}
+ function report(e:unknown,stage:'request'|'save'='request'){const failed=AssistantFailure.from(e,stage);setFailure(failed);setCopied(false);e=failed;const code=(e as {code?:string}).code?.replace(/^firestore\//,'')||(e as Error).message;setError(failed.stage==='read'?failureMessage(failed,language,fw.stage.read+': '+t.unavailable):code==='permission-denied'?t.permission:code==='assistant-confirmation'?t.confirmation:code==='ai-rate-limit'?t.rate:code==='ai-provider-context'?t.providerContext:code==='ai-provider-access'?t.providerAccess:code==='ai-provider-limit'?t.providerLimit:code==='assistant-local-unsupported'?t.localUnsupported:code==='assistant-local-context'?t.localContext:/^assistant-local-/.test(code)?t.localLoadError:code==='ai-incomplete-proposal'||code==='ai-intent-format'?[t.incomplete,coverageHint(e,language)].filter(Boolean).join(' '):code==='ai-not-configured'?t.setup:/ai-(?:user|daily)-limit/.test(code)?t.limit:code==='assistant-format'||code==='ai-response-too-large'?t.format:code==='assistant-invalid'?[t.invalid,assistantValidationHint(e,language)].filter(Boolean).join(' '):code==='assistant-conflict'?t.conflict:code==='assistant-pending'?t.pending:code==='assistant-linked-reminder'?t.linked:code==='assistant-too-large'?t.large:failureMessage(failed,language,t.unavailable));}
  async function send(){
   if(lock.current||!text.trim())return;
-  const message=text.trim();lock.current=true;setBusy(true);setPhase('reading');setError('');
+  const message=text.trim();lock.current=true;setBusy(true);setPhase('reading');setError('');setFailure(null);setHealth(null);setCopied(false);
   setMessages(old=>[...old.slice(-15),{role:'user',text:message}]);setText('');
   try{
-   const snapshot=await repository.read();
+   const snapshot=await repository.read().catch(error=>{throw AssistantFailure.from(error,'read');});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
-   let quick=quickAssistantReply(message,snapshot.data,language,messages.map(m=>({role:m.role,content:m.text+(m.resolved?' [proposal resolved; do not repeat]':'')})));
-   const matching=!preferLocal&&!localReady&&isStandaloneTimetableList(message)?courseMatchRequest(message,snapshot.data,language):null;
-   if(matching&&!matching.courses.length)quick=noCoursesReply(language);
-   const request={mode:matching&&!quick?'course-match':'workspace',message:matching&&!quick?'Match requested course references to existing account courses.':message,language,context:quick?'':matching?JSON.stringify(matching):JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
+   const request={mode:'workspace',message,language,context:JSON.stringify({...JSON.parse(assistantContext(snapshot,message)),controls:controls.context(language),capabilities:assistantCapabilities}),history:messages.slice(-4).map(m=>({role:m.role,content:(m.text+(m.resolved?' [proposal resolved; do not repeat]':'')).slice(0,1200)}))};
    if(request.context.length>44000||JSON.stringify(request).length>65000)throw new Error('assistant-too-large');
-   if(!quick&&preferLocal&&!localReady)throw new Error('assistant-local-not-ready');
+   if(preferLocal&&!localReady)throw new Error('assistant-local-not-ready');
    setPhase('thinking');
    const validate=(text:string)=>{
-    const reply=matching&&!quick?resolvedTimetableReply(message,snapshot.data,language,matching,text):parseAssistantReply(text);
-    if(!quick&&request.mode==='workspace'&&(reply.actions.length||reply.controls?.length)&&!reply.tasks?.length)throw new Error('assistant-invalid',{cause:new Error('assistant-task-coverage')});
+    const reply=parseAssistantReply(text);
+    if(request.mode==='workspace'&&(reply.actions.length||reply.controls?.length)&&!reply.tasks?.length)throw new Error('assistant-invalid',{cause:new Error('assistant-task-coverage')});
     let changes:Change[];
     try{changes=planAssistantProposal(snapshot.data,reply.actions);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
     const controlPlans=controls.plan(resolveProposalControls(snapshot.data,reply.actions,changes,reply.controls||[]),language,snapshot.data.scopes.map(s=>s.id));
     return {reply,controlPlans,changes};
    };
-   const prepared=quick?validate(JSON.stringify(quick)):localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
+   const prepared=localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
     if(!mounted.current||auth?.currentUser?.uid!==user.uid)throw new Error('account-changed');
     return pushCall<{text:string}>(payload,{path:'/assistant',timeout});
    }).prepare(request,validate,()=>{if(mounted.current)setPhase('repairing');});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    const {reply,controlPlans,changes}=prepared;
-   setMessages(old=>[...old,{role:'assistant',text:controlPlans.length?ct.review:quick||matching?reply.text:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
+   setMessages(old=>[...old,{role:'assistant',text:controlPlans.length?ct.review:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
   }catch(e){if(mounted.current){report(e);setText(current=>current||message);}}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
  }
@@ -93,8 +91,19 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    else {if(m.changes?.length)receipt=await repository.apply(m.snapshot!,m.changes);controlResults=await controls.apply(m.controlPlans||[]);}
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    setMessages(old=>old.map((value,i)=>i===index?{...value,resolved:true,undone:undo,receipt,controlResults:undo?value.controlResults:controlResults,text:undo?t.undone+(value.controlPlans?.length?' '+ct.dataOnlyUndo:''):(receipt?t.applied+' '+confirmedChangeCount(receipt.changes,language):'')+(controlResults.length?'\n'+controlResults.filter(r=>r.ok).length+' / '+(m.controlPlans?.length||0)+' '+ct.controls:'')}:value));
-  }catch(e){if(mounted.current)report(e);}
+  }catch(e){if(mounted.current)report(e,'save');}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
+ }
+ async function checkConnection(){
+  if(lock.current)return;lock.current=true;setBusy(true);setPhase('reading');setCopied(false);
+  try{await repository.read().catch(error=>{throw AssistantFailure.from(error,'read');});const result=await pushCall<{status:string;provider:string;protocol:string;inferenceTested:boolean}>({mode:'health'},{path:'/assistant',timeout:20000});
+   if(result.status!=='ready'||!['groq','cloudflare'].includes(result.provider)||result.inferenceTested!==false||!/^wilo-assistant-[a-z0-9-]{1,40}$/.test(result.protocol))throw new AssistantFailure('assistant-server-response','request');
+   if(mounted.current)setHealth({provider:result.provider,protocol:result.protocol});
+  }catch(e){if(mounted.current)report(e);}finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
+ }
+ async function copyFailure(){
+  if(!failure)return;const report=JSON.stringify({client:'wilo-assistant-connection-v2',failure:failure.diagnostic(),...(health?{connection:health}:{})},null,2);
+  try{await navigator.clipboard.writeText(report);setCopied(true);}catch{download('wilo-assistant-diagnostic.json',report);}
  }
  function name(value:unknown,snapshot?:AssistantSnapshot){
   const item=value as {name?:string;title?:string;room?:string;courseId?:string;day?:number;start?:string;end?:string}|null;
@@ -130,8 +139,8 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    <form onSubmit={e=>{e.preventDefault();void send();}}>
     <details className="assistant-model-options"><summary><span className="assistant-option-icon" aria-hidden="true">◈</span>{ui.settings}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{t.localInfo}</p>{localReady?<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>:<button type="button" disabled={busy} onClick={()=>void activateLocal()}>{localLoading?`${t.localLoading} ${Math.round(progress*100)}%`:t.local}</button>}{preferLocal&&!localReady&&<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>}</details>
     <label>{t.input}<textarea ref={input} value={text} maxLength={6000} rows={2} placeholder={ui.placeholder} onChange={e=>setText(e.target.value)}/></label>
-    {error&&<p role="alert">{error}</p>}
-    <div className="assistant-actions"><button className="primary-button assistant-send" disabled={busy||!text.trim()}><svg viewBox="0 0 20 20" aria-hidden="true" fill="none"><path d="m10 15 0-10m-4 4 4-4 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>{busy?t.busy:t.send}</button><button type="button" onClick={()=>{setMessages([]);setError('');}} disabled={busy}>{t.clear}</button></div>
+    {error&&<p role="alert">{error}</p>}{failure&&<details className="assistant-privacy"><summary>{fw.details}</summary><p>{fw.stage[failure.stage]} · {failure.code}{failure.status?' · HTTP '+failure.status:''}</p>{failure.requestId&&<p dir="ltr">{failure.requestId}</p>}{failure.providerFailure&&<pre dir="ltr">{JSON.stringify(failure.providerFailure,null,2)}</pre>}<button type="button" disabled={busy} onClick={()=>void checkConnection()}>{fw.check}</button><button type="button" onClick={()=>void copyFailure()}>{copied?fw.copied:fw.copy}</button>{health&&<p role="status">{fw.ready} · {health.provider}</p>}</details>}
+    <div className="assistant-actions"><button className="primary-button assistant-send" disabled={busy||!text.trim()}><svg viewBox="0 0 20 20" aria-hidden="true" fill="none"><path d="m10 15 0-10m-4 4 4-4 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>{busy?t.busy:t.send}</button><button type="button" onClick={()=>{setMessages([]);setError('');setFailure(null);setHealth(null);}} disabled={busy}>{t.clear}</button></div>
     <details className="assistant-privacy"><summary>{ct.title}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{language==='ar'?'يمكنني تعديل البطاقات والأقسام والكورسات والمهام والجدول، وضبط المظهر واللغة والسكون والتنظيم وفتح الصفحات. الأذونات وكلمة المرور وحذف الحساب وإدارة أعضاء المجموعات تتطلب نماذجها الأصلية. يمكنك طلب عدة مهام معًا؛ لا يُعلن الحفظ قبل تأكيده.':language==='he'?'ניתן לערוך כרטיסים, מדורים, קורסים, משימות ומערכת שעות, לשנות מראה, שפה והעדפות ולפתוח עמודים. הרשאות, סיסמאות, מחיקת חשבון וניהול חברים מתבצעים בטפסים הקיימים. אפשר לבקש כמה משימות יחד.':'Edit cards, sections, courses, tasks and timetable; change appearance, language, sleep and workflow; open pages. Permissions, passwords, account deletion and group membership use their existing forms. You can request several tasks together.'}</p></details>
     <details className="assistant-privacy"><summary>{ui.privacy}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{preferLocal?t.localReady:t.privacy}</p></details>
    </form>

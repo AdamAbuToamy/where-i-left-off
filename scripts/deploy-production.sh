@@ -14,5 +14,6 @@ delete hosting.site
 hosting.target = 'production'
 fs.writeFileSync(filename, JSON.stringify(config, null, 2) + '\n')
 NODE
+node scripts/check-assistant-deployment.mjs
 VITE_USE_EMULATORS=false VITE_TEST_OFFLINE=false VITE_REQUIRE_APP_CHECK=true VITE_REQUIRE_FIREBASE_CONFIG=true npm run build
 "$CLI" deploy --only hosting:production,firestore:rules,firestore:indexes --project where-i-left-off-b5683

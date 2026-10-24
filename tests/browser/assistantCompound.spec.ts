@@ -6,6 +6,7 @@ test('compound Arabic requests use the cloud, repair malformed proposals, save r
  test.setTimeout(90000);
  const account=await prepareUniversityPilot(request,`compound-${Date.now()}@example.test`);
  await page.addInitScript(()=>localStorage.setItem('language','ar'));
+ await page.route('**/assistant-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-compound-test.workers.dev/assistant'})}));
  await page.route('**/push-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-compound-test.workers.dev/'})}));
  const courseMessage='اضف كورس اسمه محمد. وضعه في البرنامج ايام الاحد الساعة 00:00 حتى 1:00';
  const cardMessage='أضف بطاقة باسم عمار وضعها في الاسبوع يوم 25 الشهر\nأضف للملاحظات: مرحبا';

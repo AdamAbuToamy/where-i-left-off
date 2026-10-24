@@ -10,7 +10,7 @@ async function files(directory, prefix = '') {
   return output.sort()
 }
 // Local AI runtime is optional and large. Do not download it during every PWA install.
-const paths = (await files('dist')).filter(path=>!/^\/assets\/(?:localModel|web-llm|index-worker|lib-)/.test(path))
+const paths = (await files('dist')).filter(path=>path!=='/assistant-config.json'&&!/^\/assets\/(?:localModel|web-llm|index-worker|lib-)/.test(path))
 const hash = createHash('sha256')
 for (const path of paths) hash.update(await readFile(`dist${path}`))
 const version = hash.digest('hex').slice(0, 16)

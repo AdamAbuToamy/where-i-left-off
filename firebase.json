@@ -70,6 +70,15 @@
             "value": "no-store"
           }
         ]
+      },
+      {
+        "source": "/assistant-config.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store"
+          }
+        ]
       }
     ]
   }

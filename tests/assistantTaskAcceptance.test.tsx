@@ -41,6 +41,7 @@ it('persists injected provider proposals through the actual chat Apply button an
   }
   runtime.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'courses',action:'create',id:'new-course',values:{name:'Algorithms'}}]})});
   await run('انشئ كورس باسم Algorithms',data=>expect(data.study.courses[0].name).toBe('Algorithms'));
+  runtime.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'lessons',action:'create',id:'new-class',values:{courseId:(await repo.read()).data.study.courses[0].id,day:0,start:'17:00',end:'18:00',sessionType:'lecture',room:''}}]})});
   await run('اضف الكورس اللي عندي الى البرنامج يوم احد من الخمسة للستة مساء',data=>expect(data.study.lessons).toEqual([expect.objectContaining({day:0,start:'17:00',end:'18:00',courseId:data.study.courses[0].id})]));
   runtime.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'projects',action:'create',id:'new-card',scope:'personal',values:{name:'مراجعة الخوارزميات',nextStep:'حل تمرينين'}}]})});
   await run('أنشئ بطاقة باسم مراجعة الخوارزميات والخطوة القادمة حل تمرينين',data=>expect(data.scopes[0].projects[0]).toMatchObject({name:'مراجعة الخوارزميات',nextStep:'حل تمرينين'}));
