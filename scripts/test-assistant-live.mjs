@@ -9,26 +9,33 @@ import {acceptanceCases} from '../tests/fixtures/assistant/corpus.mjs';
 import {acceptanceSummary,providerStop} from './lib/assistantAcceptance.mjs';
 import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
 import {ASSISTANT_MODEL} from '../push-worker/src/assistant.mjs';
+import {GROQ_MODEL} from '../push-worker/src/assistantProvider.mjs';
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
-const args=process.argv.slice(2),limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):acceptanceCases.length;
-if(args.includes('--list')){console.log(JSON.stringify({requests:acceptanceCases.length,unique:new Set(acceptanceCases.map(c=>c.message)).size,languages:['ar','en','he'],model:ASSISTANT_MODEL,mode:'catalog-only; no inference'},null,2));process.exit(0);}
-if(!args.includes('--live')||!Number.isInteger(limit)||limit<1||limit>acceptanceCases.length)throw new Error('Use --live --limit=618 (or --list). Real inference consumes the existing Cloudflare allowance.');
-const fingerprint=createHash('sha256').update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
+const args=process.argv.slice(2),provider=args.find(a=>a.startsWith('--provider='))?.split('=')[1]||'cloudflare',model=provider==='groq'?GROQ_MODEL:ASSISTANT_MODEL,limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):acceptanceCases.length;
+if(args.includes('--list')){console.log(JSON.stringify({requests:acceptanceCases.length,unique:new Set(acceptanceCases.map(c=>c.message)).size,languages:['ar','en','he'],model,mode:'catalog-only; no inference'},null,2));process.exit(0);}
+if(!args.includes('--live')||!Number.isInteger(limit)||limit<1||limit>acceptanceCases.length)throw new Error('Use --live --limit=618 (or --list). Real inference consumes the selected provider allowance.');
+if(!['cloudflare','groq'].includes(provider))throw new Error('Unknown provider.');
+const fingerprint=createHash('sha256').update(provider).update(readFileSync('push-worker/src/assistantProvider.mjs')).update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
 const reportPath=resolve('assistant-acceptance-live-report.json');let old=args.includes('--resume')&&existsSync(reportPath)?JSON.parse(readFileSync(reportPath,'utf8')):null;
-if(old&&(old.model!==ASSISTANT_MODEL||old.fingerprint!==fingerprint)){writeFileSync(reportPath.replace('.json','.previous-'+Date.now()+'.json'),JSON.stringify(old,null,2)+'\n');old=null;console.log('Previous report archived; starting the updated suite.');}
-const report=old||{model:ASSISTANT_MODEL,fingerprint,kind:'live-provider-synthetic-data',startedAt:new Date().toISOString(),results:[]};
+if(old&&(old.model!==model||old.provider!==provider||old.fingerprint!==fingerprint)){writeFileSync(reportPath.replace('.json','.previous-'+Date.now()+'.json'),JSON.stringify(old,null,2)+'\n');old=null;console.log('Previous report archived; starting the updated suite.');}
+const report=old||{model,fingerprint,provider,kind:'live-provider-synthetic-data',startedAt:new Date().toISOString(),results:[]};
 const save=()=>{report.summary=acceptanceSummary(report.results,acceptanceCases.length);report.updatedAt=new Date().toISOString();writeFileSync(reportPath,JSON.stringify(report,null,2)+'\n');};
 const cancellation=new AbortController();process.once('SIGINT',()=>cancellation.abort());process.once('SIGTERM',()=>cancellation.abort());
 const folder=mkdtempSync(join(tmpdir(),'wilo-ai-live-')),token=randomUUID();let child,vite;
 try{
  const cli=resolve('push-worker/node_modules/wrangler/bin/wrangler.js');if(!existsSync(cli))throw new Error('Install push-worker dependencies first.');
+ if(provider==='groq'&&!process.env.GROQ_API_KEY?.trim())throw new Error('groq-key-required');
+ if(provider==='cloudflare'){
  const identity=spawnSync(process.execPath,[cli,'whoami'],{encoding:'utf8',env:{...process.env,WRANGLER_SEND_METRICS:'false'},timeout:15000});
  if(/not authenticated|wrangler login/i.test((identity.stdout||'')+(identity.stderr||'')))throw new Error('cloudflare-authentication-required');
  if(identity.status!==0)throw new Error('cloudflare-authentication-check-failed');
+ }
  const server=createNetServer();await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});const port=server.address().port;await new Promise(yes=>server.close(yes));
  const config=join(folder,'wrangler.json');
- writeFileSync(config,JSON.stringify({name:'wilo-local-ai-acceptance',main:resolve('tests/fixtures/assistant/live-worker.mjs'),compatibility_date:'2026-10-23',ai:{binding:'AI',remote:true},vars:{TEST_TOKEN:token}}));
- child=spawn(process.execPath,[cli,'dev','--config',config,'--ip','127.0.0.1','--port',String(port),'--show-interactive-dev-session=false'],{stdio:['ignore','pipe','pipe'],env:{...process.env,WRANGLER_SEND_METRICS:'false'}});
+ writeFileSync(config,JSON.stringify({name:'wilo-local-ai-acceptance',main:resolve('tests/fixtures/assistant/live-worker.mjs'),compatibility_date:'2026-10-23',...(provider==='cloudflare'?{ai:{binding:'AI',remote:true}}:{}),vars:{TEST_TOKEN:token,ASSISTANT_PROVIDER:provider}}));
+ const secrets=join(folder,'.dev.vars');if(provider==='groq')writeFileSync(secrets,'GROQ_API_KEY='+JSON.stringify(process.env.GROQ_API_KEY.trim())+'\n',{mode:0o600});
+ const childEnv={...process.env,WRANGLER_SEND_METRICS:'false'};delete childEnv.GROQ_API_KEY;
+ child=spawn(process.execPath,[cli,'dev','--config',config,'--ip','127.0.0.1','--port',String(port),'--show-interactive-dev-session=false'],{stdio:['ignore','pipe','pipe'],env:childEnv});
  let diagnostics='';for(const stream of [child.stdout,child.stderr])stream.on('data',d=>{diagnostics=(diagnostics+d).slice(-6000);});
  const origin=`http://127.0.0.1:${port}`,deadline=Date.now()+30000;
  while(true){
@@ -61,5 +68,5 @@ try{
  }
  save();if(report.summary.failed||report.summary.notRun)process.exitCode=2;
  console.log(JSON.stringify(report.summary));
-}catch(error){report.stopped=cancellation.signal.aborted?'interrupted':/^cloudflare-|^live-worker-/.test(error.message)?error.message:'local-harness-unavailable';save();console.error(report.stopped);process.exitCode=cancellation.signal.aborted?130:2;}
+}catch(error){report.stopped=cancellation.signal.aborted?'interrupted':/^cloudflare-|^live-worker-|^groq-key-required$/.test(error.message)?error.message:'local-harness-unavailable';save();console.error(report.stopped);process.exitCode=cancellation.signal.aborted?130:2;}
 finally{await vite?.close();child?.kill('SIGTERM');rmSync(folder,{recursive:true,force:true});}
