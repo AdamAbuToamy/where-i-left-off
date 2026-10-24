@@ -101,6 +101,7 @@ export class AssistantRepository {
  async undo(receipt:AssistantReceipt):Promise<void>{
   const snapshot=await this.read();
   for(const c of receipt.changes)if(!c.after&&!isStudy(c.target)?snapshot.raw.has(path(this.uid,c)):snapshot.raw.get(path(this.uid,c))?.mutationId!==receipt.mutations.get(path(this.uid,c)))throw new Error('assistant-conflict');
+  if(receipt.changes.some(c=>c.target==='projects'&&!c.after))throw new Error('assistant-undo-permanent');
   const reverse=receipt.changes.map(c=>({...c,before:c.after,after:c.before}));
   const study=structuredClone(snapshot.data.study);
   for(const c of reverse)if(isStudy(c.target)){
