@@ -43,6 +43,18 @@ const normalize=s=>s.replace(/\s+/g,' ').trim();
 export function readIntents(text,message){
  let value;try{value=JSON.parse(text);}catch{throw new Error('ai-intent-format');}
  if(!value||!Array.isArray(value.intents)||!value.intents.length||value.intents.length>50)throw new Error('ai-intent-format');
+ // Explicit assignment/exam words determine the task kind even if the model omits
+ // that optional field in its inventory. This is restricted to a uniquely indicated
+ // task creation, never a generic task or an ambiguous multi-task request.
+ const taskCreates=value.intents.filter(i=>i?.outcome==='proposed'&&i.requirements?.some(r=>r.target==='tasks'&&r.operation==='create'&&r.field==='title'));
+ if(taskCreates.length===1){
+  const intent=taskCreates[0];
+  const source=String(intent.source||'');
+  const specified=/(?:\bassignment\b|\bhomework\b|מטלה|שיעורי בית|وظيفة|واجب)/i.test(source)?'assignment'
+   :/(?:\bexam\b|\btest\b|בחינה|מבחן|امتحان|اختبار)/i.test(source)?'exam':null;
+  if(specified&&!intent.requirements.some(r=>r.target==='tasks'&&r.field==='kind'))
+   intent.requirements.push({target:'tasks',operation:'create',field:'kind',expected:specified,match:'equals'});
+ }
  // Normalize mechanically verifiable formatting defects without inventing user intent.
  // An empty subject cannot identify an action: derive it from a stable existing ID,
  // a uniquely named creation, or the inventory position.
@@ -124,6 +136,18 @@ function completeNewCardFields(proposal,intents){
 export function reconcileIntentProposal(proposal,intents,context={}){
  const issues=[];
  if(!proposal||typeof proposal.text!=='string'||proposal.text.length>12000||!Array.isArray(proposal.actions)||!Array.isArray(proposal.controls)||!Array.isArray(proposal.files)||proposal.actions.length>50||proposal.controls.length>20)return {proposal,issues:[{task:0,reason:'invalid-format',target:'',field:''}]};
+ // New task kind is a typed enum. Only correct a model default when the
+ // independently validated intent explicitly requires another kind and the
+ // title selects one unique new record.
+ for(const intent of intents){
+  const kinds=intent.requirements.filter(r=>r.target==='tasks'&&r.operation==='create'&&r.field==='kind'&&r.match==='equals');
+  const titles=intent.requirements.filter(r=>r.target==='tasks'&&r.operation==='create'&&r.field==='title'&&r.match==='equals');
+  if(kinds.length!==1||titles.length!==1)continue;
+  const candidates=proposal.actions.filter(a=>a?.target==='tasks'&&a.action==='create'&&a.values?.title===titles[0].expected);
+  if(candidates.length!==1)continue;
+  if(['task','assignment','exam',undefined].includes(candidates[0].values?.kind))
+   candidates[0].values.kind=kinds[0].expected;
+ }
  completeNewCardFields(proposal,intents);
  // The independent inventory can fill a missing field only on a uniquely identified record.
  // Existing records require their exact record ID and a nonconflicting expected value.
