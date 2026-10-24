@@ -20,6 +20,14 @@ function path(uid:string,c:Pick<Change,'target'|'scope'|'id'>){
  return isStudy(c.target)?`users/${uid}/studyRecords/${c.target}_${c.id}`:`${c.scope==='personal'?'users/'+uid:'groups/'+c.scope}/${c.target}/${c.id}`;
 }
 /** The caller can only use scopes discovered from this account's memberships. Firestore enforces roles. */
+/** Retry a single transient read once; never retry permissions or unconfirmed writes. */
+export async function reliableAssistantRead<T>(operation:()=>Promise<T>,pause:(ms:number)=>Promise<void>=(ms)=>new Promise(resolve=>setTimeout(resolve,ms))):Promise<T>{
+ try{return await operation();}catch(error){
+  const code=String((error as {code?:string})?.code||'');
+  if(!['unavailable','deadline-exceeded','resource-exhausted','firestore/unavailable','firestore/deadline-exceeded'].includes(code))throw error;
+  await pause(250);return operation();
+ }
+}
 export class AssistantRepository {
  private uid:string;
  constructor(uid:string){this.uid=uid;}
@@ -27,7 +35,7 @@ export class AssistantRepository {
  private studyStore(){return new UniversityStore(this.uid,db!.app.options.projectId||'local');}
  async read():Promise<AssistantSnapshot>{
   this.check();const data=blankAssistantData(),raw=new Map<string,DocumentData>();
-  const [study,memberships]=await Promise.all([getDocsFromServer(collection(db!,'users',this.uid,'studyRecords')),getDocsFromServer(collection(db!,'users',this.uid,'groupMemberships'))]);
+  const [study,memberships]=await Promise.all([reliableAssistantRead(()=>getDocsFromServer(collection(db!,'users',this.uid,'studyRecords'))),reliableAssistantRead(()=>getDocsFromServer(collection(db!,'users',this.uid,'groupMemberships')))]);
   this.check();
   for(const document of study.docs){const r=document.data();raw.set(document.ref.path,r);if(!r.deleted&&['courses','tasks','lessons'].includes(r.kind)){
    const item=JSON.parse(r.payload);if(item.id!==r.id)throw new Error('assistant-invalid');
@@ -39,9 +47,9 @@ export class AssistantRepository {
   if(journal?.pending?.length){pending=true;data.study=this.studyStore().load();}
   await Promise.all(data.scopes.map(async scope=>{
    const base=scope.id==='personal'?`users/${this.uid}`:`groups/${scope.id}`;
-   const [projects,sections]=await Promise.all([getDocsFromServer(collection(db!,base,'projects')),getDocsFromServer(collection(db!,base,'sections'))]);
+   const [projects,sections]=await Promise.all([reliableAssistantRead(()=>getDocsFromServer(collection(db!,base,'projects'))),reliableAssistantRead(()=>getDocsFromServer(collection(db!,base,'sections')))]);
    this.check();
-   if(scope.id!=='personal'){const members=await getDocsFromServer(collection(db!,base,'members'));this.check();scope.members=members.docs.map(m=>({uid:m.id,name:String(m.data().name||m.id),role:String(m.data().role||'member')}));}
+   if(scope.id!=='personal'){const members=await reliableAssistantRead(()=>getDocsFromServer(collection(db!,base,'members')));this.check();scope.members=members.docs.map(m=>({uid:m.id,name:String(m.data().name||m.id),role:String(m.data().role||'member')}));}
    scope.projects=projects.docs.map(d=>{raw.set(d.ref.path,d.data());return normalizedProject(d.id,d.data());});
    scope.sections=sections.docs.map(d=>{raw.set(d.ref.path,d.data());return normalizedSection(d.id,d.data());});
    const local=await new IndexedDbWorkspaceStore(`${db!.app.options.projectId}/${this.uid}${scope.id==='personal'?'':`/group/${scope.id}`}`).read();
