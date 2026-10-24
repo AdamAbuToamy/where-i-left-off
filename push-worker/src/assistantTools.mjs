@@ -58,6 +58,18 @@ function canonicalToolFields(plan){
 export function readWorkspaceToolProposal(text){
  let plan;try{plan=JSON.parse(text);}catch{throw new Error('ai-incomplete-proposal');}
  canonicalToolFields(plan);
+ // A create's id is a batch-local alias (not a database ID). Some providers
+ // emit an empty string for new records. Supply a unique valid alias without
+ // changing existing IDs, operation types, or any user-supplied record values.
+ if(Array.isArray(plan?.actions)){
+  const used=new Set(plan.actions.map(a=>a?.id).filter(id=>typeof id==='string'&&id.length>0));
+  plan.actions.forEach((action,index)=>{
+   if(action?.action!=='create'||action.id!=='')return;
+   let alias='new-'+action.target+'-'+(index+1),serial=1;
+   while(used.has(alias))alias='new-'+action.target+'-'+(index+1)+'-'+(++serial);
+   action.id=alias;used.add(alias);
+  });
+ }
  if(!valid(plan,TOOL_SCHEMA))throw new Error('ai-incomplete-proposal');
  // Mutating effects are always proposals; their status is derived from validated references, not model prose.
  for(const task of plan.tasks)if(task.outcome==='answer'&&(task.actionIndexes.length||task.controlIndexes.some(i=>plan.controls[i]&&plan.controls[i].kind!=='navigate')))task.outcome='proposed';
