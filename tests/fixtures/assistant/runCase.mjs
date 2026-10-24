@@ -10,7 +10,7 @@ export async function runAcceptanceCase(testCase,provider){
   const inventory=input.response_format===INTENT_FORMAT,prior=trace.filter(t=>inventory?t.stage.startsWith('inventory'):!t.stage.startsWith('inventory')).length;
   const stage=input.tools?'tool-plan':inventory?(prior?'inventory-repair':'inventory'):(prior?'repair':'proposal'),began=Date.now();
   let result;try{result=await provider.run(input,options);}catch(error){trace.push({stage,model:provider.model,ms:Date.now()-began,error:assistantProviderError(error),providerFailure:safeProviderFailure(error)});throw error;}
-  trace.push({stage,model:provider.model,ms:Date.now()-began,text:assistantResponseText(result)});return result;
+  trace.push({stage,model:provider.model,ms:Date.now()-began,text:assistantResponseText(result),...(result.contextRequest?{reads:[{callId:result.toolCall?.id,request:result.contextRequest}]}:result.contextRequests?{reads:result.contextRequests.map(r=>({callId:r.toolCall?.id,request:r.contextRequest}))}:{})});return result;
  }};
  try{
   const result=await assistant(runtime,'synthetic-user',{mode:'workspace',language:testCase.language,message:testCase.message,history:[],context:JSON.stringify(acceptanceContext(testCase.id))},traced);

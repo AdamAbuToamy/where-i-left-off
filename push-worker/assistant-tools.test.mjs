@@ -14,7 +14,7 @@ test('compact plan and read tools preserve the original request without independ
 });
 for(const [name,mutate] of [
  ['unknown field',p=>p.actions[0].values.eval='bad'],['invalid value type',p=>p.actions[0].values.name=1],['invalid day',p=>p.actions=[{target:'lessons',action:'create',id:'new',values:{day:9}}]],
- ['arbitrary path',p=>p.actions[0].target='users'],['permanent card deletion',p=>p.actions[0].action='delete'],['unreferenced action',p=>p.tasks=[]],['invalid index',p=>p.tasks[0].actionIndexes=[1]],['false answer effect',p=>p.tasks[0].outcome='answer'],['empty proposed task',p=>p.tasks[0].actionIndexes=[]],
+ ['arbitrary path',p=>p.actions[0].target='users'],['permanent card deletion',p=>p.actions[0].action='delete'],['unreferenced action',p=>p.tasks=[]],['invalid index',p=>p.tasks[0].actionIndexes=[1]],['unresolved task cannot carry effects',p=>p.tasks[0].outcome='needs-input'],['empty proposed task',p=>p.tasks[0].actionIndexes=[]],
 ])test(`tool plans reject ${name}`,()=>{const plan=good();mutate(plan);assert.throws(()=>readWorkspaceToolProposal(JSON.stringify(plan)),/ai-incomplete-proposal/);});
 test('only the named function is accepted; unknown calls or multiple calls never execute',()=>{
  const call={type:'function',function:{name:'propose_workspace_actions',arguments:JSON.stringify(good())}};
@@ -30,4 +30,13 @@ test('initial input carries counts and preferences; account content remains avai
  const data={capabilities:[{id:'metadata-only'}],study:{courses:[{id:'course',notes:'Keep every note',capabilities:'user field'}]},controls:{language:'ar'},timezone:'Asia/Jerusalem'};
  const input=workspaceToolInput({message:'Summarize',language:'en',context:JSON.stringify(data)},[]),content=input.messages.at(-1).content;
  assert.equal(content.includes('metadata-only'),false);assert.equal(content.includes('Keep every note'),false);assert.equal(content.includes('user field'),false);assert.ok(content.includes('Asia/Jerusalem'));assert.ok(content.includes('language'));
+});
+
+test('mutation task status is derived as a proposal even when the model mistakenly labels it as an answer',()=>{
+ const plan=good();plan.tasks[0].outcome='answer';assert.equal(JSON.parse(readWorkspaceToolProposal(JSON.stringify(plan))).tasks[0].outcome,'proposed');
+});
+test('tool scope enums use real account scope IDs and never the university page name',()=>{
+ const personal=workspaceToolInput({language:'ar',message:'Create course',context:'{}'},[]);assert.deepEqual(personal.tools[0].function.parameters.properties.actions.items.properties.scope.enum,['personal']);
+ const group=workspaceToolInput({language:'en',message:'Edit group card',context:JSON.stringify({scopes:[{id:'personal'},{id:'my-group'}]})},[]);
+ assert.deepEqual(group.tools[0].function.parameters.properties.actions.items.properties.scope.enum,['personal','my-group']);assert.deepEqual(group.tools[1].function.parameters.properties.requests.items.properties.scope.enum,['personal','my-group']);assert.deepEqual(WORKSPACE_TOOL.function.parameters.properties.actions.items.properties.scope.enum,['personal']);
 });

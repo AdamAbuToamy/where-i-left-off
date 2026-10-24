@@ -104,17 +104,41 @@ jobs:
           const r=spawnSync(process.execPath,args,{stdio:'inherit',env:process.env});
           process.exitCode=r.status??1;
           JS
+      - name: Select successful live replies for persistence even after a later case fails
+        if: always() && steps.readiness.outputs.ready == 'true'
+        id: replay
+        run: |
+          node --input-type=module <<'JS'
+          import {existsSync,readFileSync,appendFileSync} from 'node:fs';
+          const path='assistant-acceptance-live-report.json';
+          const report=existsSync(path)?JSON.parse(readFileSync(path,'utf8')):null;
+          const count=report?.kind==='live-provider-synthetic-data'?report.results.filter(r=>r.status==='passed'&&typeof r.reply==='string').length:0;
+          appendFileSync(process.env.GITHUB_OUTPUT,'ready='+(count>0)+'\n');
+          JS
       - name: Prepare Java for local Firestore only
-        if: steps.readiness.outputs.ready == 'true'
+        if: always() && steps.replay.outputs.ready == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
       - name: Apply the actual model replies to Firestore emulator and reread
-        if: steps.readiness.outputs.ready == 'true'
+        if: always() && steps.replay.outputs.ready == 'true'
+        id: persistence
         env:
           ASSISTANT_LIVE_REPORT: assistant-acceptance-live-report.json
         run: npx firebase emulators:exec --project demo-where-i-left-off --only firestore "env TEST_SUITE=security npx vitest run tests/assistantCorpusSecurity.test.ts"
+      - name: Record the independently verified persistence stage
+        if: always() && steps.replay.outputs.ready == 'true'
+        env:
+          PERSISTENCE_OUTCOME: ${{ steps.persistence.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const path='assistant-acceptance-live-report.json',report=JSON.parse(readFileSync(path,'utf8'));
+          const passed=process.env.PERSISTENCE_OUTCOME==='success';
+          report.persistence={status:passed?'passed':'failed',caseIds:passed?report.results.filter(r=>r.status==='passed').map(r=>r.id):[],productionWrites:0,firestoreMutationsOnly:true};
+          writeFileSync(path,JSON.stringify(report,null,2)+'\n');
+          JS
       - name: Keep the result including blocked or partial runs
         if: always()
         uses: actions/upload-artifact@v4
