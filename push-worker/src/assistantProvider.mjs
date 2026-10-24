@@ -30,6 +30,7 @@ class CompatibleInference {
    let failure;const raw=await response.text().catch(()=>'');
    try{const payload=JSON.parse(raw);failure=payload?.error??payload?.[0]?.error??payload;if(typeof failure==='string')failure={message:failure};}catch{/* Preserve the HTTP status for a non-JSON response. */}
    if(typeof this.onSyntheticDiagnostic==='function')this.onSyntheticDiagnostic({status:response.status,body:raw});
+   if(attempt===0&&[502,503,504].includes(response.status)){await waitForRetry(0.75,signal);continue;}
    const rate=this.name==='groq'&&[429,413].includes(response.status)?groqRateLimit(failure?.message,response.headers.get('retry-after')):undefined;
    if(response.status===429&&attempt===0&&rate&&minuteRetry(rate)){await waitForRetry(rate.retryAfterSeconds,signal);continue;}
    const error=new Error(response.status===413||rate?.oversized?'ai-provider-context':'provider-request-failed');error.providerRate=rate;

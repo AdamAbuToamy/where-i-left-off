@@ -1,1 +1,2 @@
 export const ASSISTANT_DIALOGUE_POLICY:string;
+export const LOCAL_ASSISTANT_DIALOGUE_POLICY:string;

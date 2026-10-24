@@ -66,7 +66,7 @@ jobs:
           if(!ready){
             writeFileSync('assistant-acceptance-live-report.json',JSON.stringify({status:'not-run',reason,provider,inferenceRequests:0,productionWrites:0},null,2));
             appendFileSync(process.env.GITHUB_STEP_SUMMARY,'No live inference ran. Reason: '+reason+'. A green readiness job is not an AI test pass.\n');
-            if(process.env.EVENT_NAME==='workflow_dispatch')process.exitCode=1;
+            if(process.env.EVENT_NAME==='workflow_dispatch'||process.env.FREE_CANARY==='true')process.exitCode=1;
           }
           JS
       - name: Install the synthetic test harness

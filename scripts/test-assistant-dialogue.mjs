@@ -3,6 +3,7 @@ import {writeFileSync} from 'node:fs';
 import {createServer} from 'vite';
 import {assistant} from '../push-worker/src/assistant.mjs';
 import {assistantProvider} from '../push-worker/src/assistantProvider.mjs';
+import {safeProviderFailure} from '../push-worker/src/assistantErrors.mjs';
 import {acceptanceContext} from '../tests/fixtures/assistant/corpus.mjs';
 const report={kind:'live-dialogue-synthetic-data',provider:'gemini',productionWrites:0,persistenceTested:false,inferenceCalls:0,results:[]};
 const path='assistant-acceptance-live-report.json';const save=()=>writeFileSync(path,JSON.stringify(report,null,2));
@@ -36,7 +37,7 @@ try{
    const reply=parseAssistantReply(output.text),changes=planAssistantProposal(context,reply.actions);verify(reply,changes);
    history.push({role:'user',text:message},{role:'assistant',text:reply.text,reply,changes});
    report.results.push({id,status:'passed',elapsedMs:Date.now()-start});console.log(id+': passed ('+(Date.now()-start)+'ms)');save();
-  }catch(error){report.results.push({id,status:'failed',reason:String(error.message).slice(0,300),...(output?{syntheticReply:output.text}:{}),elapsedMs:Date.now()-start});save();throw error;}
+  }catch(error){report.results.push({id,status:'failed',reason:String(error.message).slice(0,300),providerFailure:safeProviderFailure(error.cause||error),...(output?{syntheticReply:output.text}:{}),elapsedMs:Date.now()-start});save();throw error;}
  }}
  console.log(JSON.stringify({passed:report.results.length,inferenceCalls:report.inferenceCalls,productionWrites:0}));
 }catch(error){save();console.error('dialogue-canary-failed: '+String(error.message).slice(0,300));process.exitCode=1;}

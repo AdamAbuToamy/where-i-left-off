@@ -37,3 +37,12 @@ test('Gemini never falls back to Groq or Cloudflare, and requires its own server
   await assert.rejects(assistantProvider({ASSISTANT_PROVIDER:'gemini',GEMINI_API_KEY:'test-key',GROQ_API_KEY:'other-key',AI:{}}).run(input),e=>assistantProviderError(e)==='ai-provider-limit');
  });
 });
+test('retries a temporary Gemini 503 once, without retrying indefinitely or changing provider',async()=>{
+ let calls=0;
+ await withFetch(async()=>++calls===1?Response.json({error:{code:503}},{status:503}):Response.json({choices:[{finish_reason:'stop',message:{content:'{"text":"Name?"}'}}]}),async()=>{
+  const p=assistantProvider({ASSISTANT_PROVIDER:'gemini',GEMINI_API_KEY:'test-key'});assert.equal((await p.run(input)).response,'{"text":"Name?"}');assert.equal(calls,2);
+ });
+ calls=0;await withFetch(async()=>{calls++;return Response.json({error:{code:503}},{status:503});},async()=>{
+  await assert.rejects(assistantProvider({ASSISTANT_PROVIDER:'gemini',GEMINI_API_KEY:'test-key'}).run(input),e=>e.status===503);assert.equal(calls,2);
+ });
+});
