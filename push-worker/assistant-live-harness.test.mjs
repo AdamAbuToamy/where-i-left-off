@@ -12,7 +12,7 @@ test('provider diagnostics allow only fixed labels, never raw upstream messages,
 });
 test('shared case runner records the failing inference stage and safe HTTP diagnosis',async()=>{
  const result=await runAcceptanceCase(acceptanceCases[0],{name:'groq',model:'test',run:async()=>{const error=new Error('private payload');error.status=400;error.providerCode='json_validate_failed';throw error;}});
- assert.equal(result.error,'ai-unavailable-or-quota');assert.equal(result.trace[0].stage,'inventory');assert.equal(result.trace[0].providerFailure.status,400);assert.equal(result.trace[0].providerFailure.code,'json_validate_failed');assert.equal(JSON.stringify(result).includes('private payload'),false);
+ assert.equal(result.error,'ai-provider-request');assert.equal(result.trace[0].stage,'inventory');assert.equal(result.trace[0].providerFailure.status,400);assert.equal(result.trace[0].providerFailure.code,'json_validate_failed');assert.equal(JSON.stringify(result).includes('private payload'),false);
 });
 for(const provider of ['groq','gemini'])test(`${provider} CLI tests three compound cases without Wrangler or a secret file`,()=>{
  const root=fileURLToPath(new URL('../',import.meta.url)),folder=mkdtempSync(join(tmpdir(),'wilo-direct-cli-'));
@@ -29,6 +29,9 @@ for(const provider of ['groq','gemini'])test(`${provider} CLI tests three compou
   assert.equal(report.summary.passed,3,result.stdout+result.stderr);assert.equal(report.selection.summary.notRun,0);assert.equal(report.summary.notRun,acceptanceCases.length-3);assert.equal(report.provider,provider);assert.equal(report.summary.failed,0);assert.equal(report.summary.blocked,0);
   assert.equal(report.results.every(r=>r.trace.length===1&&r.trace[0].stage==='tool-plan'),true);assert.equal((result.stdout+result.stderr+JSON.stringify(report)).includes('test-only-secret'),false);assert.equal(existsSync(join(folder,'push-worker/node_modules/wrangler')),false);
   if(provider==='gemini'){
+   const broken=join(folder,'broken-http.mjs');writeFileSync(broken,`import './mock-http.mjs';const real=globalThis.fetch;globalThis.fetch=async(...args)=>{const r=await real(...args),body=await r.json(),f=body.choices[0].message.tool_calls[0].function,plan=JSON.parse(f.arguments);plan.actions[0].values.description='WRONG NOTE';f.arguments=JSON.stringify(plan);return Response.json(body);};`);
+   const stopped=spawnSync(process.execPath,['--import',broken,join(folder,'scripts/test-assistant-live.mjs'),'--live','--provider=gemini','--case=compound-card-ar','--case=compound-card-en','--case=compound-card-he','--stop-on-failure'],{cwd:folder,encoding:'utf8',timeout:10000,env:{...process.env,GEMINI_API_KEY:'test-only-secret'}});
+   assert.equal(stopped.status,2);const failure=JSON.parse(readFileSync(join(folder,'assistant-acceptance-live-report.json'),'utf8'));assert.equal(failure.stopped,'case-failed');assert.equal(failure.results.length,1);assert.equal(failure.results[0].status,'failed');
    const missing=spawnSync(process.execPath,[join(folder,'scripts/test-assistant-live.mjs'),'--live','--provider=gemini','--case=compound-card-ar'],{cwd:folder,encoding:'utf8',timeout:10000,env:{...process.env,GEMINI_API_KEY:''}});
    assert.equal(missing.status,2);const blocked=JSON.parse(readFileSync(join(folder,'assistant-acceptance-live-report.json'),'utf8'));assert.equal(blocked.stopped,'gemini-key-required');assert.equal(blocked.results.length,0);assert.equal((missing.stdout+missing.stderr).includes('test-only-secret'),false);
   }
