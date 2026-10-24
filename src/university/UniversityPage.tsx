@@ -346,7 +346,7 @@ function Workspace({ user }: {
                   </p>
                   <button className="secondary-button" onClick={() => setBatchOpen(true)}>لصق قائمة كورسات</button>
                 </div>)}
-              {state.courses.map((c) => (<article className="study-course" key={c.id} style={{ borderInlineStartColor: courseColor(c.id) }}>
+              {state.courses.map((c) => (<article data-study-course={c.id} className="study-course" key={c.id} style={{ borderInlineStartColor: courseColor(c.id) }}>
                   <button className="study-course-name" dir="auto" onClick={() => setFilter(filter === c.id ? "" : c.id)} aria-pressed={filter === c.id}>
                     {c.name}
                   </button>
@@ -382,7 +382,7 @@ function Workspace({ user }: {
                   <button className="primary-button" disabled={!state.courses.length} onClick={newTask}>إضافة أول مهمة</button>
                   {!state.courses.length && <small>أضف كورسًا أولًا لربط المهمة به.</small>}
                 </div>)}
-              {visible.map((t) => (<article key={t.id} className={`study-task ${t.done ? "is-done" : ""}`}>
+              {visible.map((t) => (<article data-study-task={t.id} key={t.id} className={`study-task ${t.done ? "is-done" : ""}`}>
                   <div className="study-task-top">
                     <label>
                       <input type="checkbox" checked={t.done} disabled={busy} onChange={(e) => void run(() => saveTask({ ...t, done: e.target.checked }))}/>

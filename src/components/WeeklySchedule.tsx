@@ -33,7 +33,7 @@ export default function WeeklySchedule({ projects, language, weekOf }: Props) {
     <div className="week-grid">
       {week.map(day => <section className="week-day" key={day.key}>
         <h3><span>{day.label}</span><time dateTime={day.key}>{day.date.toLocaleDateString(language === 'ar' ? 'ar' : language === 'he' ? 'he' : 'en', { day: 'numeric', month: 'numeric' })}</time></h3>
-        {dated.filter(project => project.dueDate === day.key).map(project => <article className="week-item" key={project.id}>
+        {dated.filter(project => project.dueDate === day.key).map(project => <article data-project={project.id} className="week-item" key={project.id}>
           <strong dir="auto">{project.name}</strong>
           {project.nextStep && <p dir="auto">{project.nextStep}</p>}
           {project.projectUrl && <a href={project.projectUrl} target="_blank" rel="noopener noreferrer">↗ {t.projectUrl}</a>}

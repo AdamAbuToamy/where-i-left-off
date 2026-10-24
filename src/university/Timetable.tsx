@@ -20,7 +20,7 @@ export default function Timetable({lessons,courses,courseFilter,conflicts,langua
      {layoutTimetableDay(lessons.filter(l=>l.day===index&&(!courseFilter||l.courseId===courseFilter)),bounds.start).map(({lesson,top,height,lane,lanes})=>{
       const course=names.get(lesson.courseId)||'',type=t.types[lesson.sessionType||'lecture'];
       const label=[course,day,lesson.start+'–'+lesson.end,type,lesson.room,lesson.notes].filter(Boolean).join(' · ');
-      return <button type="button" key={lesson.id} className={`study-lesson study-hour-lesson${conflicts.has(lesson.id)?' has-conflict':''}${height<TIMETABLE_HOUR_HEIGHT?' is-short':''}`} aria-label={label} title={label} style={{top:top+2,height:Math.max(1,height-4),insetInlineStart:`calc(${lane*100/lanes}% + 3px)`,width:`calc(${100/lanes}% - 6px)`,borderColor:courseColor(lesson.courseId)}} onClick={()=>onEdit(lesson)}>
+      return <button data-study-lesson={lesson.id} type="button" key={lesson.id} className={`study-lesson study-hour-lesson${conflicts.has(lesson.id)?' has-conflict':''}${height<TIMETABLE_HOUR_HEIGHT?' is-short':''}`} aria-label={label} title={label} style={{top:top+2,height:Math.max(1,height-4),insetInlineStart:`calc(${lane*100/lanes}% + 3px)`,width:`calc(${100/lanes}% - 6px)`,borderColor:courseColor(lesson.courseId)}} onClick={()=>onEdit(lesson)}>
        <time dir="ltr">{lesson.start} — {lesson.end}</time><strong dir="auto" data-study-content="true">{course}</strong><small>{type}</small>{lesson.room&&<small dir="auto" data-study-content="true">{lesson.room}</small>}{lesson.notes&&<small dir="auto" data-study-content="true">{lesson.notes}</small>}
       </button>;
      })}

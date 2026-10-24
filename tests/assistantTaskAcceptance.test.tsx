@@ -69,7 +69,7 @@ it('imports all fourteen real requested classes through Apply, remounts chat and
   await mount();await ask();expect(element.querySelector('[role=alert]')).toBeNull();expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(14);
   expect((await repo.read()).data.study.lessons.filter(l=>[...ids.values()].includes(l.courseId))).toHaveLength(0);
   const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='تطبيق التغييرات')!;await act(async()=>button.click());await idle();
-  expect(element.querySelector('[role=alert]')).toBeNull();expect(element.textContent).toContain('الحصص التي أُضيفت وحُفظت: 14');
+  expect(element.querySelector('[role=alert]')).toBeNull();expect(element.querySelector('.assistant-saved summary')?.textContent).toBe('عرض التغييرات (14)');
   await act(async()=>root.unmount());root=createRoot(element);await mount();
   const saved=await new AssistantRepository('acceptance').read();
   const classes=saved.data.study.lessons.filter(l=>receipt.changes.some(c=>c.id===l.courseId));

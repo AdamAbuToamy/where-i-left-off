@@ -74,7 +74,7 @@ it('reviews ten mixed site controls, executes them, and reports verified results
  api.call.mockResolvedValue({text:providerReply({text:'All changes saved!',actions:[],files:[],controls})});await open();await input('Change my theme ten times as specified');await submit();
  expect(document.documentElement.dataset.theme).not.toBe('olive');expect(element.textContent).not.toContain('All changes saved!');
  const button=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;await act(async()=>button.click());
- expect(api.apply).not.toHaveBeenCalled();expect(localStorage.getItem('site-theme:alice')).toBe('olive');expect(element.textContent).toContain('10 / 10');
+ expect(api.apply).not.toHaveBeenCalled();expect(localStorage.getItem('site-theme:alice')).toBe('olive');expect(element.textContent).toContain('Changes applied to the site.');expect(element.textContent).not.toContain('10 / 10');
 });
 it('uses cloud AI for non-identical course names without downloading a local model, then previews actual IDs',async()=>{
  const {timetableData,weeklyRequest,expectedSessions}=await import('./fixtures/weeklyTimetable');
@@ -99,4 +99,12 @@ it('keeps the server failure stage visible and runs a no-inference connection ch
  await open();await input('Add a card');await submit();expect(element.querySelector('[role=alert]')?.textContent).toContain('Firebase Auth lookup');expect(element.textContent).toContain('HTTP 503');
  api.call.mockResolvedValueOnce({status:'ready',provider:'groq',protocol:'wilo-assistant-2026-10-v2',inferenceTested:false});
  const check=[...element.querySelectorAll('button')].find(b=>b.textContent==='Check assistant connection')!;await act(async()=>check.click());expect(api.call).toHaveBeenLastCalledWith({mode:'health'},20000);expect(element.textContent).toContain('This check used no AI request');expect(api.apply).not.toHaveBeenCalled();
+});
+
+it('keeps ordinary replies free of role labels, task ledgers and no-change notices; closing restores the workspace',async()=>{
+ api.call.mockResolvedValue({text:JSON.stringify({text:'Happy to help!',actions:[],controls:[],files:[],tasks:[{title:'Reply to kindness',outcome:'answer',actionIndexes:[],controlIndexes:[],detail:'Respond to the greeting'}]})});
+ await open();expect(document.body.classList.contains('assistant-docked')).toBe(true);
+ await input('Thank you!');await submit();
+ expect(element.querySelector('.assistant-message-author')).toBeNull();expect(element.querySelector('.assistant-message.is-assistant')?.textContent).toBe('Happy to help!');
+ const close=element.querySelector<HTMLButtonElement>('.assistant-close')!;await act(async()=>close.click());expect(document.body.classList.contains('assistant-docked')).toBe(false);
 });

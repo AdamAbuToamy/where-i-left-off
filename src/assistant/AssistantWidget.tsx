@@ -9,7 +9,7 @@ import { auth } from '../lib/firebase';
 import { assistantRequest } from './api';
 import type { LocalAssistantModel } from './localModel';
 import { assistantValidationHint } from './validationHint';
-import { proposalStatus, confirmedChangeCount } from './replyStatus';
+import { proposalStatus } from './replyStatus';
 import { parseAssistantReply, planAssistantProposal, resolveProposalControls } from './actions';
 import type { AssistantReply, Change } from './actions';
 import { AssistantRepository, assistantContext } from './assistantRepository';
@@ -20,19 +20,22 @@ import type { AssistantPhase } from './AssistantWaiting';
 import { AssistantControls } from './controls';
 import type { ControlPlan,ControlResult } from './controls';
 import { controlWords } from './controlWords';
-import { taskState,taskStateWords } from './taskLedger';
+import { AssistantChangeReveal } from './changeReveal';
 import { assistantCapabilities } from './capabilities';
 import { assistantPresentation } from './presentationWords';
 import './assistant.css';
 type Message={role:'user'|'assistant';text:string;reply?:AssistantReply;changes?:Change[];snapshot?:AssistantSnapshot;receipt?:AssistantReceipt;controlPlans?:ControlPlan[];controlResults?:ControlResult[];resolved?:boolean;undone?:boolean};
 function download(name:string,content:string){const url=URL.createObjectURL(new Blob(['\uFEFF'+content],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 export default function AssistantWidget({user,language}:{user:User;language:Language}){
- const [open,setOpen]=useState(false),[messages,setMessages]=useState<Message[]>([]),[text,setText]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [open,setOpen]=useState(false),[present,setPresent]=useState(false),[messages,setMessages]=useState<Message[]>([]),[text,setText]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [failure,setFailure]=useState<AssistantFailure|null>(null),[health,setHealth]=useState<{provider:string;protocol:string}|null>(null),[copied,setCopied]=useState(false);
  const fw=failureWords[language];
  const button=useRef<HTMLButtonElement>(null),input=useRef<HTMLTextAreaElement>(null),mounted=useRef(true),lock=useRef(false);
  const [repository]=useState(()=>new AssistantRepository(user.uid));
  const [controls]=useState(()=>new AssistantControls(user.uid));
+ const [reveal]=useState(()=>new AssistantChangeReveal());
+ useEffect(()=>()=>reveal.dispose(),[reveal]);
+ useEffect(()=>{document.body.classList.toggle('assistant-docked',open);const timer=!open?setTimeout(()=>setPresent(false),240):undefined;return()=>{clearTimeout(timer);document.body.classList.remove('assistant-docked');};},[open]);
  const ct=controlWords[language];
  const t=assistantWords[language],ui=assistantPresentation[language];
  const [phase,setPhase]=useState<AssistantPhase|null>(null);
@@ -49,8 +52,9 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   finally{lock.current=false;if(mounted.current){setLocalLoading(false);setBusy(false);setPhase(null);}}
  }
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
- useEffect(()=>{if(open)input.current?.focus();},[open]);
+ useEffect(()=>{if(open&&present)input.current?.focus();else if(!open&&present)button.current?.focus();},[open,present]);
  function useCloud(){local.current?.dispose();local.current=null;setLocalReady(false);setPreferLocal(false);try{localStorage.removeItem('wilo-assistant-local');}catch{/* Optional preference. */}}
+ function openPanel(){setPresent(true);setOpen(true);}
  function close(){setOpen(false);button.current?.focus();}
  function report(e:unknown,stage:'request'|'save'='request'){const failed=AssistantFailure.from(e,stage);setFailure(failed);setCopied(false);e=failed;const code=(e as {code?:string}).code?.replace(/^firestore\//,'')||(e as Error).message;setError(failed.stage==='read'?failureMessage(failed,language,fw.stage.read+': '+t.unavailable):code==='permission-denied'?t.permission:code==='assistant-confirmation'?t.confirmation:code==='ai-rate-limit'?t.rate:code==='ai-provider-context'?t.providerContext:code==='ai-provider-access'?t.providerAccess:code==='ai-provider-limit'?t.providerLimit:code==='assistant-local-unsupported'?t.localUnsupported:code==='assistant-local-context'?t.localContext:/^assistant-local-/.test(code)?t.localLoadError:code==='ai-incomplete-proposal'||code==='ai-intent-format'?[t.incomplete,coverageHint(e,language)].filter(Boolean).join(' '):code==='ai-not-configured'?t.setup:/ai-(?:user|daily)-limit/.test(code)?t.limit:code==='assistant-format'||code==='ai-response-too-large'?t.format:code==='assistant-invalid'?[t.invalid,assistantValidationHint(e,language)].filter(Boolean).join(' '):code==='assistant-conflict'?t.conflict:code==='assistant-pending'?t.pending:code==='assistant-linked-reminder'?t.linked:code==='assistant-too-large'?t.large:failureMessage(failed,language,t.unavailable));}
  async function send(){
@@ -78,7 +82,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    }).prepare(request,validate,()=>{if(mounted.current)setPhase('repairing');});
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
    const {reply,controlPlans,changes}=prepared;
-   setMessages(old=>[...old,{role:'assistant',text:controlPlans.length?ct.review:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
+   setMessages(old=>[...old,{role:'assistant',text:changes.length||controlPlans.length?ui.reviewReady:proposalStatus(reply.text,changes,language),reply,changes,snapshot,controlPlans}]);
   }catch(e){if(mounted.current){report(e);setText(current=>current||message);}}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
  }
@@ -90,10 +94,13 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    if(undo)await repository.undo(m.receipt!);
    else {if(m.changes?.length)receipt=await repository.apply(m.snapshot!,m.changes);controlResults=await controls.apply(m.controlPlans||[]);}
    if(!mounted.current||auth?.currentUser?.uid!==user.uid)return;
-   setMessages(old=>old.map((value,i)=>i===index?{...value,resolved:true,undone:undo,receipt,controlResults:undo?value.controlResults:controlResults,text:undo?t.undone+(value.controlPlans?.length?' '+ct.dataOnlyUndo:''):(receipt?t.applied+' '+confirmedChangeCount(receipt.changes,language):'')+(controlResults.length?'\n'+controlResults.filter(r=>r.ok).length+' / '+(m.controlPlans?.length||0)+' '+ct.controls:'')}:value));
+   setMessages(old=>old.map((value,i)=>i===index?{...value,resolved:true,undone:undo,receipt,controlResults:undo?value.controlResults:controlResults,text:undo?t.undone+(value.controlPlans?.length?' '+ct.dataOnlyUndo:''):(receipt||controlResults.some(r=>r.ok)?t.applied:'')}:value));
+   if(undo&&m.receipt?.changes.length){const first=m.receipt.changes[0];showChange({...first,before:first.after,after:first.before});}
+   if(!undo){if(receipt?.changes.length)showChange(receipt.changes[0],controlResults.some(r=>r.ok&&r.plan.control.kind==='navigate'));else{const succeeded=controlResults.filter(r=>r.ok).map(r=>r.plan);if(succeeded.length){reveal.showControls(succeeded);if(window.matchMedia?.('(max-width: 1099px)').matches)close();}}}
   }catch(e){if(mounted.current)report(e,'save');}
   finally{lock.current=false;if(mounted.current){setBusy(false);setPhase(null);}}
  }
+ function showChange(change:Change,preserveView=false){reveal.show(change,preserveView);if(window.matchMedia?.('(max-width: 1099px)').matches)close();}
  async function checkConnection(){
   if(lock.current)return;lock.current=true;setBusy(true);setPhase('reading');setCopied(false);
   try{await repository.read().catch(error=>{throw AssistantFailure.from(error,'read');});const result=await assistantRequest<{status:string;provider:string;protocol:string;inferenceTested:boolean}>({mode:'health'},20000);
@@ -117,32 +124,31 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   if(Array.isArray(value))return value.map(v=>typeof v==='string'?(labels.get(v)||v):JSON.stringify(v)).join(', ');
   return JSON.stringify(value)??'—';
  }
- return <div className="assistant-root" dir={language==='en'?'ltr':'rtl'}>
-  <button ref={button} className="assistant-launcher" aria-label={t.open} aria-expanded={open} aria-controls="wilo-assistant" onClick={()=>open?close():setOpen(true)}><span className="assistant-launcher-mark"><AssistantMark/></span><span>{t.name}</span><span className="assistant-launcher-dot" aria-hidden="true"/></button>
-  {open&&<section id="wilo-assistant" role="dialog" aria-label={t.name} className="assistant-panel" aria-busy={busy} onKeyDown={e=>{if(e.key==='Escape')close();}}>
+ return <div className={"assistant-root"+(open?" is-open":"")} dir={language==='en'?'ltr':'rtl'}>
+  <button ref={button} className="assistant-launcher" aria-label={t.open} aria-expanded={open} aria-controls="wilo-assistant" onClick={()=>open?close():openPanel()}><span className="assistant-launcher-mark"><AssistantMark/></span><span>{t.name}</span><span className="assistant-launcher-dot" aria-hidden="true"/></button>
+  {present&&<section id="wilo-assistant" role="dialog" aria-label={t.name} className={"assistant-panel"+(!open?" is-closing":"")} inert={!open} aria-busy={busy} onKeyDown={e=>{if(e.key==='Escape')close();}}>
    <header className="assistant-header"><span className="assistant-brand-mark"><AssistantMark/></span><div className="assistant-heading"><strong>{t.name}</strong><span><i aria-hidden="true"/>{localReady?ui.local:preferLocal?ui.notReady:ui.cloud}</span></div><button type="button" className="assistant-close" aria-label={t.close} onClick={close}><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg></button></header>
    {preferLocal&&!localReady&&<div className="assistant-intro"><p>{ui.notReady}</p><button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button></div>}
-   <div ref={conversation} className="assistant-messages" role="log" aria-live="polite" aria-relevant="additions text"><div className="assistant-intro"><span className="assistant-intro-title">{ui.welcome}</span><p>{t.intro}</p><span className="assistant-review-hint">{ui.hint}</span></div>{messages.map((m,i)=><article className={'assistant-message is-'+m.role} key={i}><span className="assistant-message-author">{m.role==='user'?ui.you:ui.assistant}</span><p dir="auto">{m.text}</p>
-    {!!m.reply?.tasks?.length&&<p><strong>{t.taskCount}: {m.reply.tasks.length}</strong></p>}{m.reply?.tasks?.map((task,index)=><p key={'task-'+index}><strong>{task.title}</strong> · {taskStateWords[language][taskState(task,m.changes||[],m.receipt?.changes,m.controlResults,!!m.resolved,!!m.undone)]}{task.outcome!=='proposed'&&task.detail?' · '+proposalStatus(task.detail,[],language):''}</p>)}
+   <div ref={conversation} className="assistant-messages" role="log" aria-live="polite" aria-relevant="additions text">{!messages.length&&<div className="assistant-intro"><span className="assistant-intro-emblem"><AssistantMark/></span><span className="assistant-intro-title">{ui.welcome}</span><p>{ui.placeholder}</p></div>}{messages.map((m,i)=><article className={'assistant-message is-'+m.role} key={i}><p dir="auto">{m.text}</p>
+    {m.reply?.tasks?.some(task=>task.outcome==='needs-input'||task.outcome==='unsupported')&&<details className="assistant-followups"><summary>{ui.followups}</summary>{m.reply.tasks.filter(task=>task.outcome==='needs-input'||task.outcome==='unsupported').map((task,index)=><p key={index}>{task.detail||task.title}</p>)}</details>}
     {m.reply?.files.map((file,index)=><button type="button" key={index} onClick={()=>download(file.name,file.content)}>{t.download}: {file.name}</button>)}
     {((m.changes?.length||0)+(m.controlPlans?.length||0))>0&&!m.resolved?<div className="assistant-proposal"><strong>{t.review} ({(m.changes?.length||0)+(m.controlPlans?.length||0)})</strong>{m.changes?.map((c,index)=>{
       const before=(c.before||{}) as Record<string,unknown>,after=(c.after||{}) as Record<string,unknown>;
       const keys=[...new Set([...Object.keys(before),...Object.keys(after)])].filter(k=>!['id','revision'].includes(k)&&JSON.stringify(before[k])!==JSON.stringify(after[k]));
       return <details key={index}><summary>{t.titles[c.target]} · {c.scope==='personal'?t.personal:m.snapshot!.data.scopes.find(s=>s.id===c.scope)?.name}: {name(c.after,m.snapshot)||name(c.before,m.snapshot)}{!c.before?' · '+t.create:!c.after?' · '+t.remove:''}</summary>{keys.map(key=><div className="assistant-diff" key={key}><strong>{assistantFieldNames[key]?.[language==='ar'?0:language==='en'?1:2]||key}</strong><span>{t.before}: <bdi>{display(before[key],m.snapshot!)}</bdi></span><span>{t.after}: <bdi>{display(after[key],m.snapshot!)}</bdi></span></div>)}</details>;
      })}{m.controlPlans?.map((plan,index)=><details key={'control-'+index}><summary>{ct.kind[plan.control.kind]}</summary><p dir="auto">{JSON.stringify(plan.control.values)}</p></details>)}<button type="button" disabled={busy} onClick={()=>void apply(i)}>{t.apply}</button><button type="button" disabled={busy} onClick={()=>setMessages(old=>old.map((v,index)=>index===i?{...v,resolved:true}:v))}>{t.cancel}</button></div>:null}
-    {m.receipt?.changes.map((change,index)=><p key={'saved-'+index}>{t.titles[change.target]} · {name(change.after,m.snapshot)||name(change.before,m.snapshot)||change.id}: {ct.done}{change.target==='projects'&&typeof change.after==='object'&&change.after!==null&&<span dir="auto">{Object.entries(change.after).filter(([key,value])=>['dueDate','description'].includes(key)&&value).map(([key,value])=><span key={key}>{' · '+(assistantFieldNames[key]?.[language==='ar'?0:language==='en'?1:2]||key)+': '+String(value)}</span>)}</span>}</p>)}
-    {m.resolved&&!m.receipt&&!m.controlResults?.length&&<p>{ct.noChanges}</p>}
-    {m.reply&&!m.changes?.length&&!m.controlPlans?.length&&<p>{ct.noChanges}</p>}
-    {m.controlResults&&m.controlPlans?.map((plan,index)=>{const result=m.controlResults![index];return <p key={'result-'+index} role={result&&!result.ok?'alert':undefined}>{ct.kind[plan.control.kind]}: {result?(result.ok?ct.done:ct.failed+(result.reason==='assistant-browser-permission'?' · '+ct.permission:' · '+(result.reason==='assistant-conflict'?t.conflict:t.unavailable))):ct.pending}</p>;})}
-    {m.receipt&&!m.receipt.changes.some(c=>!c.before&&['projects','sections'].includes(c.target))&&<button type="button" disabled={busy} onClick={()=>void apply(i,true)}>{m.controlPlans?.length?ct.dataOnlyUndo:t.undo}</button>}
+    {!!m.receipt?.changes.length&&!m.undone&&<details className="assistant-saved"><summary>{ui.showChanges} ({m.receipt.changes.length})</summary>{m.receipt.changes.map((change,index)=><button type="button" key={index} onClick={()=>showChange(change)}>{name(change.after,m.snapshot)||name(change.before,m.snapshot)||t.titles[change.target]} <span aria-hidden="true">↗</span></button>)}</details>}
+    {m.controlResults&&m.controlPlans?.map((plan,index)=>{const result=m.controlResults![index];return result?.ok?null:<p key={'result-'+index} role={result&&!result.ok?'alert':undefined}>{ct.kind[plan.control.kind]}: {result?(result.ok?ct.done:ct.failed+(result.reason==='assistant-browser-permission'?' · '+ct.permission:' · '+(result.reason==='assistant-conflict'?t.conflict:t.unavailable))):ct.pending}</p>;})}
+    {m.receipt&&!m.undone&&!m.receipt.changes.some(c=>!c.before&&['projects','sections'].includes(c.target))&&<button type="button" disabled={busy} onClick={()=>void apply(i,true)}>{m.controlPlans?.length?ct.dataOnlyUndo:t.undo}</button>}
    </article>)}{busy&&phase&&<AssistantWaiting phase={phase} language={language} progress={progress}/>}</div>
    <form onSubmit={e=>{e.preventDefault();void send();}}>
-    <details className="assistant-model-options"><summary><span className="assistant-option-icon" aria-hidden="true">◈</span>{ui.settings}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{t.localInfo}</p>{localReady?<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>:<button type="button" disabled={busy} onClick={()=>void activateLocal()}>{localLoading?`${t.localLoading} ${Math.round(progress*100)}%`:t.local}</button>}{preferLocal&&!localReady&&<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>}</details>
     <label>{t.input}<textarea ref={input} value={text} maxLength={6000} rows={2} placeholder={ui.placeholder} onChange={e=>setText(e.target.value)}/></label>
     {error&&<p role="alert">{error}</p>}{failure&&<details className="assistant-privacy"><summary>{fw.details}</summary><p>{fw.stage[failure.stage]} · {failure.code}{failure.status?' · HTTP '+failure.status:''}</p>{failure.requestId&&<p dir="ltr">{failure.requestId}</p>}{failure.providerFailure&&<pre dir="ltr">{JSON.stringify(failure.providerFailure,null,2)}</pre>}<button type="button" disabled={busy} onClick={()=>void checkConnection()}>{fw.check}</button><button type="button" onClick={()=>void copyFailure()}>{copied?fw.copied:fw.copy}</button>{health&&<p role="status">{fw.ready} · {health.provider}</p>}</details>}
     <div className="assistant-actions"><button className="primary-button assistant-send" disabled={busy||!text.trim()}><svg viewBox="0 0 20 20" aria-hidden="true" fill="none"><path d="m10 15 0-10m-4 4 4-4 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>{busy?t.busy:t.send}</button><button type="button" onClick={()=>{setMessages([]);setError('');setFailure(null);setHealth(null);}} disabled={busy}>{t.clear}</button></div>
+    <details className="assistant-preferences"><summary>{ui.options}<span className="assistant-chevron" aria-hidden="true"/></summary><div className="assistant-preferences-body">    <details className="assistant-model-options"><summary><span className="assistant-option-icon" aria-hidden="true">◈</span>{ui.settings}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{ui.localCaution}</p><p>{t.localInfo}</p>{localReady?<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>:<button type="button" disabled={busy} onClick={()=>void activateLocal()}>{localLoading?`${t.localLoading} ${Math.round(progress*100)}%`:t.local}</button>}{preferLocal&&!localReady&&<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>}</details>
     <details className="assistant-privacy"><summary>{ct.title}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{language==='ar'?'يمكنني تعديل البطاقات والأقسام والكورسات والمهام والجدول، وضبط المظهر واللغة والسكون والتنظيم وفتح الصفحات. الأذونات وكلمة المرور وحذف الحساب وإدارة أعضاء المجموعات تتطلب نماذجها الأصلية. يمكنك طلب عدة مهام معًا؛ لا يُعلن الحفظ قبل تأكيده.':language==='he'?'ניתן לערוך כרטיסים, מדורים, קורסים, משימות ומערכת שעות, לשנות מראה, שפה והעדפות ולפתוח עמודים. הרשאות, סיסמאות, מחיקת חשבון וניהול חברים מתבצעים בטפסים הקיימים. אפשר לבקש כמה משימות יחד.':'Edit cards, sections, courses, tasks and timetable; change appearance, language, sleep and workflow; open pages. Permissions, passwords, account deletion and group membership use their existing forms. You can request several tasks together.'}</p></details>
     <details className="assistant-privacy"><summary>{ui.privacy}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{preferLocal?t.localReady:t.privacy}</p></details>
+</div></details>
    </form>
   </section>}
  </div>;
