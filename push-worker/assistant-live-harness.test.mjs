@@ -1,0 +1,32 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {mkdtempSync,mkdirSync,copyFileSync,cpSync,writeFileSync,readFileSync,symlinkSync,rmSync,existsSync} from 'node:fs';
+import {tmpdir} from 'node:os';import {join} from 'node:path';import {fileURLToPath} from 'node:url';import {spawnSync} from 'node:child_process';
+import {safeProviderFailure} from './src/assistantErrors.mjs';
+import {runAcceptanceCase} from '../tests/fixtures/assistant/runCase.mjs';
+import {acceptanceCases} from '../tests/fixtures/assistant/corpus.mjs';
+test('provider diagnostics allow only fixed labels, never raw upstream messages, parameters, keys or headers',()=>{
+ const malicious={status:400,providerCode:'test-only-secret',providerParameter:'test-only-secret',message:'test-only-secret',cause:{code:'test-only-secret'}};
+ assert.deepEqual(safeProviderFailure(malicious),{status:400,code:'unclassified',parameter:'',network:''});
+ assert.deepEqual(safeProviderFailure({status:400,providerCode:'json_validate_failed',providerParameter:'response_format'}),{status:400,code:'json_validate_failed',parameter:'response_format',network:''});
+ assert.equal(safeProviderFailure({cause:{code:'ECONNRESET'}}).network,'ECONNRESET');
+});
+test('shared case runner records the failing inference stage and safe HTTP diagnosis',async()=>{
+ const result=await runAcceptanceCase(acceptanceCases[0],{name:'groq',model:'test',run:async()=>{const error=new Error('private payload');error.status=400;error.providerCode='json_validate_failed';throw error;}});
+ assert.equal(result.error,'ai-unavailable-or-quota');assert.equal(result.trace[0].stage,'inventory');assert.equal(result.trace[0].providerFailure.status,400);assert.equal(result.trace[0].providerFailure.code,'json_validate_failed');assert.equal(JSON.stringify(result).includes('private payload'),false);
+});
+test('Groq CLI runs all three compound cases directly in Node with fake HTTP, without Wrangler or a secret file',()=>{
+ const root=fileURLToPath(new URL('../',import.meta.url)),folder=mkdtempSync(join(tmpdir(),'wilo-direct-cli-'));
+ try{
+  for(const dir of ['scripts/lib','tests/fixtures','push-worker'])mkdirSync(join(folder,dir),{recursive:true});
+  copyFileSync(join(root,'scripts/test-assistant-live.mjs'),join(folder,'scripts/test-assistant-live.mjs'));
+  copyFileSync(join(root,'scripts/lib/assistantAcceptance.mjs'),join(folder,'scripts/lib/assistantAcceptance.mjs'));
+  cpSync(join(root,'tests/fixtures/assistant'),join(folder,'tests/fixtures/assistant'),{recursive:true});cpSync(join(root,'src'),join(folder,'src'),{recursive:true});cpSync(join(root,'push-worker/src'),join(folder,'push-worker/src'),{recursive:true});
+  symlinkSync(join(root,'node_modules'),join(folder,'node_modules'),'dir');writeFileSync(join(folder,'package.json'),'{"type":"module"}');
+  const preload=join(folder,'mock-http.mjs');
+  writeFileSync(preload,`import {acceptanceCases} from './tests/fixtures/assistant/corpus.mjs';\nglobalThis.fetch=async(url,options)=>{if(url!=='https://api.groq.com/openai/v1/chat/completions')throw new Error('unexpected-network');const body=JSON.parse(options.body),content=body.messages.find(m=>m.role==='user').content,c=acceptanceCases.filter(c=>c.id.startsWith('compound-card-')).find(c=>content.includes(c.message));if(!c)throw new Error('original-request-missing');const inventory=Boolean(body.response_format.json_schema.schema.properties.intents),reply=inventory?{intents:c.intents}:{text:'Review',actions:c.actions,controls:[],files:[],tasks:[]};return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(reply)}}]});};`);
+  const result=spawnSync(process.execPath,['--import',preload,join(folder,'scripts/test-assistant-live.mjs'),'--live','--provider=groq','--limit=3'],{cwd:folder,encoding:'utf8',timeout:30000,env:{...process.env,GROQ_API_KEY:'test-only-secret'}});
+  assert.equal(result.status,2,result.stdout+result.stderr);const report=JSON.parse(readFileSync(join(folder,'assistant-acceptance-live-report.json'),'utf8'));
+  assert.equal(report.summary.passed,3,result.stdout+result.stderr);assert.equal(report.summary.failed,0);assert.equal(report.summary.blocked,0);
+  assert.equal(report.results.every(r=>r.trace.length===2),true);assert.equal((result.stdout+result.stderr+JSON.stringify(report)).includes('test-only-secret'),false);assert.equal(existsSync(join(folder,'push-worker/node_modules/wrangler')),false);
+ }finally{rmSync(folder,{recursive:true,force:true});}
+});
