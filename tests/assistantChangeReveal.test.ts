@@ -6,7 +6,7 @@ const course:Change={target:'courses',scope:'personal',id:'saved-course',before:
 afterEach(()=>{vi.useRealTimers();document.body.innerHTML='';});
 it('routes every data kind through existing views, including deleted records and the archive',()=>{
  expect(changeDestination(course).hash).toBe('#/university?tab=overview');
- expect(changeDestination({...course,target:'lessons',after:{courseId:'c'}}).hash).toBe('#/university?tab=schedule&courseId=c');
+ expect(changeDestination({...course,target:'lessons',after:{courseId:'c'}}).hash).toBe('#/university?tab=schedule');
  expect(changeDestination({...course,target:'tasks',after:{courseId:'c'}}).attribute).toBe('data-study-task');
  expect(changeDestination({...course,target:'sections',scope:'group123'}).hash).toContain('#/groups/group123');
  expect(changeDestination({...course,target:'projects',after:{archivedAt:5}}).hash).toBe('#/library?view=archive');

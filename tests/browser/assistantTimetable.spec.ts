@@ -31,7 +31,7 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  const chat=page.locator('#wilo-assistant');await chat.getByLabel('رسالتك',{exact:true}).fill(weeklyRequest);await chat.getByRole('button',{name:'إرسال',exact:true}).click();
  await expect(chat.locator('.assistant-proposal details')).toHaveCount(14);
  const dock=await page.evaluate(()=>({panel:document.querySelector('#wilo-assistant')!.getBoundingClientRect().right,content:document.querySelector('main.workspace')!.getBoundingClientRect().left}));
- expect(dock.content).toBeGreaterThanOrEqual(dock.panel);await page.screenshot({path:'test-results/layout-review/assistant-dock-desktop.png',fullPage:true});
+ expect(dock.content).toBeGreaterThanOrEqual(dock.panel);await page.screenshot({path:'test-results/layout-review/assistant-dock-desktop.png',fullPage:false});
 
  await expect(page.locator('.study-lesson')).toHaveCount(0);
  await chat.getByRole('button',{name:'تطبيق التغييرات',exact:true}).click();
@@ -54,7 +54,7 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  await expect(page.locator('.study-lesson')).toHaveCount(14);expect(cloudMatches).toBe(2);
  await page.setViewportSize({width:390,height:844});await expect(chat).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- await page.screenshot({path:'test-results/layout-review/assistant-dock-phone.png',fullPage:true});
+ await page.screenshot({path:'test-results/layout-review/assistant-dock-phone.png',fullPage:false});
  await page.getByRole('button',{name:'إغلاق المساعد',exact:true}).click();await expect(chat).toHaveCount(0);await expect(page.locator('body')).not.toHaveClass(/assistant-docked/);
 
 });

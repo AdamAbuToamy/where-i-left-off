@@ -6,7 +6,7 @@ export function changeDestination(change:Change):ChangeDestination{
  const item=(change.after||change.before||{}) as Record<string,unknown>,q=new URLSearchParams();
  if(['courses','tasks','lessons'].includes(change.target)){
   q.set('tab',change.target==='lessons'?'schedule':'overview');
-  if(item.courseId)q.set('courseId',String(item.courseId));
+  if(change.target==='tasks'&&item.courseId)q.set('courseId',String(item.courseId));
   return {hash:'#/university?'+q,attribute:change.after?'data-study-'+({courses:'course',tasks:'task',lessons:'lesson'} as const)[change.target as 'courses'|'tasks'|'lessons']:undefined,id:change.id,container:change.target==='lessons'?'.study-time-grid':change.target==='tasks'?'.study-task-list':'.study-layout aside'};
  }
  const project=item as {trashedAt?:number;archivedAt?:number};
