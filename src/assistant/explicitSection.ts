@@ -6,7 +6,7 @@ import type {AssistantData,AssistantReply} from './actions';
  */
 export function checkExplicitSection(message:string,data:AssistantData,reply:AssistantReply):void {
  const normalized=message.normalize('NFKC');
- const match=normalized.match(/(?:في|داخل|إلى|الى|ضمن|بـ?|ب)\s*قسم\s+([^،,.؟!?\n]+?)(?=\s+(?:بتاريخ|تاريخ|يوم|بموعد|ثم|وبعد|واضف|وأضف|مع|وضع|واحذف)\b|$)/i);
+ const match=normalized.match(/(?:في|داخل|إلى|الى|ضمن|بـ?)\s*قسم\s+([^،,.؟!?\n]+?)(?=\s+(?:بتاريخ|تاريخ|يوم|بموعد|ثم|وبعد|واضف|وأضف|مع|وضع|واحذف)|$)/i);
  if(!match)return;
  const requested=match[1].trim().replace(/[«»"']/g,'').trim().toLocaleLowerCase();
  if(!requested||requested.length>60)return;
