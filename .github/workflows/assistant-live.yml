@@ -2,7 +2,7 @@ name: Assistant live validation
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/assistant-live.yml', 'scripts/test-assistant-live.mjs', 'scripts/check-gemini-catalog.mjs', 'push-worker/src/assistant*.mjs']
+    paths: ['.github/workflows/assistant-live.yml', 'scripts/test-assistant-live.mjs', 'scripts/check-gemini-catalog.mjs', 'push-worker/src/assistant*.mjs', '.github/assistant-test-request.json']
   workflow_dispatch:
     inputs:
       provider:
@@ -47,16 +47,19 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           EVENT_NAME: ${{ github.event_name }}
+          TEST_REQUEST: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[assistant-test-request]') }}
           FREE_CONFIRMED: ${{ inputs.confirm_free_project }}
           FREE_CANARY: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[gemini-free-canary]') || contains(github.event.head_commit.message, '[gemini-free-acceptance]') || contains(github.event.head_commit.message, '[gemini-free-case:')) }}
         run: |
           node --input-type=module <<'JS'
-          import {appendFileSync,writeFileSync} from 'node:fs';
+          import {appendFileSync,writeFileSync,readFileSync} from 'node:fs';
+          import {assistantTestRequest} from './scripts/lib/assistantTestRequest.mjs';
+          const requested=process.env.TEST_REQUEST==='true'?assistantTestRequest(JSON.parse(readFileSync('.github/assistant-test-request.json','utf8'))):null;
           const provider=process.env.PROVIDER;
           if(!['gemini','groq'].includes(provider))throw new Error('Invalid provider.');
           const present=Boolean(process.env[provider==='gemini'?'GEMINI_API_KEY':'GROQ_API_KEY']?.trim());
           // Bounded repair canary authorized by the owner's free-project confirmation in run 40089379901.
-          const canary=process.env.FREE_CANARY==='true'&&provider==='gemini';
+          const canary=(process.env.FREE_CANARY==='true'||requested!==null)&&provider==='gemini';
           const ready=present&&(canary||(process.env.EVENT_NAME==='workflow_dispatch'&&process.env.FREE_CONFIRMED==='true'));
           const reason=!present?provider+'-key-required':process.env.EVENT_NAME!=='workflow_dispatch'?'manual-run-required':process.env.FREE_CONFIRMED!=='true'?'free-project-confirmation-required':'ready';
           appendFileSync(process.env.GITHUB_OUTPUT,'ready='+ready+'\n');
@@ -75,6 +78,7 @@ jobs:
           PROVIDER: ${{ inputs.provider || 'gemini' }}
           TEST_SCOPE: ${{ inputs.scope }}
           REPAIR_COMMIT: ${{ github.event.head_commit.message }}
+          TEST_REQUEST: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[assistant-test-request]') }}
           FREE_ACCEPTANCE: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[gemini-free-acceptance]') }}
           CASE_ID: ${{ inputs.case_id }}
           FREE_CANARY: ${{ github.event_name == 'push' && (contains(github.event.head_commit.message, '[gemini-free-canary]') || contains(github.event.head_commit.message, '[gemini-free-acceptance]') || contains(github.event.head_commit.message, '[gemini-free-case:')) }}
@@ -83,13 +87,16 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import {spawnSync} from 'node:child_process';
+          import {readFileSync} from 'node:fs';
+          import {assistantTestRequest} from './scripts/lib/assistantTestRequest.mjs';
           if(process.env.PROVIDER==='gemini'&&process.env.FREE_CANARY==='true'){
             const catalog=spawnSync(process.execPath,['scripts/check-gemini-catalog.mjs'],{stdio:'inherit',env:process.env});
             if(catalog.status!==0)process.exit(catalog.status??1);
           }
           const args=['scripts/test-assistant-live.mjs','--live','--provider='+process.env.PROVIDER];
           const repairCase=process.env.REPAIR_COMMIT?.match(/\[gemini-free-case:([-a-z0-9]+)\]/)?.[1];
-          if(repairCase)args.push('--case='+repairCase,'--stop-on-failure');
+          if(process.env.TEST_REQUEST==='true')args.push(...assistantTestRequest(JSON.parse(readFileSync('.github/assistant-test-request.json','utf8'))).args);
+          else if(repairCase)args.push('--case='+repairCase,'--stop-on-failure');
           else if(process.env.FREE_ACCEPTANCE==='true')args.push('--sample=200','--stop-on-failure');
           else if(process.env.FREE_CANARY==='true')args.push('--case=compound-card-ar','--case=compound-card-en','--case=compound-card-he','--stop-on-failure');
           else if(process.env.CASE_ID)args.push('--case='+process.env.CASE_ID);
