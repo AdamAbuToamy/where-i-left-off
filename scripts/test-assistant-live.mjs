@@ -23,6 +23,9 @@ const sampleArg=args.find(a=>a.startsWith('--sample='));
 if(sampleArg&&requestedIds.length)throw new Error('Use either --sample or --case.');
 const selected=sampleArg?assistantSample(acceptanceCases,Number(sampleArg.slice(9))):requestedIds.length?acceptanceCases.filter(c=>requestedIds.includes(c.id)):acceptanceCases;
 const limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):selected.length;
+const pauseArg=args.find(a=>a.startsWith('--pause-ms='));
+const pauseMs=pauseArg?Number(pauseArg.slice('--pause-ms='.length)):0;
+if(!Number.isInteger(pauseMs)||pauseMs<0||pauseMs>120000)throw new Error('Use --pause-ms between 0 and 120000.');
 if(args.includes('--list')){console.log(JSON.stringify({requests:selected.length,total:acceptanceCases.length,cases:selected.map(c=>c.id),unique:new Set(selected.map(c=>c.message)).size,languages:['ar','en','he'],provider,model,mode:'catalog-only; no inference'},null,2));process.exit(0);}
 if(!args.includes('--live')||!Number.isInteger(limit)||limit<1||limit>acceptanceCases.length)throw new Error('Use --live --limit=618 (or --list). Real inference consumes the selected provider allowance.');
 const fingerprint=createHash('sha256').update(provider).update(readFileSync('scripts/test-assistant-live.mjs')).update(readFileSync('tests/fixtures/assistant/runCase.mjs')).update(readFileSync('push-worker/src/assistantProvider.mjs')).update(readFileSync('push-worker/src/assistantGemini.mjs')).update(readFileSync('push-worker/src/assistantTools.mjs')).update(readFileSync('push-worker/src/assistantStudyTaskKind.mjs')).update(readFileSync('push-worker/src/assistantClarification.mjs')).update(readFileSync('shared/assistantDialogue.mjs')).update(readFileSync('push-worker/src/assistantContext.mjs')).update(readFileSync('tests/fixtures/assistant/corpus.mjs')).update(readFileSync('push-worker/src/assistantContract.mjs')).update(readFileSync('push-worker/src/groqLimits.mjs')).update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
@@ -67,6 +70,13 @@ try{
  for(const testCase of ordered){
   if(report.results.some(r=>r.id===testCase.id&&r.status==='passed'))continue;if(attempted++>=limit)break;
   cancellation.signal.throwIfAborted();
+  if(attempted>1&&pauseMs){
+   await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{cancellation.signal.removeEventListener('abort',abort);resolve();},pauseMs);
+    const abort=()=>{clearTimeout(timer);reject(cancellation.signal.reason);};
+    cancellation.signal.addEventListener('abort',abort,{once:true});
+   });
+  }
   const result=await executeCase(testCase);cancellation.signal.throwIfAborted();
   if(blockedProviderCodes.has(result.error)){
    const item={id:testCase.id,status:'blocked',reason:result.error,elapsedMs:result.elapsedMs,trace:result.trace,details:result.details};
