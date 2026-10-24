@@ -11,7 +11,7 @@ class CloudflareInference {
 }
 /** Credentials stay in the Worker; endpoints and model cannot come from user input. */
 class CompatibleInference {
- constructor(key,signal,name,model,endpoint){Object.assign(this,{key,signal,name,model,endpoint,workspaceTools:true});}
+ constructor(key,signal,name,model,endpoint,onSyntheticDiagnostic){Object.assign(this,{key,signal,name,model,endpoint,onSyntheticDiagnostic,workspaceTools:true});}
  async run(input,{compactOutput=false,signal:requestSignal}={}){
   const body={model:this.model,messages:input.messages,temperature:input.temperature,max_completion_tokens:compactOutput?Math.min(input.max_tokens,3072):input.max_tokens,reasoning_effort:'low'};
   if(this.name==='gemini'){body.max_tokens=body.max_completion_tokens;delete body.max_completion_tokens;body.reasoning_effort='minimal';}
@@ -27,7 +27,9 @@ class CompatibleInference {
   });
   // Never include upstream payloads, headers or secrets in errors/logs.
   if(!response.ok){
-   let failure;try{failure=(await response.json())?.error;}catch{/* Non-JSON errors still retain their HTTP status. */}
+   let failure;const raw=await response.text().catch(()=>'');
+   try{const payload=JSON.parse(raw);failure=payload?.error??payload?.[0]?.error??payload;if(typeof failure==='string')failure={message:failure};}catch{/* Preserve the HTTP status for a non-JSON response. */}
+   if(typeof this.onSyntheticDiagnostic==='function')this.onSyntheticDiagnostic({status:response.status,body:raw});
    const rate=this.name==='groq'&&[429,413].includes(response.status)?groqRateLimit(failure?.message,response.headers.get('retry-after')):undefined;
    if(response.status===429&&attempt===0&&rate&&minuteRetry(rate)){await waitForRetry(rate.retryAfterSeconds,signal);continue;}
    const error=new Error(response.status===413||rate?.oversized?'ai-provider-context':'provider-request-failed');error.providerRate=rate;
@@ -42,10 +44,10 @@ class CompatibleInference {
   }
  }
 }
-export function assistantProvider(env,{signal}={}){
+export function assistantProvider(env,{signal,onSyntheticDiagnostic}={}){
  const name=env.ASSISTANT_PROVIDER||'cloudflare';
- if(name==='groq'&&typeof env.GROQ_API_KEY==='string'&&env.GROQ_API_KEY.trim())return new CompatibleInference(env.GROQ_API_KEY.trim(),signal,'groq',GROQ_MODEL,'https://api.groq.com/openai/v1/chat/completions');
- if(name==='gemini'&&typeof env.GEMINI_API_KEY==='string'&&env.GEMINI_API_KEY.trim())return new CompatibleInference(env.GEMINI_API_KEY.trim(),signal,'gemini',GEMINI_MODEL,'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
+ if(name==='groq'&&typeof env.GROQ_API_KEY==='string'&&env.GROQ_API_KEY.trim())return new CompatibleInference(env.GROQ_API_KEY.trim(),signal,'groq',GROQ_MODEL,'https://api.groq.com/openai/v1/chat/completions',onSyntheticDiagnostic);
+ if(name==='gemini'&&typeof env.GEMINI_API_KEY==='string'&&env.GEMINI_API_KEY.trim())return new CompatibleInference(env.GEMINI_API_KEY.trim(),signal,'gemini',GEMINI_MODEL,'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',onSyntheticDiagnostic);
  if(name==='cloudflare'&&env.AI)return new CloudflareInference(env.AI);
  throw new Error('ai-not-configured');
 }

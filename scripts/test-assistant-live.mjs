@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID,createHash} from 'node:crypto';
 import {createServer as createNetServer} from 'node:net';
 import {acceptanceCases} from '../tests/fixtures/assistant/corpus.mjs';
+import {syntheticProviderDiagnostic} from './lib/providerDiagnostic.mjs';
 import {acceptanceSummary,providerStop} from './lib/assistantAcceptance.mjs';
 import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
 import {ASSISTANT_MODEL} from '../push-worker/src/assistant.mjs';
@@ -32,7 +33,7 @@ try{
  if(settings.key&&!process.env[settings.key]?.trim())throw new Error(provider+'-key-required');
  let executeCase;
  if(settings.key){
-  const inference=assistantProvider({ASSISTANT_PROVIDER:provider,[settings.key]:process.env[settings.key]},{signal:cancellation.signal});
+  const inference=assistantProvider({ASSISTANT_PROVIDER:provider,[settings.key]:process.env[settings.key]},{signal:cancellation.signal,onSyntheticDiagnostic:diagnostic=>console.error('synthetic-provider-diagnostic',JSON.stringify(syntheticProviderDiagnostic(diagnostic,process.env[settings.key])))});
   executeCase=testCase=>runAcceptanceCase(testCase,inference);
   console.log(settings.label+' transport: direct Node HTTPS; no local Worker or secret file.');
  }else{

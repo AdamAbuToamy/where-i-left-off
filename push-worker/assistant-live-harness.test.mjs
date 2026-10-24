@@ -20,6 +20,7 @@ for(const provider of ['groq','gemini'])test(`${provider} CLI tests three compou
   for(const dir of ['scripts/lib','tests/fixtures','push-worker'])mkdirSync(join(folder,dir),{recursive:true});
   copyFileSync(join(root,'scripts/test-assistant-live.mjs'),join(folder,'scripts/test-assistant-live.mjs'));
   copyFileSync(join(root,'scripts/lib/assistantAcceptance.mjs'),join(folder,'scripts/lib/assistantAcceptance.mjs'));
+  copyFileSync(join(root,'scripts/lib/providerDiagnostic.mjs'),join(folder,'scripts/lib/providerDiagnostic.mjs'));
   cpSync(join(root,'tests/fixtures/assistant'),join(folder,'tests/fixtures/assistant'),{recursive:true});cpSync(join(root,'src'),join(folder,'src'),{recursive:true});cpSync(join(root,'push-worker/src'),join(folder,'push-worker/src'),{recursive:true});
   symlinkSync(join(root,'node_modules'),join(folder,'node_modules'),'dir');writeFileSync(join(folder,'package.json'),'{"type":"module"}');
   const preload=join(folder,'mock-http.mjs');
