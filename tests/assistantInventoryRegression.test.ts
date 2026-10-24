@@ -29,3 +29,16 @@ it('preserves previous notes on append but permits replacing a next step',()=>{
  const proposal={text:'',actions:[{target:'projects',action:'update',id:'card',values:{nextStep:'Go'}}],controls:[],files:[]};
  expect(reconcileIntentProposal(proposal,intents,{scopes:[{id:'personal',projects:[{id:'card',nextStep:'Keep'}]}]}).issues).toEqual([]);
 });
+
+it('uses explicit Hebrew assignment wording rather than default generic task',()=>{
+ const message='הוסף מטלה Homework 2 לאלגוריתמים ללא מועד';
+ const raw={intents:[{title:message,source:message,subject:'newTask',recordId:'',outcome:'proposed',requirements:[
+  req('tasks','create','title','Homework 2'),req('tasks','create','courseId','course'),req('tasks','create','due',''),req('tasks','create','done',false)
+ ]}]};
+ const intents=readIntents(JSON.stringify(raw),message);
+ expect(intents[0].requirements).toContainEqual(req('tasks','create','kind','assignment'));
+ const proposal={text:'',actions:[{target:'tasks',action:'create',id:'new-task',values:{title:'Homework 2',courseId:'course',kind:'task',due:'',done:false}}],controls:[],files:[]};
+ const checked=reconcileIntentProposal(proposal,intents,{study:{tasks:[],courses:[{id:'course',name:'Algorithms'}]}});
+ expect(checked.issues).toEqual([]);
+ expect(proposal.actions[0].values.kind).toBe('assignment');
+});
