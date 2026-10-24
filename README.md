@@ -55,7 +55,7 @@ The current extension can recognize supported Moodle course/task pages that the 
 
 Open the floating assistant from the signed-in workspace to ask about saved data, request summaries or advice, download plain-text files, and propose changes to cards, courses, tasks, prerequisites and timetable sessions. Review the proposal and choose **Apply changes** to save it. Writes use the same Firebase permissions as the user, check for conflicting edits, and are confirmed from the server before success is shown. Supported undo operations also refuse to overwrite later edits. Tasks linked to phone reminders are edited in University to keep the reminder schedule consistent.
 
-- **Cloud mode:** GPT-OSS-120B through the existing Cloudflare Worker. Configure it with `node scripts/setup-free-assistant.mjs`. Provider free quotas apply; the app has a short anti-burst interval, not the former ten-attempt daily cap.
+- **Cloud mode:** GPT-OSS-120B through the existing Cloudflare Worker, with Cloudflare AI by default or Groq after explicit owner setup. Configure Cloudflare AI with `node scripts/setup-free-assistant.mjs`; see the Groq guide below for the alternative. Provider free quotas apply; the app has a short anti-burst interval, not the former ten-attempt daily cap.
 - **Optional on-device mode:** choose **Run Qwen on this device** in the chat. Qwen2.5 1.5B runs through WebLLM in a Web Worker after an explicit, large first download (about 1 GB). It requires WebGPU and sufficient GPU memory (the model configuration lists about 1.6 GB). It has no AI-provider message quota; speed, output quality and context capacity depend on the device. Firebase connectivity is still needed to synchronize and save approved changes. Local-mode failures do not silently send the request to the cloud.
 - **Structured timetable lists:** standalone lists use validated parsing and cloud course matching. Free-form card/course edits and compound requests use the cloud model.
 
@@ -167,6 +167,9 @@ Course-name differences in timetable lists now use a compact cloud model identit
 
 Workspace requests now use an independent intent inventory before action generation. Each requested field is checked against the proposal, with one bounded semantic repair; incomplete task sets are rejected. Creating a card, assigning its due date and appending a note count as three requests even if implemented by one write. Card notes use the existing editable description field. Provider inference quality is separate from the injected-response persistence tests. See [the capability audit](docs/ASSISTANT_UI_AUDIT_AR.md).
 
-Cloudflare's free allowance is 10,000 neurons/day shared by the account, not unlimited per-user messages. The free-capable model needs no external API key and no model download; no paid-only fallback is configured. [Official model](https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b/) · [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
+Cloudflare's free allowance is 10,000 neurons/day shared by the account, not unlimited per-user messages. Cloudflare AI needs no external API key or model download; the optional Groq provider needs one owner server secret. No automatic provider fallback is configured. [Official model](https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b/) · [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
 
 [Assistant failure analysis and 618-request acceptance matrix](docs/ASSISTANT_FAILURE_ANALYSIS_AR.md). The live runner is `npm run test:assistant:live -- --limit=618 --resume`; injected tests do not certify model comprehension.
+
+
+Alternative cloud provider: [Groq setup and actual free-tier limits](docs/GROQ_ASSISTANT_AR.md). Use `node scripts/setup-groq-assistant.mjs` after a three-case live probe. The server secret is owner-only; end users need no key or model download.

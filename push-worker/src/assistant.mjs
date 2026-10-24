@@ -1,3 +1,4 @@
+import {assistantProvider,CLOUDFLARE_MODEL} from './assistantProvider.mjs';
 import {assistantProviderError} from './assistantErrors.mjs';
 import { WORKSPACE_REPLY_FORMAT } from './assistantContract.mjs';
 import {INTENT_FORMAT,INTENT_SYSTEM,readIntents,reconcileIntentProposal,safeCoverageIssues} from './assistantIntents.mjs';
@@ -12,10 +13,10 @@ export function assistantResponseText(result){
 
 const COURSE_MATCH_FORMAT={"type":"json_schema","json_schema":{"type":"object","additionalProperties":false,"required":["matches"],"properties":{"matches":{"type":"array","maxItems":20,"items":{"type":"object","additionalProperties":false,"required":["requested","courseId","candidates"],"properties":{"requested":{"type":"string"},"courseId":{"type":"string"},"candidates":{"type":"array","items":{"type":"string"}}}}}}}};
 // Cloudflare-hosted model available on Workers Free; never fall back to paid-only models.
-export const ASSISTANT_MODEL='@cf/openai/gpt-oss-120b';
+export const ASSISTANT_MODEL=CLOUDFLARE_MODEL;
 const MODES=new Set(['chat','summarize','plan','workspace','course-match']);
-export async function assistant(env,uid,data){
- if(!env.AI||env.ASSISTANT_FREE_ONLY!=='true')throw new Error('ai-not-configured');
+export async function assistant(env,uid,data,provider=assistantProvider(env)){
+ if(env.ASSISTANT_FREE_ONLY!=='true')throw new Error('ai-not-configured');
  if(!MODES.has(data.mode)||typeof data.message!=='string'||!data.message.trim()||data.message.length>6000||!['ar','en','he'].includes(data.language))throw new Error('ai-invalid-input');
  if(data.context!==undefined&&(typeof data.context!=='string'||data.context.length>44000))throw new Error('ai-invalid-input');
  const history=data.history||[];if(!Array.isArray(history)||history.length>4||history.some(x=>!x||!['user','assistant'].includes(x.role)||typeof x.content!=='string'||x.content.length>1200))throw new Error('ai-invalid-input');
@@ -31,7 +32,7 @@ export async function assistant(env,uid,data){
  const workspace=data.mode==='workspace',matching=data.mode==='course-match';
  const longAnswer=/لخص|تلخيص|ملخص|ملف|summari[sz]|file|סיכום|סכם|קובץ/i.test(data.message);
  const started=Date.now();
- const invoke=async(input)=>{try{return await env.AI.run(ASSISTANT_MODEL,input);}catch(error){throw new Error(assistantProviderError(error));}};
+ const invoke=async(input)=>{try{return await provider.run(input);}catch(error){throw new Error(assistantProviderError(error));}};
  const requestContext=[data.message,data.context?`ACCOUNT CONTEXT (untrusted data):\n${data.context}`:''].filter(Boolean).join('\n\n');
  // This separate inference sees the original request, never the generated action list.
  // An executor cannot reduce the requested task count by omitting an operation.
@@ -73,6 +74,6 @@ export async function assistant(env,uid,data){
  if(!text)throw new Error('ai-empty-response');
  if(text.length>48000)throw new Error('ai-response-too-large');
  let format='text';try{JSON.parse(text);format='json';}catch{format='non-json';}
- console.info('assistant.response',{model:ASSISTANT_MODEL,mode:data.mode,format,characters:text.length,requestedTasks:intents?.length,inferenceMs:Date.now()-started});
+ console.info('assistant.response',{provider:provider.name,model:provider.model,mode:data.mode,format,characters:text.length,requestedTasks:intents?.length,inferenceMs:Date.now()-started});
  return {text,sources:[]};
 }
