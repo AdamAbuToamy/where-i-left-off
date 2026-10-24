@@ -59,6 +59,19 @@ function canonicalToolFields(plan){
 export function readWorkspaceToolProposal(text){
  let plan;try{plan=JSON.parse(text);}catch{throw new Error('ai-incomplete-proposal');}
  canonicalToolFields(plan);
+ // Providers sometimes emit every optional create field with null or an
+ // empty enum placeholder. These are omissions, not user-requested values.
+ // Never normalize updates/deletes or unknown fields: validation must reject.
+ if(Array.isArray(plan?.actions))for(const action of plan.actions){
+  if(action?.action!=='create'||!action.values||typeof action.values!=='object'||Array.isArray(action.values))continue;
+  const fields=actionFields[action.target];
+  if(!fields)continue;
+  for(const [name,value] of Object.entries(action.values)){
+   const schema=fields[name];
+   if(!schema)continue;
+   if(value===null||(value===''&&Array.isArray(schema.enum)&&!schema.enum.includes('')))delete action.values[name];
+  }
+ }
  // A create's id is a batch-local alias (not a database ID). Some providers
  // emit an empty string for new records. Supply a unique valid alias without
  // changing existing IDs, operation types, or any user-supplied record values.
