@@ -3,6 +3,7 @@ import {writeFileSync} from 'node:fs';
 import {createServer} from 'vite';
 import {assistant} from '../push-worker/src/assistant.mjs';
 import {assistantProvider} from '../push-worker/src/assistantProvider.mjs';
+import {syntheticProviderDiagnostic} from './lib/providerDiagnostic.mjs';
 import {safeProviderFailure} from '../push-worker/src/assistantErrors.mjs';
 import {acceptanceContext} from '../tests/fixtures/assistant/corpus.mjs';
 const report={kind:'live-dialogue-synthetic-data',provider:'gemini',productionWrites:0,persistenceTested:false,inferenceCalls:0,results:[]};
@@ -14,8 +15,8 @@ try{
  const {conversationHistory}=await vite.ssrLoadModule('/src/assistant/conversationHistory.ts');
  const {parseAssistantReply,planAssistantProposal}=await vite.ssrLoadModule('/src/assistant/actions.ts');
  const context=acceptanceContext('dialogue');context.scopes[0].projects.push({...context.scopes[0].projects[0],id:'robot-b',name:'Robot B'});
- const provider=assistantProvider({ASSISTANT_PROVIDER:'gemini',GEMINI_API_KEY:process.env.GEMINI_API_KEY});
- const traced={...provider,name:provider.name,model:provider.model,workspaceTools:true,run:async(...args)=>{if(++report.inferenceCalls>28)throw new Error('dialogue-call-budget');return provider.run(...args);}};
+ const provider=assistantProvider({ASSISTANT_PROVIDER:'gemini',GEMINI_API_KEY:process.env.GEMINI_API_KEY},{onSyntheticDiagnostic:value=>{const diagnostic=syntheticProviderDiagnostic(value,process.env.GEMINI_API_KEY);console.log('synthetic-dialogue-diagnostic',JSON.stringify(diagnostic));(report.diagnostics||=[]).push(diagnostic);}});
+ const traced={...provider,name:provider.name,model:provider.model,workspaceTools:true,run:async(...args)=>{if(++report.inferenceCalls>28)throw new Error('dialogue-call-budget');const value=await provider.run(...args);if(value.contextRequest||value.contextRequests){const step={contextRequest:value.contextRequest,toolCall:value.toolCall,contextRequests:value.contextRequests};(report.readSteps||=[]).push(step);console.log('synthetic-dialogue-read',JSON.stringify(step));}return value;}};
  const runtime={ASSISTANT_FREE_ONLY:'true',DB:{prepare:()=>({bind(){return this;},async run(){return {};},async all(){return {results:[{used:1}]};}})}};
  const needsInput=(reply,changes)=>{assert.equal(changes.length,0);assert.ok(reply.tasks?.some(t=>t.outcome==='needs-input'));assert.ok(reply.text.trim());};
  const threads=[

@@ -12,7 +12,7 @@ test('a greeting with a large account does not send account bodies or require a 
 test('the model reads exact existing record data then proposes an append through the same request',async()=>{
  let calls=0;const text=await runWorkspaceTools(data,[],async input=>{
   calls++;if(calls===1){assert.equal(JSON.stringify(input).includes('old note'),false);return workspaceToolStep({message:{tool_calls:[{id:'read-1',type:'function',function:{name:'read_workspace',arguments:JSON.stringify({requests:[{target:'projects',view:'details',query:'محمد',fields:['name','description']}]})}}]}});}
-  const result=JSON.parse(input.messages.at(-1).content);assert.deepEqual(result.results[0].items,[{id:'p',name:'محمد',description:'old note'}]);assert.equal(input.messages.at(-1).tool_call_id,'read-1');assert.equal(JSON.stringify(input).includes('private course body'),false);return {response:JSON.stringify(plan)};
+  const result=JSON.parse(input.messages.at(-1).content);assert.deepEqual(result.results[0].items,[{id:'p',name:'محمد',description:'old note'}]);assert.equal(input.messages.at(-1).tool_call_id,input.messages.at(-2).tool_calls[0].id);assert.equal(JSON.stringify(input).includes('private course body'),false);return {response:JSON.stringify(plan)};
  });assert.equal(calls,2);assert.deepEqual(JSON.parse(text).actions,plan.actions);
 });
 test('reads cannot cross account scopes; IDs are discovered from authorized context only',()=>{
@@ -33,7 +33,7 @@ const readCall=(id,target)=>({id,type:'function',function:{name:'read_workspace'
 test('independent course and card reads in one response receive all tool results before the next model turn',async()=>{
  let calls=0;const result=await runWorkspaceTools(data,[],async input=>{
   if(++calls===1)return workspaceToolStep({message:{tool_calls:[readCall('courses','courses'),readCall('cards','projects')]}});
-  const replies=input.messages.slice(-2);assert.deepEqual(replies.map(r=>r.tool_call_id),['courses','cards']);
+  const replies=input.messages.slice(-2);assert.deepEqual(replies.map(r=>r.tool_call_id),input.messages.at(-3).tool_calls.map(call=>call.id));
   assert.equal(JSON.parse(replies[0].content).results[0].items[0].id,'c');assert.equal(JSON.parse(replies[1].content).results[0].items[0].id,'p');
   return {response:JSON.stringify(plan)};
  });assert.equal(calls,2);assert.deepEqual(JSON.parse(result).actions,plan.actions);
@@ -42,8 +42,8 @@ test('parallel reads reject duplicate call IDs, unknown calls, mixed proposals, 
  for(const calls of [[readCall('same','courses'),readCall('same','projects')],[readCall('a','courses'),{id:'b',type:'function',function:{name:'propose_workspace_actions',arguments:JSON.stringify(plan)}}],[readCall('a','courses'),{id:'b',type:'function',function:{name:'execute_code',arguments:'{}'}}]])assert.throws(()=>workspaceToolStep({message:{tool_calls:calls}}),/ai-incomplete-proposal/);
  assert.throws(()=>workspaceToolStep({message:{tool_calls:['a','b','c','d'].map(id=>readCall(id,'courses'))}}),/ai-context-read-limit/);
 });
-test('repeated tool-call IDs across model turns fail rather than attaching data to an old call',async()=>{
- await assert.rejects(runWorkspaceTools(data,[],async()=>workspaceToolStep({message:{tool_calls:[readCall('same','courses')]}})),/ai-incomplete-proposal/);
+test('repeated provider call IDs remain bounded by the context read limit',async()=>{
+ await assert.rejects(runWorkspaceTools(data,[],async()=>workspaceToolStep({message:{tool_calls:[readCall('same','courses')]}})),/ai-context-read-limit/);
 });
 test('invalid parallel read scopes remain blocked through the bounded repair without forwarding records',async()=>{
  let calls=0;await assert.rejects(runWorkspaceTools(data,[],async input=>{
@@ -63,4 +63,12 @@ test('persistent malformed plans stop after one repair; provider access and quot
  for(const reason of ['ai-incomplete-proposal','ai-provider-limit','ai-provider-access','ai-provider-request']){
   let calls=0;await assert.rejects(runWorkspaceTools(data,[],async()=>{calls++;throw new Error(reason);}),new RegExp(reason));assert.equal(calls,reason==='ai-incomplete-proposal'?2:1);
  }
+});
+
+test('reused provider IDs across successive reads are correlated with unique canonical calls',async()=>{
+ let calls=0;const result=await runWorkspaceTools(data,[],async input=>{
+  calls++;if(calls<=2)return workspaceToolStep({message:{tool_calls:[readCall('same',calls===1?'courses':'projects')]}});
+  const toolMessages=input.messages.filter(m=>m.role==='tool');const toolCalls=input.messages.filter(m=>m.role==='assistant').flatMap(m=>m.tool_calls||[]);
+  assert.equal(new Set(toolCalls.map(c=>c.id)).size,2);assert.deepEqual(toolMessages.map(m=>m.tool_call_id),toolCalls.map(c=>c.id));return {response:JSON.stringify(plan)};
+ });assert.equal(JSON.parse(result).actions[0].id,'p');assert.equal(calls,3);
 });

@@ -40,3 +40,8 @@ test('tool scope enums use real account scope IDs and never the university page 
  const group=workspaceToolInput({language:'en',message:'Edit group card',context:JSON.stringify({scopes:[{id:'personal'},{id:'my-group'}]})},[]);
  assert.deepEqual(group.tools[0].function.parameters.properties.actions.items.properties.scope.enum,['personal','my-group']);assert.deepEqual(group.tools[1].function.parameters.properties.requests.items.properties.scope.enum,['personal','my-group']);assert.deepEqual(WORKSPACE_TOOL.function.parameters.properties.actions.items.properties.scope.enum,['personal']);
 });
+test('model history carries questions and saved IDs without copying private app workflow fields into tool arguments',()=>{
+ const history=[{role:'assistant',content:JSON.stringify({text:'A date, section, notes or link?',status:'pending',proposal:{clarification:{kind:'creation-details',target:'projects',scope:'personal',name:'Algorithms'},actions:[]}})}];
+ const input=workspaceToolInput({message:'No date',language:'en',context:'{}'},history);
+ assert.ok(input.messages[1].content.includes('A date, section, notes or link?'));assert.equal(input.messages[1].content.includes('creation-details'),false);assert.equal(input.messages[1].content.includes('clarification'),false);
+});
