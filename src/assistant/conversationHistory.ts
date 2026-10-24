@@ -12,7 +12,7 @@ export function conversationHistory(turns:Turn[]):{role:'user'|'assistant';conte
   if(turn.role==='user')return {role:turn.role,content:turn.text};
   const status=turn.undone?'undone':turn.resolved?(turn.receipt||turn.controlResults?.some(r=>r.ok)?'saved':'cancelled'):'pending';
   const saved=turn.receipt?.changes.map(c=>{const item=(c.after||c.before) as {name?:string;title?:string}|null;return {target:c.target,scope:c.scope,id:c.id,exists:!!c.after,name:item?.name||item?.title||''};});
-  const proposal=!turn.resolved&&turn.reply?{actions:turn.reply.actions,controls:turn.reply.controls||[],questions:turn.reply.tasks?.filter(task=>task.outcome==='needs-input'||task.outcome==='unsupported'),files:turn.reply.files.map(file=>({name:file.name,contentOmitted:true}))}:undefined;
+  const proposal=!turn.resolved&&turn.reply?{clarification:turn.reply.clarification,actions:turn.reply.actions,controls:turn.reply.controls||[],questions:turn.reply.tasks?.filter(task=>task.outcome==='needs-input'||task.outcome==='unsupported'),files:turn.reply.files.map(file=>({name:file.name,contentOmitted:true}))}:undefined;
   const content=JSON.stringify({text:turn.text,status,...(saved?{saved}:{}),...(proposal?{proposal}:{})});
   return {role:turn.role,content};
  });

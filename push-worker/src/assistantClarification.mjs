@@ -4,14 +4,18 @@ const words={
  he:{name:'איך תרצה לקרוא לזה?',extras:name=>`עבור ״${name}״, להוסיף מדור, תאריך, הערות או קישור? אשמור פרטים שכבר מסרת. אפשר לומר ״בלי תוספות״ כדי להמשיך.`,study:name=>`עבור ״${name}״, להוסיף מועד, סוג משימה, הערות או קישור? אפשר לדלג.`,course:name=>`עבור ״${name}״, להוסיף הערות או קישור? אפשר לומר ״בלי תוספות״.`,sections:'מדורים זמינים: '},
 };
 /** Missing creation choices are a workflow state, never silently guessed defaults. */
-export function clarifyMinimalCreation(plan,language,context){
+export function clarifyMinimalCreation(plan,language,context,history=[],message=''){
+ const skipped=['بدون إضافات','بدون اي اضافات','بدون أي إضافات','بدون اضافات','no extras','skip extras','without extras','בלי תוספות','ללא תוספות'].some(choice=>message.normalize('NFKC').toLowerCase().includes(choice));
+ const prior=history.filter(turn=>turn.role==='assistant').map(turn=>{try{return JSON.parse(turn.content);}catch{return null;}}).filter(turn=>turn?.status==='pending'&&turn.proposal?.clarification?.kind==='creation-details').at(-1)?.proposal.clarification;
+ if(!plan.actions.length&&!plan.controls.length&&prior&&plan.tasks.some(t=>t.outcome==='needs-input'))return {...plan,clarification:prior};
  if(plan.actions.length!==1||plan.actions[0].action!=='create'||plan.controls.some(c=>c.kind!=='navigate'))return plan;
  const action=plan.actions[0],v=action.values||{},w=words[language]||words.en;
  const identity=action.target==='tasks'?'title':'name',name=v[identity];let question;
+ if(name&&(skipped||prior?.target===action.target&&prior.scope===(action.scope||'personal')))return plan;
  if(action.target!=='lessons'&&(typeof name!=='string'||!name.trim()))question=w.name;
  else if(action.target==='projects'){
   const fields=['sectionId','dueDate','description','projectUrl'];
-  if(fields.every(k=>Object.hasOwn(v,k))||fields.filter(k=>v[k]).length>=2)return plan;
+  if(fields.filter(k=>v[k]).length>=2)return plan;
   question=w.extras(name);
   let data;try{data=JSON.parse(context||'{}');}catch{return plan;}
   const sections=data.scopes?.find(s=>s.id===(action.scope||'personal'))?.sections||[];
@@ -20,5 +24,5 @@ export function clarifyMinimalCreation(plan,language,context){
  }else if(action.target==='tasks'&&(!Object.hasOwn(v,'due')||!Object.hasOwn(v,'kind')))question=w.study(name);
  else if(action.target==='courses'&&(!Object.hasOwn(v,'notes')||!Object.hasOwn(v,'url')))question=w.course(name);
  if(!question)return plan;
- return {...plan,text:question,actions:[],controls:[],tasks:plan.tasks.map(t=>t.actionIndexes.length||t.controlIndexes.length?{...t,outcome:'needs-input',actionIndexes:[],controlIndexes:[],detail:question}:t)};
+ return {...plan,text:question,actions:[],controls:[],...(name?{clarification:{kind:'creation-details',target:action.target,scope:action.scope||'personal',name}}:{}),tasks:plan.tasks.map(t=>t.actionIndexes.length||t.controlIndexes.length?{...t,outcome:'needs-input',actionIndexes:[],controlIndexes:[],detail:question}:t)};
 }

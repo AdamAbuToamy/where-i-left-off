@@ -14,7 +14,8 @@ export type AssistantScope = { id: string; name: string; role?:'manager'|'member
 export type AssistantData = { study: UniversityState; scopes: AssistantScope[] };
 export type Action = { target: 'courses'|'tasks'|'lessons'|'projects'|'sections'; action: 'create'|'update'|'delete'|'trash'; id?: string; scope?: string; values?: Record<string, unknown> };
 export type Change = { target: Action['target']; scope: string; id: string; before: unknown; after: unknown; actionIndexes?:number[] };
-export type AssistantReply = { tasks?:AssistantTask[]; controls?: AssistantControl[]; text: string; actions: Action[]; files: { name: string; content: string }[] };
+export type CreationClarification={kind:'creation-details';target:'projects'|'courses'|'tasks';scope:string;name:string};
+export type AssistantReply = { clarification?:CreationClarification; tasks?:AssistantTask[]; controls?: AssistantControl[]; text: string; actions: Action[]; files: { name: string; content: string }[] };
 const fields = {
  courses: ['name','url','notes','requires','topics','x','y'], tasks: ['courseId','title','kind','due','done','notes','url'],
  lessons: ['courseId','sessionType','day','start','end','room','notes'],
@@ -44,10 +45,12 @@ export function parseAssistantReply(text: string): AssistantReply {
    if(Object.keys(values).some(k=>!fields[a.target as Action['target']].includes(k)))invalid('assistant-fields');
   }
   const files=value.files.map(raw=>{const f=object(raw);if(typeof f.name!=='string'||typeof f.content!=='string'||f.content.length>30000||!f.name.trim()||f.name.length>100)throw new Error();return {name:Array.from(f.name).map(c=>c==='/'||c==='\\'||c.charCodeAt(0)<32?'_':c).join('').replace(/\.[^.]+$/,'')+'.txt',content:f.content};});
+  let clarification:CreationClarification|undefined;
+  if(value.clarification!==undefined){const c=object(value.clarification);if(c.kind!=='creation-details'||!['projects','courses','tasks'].includes(String(c.target))||typeof c.scope!=='string'||!/^[-\w]{1,100}$/.test(c.scope)||typeof c.name!=='string'||!c.name.trim()||c.name.length>500||value.actions.length)throw new Error('assistant-format');clarification=c as unknown as CreationClarification;}
   const controls=parseControls(value.controls);
   const tasks=parseTasks(value.tasks,value.actions.length,controls.length);
   if(tasks.some(t=>t.outcome!=='proposed'&&t.controlIndexes.some(i=>controls[i].kind!=='navigate')))invalid('assistant-task-coverage');
-  return {text:value.text,actions:value.actions as Action[],files,...(controls.length?{controls}:{}),...(tasks.length?{tasks}:{})};
+  return {...(clarification?{clarification}:{}),text:value.text,actions:value.actions as Action[],files,...(controls.length?{controls}:{}),...(tasks.length?{tasks}:{})};
  }catch(error) {if((error as Error).message==='assistant-format')throw error;throw new Error('assistant-invalid',{cause:error});}
 }
 /** Model output is a proposal. Only whitelisted domain changes reach the persistence adapter. */

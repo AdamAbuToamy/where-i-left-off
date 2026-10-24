@@ -6,6 +6,12 @@ test('minimal creation asks optional choices without preserving a guessed sectio
  assert.equal(result.actions.length,0);assert.equal(result.tasks[0].outcome,'needs-input');assert.ok(result.text.includes('Algorithms'));assert.ok(result.text.includes('Study'));assert.equal(JSON.stringify(result).includes('guessed'),false);
 });
 test('explicit empty choices and fully specified compound creations proceed to review',()=>{
- for(const values of [{name:'Quick',sectionId:'',dueDate:'',description:'',projectUrl:''},{name:'Ammar',dueDate:'2026-10-25',description:'Hello'}]){const p=plan(values);assert.equal(clarifyMinimalCreation(p,'en','{}'),p);}
+ const quick=plan({name:'Quick',sectionId:'',dueDate:'',description:'',projectUrl:''});assert.equal(clarifyMinimalCreation(quick,'en','{}',[],'Create Quick with no extras'),quick);
+ const full=plan({name:'Ammar',dueDate:'2026-10-25',description:'Hello'});assert.equal(clarifyMinimalCreation(full,'en','{}'),full);
 });
 test('missing identity asks a name and never invents one',()=>{const r=clarifyMinimalCreation(plan({}),'en','{}');assert.equal(r.actions.length,0);assert.equal(r.text,'What would you like to name it?');});
+
+test('empty model defaults do not count as user choices, but an actual follow-up stage does',()=>{
+ const p=plan({name:'Algorithms',sectionId:'section',dueDate:'',description:'',projectUrl:''});const question=clarifyMinimalCreation(p,'en','{}',[],'Call it Algorithms');assert.equal(question.actions.length,0);
+ const history=[{role:'assistant',content:JSON.stringify({status:'pending',proposal:{clarification:question.clarification}})}];assert.equal(clarifyMinimalCreation(p,'en','{}',history,'Study please'),p);
+});

@@ -115,3 +115,9 @@ it('asks for missing details and retains the entire follow-up conversation befor
  await input('Algorithms');await submit();expect(element.querySelector('.assistant-proposal')).toBeNull();await input('No date');await submit();await input('No section; note Read chapter 1');await submit();
  const last=api.call.mock.calls.at(-1)![0];expect(last.history).toHaveLength(6);expect(last.history[0].content).toBe('Add a card');expect(last.history[2].content).toBe('Algorithms');expect(last.history[4].content).toBe('No date');expect(api.apply).not.toHaveBeenCalled();expect(element.querySelector('.assistant-proposal')).not.toBeNull();
 });
+it('offers a clear skip-extras choice and continues the same draft without creating anything early',async()=>{
+ api.call.mockResolvedValueOnce({text:JSON.stringify({text:'For Algorithms, a date, section, notes or link?',actions:[],files:[],controls:[],clarification:{kind:'creation-details',target:'projects',scope:'personal',name:'Algorithms'},tasks:[{title:'Create Algorithms',outcome:'needs-input',actionIndexes:[],controlIndexes:[],detail:'Choose or skip extras'}]})}).mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'projects',action:'create',id:'new',values:{name:'Algorithms',sectionId:'',dueDate:'',description:'',projectUrl:''}}]})});
+ await open();await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();
+ const skip=[...element.querySelectorAll('button')].find(b=>b.textContent==='No extras')!;expect(skip).toBeDefined();await act(async()=>skip.click());
+ expect(api.call.mock.calls[1][0].message).toBe('No extras');expect(api.call.mock.calls[1][0].history.some((turn:{content:string})=>turn.content.includes('creation-details'))).toBe(true);expect(api.apply).not.toHaveBeenCalled();expect(element.querySelectorAll('.assistant-proposal')).toHaveLength(1);
+});
