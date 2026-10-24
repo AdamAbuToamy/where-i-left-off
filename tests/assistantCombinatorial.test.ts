@@ -51,7 +51,7 @@ it('three creates and a later edit retain exact targets and values',()=>{
   ]);
   expect(changes.filter(c=>c.target==='projects')).toHaveLength(3);
   expect(changes.find(c=>(c.after as {name:string})?.name==='Second '+index)?.after).toMatchObject({description:'Updated '+index,dueDate:'2026-10-28'});
- });
+ }
 });
 it('new course alias can be used for its task and class, but nonexistent IDs fail safely',()=>{
  for(let index=0;index<60;index++){
