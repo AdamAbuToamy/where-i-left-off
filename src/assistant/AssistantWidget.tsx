@@ -1,6 +1,7 @@
 import {conversationHistory} from './conversationHistory';
 import {friendlyFailure} from './friendlyFailure';
 import {quickGreeting} from './quickGreeting';
+import {checkExplicitSection} from './explicitSection';
 import {quickTrashPurge} from './quickTrashPurge';
 import {AssistantFailure} from './failure';
 import {failureWords,failureMessage} from './failureWords';
@@ -76,6 +77,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
    setPhase('thinking');
    const validate=(text:string)=>{
     const reply=parseAssistantReply(text);
+    checkExplicitSection(message,snapshot.data,reply);
     if(request.mode==='workspace'&&(reply.actions.length||reply.controls?.length)&&!reply.tasks?.length)throw new Error('assistant-invalid',{cause:new Error('assistant-task-coverage')});
     let changes:Change[];
     try{changes=planAssistantProposal(snapshot.data,reply.actions);}catch(e){if((e as Error).message==='assistant-linked-reminder')throw e;throw new Error('assistant-invalid',{cause:e});}
