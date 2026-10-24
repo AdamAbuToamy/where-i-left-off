@@ -128,3 +128,5 @@ npm run test:all
 أُعيد بناء اتصال المساعد بمراحل أخطاء واضحة وفحص اتصال محمي دون استهلاك AI، وتحقق إصدار Worker وCORS قبل نشر الواجهة، ومسار نموذج واحد لكل رسائل الشات. [مراجعة إعادة البناء ومصادرها وحدود التحقق](docs/ASSISTANT_REBUILD_AR.md).
 
 Google Gemini setup: [instructions and limits](docs/GEMINI_ASSISTANT_AR.md).
+
+[Deployment from GitHub and a phone](docs/DEPLOY_FROM_PHONE_AR.md).

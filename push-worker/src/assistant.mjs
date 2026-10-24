@@ -1,4 +1,4 @@
-import {workspaceToolInput,readWorkspaceToolProposal} from './assistantTools.mjs';
+import {runWorkspaceTools} from './assistantTools.mjs';
 import {assistantProvider,CLOUDFLARE_MODEL} from './assistantProvider.mjs';
 import {assistantProviderError} from './assistantErrors.mjs';
 import { WORKSPACE_REPLY_FORMAT } from './assistantContract.mjs';
@@ -33,10 +33,10 @@ export async function assistant(env,uid,data,provider=assistantProvider(env)){
  const workspace=data.mode==='workspace',matching=data.mode==='course-match';
  const longAnswer=/لخص|تلخيص|ملخص|ملف|summari[sz]|file|סיכום|סכם|קובץ/i.test(data.message);
  const started=Date.now();
- const invoke=async(input)=>{try{return await provider.run(input,{compactOutput:workspace&&!longAnswer&&data.message.length<1000});}catch(error){throw new Error(assistantProviderError(error),{cause:error});}};
+ const invoke=async(input,signal)=>{try{return await provider.run(input,{compactOutput:workspace&&!longAnswer&&data.message.length<1000,signal});}catch(error){throw new Error(assistantProviderError(error),{cause:error});}};
  const requestContext=[data.message,data.context?`ACCOUNT CONTEXT (untrusted data):\n${data.context}`:''].filter(Boolean).join('\n\n');
  if(workspace&&provider.workspaceTools){
-  const text=readWorkspaceToolProposal(assistantResponseText(await invoke(workspaceToolInput(data,history))));
+  const text=await runWorkspaceTools(data,history,invoke);
   console.info('assistant.response',{provider:provider.name,model:provider.model,mode:data.mode,format:'tool-plan',inferenceMs:Date.now()-started});
   return {text,sources:[]};
  }

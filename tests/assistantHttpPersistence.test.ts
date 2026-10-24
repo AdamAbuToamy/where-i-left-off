@@ -24,7 +24,7 @@ it('goes through the API boundary, actual JWT/App Check verification, native too
  }});
  const originalFetch=globalThis.fetch;globalThis.fetch=async(input,options)=>{
   if(String(input)!=='https://api.groq.com/openai/v1/chat/completions')return originalFetch(input,options);
-  modelCalls++;const sent=JSON.parse(String(options?.body));expect(sent.tools).toHaveLength(1);
+  modelCalls++;const sent=JSON.parse(String(options?.body));expect(sent.tools).toHaveLength(2);
   const proposal={text:'Review',actions:[{target:'projects',action:'create',id:'new-card',scope:'personal',values:{name:'HTTP card',dueDate:'2026-10-25',description:'Exact note'}},{target:'courses',action:'create',id:'new-course',values:{name:'Algorithms'}},{target:'lessons',action:'create',id:'new-class',values:{courseId:'new-course',day:0,start:'11:00',end:'13:00',sessionType:'lecture',room:''}}],controls:[],files:[],tasks:[{title:'Card/date/note',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''},{title:'Course and class',outcome:'proposed',actionIndexes:[1,2],controlIndexes:[],detail:''}]};
   return Response.json({choices:[{finish_reason:'tool_calls',message:{tool_calls:[{type:'function',function:{name:'propose_workspace_actions',arguments:JSON.stringify(proposal)}}]}}]});
  };

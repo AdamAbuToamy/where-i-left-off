@@ -6,6 +6,7 @@ export const failureWords={
  he:{details:'פרטי החיבור',copy:'העתקת דוח תקלה',copied:'הדוח הבטוח הועתק',check:'בדיקת חיבור העוזר',ready:'החשבון והשרת מחוברים. הבדיקה לא צרכה בקשת AI.',stage:{read:'קריאת נתוני החשבון',configuration:'הגדרת החיבור',identity:'התחברות לחשבון','app-check':'אימות האפליקציה',request:'חיבור לשרת',account:'בדיקת החשבון בשרת',database:'מסד נתוני העוזר',provider:'ספק הבינה המלאכותית',validation:'בדיקת השינויים',save:'שמירת השינויים'}},
 } satisfies Record<Language,{details:string;copy:string;copied:string;check:string;ready:string;stage:Record<AssistantStage,string>}>;
 const messages:Record<string,[string,string,string]>={
+ 'ai-context-read-limit':['يحتاج الطلب قراءة بيانات أكثر من الحد الحالي. حدّد الكورس أو البطاقات المطلوبة؛ لم تُحفظ تغييرات.','This request needs more account reads. Specify the course or cards; no changes were saved.','הבקשה דורשת קריאות נוספות. ציינו קורס או כרטיסים; לא נשמרו שינויים.'],
  'assistant-read-failed':['تعذرت قراءة بيانات حسابك قبل الاتصال بالذكاء الاصطناعي.','Could not read account data before contacting AI.','קריאת נתוני החשבון נכשלה לפני הפנייה ל-AI.'],
  'assistant-config-unavailable':['عنوان خادم المساعد غير جاهز في النسخة المنشورة.','The deployed assistant endpoint is not configured correctly.','כתובת שרת העוזר אינה מוגדרת כראוי בגרסה שפורסמה.'],
  'assistant-auth-required':['سجّل الدخول لاستخدام المساعد.','Sign in to use the assistant.','יש להתחבר כדי להשתמש בעוזר.'],

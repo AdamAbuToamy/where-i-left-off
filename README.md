@@ -179,3 +179,5 @@ Groq workspace requests now use one native function call to select the existing 
 The assistant connection was rebuilt with stage-specific errors, protected no-inference health checks, deployment protocol/CORS verification, and a single model path for chat input. See [the rebuild audit, official sources and verification limits](docs/ASSISTANT_REBUILD_AR.md).
 
 Google Gemini setup: [instructions and limits](docs/GEMINI_ASSISTANT_AR.md).
+
+[Deployment from GitHub and a phone](docs/DEPLOY_FROM_PHONE_AR.md).
