@@ -1,8 +1,9 @@
 name: Deploy Firebase Hosting
+# Recovery deployment keeps the production assistant disabled; emulator tests opt in explicitly.
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/deploy-hosting.yml', 'scripts/prepare-hosting-config.mjs', 'public/google*.html', 'public/sitemap.*', 'public/robots.txt']
+  workflow_run:
+    workflows: [Quality checks]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,10 +12,25 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository)
+    env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+      - name: Refuse superseded deployments
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          const r=await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/git/ref/heads/main`,{headers:{authorization:`Bearer ${process.env.GH_TOKEN}`,accept:'application/vnd.github+json'}});
+          if(!r.ok||(await r.json()).object.sha!==process.env.DEPLOY_SHA)throw new Error('Refusing to deploy a superseded or non-main commit.');
+          JS
       - name: Check existing deployment credential
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
@@ -30,6 +46,19 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Preserve public production configuration and App Check
         run: node scripts/prepare-hosting-config.mjs
+      - name: Check and repair only the same-project Auth handler referrer
+        continue-on-error: true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/repair-auth-origin.mjs --fix
+      - name: Keep safe Auth diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-origin-report
+          path: auth-origin-report.json
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Build production application
         run: npm run build
       - name: Run unit tests

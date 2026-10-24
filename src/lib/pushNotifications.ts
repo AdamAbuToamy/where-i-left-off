@@ -1,4 +1,3 @@
-import {assistantRequest} from '../assistant/api'
 import { getToken } from 'firebase/app-check'
 import { useEffect, useState } from 'react'
 import { auth, db, emulatorMode, appCheck } from './firebase'
@@ -25,8 +24,7 @@ export function notificationEndpoint() {
     return url.href
   }).catch(error=>{pushEndpoint=undefined;throw error})
 }
-export async function pushCall<T=unknown>(data:Record<string,unknown>,options:{path?:'/assistant';timeout?:number}={}):Promise<T> {
-  if(options.path)return assistantRequest<T>(data,options.timeout)
+export async function pushCall<T=unknown>(data:Record<string,unknown>,options:{timeout?:number}={}):Promise<T> {
   if (!db || !auth?.currentUser) throw new Error('Sign in first')
   const uid=auth.currentUser.uid
   const [endpoint,identity,appcheck]=await Promise.all([

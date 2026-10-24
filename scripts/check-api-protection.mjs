@@ -3,7 +3,7 @@ import {readFileSync,existsSync,writeFileSync} from 'node:fs';
 import {parseEnv} from 'node:util';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {inspectRestrictions,repairRestrictions} from './api-protection-policy.mjs';
+import {inspectRestrictions,repairRestrictions,firebaseOrigins} from './api-protection-policy.mjs';
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const PROJECT='where-i-left-off-b5683', require=createRequire(import.meta.url);
 const fix=process.argv.includes('--fix');let phase='login',accessToken;
@@ -38,6 +38,7 @@ try {
  if(local.VITE_FIREBASE_PROJECT_ID&&local.VITE_FIREBASE_PROJECT_ID!==PROJECT)throw failure('local-project-mismatch');
  async function publicRead(path,json=false){const r=await fetch('https://where-i-left-off.web.app'+path,{signal:AbortSignal.timeout(20000)});if(!r.ok)throw failure('public-config-http-'+r.status);if(path==='/')report.hostedReferrerPolicy=r.headers.get('referrer-policy');return json?r.json():r.text();}
  const sdk=await publicRead('/__/firebase/init.json',true);if(sdk.projectId!==PROJECT||!new RegExp(`^1:${number}:web:[A-Za-z0-9_-]+$`).test(sdk.appId||''))throw failure('hosted-project-mismatch');
+ const origins=firebaseOrigins(sdk.authDomain,PROJECT);report.authDomain=sdk.authDomain;report.checkedOrigins=origins;
  report.localReferrerPolicy=JSON.parse(readFileSync('firebase.json','utf8')).hosting.headers.find(x=>x.source==='**')?.headers.find(x=>x.key==='Referrer-Policy')?.value;
  const html=await publicRead('/');const entry=html.match(/<script\b[^>]*\bsrc="(\/assets\/[^"?#]+\.js)"/i)?.[1];
  if(!entry)throw failure('hosted-entry-missing');
@@ -54,17 +55,17 @@ try {
   if(!new RegExp(`^projects/${number}/locations/global/keys/[A-Za-z0-9_-]+$`).test(lookup.name||''))throw failure('key-project-mismatch');
   phase='key-restrictions-'+label;
   const metadata=await request('https://apikeys.googleapis.com/v2/'+lookup.name);
-  const before=inspectRestrictions(metadata.restrictions);const check={label,...before,repaired:false};report.checks.push(check);
+  const before=inspectRestrictions(metadata.restrictions,origins);const check={label,...before,repaired:false};report.checks.push(check);
   console.log(`${label}: missing APIs=${before.missingServices.join(',')||'none'}; missing site domains=${before.missingOrigins.join(',')||'none'}; method limits=${before.methodRestricted.join(',')||'none'}; wrong key type=${before.incompatibleApplication}`);
   if(fix){
    phase='repair-plan-'+label;
-   const plan=repairRestrictions(metadata.restrictions);
+   const plan=repairRestrictions(metadata.restrictions,origins);
    if(plan.changed){
     if(!metadata.etag)throw failure('missing-key-etag');
     phase='repair-'+label;
     const operation=await request('https://apikeys.googleapis.com/v2/'+lookup.name+'?updateMask=restrictions','PATCH',{name:lookup.name,etag:metadata.etag,restrictions:plan.restrictions});
     await poll(operation);
-    const verified=inspectRestrictions((await request('https://apikeys.googleapis.com/v2/'+lookup.name)).restrictions);
+    const verified=inspectRestrictions((await request('https://apikeys.googleapis.com/v2/'+lookup.name)).restrictions,origins);
     if(verified.missingServices.length||verified.missingOrigins.length)throw failure('repair-not-verified');
     check.repaired=true;check.after=verified;
    }

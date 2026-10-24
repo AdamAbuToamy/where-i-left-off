@@ -44,3 +44,5 @@ assistant-acceptance-live-report.json
 assistant-acceptance-live-report.previous-*.json
 
 /assistant-acceptance-rechecked-report.json
+
+/auth-origin-report.json

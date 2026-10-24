@@ -43,3 +43,10 @@ it('disables saving when new passwords mismatch or repeat the current password',
  type('password-confirm','mismatch');expect(container.querySelector<HTMLButtonElement>('form button')!.disabled).toBe(true)
  type('password-new','old-password');type('password-confirm','old-password');expect(container.querySelector<HTMLButtonElement>('form button')!.disabled).toBe(true)
 })
+
+it('refreshes authoritative email and token state without marking an unverified account verified locally',async()=>{
+ const refresh=vi.fn().mockResolvedValue(undefined),testUser={...user,emailVerified:false,reload:refresh} as unknown as User;
+ act(()=>root.render(<PasswordChange user={testUser} language="en"/>));
+ const button=[...container.querySelectorAll('button')].find(b=>b.textContent==='Refresh email verification')!;await act(async()=>button.click());
+ expect(refresh).toHaveBeenCalledOnce();expect(token).toHaveBeenCalledWith(true);expect(testUser.emailVerified).toBe(false);expect(container.textContent).toContain('Email is not verified yet.');expect(mocks.update).not.toHaveBeenCalled();
+});
