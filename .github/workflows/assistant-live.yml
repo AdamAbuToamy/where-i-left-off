@@ -2,7 +2,7 @@ name: Assistant live validation
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/assistant-live.yml', 'scripts/test-assistant-live.mjs']
+    paths: ['.github/workflows/assistant-live.yml', 'scripts/test-assistant-live.mjs', 'scripts/check-gemini-catalog.mjs', 'push-worker/src/assistant*.mjs']
   workflow_dispatch:
     inputs:
       provider:
