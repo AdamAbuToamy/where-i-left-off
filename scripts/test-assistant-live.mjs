@@ -9,13 +9,14 @@ import {acceptanceCases} from '../tests/fixtures/assistant/corpus.mjs';
 import {acceptanceSummary,providerStop} from './lib/assistantAcceptance.mjs';
 import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
 import {ASSISTANT_MODEL} from '../push-worker/src/assistant.mjs';
-import {GROQ_MODEL} from '../push-worker/src/assistantProvider.mjs';
+import {runAcceptanceCase} from '../tests/fixtures/assistant/runCase.mjs';
+import {assistantProvider,GROQ_MODEL} from '../push-worker/src/assistantProvider.mjs';
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const args=process.argv.slice(2),provider=args.find(a=>a.startsWith('--provider='))?.split('=')[1]||'cloudflare',model=provider==='groq'?GROQ_MODEL:ASSISTANT_MODEL,limitArg=args.find(a=>a.startsWith('--limit=')),limit=limitArg?Number(limitArg.split('=')[1]):acceptanceCases.length;
 if(args.includes('--list')){console.log(JSON.stringify({requests:acceptanceCases.length,unique:new Set(acceptanceCases.map(c=>c.message)).size,languages:['ar','en','he'],model,mode:'catalog-only; no inference'},null,2));process.exit(0);}
 if(!args.includes('--live')||!Number.isInteger(limit)||limit<1||limit>acceptanceCases.length)throw new Error('Use --live --limit=618 (or --list). Real inference consumes the selected provider allowance.');
 if(!['cloudflare','groq'].includes(provider))throw new Error('Unknown provider.');
-const fingerprint=createHash('sha256').update(provider).update(readFileSync('push-worker/src/assistantProvider.mjs')).update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
+const fingerprint=createHash('sha256').update(provider).update(readFileSync('scripts/test-assistant-live.mjs')).update(readFileSync('tests/fixtures/assistant/runCase.mjs')).update(readFileSync('push-worker/src/assistantProvider.mjs')).update(JSON.stringify(acceptanceCases)).update(readFileSync('push-worker/src/assistant.mjs')).update(readFileSync('push-worker/src/assistantIntents.mjs')).update(readFileSync('tests/fixtures/assistant/oracle.ts')).digest('hex');
 const reportPath=resolve('assistant-acceptance-live-report.json');let old=args.includes('--resume')&&existsSync(reportPath)?JSON.parse(readFileSync(reportPath,'utf8')):null;
 if(old&&(old.model!==model||old.provider!==provider||old.fingerprint!==fingerprint)){writeFileSync(reportPath.replace('.json','.previous-'+Date.now()+'.json'),JSON.stringify(old,null,2)+'\n');old=null;console.log('Previous report archived; starting the updated suite.');}
 const report=old||{model,fingerprint,provider,kind:'live-provider-synthetic-data',startedAt:new Date().toISOString(),results:[]};
@@ -23,17 +24,20 @@ const save=()=>{report.summary=acceptanceSummary(report.results,acceptanceCases.
 const cancellation=new AbortController();process.once('SIGINT',()=>cancellation.abort());process.once('SIGTERM',()=>cancellation.abort());
 const folder=mkdtempSync(join(tmpdir(),'wilo-ai-live-')),token=randomUUID();let child,vite;
 try{
- const cli=resolve('push-worker/node_modules/wrangler/bin/wrangler.js');if(!existsSync(cli))throw new Error('Install push-worker dependencies first.');
  if(provider==='groq'&&!process.env.GROQ_API_KEY?.trim())throw new Error('groq-key-required');
- if(provider==='cloudflare'){
+ let executeCase;
+ if(provider==='groq'){
+  const inference=assistantProvider({ASSISTANT_PROVIDER:'groq',GROQ_API_KEY:process.env.GROQ_API_KEY},{signal:cancellation.signal});
+  executeCase=testCase=>runAcceptanceCase(testCase,inference);
+  console.log('Groq transport: direct Node HTTPS; no local Worker or secret file.');
+ }else{
+ const cli=resolve('push-worker/node_modules/wrangler/bin/wrangler.js');if(!existsSync(cli))throw new Error('Install push-worker dependencies first.');
  const identity=spawnSync(process.execPath,[cli,'whoami'],{encoding:'utf8',env:{...process.env,WRANGLER_SEND_METRICS:'false'},timeout:15000});
  if(/not authenticated|wrangler login/i.test((identity.stdout||'')+(identity.stderr||'')))throw new Error('cloudflare-authentication-required');
  if(identity.status!==0)throw new Error('cloudflare-authentication-check-failed');
- }
  const server=createNetServer();await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});const port=server.address().port;await new Promise(yes=>server.close(yes));
  const config=join(folder,'wrangler.json');
- writeFileSync(config,JSON.stringify({name:'wilo-local-ai-acceptance',main:resolve('tests/fixtures/assistant/live-worker.mjs'),compatibility_date:'2026-10-23',...(provider==='cloudflare'?{ai:{binding:'AI',remote:true}}:{}),vars:{TEST_TOKEN:token,ASSISTANT_PROVIDER:provider}}));
- const secrets=join(folder,'.dev.vars');if(provider==='groq')writeFileSync(secrets,'GROQ_API_KEY='+JSON.stringify(process.env.GROQ_API_KEY.trim())+'\n',{mode:0o600});
+ writeFileSync(config,JSON.stringify({name:'wilo-local-ai-acceptance',main:resolve('tests/fixtures/assistant/live-worker.mjs'),compatibility_date:'2026-10-23',ai:{binding:'AI',remote:true},vars:{TEST_TOKEN:token}}));
  const childEnv={...process.env,WRANGLER_SEND_METRICS:'false'};delete childEnv.GROQ_API_KEY;
  child=spawn(process.execPath,[cli,'dev','--config',config,'--ip','127.0.0.1','--port',String(port),'--show-interactive-dev-session=false'],{stdio:['ignore','pipe','pipe'],env:childEnv});
  let diagnostics='';for(const stream of [child.stdout,child.stderr])stream.on('data',d=>{diagnostics=(diagnostics+d).slice(-6000);});
@@ -43,6 +47,8 @@ try{
   if(child.exitCode!==null||child.signalCode!==null)throw new Error(/auth|log.?in|CLOUDFLARE_API_TOKEN/i.test(diagnostics)?'cloudflare-authentication-required':'live-worker-startup-failed');
   try{await fetch(origin,{signal:AbortSignal.timeout(500)});break;}catch{if(Date.now()>deadline)throw new Error('live-worker-startup-timeout');await new Promise(r=>setTimeout(r,250));}
  }
+ executeCase=async testCase=>{const response=await fetch(origin,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({id:testCase.id}),signal:AbortSignal.any([cancellation.signal,AbortSignal.timeout(120000)])});return response.json();};
+ }
  const {createServer}=await import('vite');vite=await createServer({server:{middlewareMode:true,hmr:false},appType:'custom'});
  const {evaluateAcceptance}=await vite.ssrLoadModule('/tests/fixtures/assistant/oracle.ts');
  let attempted=0,consecutiveUnavailable=0;
@@ -51,12 +57,13 @@ try{
  const ordered=[...acceptanceCases].sort((a,b)=>priority(a.id)-priority(b.id));
  for(const testCase of ordered){
   if(report.results.some(r=>r.id===testCase.id&&r.status==='passed'))continue;if(attempted++>=limit)break;
-  const response=await fetch(origin,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({id:testCase.id}),signal:AbortSignal.any([cancellation.signal,AbortSignal.timeout(120000)])}),result=await response.json();
+  cancellation.signal.throwIfAborted();
+  const result=await executeCase(testCase);cancellation.signal.throwIfAborted();
   if(blockedProviderCodes.has(result.error)){
    const item={id:testCase.id,status:'blocked',reason:result.error,elapsedMs:result.elapsedMs,trace:result.trace,details:result.details};
    report.results=report.results.filter(r=>r.id!==testCase.id);report.results.push(item);save();
    consecutiveUnavailable++;
-   console.log(`${testCase.id}: blocked (${result.error})`);
+   console.log(`${testCase.id}: blocked (${result.error})`,JSON.stringify(result.trace?.at(-1)?.providerFailure||{}));
    if(providerStop(result.error,consecutiveUnavailable)){report.stopped=result.error;save();process.exitCode=2;break;}
    continue;
   }
