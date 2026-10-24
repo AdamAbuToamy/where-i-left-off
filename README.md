@@ -165,7 +165,7 @@ Browser permissions, account/security and group membership operations use their 
 
 Course-name differences in timetable lists now use a compact cloud model identity-resolution request instead of requiring an exact saved title. Only existing course IDs are accepted; class times and types remain under client validation. Cloud mode needs no local model download.
 
-Workspace requests now use an independent intent inventory before action generation. Each requested field is checked against the proposal, with one bounded semantic repair; incomplete task sets are rejected. Creating a card, assigning its due date and appending a note count as three requests even if implemented by one write. Card notes use the existing editable description field. Provider inference quality is separate from the injected-response persistence tests. See [the capability audit](docs/ASSISTANT_UI_AUDIT_AR.md).
+The older Cloudflare workspace path uses an independent intent inventory before action generation; the current Groq path uses one native tool plan instead. Each requested field is checked against the proposal, with one bounded semantic repair; incomplete task sets are rejected. Creating a card, assigning its due date and appending a note count as three requests even if implemented by one write. Card notes use the existing editable description field. Provider inference quality is separate from the injected-response persistence tests. See [the capability audit](docs/ASSISTANT_UI_AUDIT_AR.md).
 
 Cloudflare's free allowance is 10,000 neurons/day shared by the account, not unlimited per-user messages. Cloudflare AI needs no external API key or model download; the optional Groq provider needs one owner server secret. No automatic provider fallback is configured. [Official model](https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b/) · [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
 
@@ -173,3 +173,5 @@ Cloudflare's free allowance is 10,000 neurons/day shared by the account, not unl
 
 
 Alternative cloud provider: [Groq setup and actual free-tier limits](docs/GROQ_ASSISTANT_AR.md). Use `node scripts/setup-groq-assistant.mjs` after a three-case live probe. The server secret is owner-only; end users need no key or model download.
+
+Groq workspace requests now use one native function call to select the existing app operations and arguments, with code-side schema/coverage checks and the unchanged client planner, permissions and verified save path. The older Cloudflare inventory path is unchanged. Free quotas still apply; the authored 618-case contract matrix is not live inference evidence.

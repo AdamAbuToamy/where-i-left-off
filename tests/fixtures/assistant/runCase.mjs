@@ -6,10 +6,10 @@ import {acceptanceContext} from './corpus.mjs';
 export async function runAcceptanceCase(testCase,provider){
  const trace=[],start=Date.now();
  const runtime={ASSISTANT_FREE_ONLY:'true',DB:{prepare:()=>({bind(){return this;},async run(){return {};},async all(){return {results:[{used:1}]};}})}};
- const traced={name:provider.name,model:provider.model,async run(input){
+ const traced={name:provider.name,model:provider.model,workspaceTools:provider.workspaceTools,async run(input,options){
   const inventory=input.response_format===INTENT_FORMAT,prior=trace.filter(t=>inventory?t.stage.startsWith('inventory'):!t.stage.startsWith('inventory')).length;
-  const stage=inventory?(prior?'inventory-repair':'inventory'):(prior?'repair':'proposal'),began=Date.now();
-  let result;try{result=await provider.run(input);}catch(error){trace.push({stage,model:provider.model,ms:Date.now()-began,error:assistantProviderError(error),providerFailure:safeProviderFailure(error)});throw error;}
+  const stage=input.tools?'tool-plan':inventory?(prior?'inventory-repair':'inventory'):(prior?'repair':'proposal'),began=Date.now();
+  let result;try{result=await provider.run(input,options);}catch(error){trace.push({stage,model:provider.model,ms:Date.now()-began,error:assistantProviderError(error),providerFailure:safeProviderFailure(error)});throw error;}
   trace.push({stage,model:provider.model,ms:Date.now()-began,text:assistantResponseText(result)});return result;
  }};
  try{
