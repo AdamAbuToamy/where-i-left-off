@@ -99,8 +99,24 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
    if(patch.assignedTo&&scope!=='personal'&&workspace.members&&!workspace.members.some(m=>m.uid===patch.assignedTo))invalid('assistant-reference');
    if(data.study.tasks.some(t=>t.reminderProjectId===id)&&scope==='personal')throw new Error('assistant-linked-reminder');
   }else if(a.target==='sections'){
-   if(!['create','update'].includes(a.action)||typeof patch.name!=='string'||!patch.name.trim()||patch.name.length>60)throw new Error('assistant-invalid');
-   after={id,name:patch.name.trim(),revision:before?Number(before.revision||0)+1:0};
+   if(a.action==='delete'){
+    if(Object.keys(patch).length||scope!=='personal'&&workspace.role!=='manager')invalid('assistant-fields');
+    // Match the ordinary section-delete command. Cards (including Trash cards)
+    // remain in the account but move to "No section". Track each related write
+    // in the same reviewed, atomic proposal so no dangling section IDs persist.
+    for(let i=0;i<workspace.projects.length;i++){
+     const project=workspace.projects[i];
+     if(project.sectionId!==id)continue;
+     const moved=ProjectEntity.restore(project).apply('edit',{sectionId:''},project.revision,now)!.snapshot();
+     workspace.projects[i]=moved;
+     const key=['projects',scope,project.id].join('/'),existing=changed.get(key);
+     changed.set(key,{target:'projects',scope,id:project.id,before:existing?existing.before:structuredClone(project),after:moved,...(trackActions?{actionIndexes:[...new Set([...(existing?.actionIndexes||[]),actionIndex])]}:{})});
+    }
+    after=null;
+   }else{
+    if(!['create','update'].includes(a.action)||typeof patch.name!=='string'||!patch.name.trim()||patch.name.length>60)invalid('assistant-fields');
+    after={id,name:patch.name.trim(),revision:before?Number(before.revision||0)+1:0};
+   }
   }else{
    if(!['create','update'].includes(a.action))throw new Error('assistant-invalid');
    const defaults=a.target==='courses'?{name:'',url:'',notes:'',requires:[],topics:[],x:0,y:0}:a.target==='tasks'?{courseId:'',title:'',kind:'task',due:'',done:false,notes:'',url:''}:{courseId:'',sessionType:'lecture',day:0,start:'09:00',end:'10:00',room:''};
