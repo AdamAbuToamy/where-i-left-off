@@ -12,7 +12,7 @@ test('Cloudflare runtime reaches each provider with native tools and refuses red
  const runtime=new Miniflare(convertV4MiniflareOptions({modules:true,script:outputFiles[0].text,compatibilityDate:'2026-10-20',outboundService:async request=>{
   destinations.push(new URL(request.url).hostname);assert.equal(request.headers.get('authorization'),'Bearer runtime-test-only');
   if(redirect)return new Response(null,{status:302,headers:{location:'https://must-never-receive-key.example/'}});
-  const body=await request.json();assert.equal(body.tools.length,1);assert.ok(body.messages.at(-1).content.includes('أضف بطاقة وتاريخها وملاحظتها'));
+  const body=await request.json();assert.equal(body.tools.length,2);assert.ok(body.messages.at(-1).content.includes('أضف بطاقة وتاريخها وملاحظتها'));
   return Response.json({choices:[{finish_reason:'tool_calls',message:{tool_calls:[{type:'function',function:{name:'propose_workspace_actions',arguments:JSON.stringify(proposal)}}]}}]});
  }}));
  try{

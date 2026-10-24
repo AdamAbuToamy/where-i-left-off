@@ -1,0 +1,93 @@
+name: Deploy Worker and website
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Quality checks]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: wilo-production
+  cancel-in-progress: false
+jobs:
+  configuration:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    outputs:
+      ready: ${{ steps.credentials.outputs.ready }}
+    steps:
+      - name: Check deployment credentials without exposing them
+        id: credentials
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
+          FIREBASE_CREDENTIAL: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$CF_TOKEN" ] && [ -n "$CF_CONFIG" ] && [ -n "$FIREBASE_CREDENTIAL" ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Deployment is not configured. See docs/DEPLOY_FROM_PHONE_AR.md. No deployment was attempted.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+  deploy:
+    needs: configuration
+    if: needs.configuration.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Require current main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          const r=await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/git/ref/heads/main`,{headers:{authorization:`Bearer ${process.env.GH_TOKEN}`,accept:'application/vnd.github+json'}});
+          if(!r.ok||(await r.json()).object.sha!==process.env.DEPLOY_SHA)throw new Error('Refusing to deploy a superseded or non-main commit.');
+          JS
+      - name: Install dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          npm ci --prefix push-worker --no-audit --no-fund
+      - name: Restore existing Worker configuration
+        env:
+          WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          const c=JSON.parse(process.env.WORKER_CONFIG);
+          if(c.name!=='wilo-free-push'||!/^[a-f0-9]{32}$/.test(c.account_id||'')||c.vars?.FIREBASE_PROJECT_ID!=='where-i-left-off-b5683'||c.vars?.ASSISTANT_FREE_ONLY!=='true'||!c.d1_databases?.some(d=>d.binding==='DB'&&d.database_id!=='SET_BY_SETUP_SCRIPT'))throw new Error('Invalid existing production Worker configuration.');
+          writeFileSync('push-worker/wrangler.local.json',JSON.stringify(c));
+          JS
+      - name: Deploy existing Worker with its stored secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_SEND_METRICS: 'false'
+        run: node push-worker/node_modules/wrangler/bin/wrangler.js deploy --config push-worker/wrangler.local.json
+      - name: Verify Worker connection and prepare public Firebase configuration
+        run: |
+          node scripts/check-assistant-deployment.mjs
+          node scripts/prepare-hosting-config.mjs
+      - name: Build website
+        run: VITE_USE_EMULATORS=false VITE_TEST_OFFLINE=false VITE_REQUIRE_APP_CHECK=true VITE_REQUIRE_FIREBASE_CONFIG=true npm run build
+      - name: Deploy existing Firebase Hosting site
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: where-i-left-off-b5683
+          channelId: live
+          target: production
+          firebaseToolsVersion: 15.33.0
+      - name: Remove temporary configuration
+        if: always()
+        run: rm -f push-worker/wrangler.local.json .env.production.local

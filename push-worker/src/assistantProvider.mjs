@@ -1,4 +1,4 @@
-import {workspaceToolArguments} from './assistantTools.mjs';
+import {workspaceToolStep} from './assistantTools.mjs';
 import {groqRateLimit,minuteRetry} from './groqLimits.mjs';
 export const CLOUDFLARE_MODEL='@cf/openai/gpt-oss-120b';
 export const GROQ_MODEL='openai/gpt-oss-120b';
@@ -11,14 +11,14 @@ class CloudflareInference {
 /** Credentials stay in the Worker; endpoints and model cannot come from user input. */
 class CompatibleInference {
  constructor(key,signal,name,model,endpoint){Object.assign(this,{key,signal,name,model,endpoint,workspaceTools:true});}
- async run(input,{compactOutput=false}={}){
+ async run(input,{compactOutput=false,signal:requestSignal}={}){
   const body={model:this.model,messages:input.messages,temperature:input.temperature,max_completion_tokens:compactOutput?Math.min(input.max_tokens,3072):input.max_tokens,reasoning_effort:'low'};
   if(this.name==='gemini'){body.max_tokens=body.max_completion_tokens;delete body.max_completion_tokens;body.reasoning_effort='minimal';}
   if(input.tools){body.tools=input.tools;body.tool_choice=input.tool_choice;if(this.name==='groq')body.parallel_tool_calls=false;}
   if(input.response_format)body.response_format=input.response_format.type==='json_schema'
    ?{type:'json_object'}
    :input.response_format;
-  const signal=this.signal?AbortSignal.any([this.signal,AbortSignal.timeout(40000)]):AbortSignal.timeout(40000);
+  const signal=AbortSignal.any([AbortSignal.timeout(40000),...[this.signal,requestSignal].filter(Boolean)]);
   for(let attempt=0;attempt<2;attempt++){
   const response=await fetch(this.endpoint,{
    method:'POST',redirect:'manual',headers:{authorization:`Bearer ${this.key}`,'content-type':'application/json'},
@@ -27,14 +27,14 @@ class CompatibleInference {
   // Never include upstream payloads, headers or secrets in errors/logs.
   if(!response.ok){
    let failure;try{failure=(await response.json())?.error;}catch{/* Non-JSON errors still retain their HTTP status. */}
-   const rate=this.name==='groq'&&response.status===429?groqRateLimit(failure?.message,response.headers.get('retry-after')):undefined;
-   if(attempt===0&&rate&&minuteRetry(rate)){await waitForRetry(rate.retryAfterSeconds,signal);continue;}
+   const rate=this.name==='groq'&&[429,413].includes(response.status)?groqRateLimit(failure?.message,response.headers.get('retry-after')):undefined;
+   if(response.status===429&&attempt===0&&rate&&minuteRetry(rate)){await waitForRetry(rate.retryAfterSeconds,signal);continue;}
    const error=new Error(response.status===413||rate?.oversized?'ai-provider-context':'provider-request-failed');error.providerRate=rate;
    error.status=response.status;error.providerCode=failure?.code;error.providerParameter=failure?.param;throw error;
   }
   const result=await response.json(),choice=result?.choices?.[0];
   if(choice?.finish_reason==='length')throw new Error('ai-response-too-large');
-  if(input.tools)return {response:workspaceToolArguments(choice)};
+  if(input.tools)return workspaceToolStep(choice);
   if(typeof choice?.message?.content!=='string'||!choice.message.content.trim())throw new Error('ai-empty-response');
   return {response:choice.message.content};
   }
