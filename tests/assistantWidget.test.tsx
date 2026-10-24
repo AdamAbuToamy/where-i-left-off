@@ -25,7 +25,7 @@ it('does not call the model with incomplete data when Firebase read fails',async
  api.read.mockRejectedValue(new Error('permission-denied'));await open();await input('Summarize');await submit();expect(api.call).not.toHaveBeenCalled();expect(api.apply).not.toHaveBeenCalled();expect(element.querySelector('.assistant-message.is-assistant')?.textContent).toContain('permissions');
 });
 it('answers a normal question without proposals and distinguishes invalid model format from invalid edit IDs',async()=>{
- api.call.mockResolvedValue({text:'{"text":"Hello"}'});await open();await input('Hi');await submit();expect(element.textContent).toContain('Hello');expect(api.apply).not.toHaveBeenCalled();
+ api.call.mockResolvedValue({text:'{"text":"Hello"}'});await open();await input('What is a summary?');await submit();expect(element.textContent).toContain('Hello');expect(api.apply).not.toHaveBeenCalled();
  vi.useFakeTimers();api.call.mockResolvedValue({text:'not JSON'});await input('Again');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});expect(element.querySelectorAll('.assistant-message.is-assistant')[1]?.textContent).toContain('technical issue');expect(api.apply).not.toHaveBeenCalled();
  api.call.mockResolvedValue({text:providerReply({text:'Update',actions:[{target:'courses',action:'update',id:'missing',values:{notes:'New'}}],files:[]})});await input('Edit course');await submit();await act(async()=>{await vi.advanceTimersByTimeAsync(4000);});vi.useRealTimers();expect(element.querySelectorAll('.assistant-message.is-assistant')[2]?.textContent).toContain('failed validation');expect(api.apply).not.toHaveBeenCalled();
 });
@@ -39,7 +39,7 @@ it('sends the original simple timetable request through AI and applies its valid
 });
 it('distinguishes a burst limit, provider quota and failed save confirmation',async()=>{
  await open();
- for(const [code,expected] of [['ai-rate-limit','few seconds'],['ai-provider-limit','AI provider'],['assistant-confirmation','server confirmation']]){
+ for(const [code,expected] of [['ai-rate-limit','Too many requests'],['ai-provider-limit','usage limit'],['assistant-confirmation','confirm the save result']]){
   api.call.mockRejectedValue(new Error(code));await input('Tell me something useful');await submit();expect(element.querySelectorAll('.assistant-message.is-assistant').length).toBeGreaterThan(0);expect(element.textContent).toContain(expected);
  }
 });
