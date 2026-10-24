@@ -2,6 +2,7 @@ import {conversationHistory} from './conversationHistory';
 import {friendlyFailure} from './friendlyFailure';
 import {quickGreeting} from './quickGreeting';
 import {checkExplicitSection} from './explicitSection';
+import {quickFollowUp} from './quickFollowUp';
 import {quickTrashPurge} from './quickTrashPurge';
 import {AssistantFailure} from './failure';
 import {failureWords,failureMessage} from './failureWords';
@@ -84,7 +85,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
     const controlPlans=controls.plan(resolveProposalControls(snapshot.data,reply.actions,changes,reply.controls||[]),language,snapshot.data.scopes.map(s=>s.id));
     return {reply,controlPlans,changes};
    };
-   const quick=quickTrashPurge(message,snapshot.data,language);
+   const quick=quickTrashPurge(message,snapshot.data,language)||quickFollowUp(message,snapshot.data,messages);
    const prepared=quick?validate(JSON.stringify(quick)):localReady?validate((await local.current!.answer(request)).text):await new AssistantProposalClient(async(payload,timeout)=>{
     if(!mounted.current||auth?.currentUser?.uid!==user.uid)throw new Error('account-changed');
     return assistantRequest<{text:string}>(payload,timeout);
