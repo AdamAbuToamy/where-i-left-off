@@ -3,6 +3,11 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { spawnSync } from 'node:child_process';
+if (process.argv.includes('--recover-config')) {
+  const result=spawnSync('node',['scripts/restore-app-check-config.mjs'],{stdio:'inherit'});
+  if(result.error)throw result.error;
+  if(result.status!==0)process.exit(result.status||1);
+}
 const env = {};
 for (const file of ['.env', '.env.local', '.env.production', '.env.production.local']) {
   if (existsSync(file)) Object.assign(env, parseEnv(readFileSync(file, 'utf8')));
