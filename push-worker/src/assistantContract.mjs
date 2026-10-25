@@ -16,6 +16,7 @@ export const actionFields={
  sections:{name:text(60)},
 };
 export const controlFields={
+ profile:{displayName:{type:'string',minLength:1,maxLength:100}},
  appearance:{theme:enumeration('original','ocean','olive','violet','cobalt','emerald','sunset','rose'),background:enumeration('dots','paper','grid','linen','mist','plain')},
  language:{language:enumeration('ar','en','he')},sleep:{enabled:boolean},
  workflow:{autoArchive:boolean,reminders:boolean,desktop:boolean,reviewDays:{type:'integer',enum:[7,14,30,60,90]}},

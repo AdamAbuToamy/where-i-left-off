@@ -2,7 +2,9 @@ import type { Language } from '../translations';
 import { backgrounds, themes, readBackground, readTheme, saveBackground, saveTheme } from '../lib/theme';
 import { readSleepEnabled, saveSleepEnabled } from '../lib/idleSleep';
 import { readPreferences, patchPreferences } from '../lib/workflowPreferences';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { saveName } from '../lib/profile';
+import { assistantAccountContext } from './accountContext';
 import { parseControls } from './controlContract';
 import type { AssistantControl,ControlPlan,ControlResult } from './controlContract';
 export type { AssistantControl,ControlPlan,ControlResult } from './controlContract';
@@ -11,7 +13,7 @@ export class AssistantControls {
  private readonly uid:string;
  constructor(uid:string){this.uid=uid;}
  private check(){if(auth?.currentUser?.uid!==this.uid)throw new Error('account-changed');}
- context(language:Language){return {appearance:{theme:readTheme(this.uid),background:readBackground(this.uid)},language:{language},sleep:{enabled:readSleepEnabled(this.uid)},workflow:readPreferences(this.uid)};}
+ context(language:Language){this.check();return {...assistantAccountContext(auth?.currentUser||null,this.uid),appearance:{theme:readTheme(this.uid),background:readBackground(this.uid)},language:{language},sleep:{enabled:readSleepEnabled(this.uid)},workflow:readPreferences(this.uid)};}
  plan(controls:AssistantControl[],language:Language,scopeIds:string[]):ControlPlan[]{
   this.check();const state=structuredClone(this.context(language));
   return parseControls(controls).map(control=>{
@@ -32,7 +34,10 @@ export class AssistantControls {
     else{
      const current=this.context((localStorage.getItem('language')||'en') as Language)[kind];
      for(const key of Object.keys(values))if(JSON.stringify(current[key as keyof typeof current])!==JSON.stringify(plan.before[key]))throw new Error('assistant-conflict');
-     if(kind==='workflow'){
+     if(kind==='profile'){
+      if(!db||!auth?.currentUser)throw new Error('account-changed');
+      await saveName(db,auth.currentUser,String(values.displayName));
+     }else if(kind==='workflow'){
       if(values.desktop===true&&(!('Notification' in window)||Notification.permission!=='granted'))throw new Error('assistant-browser-permission');
       await patchPreferences(this.uid,plan.before as ReturnType<typeof readPreferences>,values);
      }else if(kind==='appearance'){
