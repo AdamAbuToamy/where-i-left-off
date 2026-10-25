@@ -6,6 +6,9 @@ import {runWorkspaceTools,workspaceToolStep} from '../../push-worker/src/assista
 import {LOCAL_RELEASE} from '../../shared/localRelease.mjs';
 import {validateWorkspaceReply} from './workspaceValidation';
 export const LOCAL_MODEL=LOCAL_RELEASE.model;
+// Matches the published Qwen3-4B MLC configuration. WebLLM 0.2.82 needs
+// this explicit metadata when its cached model configuration is incomplete.
+const QWEN_TOKENIZER_FILES=['tokenizer.json','vocab.json','merges.txt','tokenizer_config.json'];
 /** WebLLM web workers may reject with string messages; handle all rejection types. */
 export function localFailureMessage(error:unknown):string{
  if(error instanceof Error)return error.message.slice(0,3000);
@@ -47,7 +50,7 @@ export class LocalAssistantModel {
     appConfig:{...runtime.prebuiltAppConfig,useIndexedDBCache:true},
     initProgressCallback:report=>{if(generation===this.generation)progress(Math.max(0,Math.min(1,report.progress)));},logLevel:'ERROR'
    });
-   try{await engine.reload(LOCAL_MODEL,{context_window_size:LOCAL_RELEASE.contextWindow});}
+   try{await engine.reload(LOCAL_MODEL,{context_window_size:LOCAL_RELEASE.contextWindow,tokenizer_files:QWEN_TOKENIZER_FILES});}
    catch(error){worker.terminate();const detail=error instanceof Error?error.message:String(error);throw new Error('assistant-local-load: '+detail.slice(0,1000),{cause:error});}
    if(generation!==this.generation){worker.terminate();throw new Error('assistant-local-cancelled');}
    this.engine=engine;
@@ -58,6 +61,22 @@ export class LocalAssistantModel {
    if(generation===this.generation){this.loading=null;this.rejectLoad=null;}
   });
   return this.loading;
+ }
+ // Run one real small completion before starting a large acceptance batch. This is
+ // not an acceptance pass and cannot substitute for any of the 618 operations.
+ async smoke():Promise<{text:string;elapsedMs:number}>{
+  if(!this.engine)throw new Error('assistant-local-not-ready');
+  const started=performance.now();
+  try{
+   const result=await this.engine.chat.completions.create({
+    messages:[{role:'user',content:'Reply with a single short greeting. /no_think'}],
+    temperature:0.1,max_tokens:64,seed:LOCAL_RELEASE.seed,
+    extra_body:{enable_thinking:false},
+   });
+   const text=result.choices[0]?.message.content?.trim()||'';
+   if(!text)throw new Error('assistant-smoke-empty-output');
+   return {text,elapsedMs:Math.round(performance.now()-started)};
+  }catch(error){throw new Error('assistant-local-smoke: '+localFailureMessage(error),{cause:error});}
  }
  async answer(request:LocalRequest):Promise<{text:string}>{
   if(!this.engine)throw new Error('assistant-local-not-ready');
