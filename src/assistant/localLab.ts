@@ -9,6 +9,7 @@ const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const load=byId<HTMLButtonElement>('load'),run=byId<HTMLButtonElement>('run'),stop=byId<HTMLButtonElement>('stop'),exp=byId<HTMLButtonElement>('export');
 const state=byId<HTMLElement>('state'),stats=byId<HTMLElement>('stats'),failures=byId<HTMLElement>('failures'),progress=byId<HTMLProgressElement>('progress');
 const suite=byId<HTMLSelectElement>('suite'),limit=byId<HTMLInputElement>('limit');
+suite.onchange=()=>{limit.value=String(suite.value==='smoke'?3:suite.value==='original'?acceptanceCases.length:2000);};
 let engine:LocalAssistantModel|null=null,running=false,stopRequested=false;
 const results:Result[]=[];
 function show(){
