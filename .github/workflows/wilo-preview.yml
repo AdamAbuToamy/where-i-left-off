@@ -26,7 +26,7 @@ jobs:
         run: |
           npm run lint
           npm test -- tests/assistantLocalModel.test.ts tests/assistantStressCorpus.test.ts
-          VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true VITE_ASSISTANT_ENABLED=false VITE_REQUIRE_APP_CHECK=false VITE_REQUIRE_FIREBASE_CONFIG=false npm run build
+          WILO_LAB_ONLY=true VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true VITE_ASSISTANT_ENABLED=false VITE_REQUIRE_APP_CHECK=false VITE_REQUIRE_FIREBASE_CONFIG=false npm run build
           test -f dist/assistant-lab.html
       - name: Require existing Firebase preview credential
         env:
