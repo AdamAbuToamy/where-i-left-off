@@ -35,7 +35,7 @@ export class LocalAssistantModel {
     initProgressCallback:report=>{if(generation===this.generation)progress(Math.max(0,Math.min(1,report.progress)));},logLevel:'ERROR'
    });
    try{await engine.reload(LOCAL_MODEL,{context_window_size:LOCAL_RELEASE.contextWindow});}
-   catch(error){worker.terminate();throw new Error('assistant-local-load',{cause:error});}
+   catch(error){worker.terminate();const detail=error instanceof Error?error.message:String(error);throw new Error('assistant-local-load: '+detail.slice(0,1000),{cause:error});}
    if(generation!==this.generation){worker.terminate();throw new Error('assistant-local-cancelled');}
    this.engine=engine;
    // Persistence is best-effort; browsers may decline or evict cached weights.
