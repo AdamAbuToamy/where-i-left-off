@@ -39,7 +39,6 @@ jobs:
       - name: Publish Firebase preview channel (never live)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: where-i-left-off-b5683
           channelId: wilo-lab
