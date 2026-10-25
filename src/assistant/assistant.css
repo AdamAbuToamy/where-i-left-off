@@ -162,3 +162,37 @@ html[dir=ltr] .assistant-root {left:auto;right:22px}
 @media(max-width:600px) {html[dir=ltr] .assistant-root {right:12px}}
 @keyframes assistant-close-right {to {opacity:0;transform:translateX(24px) scale(.98)}}
 @media(prefers-reduced-motion:reduce) {#root {transition:none}}
+/* Local-first WILO: effects are scoped; core pages keep their existing layout. */
+.wilo-local-v3 .assistant-panel{border-radius:28px;background:var(--site-surface,#fffaf0);box-shadow:0 24px 90px #152e3f38;animation:wilo-enter .44s cubic-bezier(.16,1,.3,1)}
+.wilo-local-v3 .assistant-header{background:linear-gradient(120deg,var(--site-soft,#e9ecdf),transparent);border-bottom:1px solid var(--site-border,#d1c4ab)}
+.wilo-local-v3 .assistant-brand-mark{border-radius:16px;animation:wilo-breathe 4s ease-in-out infinite}
+.wilo-local-v3 .wilo-version{display:block;font:9px ui-monospace,monospace;color:var(--site-muted,#59684f);opacity:.75;direction:ltr}
+.wilo-local-v3 .assistant-message{animation:wilo-message .3s cubic-bezier(.2,.8,.2,1) both}
+.wilo-local-v3 .assistant-message.is-user{border-radius:20px 20px 5px 20px;background:var(--site-soft,#e9ecdf)}
+.wilo-local-v3 .assistant-send{transition:transform .18s ease,box-shadow .18s ease}
+.wilo-local-v3 .assistant-send:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 5px 18px #244d4b30}
+.wilo-local-v3 .wilo-activation{position:relative;flex:0 1 auto;overflow:auto;text-align:center;margin:12px;padding:22px 20px;border:1px solid var(--site-border,#d1c4ab);border-radius:24px;background:radial-gradient(ellipse at 50% 10%,color-mix(in srgb,var(--site-primary,#385c4b) 14%,transparent),transparent 65%),var(--site-input,#fffdf5);animation:wilo-enter .5s ease both;isolation:isolate}
+.wilo-activation h2{margin:12px 0 8px;font-size:24px;letter-spacing:-.5px;line-height:1.4;color:var(--site-text,#25332e)}
+.wilo-activation p{margin:0 auto 12px;max-width:32em;font-size:13px;line-height:1.8;color:var(--site-muted,#59684f)}
+.wilo-activation small{display:block;margin-top:12px;font-size:10px;line-height:1.7;color:var(--site-muted,#59684f)}
+.wilo-model-label{display:block;font:9px ui-monospace,monospace;letter-spacing:1px;direction:ltr;color:var(--site-primary,#385c4b)}
+.wilo-orbit{position:relative;display:grid;place-items:center;width:82px;height:82px;margin:0 auto 16px}
+.wilo-orbit b{display:grid;place-items:center;width:54px;height:54px;border-radius:19px;background:var(--site-primary,#385c4b);color:white;font-size:27px;box-shadow:0 8px 28px #244d4b30;animation:wilo-float 3s ease-in-out infinite}
+.wilo-orbit span{position:absolute;inset:0;border:1px solid color-mix(in srgb,var(--site-primary,#385c4b) 40%,transparent);border-radius:50%;animation:wilo-orbit 8s linear infinite}
+.wilo-orbit span::before{content:'';position:absolute;top:0;left:32px;width:7px;height:7px;border-radius:50%;background:var(--site-primary,#385c4b);box-shadow:0 0 12px #3d796c70}
+.wilo-orbit span:nth-child(2){inset:-7px;opacity:.35;animation-duration:12s;animation-direction:reverse}
+.wilo-orbit span:nth-child(3){inset:7px;opacity:.2;animation-duration:6s}
+.wilo-benefits{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.wilo-benefits span{font-size:10px;border:1px solid var(--site-border,#d1c4ab);padding:4px 8px;border-radius:20px;background:var(--site-surface,#fffaf0)}
+.assistant-panel .wilo-activate-button{width:100%;min-height:45px;border:0;border-radius:14px;background:var(--site-primary,#385c4b);color:#fff;font-weight:650;box-shadow:0 5px 14px #244d4b20}
+.wilo-setup-progress{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.wilo-setup-progress progress{width:100%;height:8px;accent-color:var(--site-primary,#385c4b)}
+.wilo-setup-progress button{grid-column:1/-1}
+@keyframes wilo-enter{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes wilo-message{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wilo-orbit{to{transform:rotate(360deg)}}
+@keyframes wilo-float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-5px) rotate(3deg)}}
+@keyframes wilo-breathe{0%,100%{box-shadow:0 0 0 0 #375c4b18}50%{box-shadow:0 0 0 6px #375c4b08}}
+@media(max-width:600px){.wilo-local-v3 .wilo-activation{padding:16px 14px}.wilo-activation h2{font-size:21px}.wilo-orbit{width:66px;height:66px;margin-bottom:12px}}
+@media(max-height:650px){.wilo-local-v3 .wilo-activation{padding:12px}.wilo-orbit{display:none}.wilo-activation small{font-size:9px}.wilo-local-v3 .assistant-panel form{max-height:40%}}
+@media(prefers-reduced-motion:reduce){.wilo-local-v3 *,.wilo-local-v3 *::before,.wilo-local-v3 *::after{animation:none!important;transition:none!important}}

@@ -7,8 +7,8 @@ vi.mock('../src/assistant/assistantRepository',()=>({AssistantRepository:class{r
 import {providerReply} from './fixtures/assistantProvider';
 import AssistantWidget from '../src/assistant/AssistantWidget';import {blankAssistantData} from '../src/assistant/actions';
 let element:HTMLDivElement,root:ReturnType<typeof createRoot>;
-beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.clearAllMocks();api.read.mockResolvedValue({data:blankAssistantData(),pending:false,raw:new Map()});element=document.createElement('div');document.body.append(element);root=createRoot(element);});
-afterEach(()=>{act(()=>root.unmount());element.remove();vi.unstubAllGlobals();});
+beforeEach(()=>{localStorage.setItem('wilo-assistant-local','false');vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.clearAllMocks();api.read.mockResolvedValue({data:blankAssistantData(),pending:false,raw:new Map()});element=document.createElement('div');document.body.append(element);root=createRoot(element);});
+afterEach(()=>{localStorage.removeItem('wilo-assistant-local');act(()=>root.unmount());element.remove();vi.unstubAllGlobals();});
 async function input(value:string){const box=element.querySelector('textarea')!;await act(async()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(box,value);box.dispatchEvent(new Event('input',{bubbles:true}));});}
 async function open(language:'en'|'he'='en'){await act(async()=>root.render(<AssistantWidget user={{uid:'alice'} as User} language={language}/>));await act(async()=>(element.querySelector('button') as HTMLButtonElement).click());}
 async function submit(){await act(async()=>element.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));}
@@ -45,8 +45,8 @@ it('distinguishes a burst limit, provider quota and failed save confirmation',as
 });
 it('preserves local-only preference across reloads and never silently sends a request to the cloud',async()=>{
  localStorage.setItem('wilo-assistant-local','true');
- try{await open();await input('Give me advice on studying');await submit();expect(api.call).not.toHaveBeenCalled();expect(element.textContent).toContain('not ready');
-  const cloud=[...element.querySelectorAll('button')].find(b=>b.textContent==='Use cloud assistant')!;expect(cloud).toBeDefined();await act(async()=>cloud.click());expect(localStorage.getItem('wilo-assistant-local')).toBeNull();
+ try{await open();await input('Give me advice on studying');await submit();expect(api.call).not.toHaveBeenCalled();expect(element.textContent).toMatch(/not ready|local model|Preparing/i);
+  const cloud=[...element.querySelectorAll('button')].find(b=>b.textContent==='Use cloud assistant')!;expect(cloud).toBeDefined();await act(async()=>cloud.click());expect(localStorage.getItem('wilo-assistant-local')).toBe('false');
  }finally{localStorage.removeItem('wilo-assistant-local');}
 });
 it('announces real reading and response phases, then removes the waiting indicator when the reply arrives',async()=>{
@@ -120,4 +120,33 @@ it('offers a clear skip-extras choice and continues the same draft without creat
  await open();await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();
  const skip=[...element.querySelectorAll('button')].find(b=>b.textContent==='No extras')!;expect(skip).toBeDefined();await act(async()=>skip.click());
  expect(api.call.mock.calls[1][0].message).toBe('No extras');expect(api.call.mock.calls[1][0].history.some((turn:{content:string})=>turn.content.includes('creation-details'))).toBe(true);expect(api.apply).not.toHaveBeenCalled();expect(element.querySelectorAll('.assistant-proposal')).toHaveLength(1);
+});
+
+it('first visit offers local activation before account reads and never silently calls the cloud',async()=>{
+ localStorage.removeItem('wilo-assistant-local');
+ await open();
+ expect(element.querySelector('[data-local-activation]')).not.toBeNull();
+ expect(element.textContent).toContain('Activate local assistant');
+ await input('Create a card');await submit();
+ expect(api.call).not.toHaveBeenCalled();expect(api.read).not.toHaveBeenCalled();
+ expect(api.apply).not.toHaveBeenCalled();
+});
+it('resolves delete-them to both records from the actual confirmed create receipt without calling the model again',async()=>{
+ const data=blankAssistantData();
+ api.read.mockImplementation(async()=>({data:structuredClone(data),pending:false,raw:new Map()}));
+ api.call.mockResolvedValue({text:providerReply({text:'Review',actions:[
+  {target:'sections',action:'create',id:'new-section',scope:'personal',values:{name:'Section A'}},
+  {target:'projects',action:'create',id:'new-card',scope:'personal',values:{name:'Card A',sectionId:'new-section',dueDate:'2026-10-26'}}
+ ],files:[]})});
+ api.apply.mockImplementation(async(_snapshot,changes)=>{
+  for(const c of changes){if(c.target==='projects')data.scopes[0].projects.push(c.after);if(c.target==='sections')data.scopes[0].sections.push(c.after);}
+  return {changes,mutations:new Map()};
+ });
+ await open();await input('Create a card Card A in new section Section A for October 26, 2026');await submit();
+ const apply=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;
+ await act(async()=>apply.click());
+ expect(data.scopes[0].projects).toHaveLength(1);expect(data.scopes[0].sections).toHaveLength(1);
+ await input('delete them');await submit();
+ expect(api.call).toHaveBeenCalledTimes(1);expect(api.apply).toHaveBeenCalledTimes(1);
+ expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(2);
 });

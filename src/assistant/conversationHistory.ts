@@ -5,7 +5,7 @@ export function conversationHistory(turns:Turn[]):{role:'user'|'assistant';conte
  let boundary=-1;
  for(let i=0;i<turns.length;i++){
   const turn=turns[i];
-  if(turn.role==='assistant'&&(turn.resolved||(!turn.reply?.tasks?.some(t=>t.outcome==='needs-input')&&!turn.changes?.length&&!turn.reply?.controls?.length)))boundary=i;
+  if(!turn.failed&&turn.role==='assistant'&&(turn.resolved||(!turn.reply?.tasks?.some(t=>t.outcome==='needs-input')&&!turn.changes?.length&&!turn.reply?.controls?.length)))boundary=i;
  }
  const selected=turns.slice(Math.max(0,boundary-1)).filter(turn=>!turn.failed);
  const result=selected.map(turn=>{

@@ -93,13 +93,13 @@ export function workspaceToolStep(choice){
  return {response:workspaceToolArguments(choice)};
 }
 
-export async function runWorkspaceTools(data,history,invoke){
- const signal=AbortSignal.timeout(45000);let input=workspaceToolInput(data,history),reads=0,repaired=false;
+export async function runWorkspaceTools(data,history,invoke,timeoutMs=45000,askOptionalDetails=true){
+ const signal=AbortSignal.timeout(Math.min(600000,Math.max(1000,timeoutMs)));let input=workspaceToolInput(data,history),reads=0,repaired=false;
  for(;;){
   try{
    const result=await invoke(input,signal);
    const batch=result?.contextRequests||(result?.contextRequest?[result]:null);
-   if(!batch){const checked=JSON.parse(readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response)));return JSON.stringify(clarifyMinimalCreation(checked,data.language,data.context,history,data.message));}
+   if(!batch){const checked=JSON.parse(readWorkspaceToolProposal(typeof result?.response==='string'?result.response:JSON.stringify(result?.response)));return JSON.stringify(askOptionalDetails?clarifyMinimalCreation(checked,data.language,data.context,history,data.message):checked);}
    if(!Array.isArray(batch)||!batch.length||reads+batch.length>3)throw new Error('ai-context-read-limit');
    const pendingIds=new Set();
    // Commit protocol state only after every read in the batch has been authorized and validated.

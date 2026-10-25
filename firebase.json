@@ -79,6 +79,15 @@
             "value": "no-store"
           }
         ]
+      },
+      {
+        "source": "/wilo-release.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store"
+          }
+        ]
       }
     ]
   }

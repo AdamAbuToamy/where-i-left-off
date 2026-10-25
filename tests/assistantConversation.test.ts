@@ -36,3 +36,8 @@ it('incomplete proposals get natural-language feedback without implying a save',
  expect(reply).not.toContain('ai-incomplete-proposal');
  expect(friendlyFailure(new AssistantFailure('assistant-confirmation','save'),'ar')).toContain('ربما');
 });
+it('keeps the last confirmed IDs after failed follow-up turns instead of resetting context at the error',()=>{
+ const turns=[{role:'user' as const,text:'Create card and section'},{role:'assistant' as const,text:'Saved',resolved:true,receipt:{changes:[{target:'sections' as const,id:'confirmed-section',scope:'personal',before:null,after:{name:'S'}},{target:'projects' as const,id:'confirmed-card',scope:'personal',before:null,after:{name:'C',sectionId:'confirmed-section'}}]}},{role:'user' as const,text:'delete them',failed:true},{role:'assistant' as const,text:'Failed',failed:true,resolved:true}];
+ const history=conversationHistory(turns);
+ expect(history).toHaveLength(2);expect(history[1].content).toContain('confirmed-section');expect(history[1].content).toContain('confirmed-card');
+});

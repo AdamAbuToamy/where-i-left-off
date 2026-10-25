@@ -50,3 +50,6 @@ assistant-acceptance-live-report.previous-*.json
 /auth-browser-report.json
 
 /gemini-catalog-report.json
+
+/assistant-acceptance-browser-report*.json
+/wilo-release-logs/
