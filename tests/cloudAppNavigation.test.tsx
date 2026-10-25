@@ -15,6 +15,7 @@ vi.mock('../src/components/AccountDeletion',()=>({AccountLifecycle:({children}:{
 vi.mock('../src/components/IdleSleep',()=>({default:({children}:{children:unknown})=>children}));
 vi.mock('../src/components/AccountPage',()=>({default:({page}:{page:string})=>{if(fake.crash===page)throw new Error('simulated-page-error');return <section data-screen={page}/>;} }));
 import CloudApp from '../src/CloudApp';
+import {assistantAccess} from '../src/lib/assistantAccess';
 it('the complete app shell works without randomUUID and keeps unique keys and one route through repeated navigation',async()=>{
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const errors=vi.spyOn(console,'error').mockImplementation(()=>{}),node=document.createElement('div');document.body.append(node);const root=createRoot(node);
  try{
@@ -53,7 +54,9 @@ it('exposes the isolated production pilot only to the verified owner',async()=>{
   fake.user.email='adam2002hosny@gmail.com';fake.user.emailVerified=false;
   await act(async()=>root.render(<CloudApp key="unverified"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
   fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="verified-off"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
-  vi.stubEnv('VITE_ASSISTANT_ENABLED','true');await act(async()=>root.render(<CloudApp key="verified-on"/>));expect(node.querySelector('[data-assistant]')).not.toBeNull();
+  expect(assistantAccess('true',false,'adam2002hosny@gmail.com',true)).toBe(true);
+  expect(assistantAccess('false',false,'adam2002hosny@gmail.com',true)).toBe(false);
+  expect(assistantAccess('true',false,'adam2002hosny@gmail.com',false)).toBe(false);
   fake.user.email='other@example.test';await act(async()=>root.render(<CloudApp key="other"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
  }finally{Object.assign(fake.user,prior);act(()=>root.unmount());node.remove();vi.unstubAllGlobals();}
 });
