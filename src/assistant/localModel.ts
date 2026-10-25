@@ -42,10 +42,9 @@ export class LocalAssistantModel {
    const worker=new Worker(new URL('./localModel.worker.ts',import.meta.url),{type:'module'});
    this.worker=worker;
    const engine=new runtime.WebWorkerMLCEngine(worker,{
-    // OPFS avoids WebLLM's IndexedDB transaction-close failure while storing large
-    // weight shards. Keep the SAME published model and inference configuration.
-    // Existing IndexedDB shards remain untouched; OPFS maintains its own cache.
-    appConfig:{...runtime.prebuiltAppConfig,cacheBackend:'opfs',opfsAccessMode:'auto'},
+    // WebLLM 0.2.82 uses useIndexedDBCache, not the later OPFS appConfig.
+    // Keep the exact Qwen3-4B weights; earlier OPFS data is preserved.
+    appConfig:{...runtime.prebuiltAppConfig,useIndexedDBCache:true},
     initProgressCallback:report=>{if(generation===this.generation)progress(Math.max(0,Math.min(1,report.progress)));},logLevel:'ERROR'
    });
    try{await engine.reload(LOCAL_MODEL,{context_window_size:LOCAL_RELEASE.contextWindow});}
