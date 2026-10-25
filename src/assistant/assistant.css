@@ -162,3 +162,19 @@ html[dir=ltr] .assistant-root {left:auto;right:22px}
 @media(max-width:600px) {html[dir=ltr] .assistant-root {right:12px}}
 @keyframes assistant-close-right {to {opacity:0;transform:translateX(24px) scale(.98)}}
 @media(prefers-reduced-motion:reduce) {#root {transition:none}}
+
+/* Owner-only isolated pilot: local model invitation and expressive progress. */
+.assistant-local-invite{display:flex;align-items:center;gap:12px;margin:12px 16px;padding:14px;border:1px solid var(--site-border,#d1c4ab);border-radius:18px;background:linear-gradient(130deg,var(--site-soft,#e9ecdf),var(--site-surface,#fffaf0));animation:assistant-invite-in .42s cubic-bezier(.2,.8,.2,1) both}
+.assistant-local-invite-icon{position:relative;display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:15px;background:var(--site-primary,#385c4b);color:#fff;animation:assistant-invite-float 3.4s ease-in-out infinite}
+.assistant-local-invite-icon::after{content:"";position:absolute;inset:-5px;border:1px solid var(--site-primary,#385c4b);border-radius:19px;opacity:.3;animation:assistant-invite-pulse 2.5s ease-out infinite}
+.assistant-local-invite>div{min-width:0;flex:1}
+.assistant-local-invite strong{font-size:13px}
+.assistant-local-invite p{font-size:11px;line-height:1.5;margin:3px 0;color:var(--site-muted,#59684f)}
+.assistant-panel .assistant-local-invite>button{font-size:11px;min-height:38px;background:var(--site-primary,#385c4b);color:#fff;border-color:transparent}
+.assistant-waiting:has(progress){padding:16px;border:1px solid var(--site-border,#d1c4ab);border-radius:17px;background:var(--site-soft,#e9ecdf)}
+.assistant-waiting:has(progress) .assistant-waiting-mark{animation:assistant-invite-float 2.6s ease-in-out infinite}
+@keyframes assistant-invite-in{from{opacity:0;transform:translateY(9px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes assistant-invite-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes assistant-invite-pulse{0%{transform:scale(.9);opacity:.4}85%,100%{transform:scale(1.12);opacity:0}}
+@media(max-width:600px){.assistant-local-invite{flex-wrap:wrap;margin:10px}.assistant-panel .assistant-local-invite>button{width:100%}}
+@media(prefers-reduced-motion:reduce){.assistant-local-invite,.assistant-local-invite-icon,.assistant-local-invite-icon::after,.assistant-waiting:has(progress) .assistant-waiting-mark{animation:none!important}}
