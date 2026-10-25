@@ -1,10 +1,10 @@
 import {parseAssistantReply,planAssistantChanges,resolveProposalControls} from '../../../src/assistant/actions';
 import type {AssistantData,Change} from '../../../src/assistant/actions';
 import {acceptanceContext} from './corpus.mjs';
-type Case={id:string;actions:{target:string;action:string;id:string;values?:Record<string,unknown>}[];controls:{kind:string;values:Record<string,unknown>}[];intents:unknown[]};
+type Case={id:string;sourceId?:string;actions:{target:string;action:string;id:string;values?:Record<string,unknown>}[];controls:{kind:string;values:Record<string,unknown>}[];intents:unknown[]};
 /** Independent corpus oracle checks values after the real domain planner, not provider prose. */
 export function evaluateAcceptance(testCase:Case,text:string){
- const data=acceptanceContext(testCase.id) as AssistantData,reply=parseAssistantReply(text),changes=planAssistantChanges(data,reply.actions,1792756800000,true);
+ const data=acceptanceContext(testCase.sourceId||testCase.id) as AssistantData,reply=parseAssistantReply(text),changes=planAssistantChanges(data,reply.actions,1792756800000,true);
  const controls=resolveProposalControls(data,reply.actions,changes,reply.controls||[]);
  const aliases=new Map<string,string>();
  for(const action of testCase.actions.filter(a=>a.action==='create')){
