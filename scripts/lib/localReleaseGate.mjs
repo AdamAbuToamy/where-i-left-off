@@ -3,6 +3,16 @@ import {readFileSync,readdirSync} from 'node:fs';
 import {join,relative} from 'node:path';
 import {LOCAL_RELEASE} from '../../shared/localRelease.mjs';
 export const LOCAL_REPORT_KIND='live-browser-local-model';
+const textSourceExtensions=new Set(['.ts','.tsx','.js','.jsx','.mjs','.cjs','.json','.css','.scss','.html','.svg','.md','.txt','.yaml','.yml']);
+/** Normalize Git's optional Windows CRLF checkout only for known UTF-8 source.
+ * Preserve binary assets byte-for-byte to keep release evidence strict.
+ */
+export function portableSourceBytes(path,bytes){
+ const extension=path.slice(path.lastIndexOf('.')).toLowerCase();
+ if(!textSourceExtensions.has(extension))return bytes;
+ return Buffer.from(bytes.toString('utf8').replace(/\\r\\n/g,'\\n'),'utf8');
+}
+
 export function sourceFingerprint(root=process.cwd()){
  const files=[];
  const walk=dir=>{for(const e of readdirSync(join(root,dir),{withFileTypes:true})){const path=join(dir,e.name);if(e.isDirectory())walk(path);else if(e.isFile())files.push(path);}};
@@ -10,7 +20,7 @@ export function sourceFingerprint(root=process.cwd()){
  for(const dir of ['src','shared','push-worker/src','tests/fixtures/assistant','tests/browser-local'])walk(dir);
  files.push('package.json','package-lock.json','scripts/test-assistant-browser.mjs','scripts/lib/localReleaseGate.mjs');
  const hash=createHash('sha256');
- for(const file of files.sort())hash.update(relative(root,join(root,file)).replaceAll('\\','/')).update('\0').update(readFileSync(join(root,file))).update('\0');
+ for(const file of files.sort())hash.update(relative(root,join(root,file)).replaceAll('\\','/')).update('\0').update(portableSourceBytes(file,readFileSync(join(root,file)))).update('\0');
  return hash.digest('hex');
 }
 export function reportSummary(results,total){
