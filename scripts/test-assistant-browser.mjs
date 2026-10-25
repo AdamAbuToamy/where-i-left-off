@@ -13,7 +13,7 @@ import {sourceFingerprint,reportSummary,assertLocalAcceptance,inferenceEvidenceH
 
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const args=process.argv.slice(2);
-const accepted=['--resume','--headed','--software','--check','--persist','--deploy','--help'];
+const accepted=['--resume','--headed','--software','--check','--persist','--deploy','--verify-report','--help'];
 for(const arg of args)if(!accepted.includes(arg)&&!/^--(?:limit|case|port|profile|executable)=.+/.test(arg))throw new Error('Unknown argument: '+arg);
 if(args.includes('--help')){
  console.log('Usage: node scripts/test-assistant-browser.mjs --limit=618 --resume --persist [--deploy] [--headed|--software]');
@@ -26,6 +26,7 @@ const selected=ids.length?acceptanceCases.filter(c=>ids.includes(c.id)):acceptan
 const limit=Number(option('limit',selected.length)),port=Number(option('port',8176));
 if(!Number.isInteger(limit)||limit<1||limit>selected.length||!Number.isInteger(port)||port<1024||port>65535)throw new Error('Invalid limit or port');
 if(args.includes('--deploy')&&(ids.length||limit!==acceptanceCases.length))throw new Error('Deployment requires all 618 cases');
+if(args.includes('--verify-report')&&(!args.includes('--resume')||args.includes('--check')||ids.length||limit!==acceptanceCases.length))throw new Error('--verify-report requires --resume, all 618 cases and no --check');
 if(args.includes('--persist')||args.includes('--deploy')){const java=spawnSync('java',['-version'],{stdio:'ignore'});if(java.status!==0)throw new Error('Java is required for Firestore persistence verification. Install openjdk-21-jre-headless first.');}
 const fingerprint=sourceFingerprint(),reportPath=resolve('assistant-acceptance-browser-report.json');
 let report=null;
@@ -42,6 +43,15 @@ let vite,http,browser,page,interrupted=false,blockedNetwork=false;
 const cancel=()=>{interrupted=true;void page?.evaluate(()=>window.wiloAcceptance?.dispose()).catch(()=>{});};
 process.once('SIGINT',cancel);process.once('SIGTERM',cancel);
 let complete=false;
+if(args.includes('--verify-report')){
+ // Allow real browser inference on Windows, then verify the identical-source
+ // saved report and run Firestore/Hosting from the existing Ubuntu session.
+ // This path CANNOT generate or fabricate test results.
+ assertLocalAcceptance(report,acceptanceCases,fingerprint);
+ complete=true;
+ console.log('REAL MODEL RESULTS VERIFIED:',JSON.stringify(reportSummary(report.results,acceptanceCases.length)));
+ console.log('REPORT:',reportPath);
+}else{
 try{
  vite=await createViteServer({configFile:false,root:process.cwd(),server:{middlewareMode:true,hmr:false},appType:'custom',logLevel:'error'});
  http=createHttpServer((req,res)=>{
@@ -104,6 +114,7 @@ try{
  }
 }catch(error){report.stopped=error.message;save();console.error('STOP:',error.message);console.error('No inference from another model/provider and no deployment performed.');process.exitCode=2;}
 finally{await browser?.close().catch(()=>{});await vite?.close();await new Promise(r=>http?.listening?http.close(r):r());}
+}
 
 // Replay EXACT saved model outputs through the production repository and real emulator rules.
 if(complete&&(args.includes('--persist')||args.includes('--deploy'))){
