@@ -1,0 +1,48 @@
+name: Isolated WILO browser preview
+on:
+  pull_request:
+    branches: [recovery/stable-site-wilo-off-20261025]
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+concurrency:
+  group: isolated-wilo-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  preview:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feature/wilo-rebuild-isolated-20261025'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Validate isolated browser build
+        run: |
+          npm run lint
+          npm test -- tests/assistantLocalModel.test.ts tests/assistantStressCorpus.test.ts
+          VITE_USE_EMULATORS=true VITE_TEST_OFFLINE=true VITE_ASSISTANT_ENABLED=false VITE_REQUIRE_APP_CHECK=false VITE_REQUIRE_FIREBASE_CONFIG=false npm run build
+          test -f dist/assistant-lab.html
+      - name: Require existing Firebase preview credential
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo '::error::Missing existing Firebase Hosting service account. No preview deployed.'
+            exit 1
+          fi
+      - name: Publish Firebase preview channel (never live)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: where-i-left-off-b5683
+          channelId: wilo-lab
+          target: production
+          expires: 7d
+          firebaseToolsVersion: 15.33.0
