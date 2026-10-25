@@ -1,8 +1,6 @@
 import {LocalAssistantModel,LOCAL_MODEL} from './localModel';
 import {evaluateAcceptance} from '../../tests/fixtures/assistant/oracle';
-// @ts-expect-error JS fixture is intentionally shared with Node tests.
 import {acceptanceCases,acceptanceContext} from '../../tests/fixtures/assistant/corpus.mjs';
-// @ts-expect-error JS fixture is intentionally shared with Node tests.
 import {buildStressCorpus} from '../../tests/fixtures/assistant/stressCorpus.mjs';
 
 type LabCase={id:string;sourceId?:string;language:'ar'|'he'|'en';message:string;actions:{target:string;action:string;id:string;values?:Record<string,unknown>}[];controls:{kind:string;values:Record<string,unknown>}[];intents:unknown[]};
