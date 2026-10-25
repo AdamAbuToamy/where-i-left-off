@@ -4,7 +4,7 @@
  */
 export function plainNumericText(value:string):string {
  return value.replace(/&#(?:x([0-9a-fA-F]{1,6})|([0-9]{1,7}));/g,(matched,hex:string|undefined,decimal:string|undefined)=>{
-  const point=Number.parseInt(hex||decimal,hex?16:10);
+  const point=Number.parseInt(hex ?? decimal ?? '0', hex ? 16 : 10);
   return Number.isInteger(point)&&point>0&&point<=0x10ffff&&!(point>=0xd800&&point<=0xdfff)?String.fromCodePoint(point):matched;
  });
 }
