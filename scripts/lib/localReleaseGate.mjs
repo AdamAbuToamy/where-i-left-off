@@ -10,7 +10,7 @@ const textSourceExtensions=new Set(['.ts','.tsx','.js','.jsx','.mjs','.cjs','.js
 export function portableSourceBytes(path,bytes){
  const extension=path.slice(path.lastIndexOf('.')).toLowerCase();
  if(!textSourceExtensions.has(extension))return bytes;
- return Buffer.from(bytes.toString('utf8').replace(/\\r\\n/g,'\\n'),'utf8');
+ return Buffer.from(bytes.toString('utf8').replace(/\r\n/g,'\n'),'utf8');
 }
 
 export function sourceFingerprint(root=process.cwd()){
