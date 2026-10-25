@@ -7,6 +7,14 @@ import {WORKSPACE_REPLY_FORMAT} from '../../push-worker/src/assistantContract.mj
 import {LOCAL_RELEASE} from '../../shared/localRelease.mjs';
 import {validateWorkspaceReply} from './workspaceValidation';
 export const LOCAL_MODEL=LOCAL_RELEASE.model;
+/** WebLLM web workers may reject with string messages; handle all rejection types. */
+export function localFailureMessage(error:unknown):string{
+ if(error instanceof Error)return error.message.slice(0,3000);
+ if(typeof error==='string')return error.slice(0,3000);
+ if(error&&typeof error==='object'&&'message' in error&&typeof error.message==='string')return error.message.slice(0,3000);
+ try{return JSON.stringify(error)?.slice(0,3000)||String(error);}catch{return String(error);}
+}
+
 export type LocalRequest={message:string;context:string;language:Language;history:{role:'user'|'assistant';content:string}[]};
 export type LocalTrace={stage:string;ms:number;text?:string;reason?:string};
 export class LocalAssistantModel {
@@ -87,6 +95,12 @@ export class LocalAssistantModel {
       max_tokens:LOCAL_RELEASE.maxOutputTokens,
       extra_body:{enable_thinking:false},
       response_format:{type:'json_object',schema:JSON.stringify({anyOf:branches})},
+     }).catch((error:unknown):never=>{
+      // WebWorkerMLCEngine rejects with plain string messages, not Error instances.
+      // Preserve the worker's original diagnostic instead of masking it.
+      const reason=localFailureMessage(error);
+      this.trace.push({stage:'local-inference-error',ms:Math.round(performance.now()-began),reason});
+      throw new Error('assistant-local-inference: '+reason,{cause:error});
      });
      if(signal.aborted)throw new Error('assistant-local-timeout');
      const choice=result.choices[0],text=choice?.message.content||'';
