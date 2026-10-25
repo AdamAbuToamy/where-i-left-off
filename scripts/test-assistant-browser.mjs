@@ -43,12 +43,12 @@ const failureCategory=reason=>/assistant-local-(?:inference|smoke|load)|GPU|WebG
 const sanitize=value=>String(value??'').replace(/(Bearer\\s+)[^\\s]+/gi,'$1[REDACTED]').slice(0,3000);
 const writeReview=()=>{
  const rows=report.results.map(r=>({...r,category:r.status==='failed'?failureCategory(r.reason):'',reason:sanitize(r.reason),expected:acceptanceCases.find(c=>c.id===r.id)?.actions??[],expectedControls:acceptanceCases.find(c=>c.id===r.id)?.controls??[]}));
- const esc=x=>'"'+String(x??'').replaceAll('"','""').replaceAll('\\r',' ').replaceAll('\\n',' ')+'"';
- const csv=['id,language,status,category,reason,elapsedMs,expectedActions,expectedControls,actualReply,trace',...rows.map(r=>[r.id,r.language,r.status,r.category,r.reason,r.elapsedMs,JSON.stringify(r.expected),JSON.stringify(r.expectedControls),r.reply||'',JSON.stringify(r.trace||[])].map(esc).join(','))].join('\\n')+'\\n';
+ const esc=x=>'"'+String(x??'').replaceAll('"','""').replaceAll('\r',' ').replaceAll('\n',' ')+'"';
+ const csv=['id,language,status,category,reason,elapsedMs,expectedActions,expectedControls,actualReply,trace',...rows.map(r=>[r.id,r.language,r.status,r.category,r.reason,r.elapsedMs,JSON.stringify(r.expected),JSON.stringify(r.expectedControls),r.reply||'',JSON.stringify(r.trace||[])].map(esc).join(','))].join('\n')+'\n';
  writeFileSync('assistant-acceptance-results.csv',csv);
  const failed=rows.filter(r=>r.status==='failed');
  const byCategory=Object.groupBy(failed,r=>r.category);
- const markdown=['# WILO local model acceptance results','','Model: '+report.model,'Runtime: '+report.release.runtime,'Fingerprint: '+report.fingerprint,'',...Object.entries(report.summary||{}).map(([k,v])=>'- '+k+': '+v),'','## Failure categories',...Object.entries(byCategory).map(([k,v])=>'- '+k+': '+v.length),'','## Failed cases',...failed.map(r=>'### '+r.id+' ('+r.language+')\\nCategory: '+r.category+'\\nReason: '+r.reason+'\\nExpected actions: '+JSON.stringify(r.expected)+'\\nExpected controls: '+JSON.stringify(r.expectedControls)+'\\nObserved: '+String(r.reply||'').slice(0,3000)+'\\n')].join('\\n');
+ const markdown=['# WILO local model acceptance results','','Model: '+report.model,'Runtime: '+report.release.runtime,'Fingerprint: '+report.fingerprint,'',...Object.entries(report.summary||{}).map(([k,v])=>'- '+k+': '+v),'','## Failure categories',...Object.entries(byCategory).map(([k,v])=>'- '+k+': '+v.length),'','## Failed cases',...failed.map(r=>'### '+r.id+' ('+r.language+')\\nCategory: '+r.category+'\nReason: '+r.reason+'\nExpected actions: '+JSON.stringify(r.expected)+'\nExpected controls: '+JSON.stringify(r.expectedControls)+'\nObserved: '+String(r.reply||'').slice(0,3000)+'\n')].join('\n');
  writeFileSync('assistant-acceptance-results.md',markdown);
 };
 let vite,http,browser,page,interrupted=false,blockedNetwork=false;
