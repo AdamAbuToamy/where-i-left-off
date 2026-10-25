@@ -48,14 +48,34 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
  const conversation=useRef<HTMLDivElement>(null);
  useEffect(()=>{if(open&&conversation.current)conversation.current.scrollTop=conversation.current.scrollHeight;},[messages,phase,open]);
  const local=useRef<LocalAssistantModel|null>(null);
+ const localGeneration=useRef(0);
  const [preferLocal,setPreferLocal]=useState(()=>{try{return localStorage.getItem('wilo-assistant-local')==='true';}catch{return false;}});
  const [localReady,setLocalReady]=useState(false),[localLoading,setLocalLoading]=useState(false),[progress,setProgress]=useState(0);
- useEffect(()=>()=>{local.current?.dispose();local.current=null;},[]);
+ useEffect(()=>()=>{localGeneration.current++;local.current?.dispose();local.current=null;},[]);
  async function activateLocal(){
-  if(lock.current)return;lock.current=true;setBusy(true);setPhase('model');setLocalLoading(true);setError('');
-  try{const {LocalAssistantModel}=await import('./localModel');const engine=new LocalAssistantModel();local.current=engine;await engine.load(f=>{if(mounted.current)setProgress(f);});if(!mounted.current){engine.dispose();return;}setLocalReady(true);setPreferLocal(true);try{localStorage.setItem('wilo-assistant-local','true');}catch{/* Device storage is optional. */}}
-  catch(e){local.current?.dispose();local.current=null;if(mounted.current)report(e);}
-  finally{lock.current=false;if(mounted.current){setLocalLoading(false);setBusy(false);setPhase(null);}}
+  if(lock.current)return;
+  const generation=++localGeneration.current;
+  lock.current=true;setBusy(true);setPhase('model');setLocalLoading(true);setError('');
+  let engine:LocalAssistantModel|null=null;
+  try{
+   const {LocalAssistantModel}=await import('./localModel');
+   if(generation!==localGeneration.current||!mounted.current)return;
+   engine=new LocalAssistantModel();local.current=engine;
+   await engine.load(f=>{if(mounted.current&&generation===localGeneration.current)setProgress(f);});
+   if(generation!==localGeneration.current||!mounted.current){engine.dispose();return;}
+   setLocalReady(true);setPreferLocal(true);
+   try{localStorage.setItem('wilo-assistant-local','true');}catch{/* Device storage is optional. */}
+  }catch(e){
+   engine?.dispose();
+   if(local.current===engine)local.current=null;
+   if(mounted.current&&generation===localGeneration.current)report(e);
+  }finally{
+   // An obsolete load cannot restore the local preference or reset a newer request.
+   if(generation===localGeneration.current){
+    lock.current=false;
+    if(mounted.current){setLocalLoading(false);setBusy(false);setPhase(null);}
+   }
+  }
  }
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  // Resume a previously enabled local model automatically after React mounts.
@@ -69,7 +89,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   // eslint-disable-next-line react-hooks/exhaustive-deps
  },[]);
  useEffect(()=>{if(open&&present)input.current?.focus();else if(!open&&present)button.current?.focus();},[open,present]);
- function useCloud(){local.current?.dispose();local.current=null;setLocalReady(false);setPreferLocal(false);try{localStorage.removeItem('wilo-assistant-local');}catch{/* Optional preference. */}}
+ function useCloud(){localGeneration.current++;local.current?.dispose();local.current=null;setLocalReady(false);setPreferLocal(false);try{localStorage.removeItem('wilo-assistant-local');}catch{/* Optional preference. */}if(localLoading){lock.current=false;setLocalLoading(false);setBusy(false);setPhase(null);}}
  function openPanel(){setPresent(true);setOpen(true);}
  function close(){setOpen(false);button.current?.focus();}
  function report(e:unknown,stage:'request'|'save'='request'){const failed=AssistantFailure.from(e,stage);setFailure(failed);setCopied(false);e=failed;const code=(e as {code?:string}).code?.replace(/^firestore\//,'')||(e as Error).message;setError(failed.stage==='read'?failureMessage(failed,language,fw.stage.read+': '+t.unavailable):code==='permission-denied'?t.permission:code==='assistant-conversation-full'?ui.conversationFull:code==='assistant-confirmation'?t.confirmation:code==='ai-rate-limit'?t.rate:code==='ai-provider-context'?t.providerContext:code==='ai-provider-access'?t.providerAccess:code==='ai-provider-limit'?t.providerLimit:code==='assistant-local-unsupported'?t.localUnsupported:code==='assistant-local-context'?t.localContext:/^assistant-local-/.test(code)?t.localLoadError:code==='ai-incomplete-proposal'||code==='ai-intent-format'?[t.incomplete,coverageHint(e,language)].filter(Boolean).join(' '):code==='ai-not-configured'?t.setup:/ai-(?:user|daily)-limit/.test(code)?t.limit:code==='assistant-format'||code==='ai-response-too-large'?t.format:code==='assistant-invalid'?[t.invalid,assistantValidationHint(e,language)].filter(Boolean).join(' '):code==='assistant-conflict'?t.conflict:code==='assistant-pending'?t.pending:code==='assistant-linked-reminder'?t.linked:code==='assistant-too-large'?t.large:failureMessage(failed,language,t.unavailable));}
@@ -148,7 +168,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   <button ref={button} className="assistant-launcher" aria-label={t.open} aria-expanded={open} aria-controls="wilo-assistant" onClick={()=>open?close():openPanel()}><span className="assistant-launcher-mark"><AssistantMark/></span><span>{t.name}</span><span className="assistant-launcher-dot" aria-hidden="true"/></button>
   {present&&<section id="wilo-assistant" role="dialog" aria-label={t.name} className={"assistant-panel"+(!open?" is-closing":"")} inert={!open} aria-busy={busy} onKeyDown={e=>{if(e.key==='Escape')close();}}>
    <header className="assistant-header"><span className="assistant-brand-mark"><AssistantMark/></span><div className="assistant-heading"><strong>{t.name}</strong><span><i aria-hidden="true"/>{localReady?ui.local:preferLocal?ui.notReady:ui.cloud}</span></div><button type="button" className="assistant-close" aria-label={t.close} onClick={close}><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg></button></header>
-   {preferLocal&&!localReady&&<div className="assistant-intro"><p>{ui.notReady}</p><button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button></div>}
+   {preferLocal&&!localReady&&<div className="assistant-intro"><p>{ui.notReady}</p><button type="button" disabled={busy&&!localLoading} onClick={useCloud}>{t.remote}</button></div>}
    <div ref={conversation} className="assistant-messages" role="log" aria-live="polite" aria-relevant="additions text">{!messages.length&&<div className="assistant-intro"><span className="assistant-intro-emblem"><AssistantMark/></span><span className="assistant-intro-title">{ui.welcome}</span><p>{ui.placeholder}</p></div>}{messages.map((m,i)=><article className={'assistant-message is-'+m.role} key={i}><p dir="auto">{m.text}</p>
     {m.reply?.tasks?.some(task=>task.outcome==='needs-input'||task.outcome==='unsupported')&&<details className="assistant-followups"><summary>{ui.followups}</summary>{m.reply.tasks.filter(task=>task.outcome==='needs-input'||task.outcome==='unsupported').map((task,index)=><p key={index}>{task.detail||task.title}</p>)}</details>}
     {m.reply?.clarification&&!m.resolved&&<button type="button" disabled={busy} onClick={()=>void send(ui.skipExtras)}>{ui.skipExtras}</button>}
@@ -166,7 +186,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
     <label>{t.input}<textarea ref={input} value={text} maxLength={6000} rows={2} placeholder={ui.placeholder} onChange={e=>setText(e.target.value)}/></label>
     {error&&<p role="alert">{error}</p>}{failure&&<details className="assistant-privacy"><summary>{fw.details}</summary><p>{fw.stage[failure.stage]} · {failure.code}{failure.status?' · HTTP '+failure.status:''}</p>{failure.requestId&&<p dir="ltr">{failure.requestId}</p>}{failure.providerFailure&&<pre dir="ltr">{JSON.stringify(failure.providerFailure,null,2)}</pre>}<button type="button" disabled={busy} onClick={()=>void checkConnection()}>{fw.check}</button><button type="button" onClick={()=>void copyFailure()}>{copied?fw.copied:fw.copy}</button>{health&&<p role="status">{fw.ready} · {health.provider}</p>}</details>}
     <div className="assistant-actions"><button className="primary-button assistant-send" disabled={busy||!text.trim()}><svg viewBox="0 0 20 20" aria-hidden="true" fill="none"><path d="m10 15 0-10m-4 4 4-4 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>{busy?t.busy:t.send}</button><button type="button" onClick={()=>{setMessages([]);setError('');setFailure(null);setHealth(null);}} disabled={busy}>{t.clear}</button></div>
-    <details className="assistant-preferences"><summary>{ui.options}<span className="assistant-chevron" aria-hidden="true"/></summary><div className="assistant-preferences-body">    <details className="assistant-model-options"><summary><span className="assistant-option-icon" aria-hidden="true">◈</span>{ui.settings}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{ui.localCaution}</p><p>{t.localInfo}</p>{localReady?<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>:<button type="button" disabled={busy} onClick={()=>void activateLocal()}>{localLoading?`${t.localLoading} ${Math.round(progress*100)}%`:t.local}</button>}{preferLocal&&!localReady&&<button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button>}</details>
+    <details className="assistant-preferences"><summary>{ui.options}<span className="assistant-chevron" aria-hidden="true"/></summary><div className="assistant-preferences-body">    <details className="assistant-model-options"><summary><span className="assistant-option-icon" aria-hidden="true">◈</span>{ui.settings}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{ui.localCaution}</p><p>{t.localInfo}</p>{localReady?<button type="button" disabled={busy&&!localLoading} onClick={useCloud}>{t.remote}</button>:<button type="button" disabled={busy} onClick={()=>void activateLocal()}>{localLoading?`${t.localLoading} ${Math.round(progress*100)}%`:t.local}</button>}{preferLocal&&!localReady&&<button type="button" disabled={busy&&!localLoading} onClick={useCloud}>{t.remote}</button>}</details>
     <details className="assistant-privacy"><summary>{ct.title}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{language==='ar'?'يمكنني تعديل البطاقات والأقسام والكورسات والمهام والجدول، وضبط المظهر واللغة والسكون والتنظيم وفتح الصفحات. الأذونات وكلمة المرور وحذف الحساب وإدارة أعضاء المجموعات تتطلب نماذجها الأصلية. يمكنك طلب عدة مهام معًا؛ لا يُعلن الحفظ قبل تأكيده.':language==='he'?'ניתן לערוך כרטיסים, מדורים, קורסים, משימות ומערכת שעות, לשנות מראה, שפה והעדפות ולפתוח עמודים. הרשאות, סיסמאות, מחיקת חשבון וניהול חברים מתבצעים בטפסים הקיימים. אפשר לבקש כמה משימות יחד.':'Edit cards, sections, courses, tasks and timetable; change appearance, language, sleep and workflow; open pages. Permissions, passwords, account deletion and group membership use their existing forms. You can request several tasks together.'}</p></details>
     <details className="assistant-privacy"><summary>{ui.privacy}<span className="assistant-chevron" aria-hidden="true"/></summary><p>{preferLocal?t.localReady:t.privacy}</p></details>
 </div></details>
