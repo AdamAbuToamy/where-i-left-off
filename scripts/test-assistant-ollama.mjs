@@ -99,8 +99,8 @@ try{
   const expected=acceptanceCases.find(entry=>entry.id===item.id);
   return [item.id,item.language,item.status,item.status==='passed'?'':categorise(item.reason),item.reason,item.elapsedMs,JSON.stringify(expected?.actions||[]),JSON.stringify(expected?.controls||[]),item.reply||'',JSON.stringify(item.trace||[])].map(quote).join(',');
  });
- writeFileSync(reportBase+'.csv','\\uFEFF'+[header.join(','),...rows].join('\\r\\n')+'\\r\\n');
- writeFileSync(reportBase+'.md',['# Local WILO acceptance report','','Model: '+model,'Source fingerprint: '+suiteFingerprint,'',...Object.entries(report.summary).map(([key,v])=>'- '+key+': '+v),'','## Failures',...failed.flatMap(item=>['### '+item.id,'Reason: '+(item.reason||item.status),'Category: '+categorise(item.reason),'Trace: '+JSON.stringify(item.trace||[]).slice(0,5000),''])].join('\\n'));
+ writeFileSync(reportBase+'.csv','\uFEFF'+[header.join(','),...rows].join('\r\n')+'\r\n');
+ writeFileSync(reportBase+'.md',['# Local WILO acceptance report','','Model: '+model,'Source fingerprint: '+suiteFingerprint,'',...Object.entries(report.summary).map(([key,v])=>'- '+key+': '+v),'','## Failures',...failed.flatMap(item=>['### '+item.id,'Reason: '+(item.reason||item.status),'Category: '+categorise(item.reason),'Trace: '+JSON.stringify(item.trace||[]).slice(0,5000),''])].join('\n'));
  console.log('REPORT:',reportPath,reportBase+'.csv',reportBase+'.md');
  console.log(JSON.stringify(report.selection));
  if(report.selection.failed||report.selection.blocked||report.stopped||(!selectedIds.length&&limit===selected.length&&report.selection.notRun))process.exitCode=2;
