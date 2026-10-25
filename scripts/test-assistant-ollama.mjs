@@ -6,15 +6,18 @@ import {createHash} from 'node:crypto';
 import {acceptanceCases} from '../tests/fixtures/assistant/corpus.mjs';
 import {runAcceptanceCase} from '../tests/fixtures/assistant/runCase.mjs';
 import {OllamaAcceptanceProvider} from './lib/ollamaAcceptance.mjs';
+import {assistantSample} from './lib/assistantSample.mjs';
 import {acceptanceSummary} from './lib/assistantAcceptance.mjs';
 import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
 
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const args=process.argv.slice(2);
 const value=key=>args.find(a=>a.startsWith('--'+key+'='))?.slice(key.length+3);
-const model=value('model')||'qwen3:8b';
+const model=value('model')||'qwen3:4b';
 const selectedIds=args.filter(a=>a.startsWith('--case=')).map(a=>a.slice(7));
-const selected=selectedIds.length?acceptanceCases.filter(c=>selectedIds.includes(c.id)):acceptanceCases;
+const sample=value('sample')===undefined?undefined:Number(value('sample'));
+if(sample!==undefined&&selectedIds.length)throw new Error('Choose --sample or --case');
+const selected=selectedIds.length?acceptanceCases.filter(c=>selectedIds.includes(c.id)):sample===undefined?acceptanceCases:assistantSample(acceptanceCases,sample);
 if(selectedIds.some(id=>!selected.some(c=>c.id===id)))throw new Error('Unknown case ID');
 const limit=value('limit')===undefined?selected.length:Number(value('limit'));
 if(!Number.isInteger(limit)||limit<1||limit>selected.length)throw new Error('Invalid --limit; use 1..'+selected.length);
@@ -51,7 +54,7 @@ for(const name of ['SIGINT','SIGTERM'])process.once(name,()=>aborter.abort());
 let vite;
 try{
  const ready=await provider.ready();
- console.log('LOCAL inference:',ready.model,'on',ready.endpoint,'(no Cloudflare or API key)');
+ console.log('LOCAL inference:,ready.model,'on',ready.endpoint,'(no Cloudflare or API key)');
  const {createServer}=await import('vite');
  vite=await createServer({server:{middlewareMode:true,hmr:false},appType:'custom'});
  const {evaluateAcceptance}=await vite.ssrLoadModule('/tests/fixtures/assistant/oracle.ts');
@@ -87,7 +90,18 @@ try{
  report.selection={requested:limit,passed:counted.filter(r=>r.status==='passed').length,failed:counted.filter(r=>r.status==='failed').length,blocked:counted.filter(r=>r.status==='blocked').length,notRun:selected.length-counted.length};
  report.stopped=aborter.signal.aborted?'interrupted':stoppedForError?'error':undefined;
  save();
- console.log('REPORT:',reportPath);
+ const reportBase=reportPath.slice(0,-5);
+ const failed=report.results.filter(item=>item.status!=='passed');
+ const categorise=reason=>/^ollama-|harness-failed|timeout|connection|memory|device lost/i.test(reason||'')?'runtime':/^oracle-/.test(reason||'')?'oracle':/format|incomplete/.test(reason||'')?'format':'validation';
+ const header=['id','language','status','category','reason','elapsedMs','expectedActions','expectedControls','reply','trace'];
+ const quote=value=>'"'+String(value??'').replaceAll('"','""')+'"';
+ const rows=report.results.map(item=>{
+  const expected=acceptanceCases.find(entry=>entry.id===item.id);
+  return [item.id,item.language,item.status,item.status==='passed'?'':categorise(item.reason),item.reason,item.elapsedMs,JSON.stringify(expected?.actions||[]),JSON.stringify(expected?.controls||[]),item.reply||'',JSON.stringify(item.trace||[])].map(quote).join(',');
+ });
+ writeFileSync(reportBase+'.csv','\\uFEFF'+[header.join(','),...rows].join('\\r\\n')+'\\r\\n');
+ writeFileSync(reportBase+'.md',['# Local WILO acceptance report','','Model: '+model,'Source fingerprint: '+suiteFingerprint,'',...Object.entries(report.summary).map(([key,v])=>'- '+key+': '+v),'','## Failures',...failed.flatMap(item=>['### '+item.id,'Reason: '+(item.reason||item.status),'Category: '+categorise(item.reason),'Trace: '+JSON.stringify(item.trace||[]).slice(0,5000),''])].join('\\n'));
+ console.log('REPORT:',reportPath,reportBase+'.csv',reportBase+'.md');
  console.log(JSON.stringify(report.selection));
  if(report.selection.failed||report.selection.blocked||report.stopped||(!selectedIds.length&&limit===selected.length&&report.selection.notRun))process.exitCode=2;
 }catch(error){
