@@ -1,4 +1,4 @@
-import {LocalAssistantModel} from '../../src/assistant/localModel';
+import {LocalAssistantModel,localFailureMessage} from '../../src/assistant/localModel';
 import type {LocalRequest} from '../../src/assistant/localModel';
 import {LOCAL_RELEASE} from '../../shared/localRelease.mjs';
 // No test expectations, corpus imports, Firebase identity or production data here.
@@ -14,7 +14,7 @@ const driver={
  async answer(request:LocalRequest){
   const start=performance.now();
   try{const {text}=await model.answer(request);return {text,elapsedMs:Math.round(performance.now()-start),trace:structuredClone(model.trace)};}
-  catch(error){return {error:error instanceof Error?error.message:'local-inference-error',elapsedMs:Math.round(performance.now()-start),trace:structuredClone(model.trace)};}
+  catch(error){return {error:localFailureMessage(error),elapsedMs:Math.round(performance.now()-start),trace:structuredClone(model.trace)};}
  },
  dispose(){model.dispose();},
 };
