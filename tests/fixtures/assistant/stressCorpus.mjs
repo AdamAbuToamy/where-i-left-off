@@ -49,14 +49,14 @@ export function buildStressCorpus(count=STRESS_CASES_PER_LANGUAGE){
  for(const language of ['ar','en','he']){
   const originals=acceptanceCases.filter(c=>c.language===language);
   if(!originals.length)throw new Error('missing-original-language:'+language);
-  const seen=new Set();
-  for(let round=0;cases.filter(c=>c.language===language).length<count;round++){
+  const seen=new Set();let generated=0;
+  for(let round=0;generated<count;round++){
    if(round>=wrappers[language].length)throw new Error('insufficient-distinct-stress-variants:'+language);
    for(const source of originals){
-    if(cases.filter(c=>c.language===language).length>=count)break;
+    if(generated>=count)break;
     const message=wrappers[language][round](source.message);
     if(seen.has(message))continue;
-    seen.add(message);
+    seen.add(message);generated++;
     cases.push({
      ...source,
      id:'stress-'+language+'-'+String(cases.length).padStart(4,'0'),
