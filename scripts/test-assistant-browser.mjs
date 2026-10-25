@@ -106,6 +106,9 @@ try{
    catch(error){item.status='failed';item.reason=error.message;}
    report.results=report.results.filter(r=>r.id!==testCase.id);report.results.push(item);save();
    console.log(`${report.results.length}/${acceptanceCases.length} ${item.id}: ${item.status}${item.reason?' ['+item.reason+']':''} (${item.elapsedMs}ms)`);
+   // A runtime/worker/GPU failure invalidates further inference until recovered.
+   // Keep the diagnostic and stop; do not turn one crash into 618 fake model failures.
+   if(result.error){console.error('STOP: first local-model runtime failure:',result.error);break;}
   }
   report.interrupted=interrupted;save();
   try{assertLocalAcceptance(report,acceptanceCases,fingerprint);complete=!interrupted;}catch{complete=false;}
