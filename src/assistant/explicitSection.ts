@@ -6,6 +6,8 @@ import type {AssistantData,AssistantReply} from './actions';
  */
 export function checkExplicitSection(message:string,data:AssistantData,reply:AssistantReply):void {
  const normalized=message.normalize('NFKC');
+ // Destination checks apply to assigning/moving a card into a section, not deleting records.
+ if(!reply.actions.some(a=>a.target==='projects'&&['create','update'].includes(a.action)))return;
  const match=normalized.match(/(?:في|داخل|إلى|الى|ضمن|بـ?|لـ?)\s*قسم\s+([^،,.؟!?\n]+?)(?=\s+(?:بتاريخ|تاريخ|يوم|بموعد|ثم|وبعد|واضف|وأضف|مع|وضع|واحذف)|$)/i);
  if(!match)return;
  const requested=match[1].trim().replace(/[«»"']/g,'').trim().toLocaleLowerCase();
