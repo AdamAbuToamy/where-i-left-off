@@ -32,6 +32,9 @@ export class LocalAssistantModel {
    const worker=new Worker(new URL('./localModel.worker.ts',import.meta.url),{type:'module'});
    this.worker=worker;
    const engine=new runtime.WebWorkerMLCEngine(worker,{
+    // WebLLM Cache API may reject cross-origin model shards with Cache.add();
+    // IndexedDB is an officially supported cache backend for the SAME weights.
+    appConfig:{...runtime.prebuiltAppConfig,cacheBackend:'indexeddb'},
     initProgressCallback:report=>{if(generation===this.generation)progress(Math.max(0,Math.min(1,report.progress)));},logLevel:'ERROR'
    });
    try{await engine.reload(LOCAL_MODEL,{context_window_size:LOCAL_RELEASE.contextWindow});}
