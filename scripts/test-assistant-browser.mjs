@@ -39,7 +39,7 @@ if(args.includes('--resume')&&existsSync(reportPath)){
 }
 report??={kind:LOCAL_REPORT_KIND,provider:'webllm',release:LOCAL_RELEASE,model:LOCAL_RELEASE.model,fingerprint,startedAt:new Date().toISOString(),results:[]};
 const save=()=>{report.summary=reportSummary(report.results,acceptanceCases.length);report.updatedAt=new Date().toISOString();writeFileSync(reportPath+'.tmp',JSON.stringify(report,null,2)+'\n');renameSync(reportPath+'.tmp',reportPath);};
-const failureCategory=reason=>/assistant-local-(?:inference|smoke|load)|GPU|WebGPU|disposed|device lost|GrammarMatcher|memory/i.test(reason)?'runtime':/oracle-/i.test(reason)?'oracle':/ai-|assistant-(?:invalid|reference|format|task-coverage)/i.test(reason)?'validation':'other';
+const failureCategory=reason=>/assistant-local-(?:inference|smoke|load)|GPU|WebGPU|disposed|device lost|GrammarMatcher|memory/i.test(reason)?'runtime':/oracle-/i.test(reason)?'oracle':/ai-|assistant-(?:invalid|reference|format|task-coverage|local-context)/i.test(reason)?'validation':'other';
 const sanitize=value=>String(value??'').replace(/(Bearer\s+)[^\s]+/gi,'$1[REDACTED]').slice(0,3000);
 const writeReview=()=>{
  const rows=report.results.map(r=>({...r,category:r.status==='failed'?failureCategory(r.reason):'',reason:sanitize(r.reason),expected:acceptanceCases.find(c=>c.id===r.id)?.actions??[],expectedControls:acceptanceCases.find(c=>c.id===r.id)?.controls??[]}));
@@ -128,7 +128,7 @@ try{
    console.log(`${report.results.length}/${acceptanceCases.length} ${item.id}: ${item.status}${item.reason?' ['+item.reason+']':''} (${item.elapsedMs}ms)`);
    // A runtime/worker/GPU failure invalidates further inference until recovered.
    // Keep the diagnostic and stop; do not turn one crash into 618 fake model failures.
-   if(result.error){console.error('STOP: first local-model runtime failure:',result.error);break;}
+   if(result.error&&failureCategory(result.error)==='runtime'){console.error('STOP: first local-model runtime failure:',result.error);break;}
   }
   report.interrupted=interrupted;save();
   try{assertLocalAcceptance(report,acceptanceCases,fingerprint);complete=!interrupted;}catch{complete=false;}
