@@ -26,15 +26,19 @@ export class LocalAssistantModel {
   const initialize=async()=>{
    const gpu=(navigator as unknown as {gpu?:{requestAdapter:()=>Promise<unknown>}}).gpu;
    if(!gpu||!await gpu.requestAdapter())throw new Error('assistant-local-unsupported');
+   // Request persistent origin storage *before* streaming multi-GB model shards;
+   // browsers can still decline and the model remains usable when they do.
+   try{await navigator.storage?.persist?.();}catch{/* Optional permission. */}
    const runtime=await import('@mlc-ai/web-llm');
    if(generation!==this.generation)throw new Error('assistant-local-cancelled');
    if(!runtime.prebuiltAppConfig.model_list.some(record=>record.model_id===LOCAL_MODEL))throw new Error('assistant-local-model-unavailable');
    const worker=new Worker(new URL('./localModel.worker.ts',import.meta.url),{type:'module'});
    this.worker=worker;
    const engine=new runtime.WebWorkerMLCEngine(worker,{
-    // WebLLM Cache API may reject cross-origin model shards with Cache.add();
-    // IndexedDB is an officially supported cache backend for the SAME weights.
-    appConfig:{...runtime.prebuiltAppConfig,cacheBackend:'indexeddb'},
+    // OPFS avoids WebLLM's IndexedDB transaction-close failure while storing large
+    // weight shards. Keep the SAME published model and inference configuration.
+    // Existing IndexedDB shards remain untouched; OPFS maintains its own cache.
+    appConfig:{...runtime.prebuiltAppConfig,cacheBackend:'opfs',opfsAccessMode:'auto'},
     initProgressCallback:report=>{if(generation===this.generation)progress(Math.max(0,Math.min(1,report.progress)));},logLevel:'ERROR'
    });
    try{await engine.reload(LOCAL_MODEL,{context_window_size:LOCAL_RELEASE.contextWindow});}
