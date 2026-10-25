@@ -1,4 +1,5 @@
 import {conversationHistory} from './conversationHistory';
+import {plainNumericText} from './safeText';
 import {friendlyFailure} from './friendlyFailure';
 import {quickGreeting} from './quickGreeting';
 import {checkExplicitSection} from './explicitSection';
@@ -124,13 +125,13 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
  }
  function name(value:unknown,snapshot?:AssistantSnapshot){
   const item=value as {name?:string;title?:string;room?:string;courseId?:string;day?:number;start?:string;end?:string}|null;
-  if(item?.name||item?.title)return item.name||item.title||'';
+  if(item?.name||item?.title)return plainNumericText(item.name||item.title||'');
   if(item?.courseId&&item.start&&item.end){const course=snapshot?.data.study.courses.find(c=>c.id===item.courseId)?.name||item.courseId;const day=Number.isInteger(item.day)?new Intl.DateTimeFormat(language,{weekday:'long',timeZone:'UTC'}).format(new Date(Date.UTC(2026,9,18+item.day!))):'';return `${course} · ${day} · ${item.start}–${item.end}`;}
   return item?.room||'';
  }
  function display(value:unknown,snapshot:AssistantSnapshot){
   const labels=new Map([...snapshot.data.study.courses,...snapshot.data.scopes.flatMap(s=>s.sections)].map(x=>[x.id,x.name]));
-  if(typeof value==='string')return labels.get(value)||value;
+  if(typeof value==='string')return plainNumericText(labels.get(value)||value);
   if(Array.isArray(value))return value.map(v=>typeof v==='string'?(labels.get(v)||v):JSON.stringify(v)).join(', ');
   return JSON.stringify(value)??'—';
  }
@@ -139,7 +140,7 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   {present&&<section id="wilo-assistant" role="dialog" aria-label={t.name} className={"assistant-panel"+(!open?" is-closing":"")} inert={!open} aria-busy={busy} onKeyDown={e=>{if(e.key==='Escape')close();}}>
    <header className="assistant-header"><span className="assistant-brand-mark"><AssistantMark/></span><div className="assistant-heading"><strong>{t.name}</strong><span><i aria-hidden="true"/>{localReady?ui.local:preferLocal?ui.notReady:ui.cloud}</span></div><button type="button" className="assistant-close" aria-label={t.close} onClick={close}><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg></button></header>
    {preferLocal&&!localReady&&<div className="assistant-intro"><p>{ui.notReady}</p><button type="button" disabled={busy} onClick={useCloud}>{t.remote}</button></div>}
-   <div ref={conversation} className="assistant-messages" role="log" aria-live="polite" aria-relevant="additions text">{!messages.length&&<div className="assistant-intro"><span className="assistant-intro-emblem"><AssistantMark/></span><span className="assistant-intro-title">{ui.welcome}</span><p>{ui.placeholder}</p></div>}{messages.map((m,i)=><article className={'assistant-message is-'+m.role} key={i}><p dir="auto">{m.text}</p>
+   <div ref={conversation} className="assistant-messages" role="log" aria-live="polite" aria-relevant="additions text">{!messages.length&&<div className="assistant-intro"><span className="assistant-intro-emblem"><AssistantMark/></span><span className="assistant-intro-title">{ui.welcome}</span><p>{ui.placeholder}</p></div>}{messages.map((m,i)=><article className={'assistant-message is-'+m.role} key={i}><p dir="auto">{plainNumericText(m.text)}</p>
     {m.reply?.tasks?.some(task=>task.outcome==='needs-input'||task.outcome==='unsupported')&&<details className="assistant-followups"><summary>{ui.followups}</summary>{m.reply.tasks.filter(task=>task.outcome==='needs-input'||task.outcome==='unsupported').map((task,index)=><p key={index}>{task.detail||task.title}</p>)}</details>}
     {m.reply?.clarification&&!m.resolved&&<button type="button" disabled={busy} onClick={()=>void send(ui.skipExtras)}>{ui.skipExtras}</button>}
     {m.reply?.files.map((file,index)=><button type="button" key={index} onClick={()=>download(file.name,file.content)}>{t.download}: {file.name}</button>)}
