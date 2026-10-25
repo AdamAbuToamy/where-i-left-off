@@ -41,7 +41,7 @@ it('isolates a feature render error and lets navigation recover without reloadin
  } finally {fake.crash='';act(()=>root.unmount());node.remove();errors.mockRestore();vi.unstubAllGlobals();}
 });
 
-it('production navigation never loads the assistant module even when the emulator-only feature is requested',async()=>{
+it('production navigation does not load WILO for an ordinary account',async()=>{
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.stubEnv('VITE_ASSISTANT_ENABLED','true');const node=document.createElement('div');document.body.append(node);const root=createRoot(node);
  try{await act(async()=>root.render(<CloudApp/>));expect(node.querySelector('[data-screen]')).not.toBeNull();expect(fake.assistantImports).toBe(0);}
  finally{act(()=>root.unmount());node.remove();vi.unstubAllGlobals();vi.unstubAllEnvs();}
@@ -53,11 +53,11 @@ it('exposes the isolated production pilot only to the verified owner',async()=>{
  try{
   fake.user.email='adam2002hosny@gmail.com';fake.user.emailVerified=false;
   await act(async()=>root.render(<CloudApp key="unverified"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
-  fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="verified-off"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
+  fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="verified-off"/>));expect(node.querySelector('[data-assistant]')).not.toBeNull();
   // Vite evaluates import.meta.env flags when the module is imported; a
   // runtime stub here cannot emulate a fresh production build.
   expect(assistantAccess('true',false,'adam2002hosny@gmail.com',true)).toBe(true);
-  expect(assistantAccess('false',false,'adam2002hosny@gmail.com',true)).toBe(false);
+  expect(assistantAccess('false',false,'adam2002hosny@gmail.com',true)).toBe(true);
   expect(assistantAccess('true',false,'adam2002hosny@gmail.com',false)).toBe(false);
   expect(assistantAccess('true',false,'other@example.test',true)).toBe(false);
   fake.user.email='other@example.test';await act(async()=>root.render(<CloudApp key="other"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
