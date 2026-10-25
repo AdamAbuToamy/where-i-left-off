@@ -6,7 +6,7 @@ import {plainNumericText,comparableRecordName} from '../src/assistant/safeText';
 
 function fixture(){
  const data=blankAssistantData(),scope=data.scopes[0];
- scope.sections=[{id:'section-popo',name:'بوبو',revision:0}];
+ scope.sections=[{id:'section-popo',name:'بوبو',revision:0},{id:'other-section',name:'آخر',revision:0}];
  scope.projects=[{id:'card-aya',name:'&#x627;يه',sectionId:'section-popo',revision:0,rank:0,trashedAt:0},
  {id:'card-else',name:'ايه',sectionId:'other-section',revision:0,rank:1,trashedAt:0}] as typeof scope.projects;
  return data;
