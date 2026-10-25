@@ -52,7 +52,8 @@ it('exposes the isolated production pilot only to the verified owner',async()=>{
  try{
   fake.user.email='adam2002hosny@gmail.com';fake.user.emailVerified=false;
   await act(async()=>root.render(<CloudApp key="unverified"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
-  fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="verified"/>));expect(node.querySelector('[data-assistant]')).not.toBeNull();
+  fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="verified-off"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
+  vi.stubEnv('VITE_ASSISTANT_ENABLED','true');await act(async()=>root.render(<CloudApp key="verified-on"/>));expect(node.querySelector('[data-assistant]')).not.toBeNull();
   fake.user.email='other@example.test';await act(async()=>root.render(<CloudApp key="other"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
  }finally{Object.assign(fake.user,prior);act(()=>root.unmount());node.remove();vi.unstubAllGlobals();}
 });
