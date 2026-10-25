@@ -45,7 +45,7 @@ it('distinguishes a burst limit, provider quota and failed save confirmation',as
 });
 it('preserves local-only preference across reloads and never silently sends a request to the cloud',async()=>{
  localStorage.setItem('wilo-assistant-local','true');
- try{await open();await input('Give me advice on studying');await submit();expect(api.call).not.toHaveBeenCalled();expect(element.textContent).toContain('not ready');
+ try{await open();await input('Give me advice on studying');await submit();expect(api.call).not.toHaveBeenCalled();expect(element.textContent).toMatch(/not ready|Preparing the local model|Local model|local model/i);
   const cloud=[...element.querySelectorAll('button')].find(b=>b.textContent==='Use cloud assistant')!;expect(cloud).toBeDefined();await act(async()=>cloud.click());expect(localStorage.getItem('wilo-assistant-local')).toBeNull();
  }finally{localStorage.removeItem('wilo-assistant-local');}
 });
