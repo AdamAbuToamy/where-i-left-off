@@ -58,6 +58,16 @@ export default function AssistantWidget({user,language}:{user:User;language:Lang
   finally{lock.current=false;if(mounted.current){setLocalLoading(false);setBusy(false);setPhase(null);}}
  }
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+ // Resume a previously enabled local model automatically after React mounts.
+ // The browser may reuse cached weights; a missing cache may trigger a new download.
+ useEffect(()=>{
+  if(!preferLocal)return;
+  let cancelled=false;
+  queueMicrotask(()=>{if(!cancelled&&mounted.current)void activateLocal();});
+  return ()=>{cancelled=true;};
+  // Keep activation tied to the initial persisted user choice.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[]);
  useEffect(()=>{if(open&&present)input.current?.focus();else if(!open&&present)button.current?.focus();},[open,present]);
  function useCloud(){local.current?.dispose();local.current=null;setLocalReady(false);setPreferLocal(false);try{localStorage.removeItem('wilo-assistant-local');}catch{/* Optional preference. */}}
  function openPanel(){setPresent(true);setOpen(true);}
