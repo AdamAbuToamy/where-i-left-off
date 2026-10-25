@@ -13,7 +13,7 @@ import {sourceFingerprint,reportSummary,assertLocalAcceptance,inferenceEvidenceH
 
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const args=process.argv.slice(2);
-const accepted=['--resume','--headed','--software','--check','--persist','--deploy','--verify-report','--help'];
+const accepted=['--resume','--headed','--software','--check','--persist','--deploy','--verify-report','--smoke','--help'];
 for(const arg of args)if(!accepted.includes(arg)&&!/^--(?:limit|case|port|profile|executable)=.+/.test(arg))throw new Error('Unknown argument: '+arg);
 if(args.includes('--help')){
  console.log('Usage: node scripts/test-assistant-browser.mjs --limit=618 --resume --persist [--deploy] [--headed|--software]');
@@ -39,6 +39,18 @@ if(args.includes('--resume')&&existsSync(reportPath)){
 }
 report??={kind:LOCAL_REPORT_KIND,provider:'webllm',release:LOCAL_RELEASE,model:LOCAL_RELEASE.model,fingerprint,startedAt:new Date().toISOString(),results:[]};
 const save=()=>{report.summary=reportSummary(report.results,acceptanceCases.length);report.updatedAt=new Date().toISOString();writeFileSync(reportPath+'.tmp',JSON.stringify(report,null,2)+'\n');renameSync(reportPath+'.tmp',reportPath);};
+const failureCategory=reason=>/assistant-local-(?:inference|smoke|load)|GPU|WebGPU|disposed|device lost|GrammarMatcher|memory/i.test(reason)?'runtime':/oracle-/i.test(reason)?'oracle':/ai-|assistant-(?:invalid|reference|format|task-coverage)/i.test(reason)?'validation':'other';
+const sanitize=value=>String(value??'').replace(/(Bearer\\s+)[^\\s]+/gi,'$1[REDACTED]').slice(0,3000);
+const writeReview=()=>{
+ const rows=report.results.map(r=>({...r,category:r.status==='failed'?failureCategory(r.reason):'',reason:sanitize(r.reason),expected:acceptanceCases.find(c=>c.id===r.id)?.actions??[],expectedControls:acceptanceCases.find(c=>c.id===r.id)?.controls??[]}));
+ const esc=x=>'"'+String(x??'').replaceAll('"','""').replaceAll('\\r',' ').replaceAll('\\n',' ')+'"';
+ const csv=['id,language,status,category,reason,elapsedMs,expectedActions,expectedControls,actualReply,trace',...rows.map(r=>[r.id,r.language,r.status,r.category,r.reason,r.elapsedMs,JSON.stringify(r.expected),JSON.stringify(r.expectedControls),r.reply||'',JSON.stringify(r.trace||[])].map(esc).join(','))].join('\\n')+'\\n';
+ writeFileSync('assistant-acceptance-results.csv',csv);
+ const failed=rows.filter(r=>r.status==='failed');
+ const byCategory=Object.groupBy(failed,r=>r.category);
+ const markdown=['# WILO local model acceptance results','','Model: '+report.model,'Runtime: '+report.release.runtime,'Fingerprint: '+report.fingerprint,'',...Object.entries(report.summary||{}).map(([k,v])=>'- '+k+': '+v),'','## Failure categories',...Object.entries(byCategory).map(([k,v])=>'- '+k+': '+v.length),'','## Failed cases',...failed.map(r=>'### '+r.id+' ('+r.language+')\\nCategory: '+r.category+'\\nReason: '+r.reason+'\\nExpected actions: '+JSON.stringify(r.expected)+'\\nExpected controls: '+JSON.stringify(r.expectedControls)+'\\nObserved: '+String(r.reply||'').slice(0,3000)+'\\n')].join('\\n');
+ writeFileSync('assistant-acceptance-results.md',markdown);
+};
 let vite,http,browser,page,interrupted=false,blockedNetwork=false;
 const cancel=()=>{interrupted=true;void page?.evaluate(()=>window.wiloAcceptance?.dispose()).catch(()=>{});};
 process.once('SIGINT',cancel);process.once('SIGTERM',cancel);
@@ -89,6 +101,14 @@ try{
  if(args.includes('--check')){console.log(JSON.stringify(report.browser));}
  else{
   await page.evaluate(()=>window.wiloAcceptance.load());
+  // Validate a genuine model completion before spending time on any corpus case.
+  // This never counts as a pass for any of the 618.
+  const smoke=await page.evaluate(()=>window.wiloAcceptance.smoke());
+  report.smoke={status:'passed',elapsedMs:smoke.elapsedMs,at:new Date().toISOString()};
+  console.log('LOCAL INFERENCE SMOKE PASS:',smoke.elapsedMs+'ms');
+  save();
+  if(args.includes('--smoke')){console.log('SMOKE ONLY: no acceptance cases executed.');}
+  else{
   const {evaluateAcceptance}=await vite.ssrLoadModule('/tests/fixtures/assistant/oracle.ts');
   const priority=id=>id.startsWith('compound-card-')?0:id.startsWith('section-card-')?1:id.startsWith('new-course-lesson-')?2:3;
   const ordered=[...selected].sort((a,b)=>priority(a.id)-priority(b.id));
@@ -114,9 +134,10 @@ try{
   try{assertLocalAcceptance(report,acceptanceCases,fingerprint);complete=!interrupted;}catch{complete=false;}
   console.log(JSON.stringify(report.summary));console.log('REPORT:',reportPath);
   if(!complete)process.exitCode=2;
+  }
  }
 }catch(error){report.stopped=error.message;save();console.error('STOP:',error.message);console.error('No inference from another model/provider and no deployment performed.');process.exitCode=2;}
-finally{await browser?.close().catch(()=>{});await vite?.close();await new Promise(r=>http?.listening?http.close(r):r());}
+finally{writeReview();await browser?.close().catch(()=>{});await vite?.close();await new Promise(r=>http?.listening?http.close(r):r());}
 }
 
 // Replay EXACT saved model outputs through the production repository and real emulator rules.
