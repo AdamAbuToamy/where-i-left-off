@@ -93,8 +93,8 @@ export function workspaceToolStep(choice){
  return {response:workspaceToolArguments(choice)};
 }
 
-export async function runWorkspaceTools(data,history,invoke){
- const signal=AbortSignal.timeout(45000);let input=workspaceToolInput(data,history),reads=0,repaired=false;
+export async function runWorkspaceTools(data,history,invoke,timeoutMs=45000){
+ const signal=AbortSignal.timeout(timeoutMs);let input=workspaceToolInput(data,history),reads=0,repaired=false;
  for(;;){
   try{
    const result=await invoke(input,signal);
