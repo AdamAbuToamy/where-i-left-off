@@ -27,6 +27,7 @@ import type { Language } from './translations'
 import { cloudText, errorText } from './cloudTranslations'
 import { auth, configured, emulatorMode } from './lib/firebase'
 import { isAdmin } from './lib/admin'
+import { assistantAccess } from './lib/assistantAccess'
 import './App.css'
 import './Cloud.css'
 import './Recall.css'
@@ -70,14 +71,14 @@ export default function App() {
     <header className="page-header"><div className="heading-copy"><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', async () => { try { await preparePushSignOut() } catch { /* Local delivery gate is already cleared. */ } await signOut(auth!) }).catch(() => {})}>{c.logout}</button>}</div></header>
     {emulatorMode && <p className="notice">{c.demo}</p>}
     {authError !== null && <p className="notice error" role="alert">{errorText(authError, language)}</p>}
-    {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <p role="status">{c.loading}</p> : user ? page === 'support' ? <><Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} />{user.emailVerified&&((emulatorMode&&import.meta.env.VITE_ASSISTANT_ENABLED==='true')||(!emulatorMode&&isAdmin(user.email,user.emailVerified)))&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox user={user} language={language}/></Suspense></ErrorBoundary>}</> : <><AccountLifecycle key={user.uid} user={user} language={language}>
+    {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <p role="status">{c.loading}</p> : user ? page === 'support' ? <><Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} />{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox user={user} language={language}/></Suspense></ErrorBoundary>}</> : <><AccountLifecycle key={user.uid} user={user} language={language}>
       {page !== 'settings' && <ExtensionInstall language={language} />}
       <CloudPushSync user={user}/><WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
       <WelcomeTour user={user} language={language} />
       <SideNavigation language={language} page={page} admin={isAdmin(user.email, user.emailVerified)} />
       {!user.displayName?.trim() && page !== 'settings' && <section className="profile-prompt" aria-label={p.needsName}><span className="profile-prompt-icon" aria-hidden="true">✦</span><div className="profile-prompt-copy"><strong>{p.needsName}</strong><span>{p.profilePrompt}</span></div><a className="primary-button profile-prompt-action" href="#/settings">{p.editProfile} <span aria-hidden="true">↗</span></a></section>}
       <section className="account-page-outlet" data-page={page} key={`${user.uid}/${page}/${groupId}`}><ErrorBoundary embedded><AccountPage page={page} groupId={groupId} user={user} language={language} installed={installed} profileVersion={profileVersion}/></ErrorBoundary></section>
-    </AccountLifecycle>{user.emailVerified&&((emulatorMode&&import.meta.env.VITE_ASSISTANT_ENABLED==='true')||(!emulatorMode&&isAdmin(user.email,user.emailVerified)))&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox user={user} language={language}/></Suspense></ErrorBoundary>}</> : <>{page === 'support' && <p className="notice">{supportText[language].signin}</p>}<AuthPanel language={language} /></>}
+    </AccountLifecycle>{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox user={user} language={language}/></Suspense></ErrorBoundary>}</> : <>{page === 'support' && <p className="notice">{supportText[language].signin}</p>}<AuthPanel language={language} /></>}
     <LegalLinks language={language} />
   </main></IdleSleep></StudyLocaleProvider>
 }
