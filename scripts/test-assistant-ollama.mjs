@@ -81,6 +81,12 @@ try{
   report.results.push(item);save();
   const progress=report.results.filter(r=>r.status==='passed').length;
   console.log('['+attempted+'/'+limit+'] '+testCase.id+': '+item.status+(item.reason?' ['+item.reason+']':'')+' ('+result.elapsedMs+'ms) | total passed='+progress);
+  // Provider transport/model failures invalidate subsequent inference until recovered.
+  // Stop safely, preserve earlier passes, and never mislabel 618 cases as semantic failures.
+  if(result.error==='harness-failed'||/^ollama-|^ai-provider-/.test(result.error||'')){
+   item.status='blocked';item.reason=result.error;save();stoppedForError=true;
+   console.error('STOP: local inference unavailable:',result.error,'(results saved)');break;
+  }
   if(item.status==='blocked'||(item.status==='failed'&&args.includes('--stop-on-failure'))){
    stoppedForError=true;break;
   }
