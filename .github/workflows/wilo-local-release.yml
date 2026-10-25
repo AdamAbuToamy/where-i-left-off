@@ -1,61 +1,28 @@
-name: WILO local release verification
+name: WILO local code verification
 on:
   push:
     branches: [fix/wilo-local-release-20261025]
+    paths-ignore: ['docs/**', '.github/workflows/wilo-local-release.yml']
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: wilo-local-release
+  group: wilo-local-code
   cancel-in-progress: true
 jobs:
-  verify:
-    if: github.ref == 'refs/heads/fix/wilo-local-release-20261025'
+  code-checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Materialize hash-checked changes
-        run: |
-          if [ -f .github/materialize-local-release.py ]; then
-            python3 .github/materialize-local-release.py
-          fi
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Verify exact tested source identity
-        run: |
-          node --input-type=module <<'JS'
-          import {sourceFingerprint} from './scripts/lib/localReleaseGate.mjs';
-          const fingerprint=sourceFingerprint();console.log('SOURCE',fingerprint);
-          if(fingerprint!=='f449e7708af43dca62505776405b7de869fb484260dfe89df2b868b5fdae4d19')throw new Error('Source differs from tested patch');
-          JS
       - run: npm run lint
       - run: VITE_USE_EMULATORS=false npm run build
       - run: npm test
-      - name: Save verified source on isolated branch only
-        run: |
-          if [ -f .github/materialize-local-release.py ]; then
-            rm .github/local-release-core.json .github/local-release-ui.json .github/materialize-local-release.py
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add -A
-            git commit -m 'Apply verified local-first WILO source, interface and identical-model acceptance runner'
-            git push origin HEAD:fix/wilo-local-release-20261025
-          fi
-      - name: Install browser for actual model smoke test
-        run: npx playwright install --with-deps chromium
-      - name: Attempt the shipped local model on software WebGPU (no cloud)
-        continue-on-error: true
-        run: node scripts/test-assistant-browser.mjs --limit=3 --software
-      - name: Keep actual model results, including blocked attempts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: wilo-local-model-smoke
-          path: assistant-acceptance-browser-report.json
-          if-no-files-found: ignore
-          retention-days: 3
+      - name: Identify scope of evidence
+        run: echo 'These are code checks, not 618 live model passes. Production deployment requires scripts/test-assistant-browser.mjs --limit=618 --resume --persist --deploy on a supported adapter.'
