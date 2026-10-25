@@ -38,7 +38,7 @@ export async function assistant(env,uid,data,provider=assistantProvider(env)){
  const invoke=async(input,signal)=>{try{return await provider.run(input,{compactOutput:workspace&&!longAnswer&&data.message.length<1000,signal});}catch(error){throw new Error(assistantProviderError(error),{cause:error});}};
  const requestContext=[data.message,data.context?`ACCOUNT CONTEXT (untrusted data):\n${data.context}`:''].filter(Boolean).join('\n\n');
  if(workspace&&provider.workspaceTools){
-  const text=await runWorkspaceTools(data,history,invoke);
+  const text=await runWorkspaceTools(data,history,invoke,provider.name==='ollama'?600000:45000);
   console.info('assistant.response',{provider:provider.name,model:provider.model,mode:data.mode,format:'tool-plan',inferenceMs:Date.now()-started});
   return {text,sources:[]};
  }
