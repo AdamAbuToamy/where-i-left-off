@@ -1,17 +1,18 @@
-> Current readiness checklist and evidence: [قائمة الجاهزية](docs/READINESS_AR.md). Engineering baseline: [PROJECT_ENGINEERING_GUIDELINES.md](PROJECT_ENGINEERING_GUIDELINES.md). Repository instructions: [AGENTS.md](AGENTS.md).
-
-# Where I Left Off
-
-> Recovery status: the assistant is disabled in production and available only in emulator experiments. See [the recovery report](docs/AUTH_ASSISTANT_RECOVERY_AR.md) for the confirmed Firebase Auth referrer issue and owner repair steps.
-
+# Where I Left Off — WILO
 
 [![Quality checks](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AdamAbuToamy/where-i-left-off/actions/workflows/ci.yml)
 
-**Save the link, remember where you stopped, and know what to do next.**
+**Save the link, remember where you stopped, and know your next step.**
 
-A multilingual project and study organizer built with React, TypeScript and Firebase. Organize personal cards and shared work, plan university courses and weekly classes, and use a floating AI assistant to review and apply changes.
+A multilingual project and study organizer for personal cards, shared work, university courses and weekly schedules. WILO combines account synchronization and offline editing with a cloud assistant that prepares changes for your review.
 
-**[Try the live app](https://where-i-left-off.web.app/)** · **[About Where I Left Off](https://where-i-left-off.web.app/about.html)** · **[العربية](README_AR.md)** · **[Test results](TEST_RESULTS.md)** · **[Security](SECURITY.md)**
+**[Open the app](https://where-i-left-off.web.app/)** · **[العربية](README_AR.md)** · **[Readiness checklist](docs/READINESS_AR.md)** · **[Security](SECURITY.md)**
+
+## Current status
+
+The public assistant is available to signed-in users with a verified email. Each user connects their own Pollinations account through the consent flow in the app. The configured model is DeepSeek V4.1 Flash. Provider free credits, rate limits and availability apply.
+
+The automated readiness checks passed. Real Google/Pollinations consent, Chrome Web Store installation and physical-device PWA/push delivery still require device verification. The [54-point readiness checklist](docs/READINESS_AR.md) distinguishes completed checks, known limits and manual checks.
 
 <!-- recall-media:start -->
 ## Promotional preview
@@ -24,165 +25,132 @@ Promotional illustration; not a screenshot of the live interface.
 
 <!-- recall-media:end -->
 
-## Why I built it
-
-A saved tab tells you where to return, but not where you stopped. A task title tells you what to do, but not the context you need to resume. Where I Left Off keeps the link, checkpoint and next step together in one card.
-
-For example: save a university assignment, record “finished questions 1–2”, and set the next step to “start question 3”. Return to that card from your phone or computer.
-
 ## Features
 
-| Area | Available features |
+| Area | What you can do |
 | --- | --- |
-| Personal organization | Cards, custom sections, saved links, checkpoints, checklists and follow-up dates |
-| Quick views | Search, status/date filters, a weekly view and University Today inside Continue Now |
-| Offline work | Device-local edits, reload persistence, synchronization on reconnect and explicit conflict choices |
-| Shared groups | Invitations, task assignment, membership management and member creation permissions |
-| Languages | Arabic, Hebrew and English, including right-to-left layout |
-| Mobile and desktop | Responsive UI and keyboard, mouse and touch card sorting |
-| Sign-in | Firebase email/password and Google authentication |
-| Web app | Installable PWA, offline application shell and an Android share-target declaration |
-| Browser capture | User-activated Chromium extension for tab/video capture and recognized Moodle course/task pages, with a preview before import |
-| University | Courses, study-topic checklists, assignments, exams, notes, prerequisite maps and a weekly timetable with room and session type |
-| Assistant | Floating chat for summaries, advice, TXT downloads and reviewed changes to cards, courses, tasks and timetable sessions |
+| Cards and sections | Save links, notes, checkpoints, next steps, checklists, progress and follow-up dates |
+| Views | Search, filter, reorder cards and review a week or today's work |
+| Offline editing | Keep edits across reloads, synchronize on reconnect and explicitly resolve conflicts |
+| Shared groups | Invite members, assign work and control member creation permissions |
+| University | Organize courses, topics, assignments, exams, prerequisites and recurring lectures/tutorials/labs |
+| Assistant | Ask about your data, request summaries and prepare supported changes across the app |
+| Downloads | Request PDF, TXT, Markdown, CSV and JSON reports |
+| Capture | Save supported browser tabs, video timestamps and recognized Moodle pages with an import preview |
+| Languages | Arabic, Hebrew and English, with RTL/LTR layouts |
+| Interaction | Page/card/dialog transitions, consistent icons, keyboard controls and reduced-motion support |
+| Installed app | PWA installation and opt-in reminders, subject to supported devices and deployment setup |
 
-This is an experimental beta. Native phone installation/share sheets and real Google OAuth still need documented physical-device verification.
+## Using WILO
 
-## University semester planner
+1. [Open WILO](https://where-i-left-off.web.app/) and sign in.
+2. Create a card with its link, checkpoint and next step.
+3. Add a section, checklist or date when useful.
+4. Use the same account on another device to continue.
+5. Open the assistant, choose **Connect assistant**, sign in and approve the Pollinations connection.
 
-The University page is available to accounts with a verified email address. Add courses, notes, study topics, assignments and exams; link prerequisites in an editable map; and build a weekly timetable with lectures, tutorials, labs, days, times and rooms. University Today appears inside Continue Now, showing today's classes, deadlines and overdue tasks.
+Open and sign in online before relying on offline editing. Queued changes synchronize while the application is open and connected. The assistant requires a network connection.
 
-University records synchronize through private, account-scoped Firestore records. Local storage and an outbox preserve edits during disconnection, with explicit conflict resolution after reconnecting. Spreadsheet paste supports preview, duplicate detection and timetable overlap warnings. JSON export/import remains available for backups. Phone reminders require separate opt-in.
+For installation and capture, see the [phone guide](docs/INSTALL.md) and [extension guide](browser-extension/README_AR.md).
 
-The current extension can recognize supported Moodle course/task pages that the user opens and explicitly chooses to capture. It does not establish a permanent Moodle account connection or automatically poll for new assignments. See [the university guide](docs/UNIVERSITY_PILOT_AR.md) and [extension instructions](browser-extension/README_AR.md).
+## The assistant
 
-## AI assistant
+Ordinary conversation stays conversational. When account data or an app operation is needed, the model selects existing typed functions. The app reads authorized records in bounded pages, validates the complete proposal and presents **Apply changes**. Only confirmed saves are shown as saved.
 
-Open the floating assistant from the signed-in workspace to ask about saved data, request summaries or advice, download plain-text files, and propose changes to cards, courses, tasks, prerequisites and timetable sessions. Review the proposal and choose **Apply changes** to save it. Writes use the same Firebase permissions as the user, check for conflicting edits, and are confirmed from the server before success is shown. Supported undo operations also refuse to overwrite later edits. Tasks linked to phone reminders are edited in University to keep the reminder schedule consistent.
+The assistant supports compound requests, follow-up details, relative dates and supported site settings. Streamed tool arguments are assembled completely before validation; partial output cannot trigger a write. Users can stop a pending request. Connection diagnostics report stage timings without including prompts, account content or API keys.
 
-- **Cloud mode:** GPT-OSS-120B through the existing Cloudflare Worker, with Cloudflare AI by default or Groq after explicit owner setup. Configure Cloudflare AI with `node scripts/setup-free-assistant.mjs`; see the Groq guide below for the alternative. Provider free quotas apply; the app has a short anti-burst interval, not the former ten-attempt daily cap.
-- **Optional on-device mode:** choose **Run Qwen on this device** in the chat. Qwen2.5 1.5B runs through WebLLM in a Web Worker after an explicit, large first download (about 1 GB). It requires WebGPU and sufficient GPU memory (the model configuration lists about 1.6 GB). It has no AI-provider message quota; speed, output quality and context capacity depend on the device. Firebase connectivity is still needed to synchronize and save approved changes. Local-mode failures do not silently send the request to the cloud.
-- **Structured timetable lists:** standalone lists use validated parsing and cloud course matching. Free-form card/course edits and compound requests use the cloud model.
+Examples:
 
-Chat replies and UI follow Arabic, English or Hebrew. The panel includes animated waiting states for reading data, preparing a reply and saving, plus real model-download progress and reduced-motion support. The assistant uses saved content, does not browse linked pages, and does not execute generated code. See [assistant task acceptance evidence and limitations](docs/AI_ACCEPTANCE_AR.md) and [privacy](https://where-i-left-off.web.app/privacy.html). On-device GPU inference quality and speed have not been validated in the development environment; the tested persistence path and mocked model contracts do not establish that every natural-language request succeeds.
+> أضف بطاقة مشروع البرمجة لقسم هالأسبوع، وخلي موعدها 28 الشهر، واعمل مراجعة قبلها بيومين.
 
-## Try it
+> Summarize my courses and give me a PDF.
 
-1. Open [where-i-left-off.web.app](https://where-i-left-off.web.app/) and create an account or sign in.
-2. Add a card with a title, a link if needed, and your next step.
-3. Add a checkpoint, section, checklist or follow-up date when useful.
-4. Open the same account on another device to access synchronized cards.
+Important limits:
 
-Open and sign in online before relying on offline use. Queued changes sync while the app is open online; background synchronization with the app closed is not promised.
+- Provider latency and free allowances vary; there is no unlimited-service guarantee.
+- Web search and finding the first YouTube video are unavailable. Supply a direct URL when needed.
+- Account security, browser permissions and group membership changes use their original interfaces.
+- PDFs currently contain rendered pages, so their text is not searchable or selectable.
+- Natural-language understanding is not guaranteed for every request. Review proposed changes.
 
-For home-screen installation on Android and iPhone, see [the installation guide](docs/INSTALL.md). For desktop tab capture, see [the extension guide](browser-extension/README_AR.md).
+The production assistant uses each user's cloud authorization. Legacy local-model/provider experiments retained in the repository are not the active production setup.
 
-## Architecture
+## Architecture and engineering
 
-```mermaid
-flowchart TB
-  App[React and TypeScript app]
-  Auth[Firebase Authentication]
-  Local[IndexedDB cache and mutation queue]
-  Cloud[Cloud Firestore and security rules]
-  App --> Auth
-  App <--> Local
-  App <--> Cloud
-```
+| Boundary | Responsibility |
+| --- | --- |
+| Domain and application | Validated entities, task plans, university state and offline orchestration |
+| Ports | Workspace persistence, remote operations, connectivity and synchronization locks |
+| Adapters | Firebase, IndexedDB, browser events, provider HTTP/SSE and file generation |
+| UI/composition | React screens, account-scoped dependency wiring and review/apply interactions |
 
-Firebase Authentication provides identity. Firestore rules enforce ownership, membership and permissions on the server. IndexedDB keeps cached data and queued changes separated by account and workspace. A service worker caches the application shell. Revision checks and explicit conflict resolution protect concurrent edits.
+The core dependency check follows runtime imports from four critical entry points across 14 modules. It prevents browser drivers and external frameworks from leaking into those business/application paths. Compatibility exports preserve existing imports and storage formats.
 
-The client admin dashboard is limited to activity metrics and app-access suspension. Its rules do not grant access to personal card content. See [security scope](SECURITY.md).
+See the [engineering baseline](PROJECT_ENGINEERING_GUIDELINES.md), [repository instructions](AGENTS.md), [architecture](docs/ARCHITECTURE.md) and [streaming/boundary decision](docs/adr/2026-10-26-streaming-and-core-boundaries.md).
 
 ## Run locally
 
-Requires **Node.js 24**, npm, and **Java 21** for emulator tests.
+Requirements: **Node.js 24**, npm, and **Java 21** for Firestore emulator tests.
 
-```bash
-npm ci --include=dev
-cp .env.example .env.local
-# Add your own Firebase web configuration to .env.local.
-npm run dev
-```
+    npm ci --include=dev
+    cp .env.example .env.local
+    # Set your Firebase web configuration in .env.local.
+    npm run dev
 
-In your Firebase project, enable Firestore and the Email/Password and Google sign-in providers. Configure the authorized domains for your deployment. Firebase client configuration is not a service-account credential; keep access tokens and private keys out of Git.
+Enable Firestore and the Email/Password and Google sign-in providers in your Firebase project. Configure authorized origins and App Check for the intended deployment. Browser identifiers are public configuration; service-account credentials and provider secrets must never be committed.
 
-To use the test emulators without production credentials, run in separate terminals:
+For the demo Firebase emulators, use separate terminals:
 
-```bash
-npm run emulators
-npm run dev:emulator
-```
+    npm run emulators
+    VITE_ASSISTANT_ENABLED=true npm run dev:emulator
 
-## Tests and checks
+Browser tests inject provider responses and use disposable emulator accounts. Real inference tests require a separately authorized scoped test key; never put it in browser source, fixtures or Git.
 
-```bash
-npx playwright install --with-deps chromium
-npm ci --prefix push-worker
-npm test --prefix push-worker
-npm audit --omit=dev --audit-level=high
-npm run test:all
-```
+Forks should configure their own Firebase deployment and Pollinations application. The bundled public Pollinations client identifier belongs to the existing WILO deployment.
 
-The latest local validation passed **252 unit/component tests, 56 Firestore/security and chat-acceptance tests, and 35 Worker tests**, along with ESLint and the production build. Chat acceptance tests use the actual Apply button and read saved results from a Firestore emulator; model-adapter tests use injected responses. See [assistant acceptance evidence](docs/AI_ACCEPTANCE_AR.md). [TEST_RESULTS.md](TEST_RESULTS.md) retains earlier validation history.
+## Verification
 
-CI runs on pushes and pull requests using demo Firebase emulators, including browser tests and a dependency audit. It does not deploy or require production credentials. Check [GitHub Actions](https://github.com/AdamAbuToamy/where-i-left-off/actions) for the current browser and audit results. Do not run E2E and production builds concurrently: both write `dist`.
+    npm ci --prefix push-worker
+    npx playwright install --with-deps chromium
+    npm run lint
+    npx tsc -b
+    npm run check:architecture
+    npm test
+    npm test --prefix push-worker
+    npm run test:rules
+    npm run test:auth:recovery
+    npm run test:e2e
+    npm audit --omit=dev
 
-For the documented WSL test runner and dependency override compatibility, see [tooling maintenance](docs/TOOLING_SECURITY.md).
+Run browser tests and production builds sequentially: both write dist. The default browser preview uses port 5173; use an isolated preview configuration when that port is occupied.
+
+Recorded readiness results on **26 October 2026**:
+
+| Check | Passed cases |
+| --- | ---: |
+| Unit/application | 1,123 |
+| Firestore rules and persistence | 675 |
+| Worker | 867 |
+| Browser journeys | 37 |
+| Auth recovery | 3 |
+| **Automated total** | **2,705** |
+
+Three additional live-provider scenarios covered a greeting, card creation and a compound request with PDF. This was not a fresh live rerun of the 618-prompt matrix. Injected-response tests establish application behavior and persistence, not universal model comprehension.
+
+The recorded production dependency audit found no advisories. Five moderate entries remained in Firebase development tooling. Check the [current Actions runs](https://github.com/AdamAbuToamy/where-i-left-off/actions) and [readiness evidence](docs/readiness/2026-10-26.json) for scope and outstanding checks.
 
 ## Deployment
 
-```bash
-VITE_USE_EMULATORS=false VITE_TEST_OFFLINE=false npm run build
-```
+Production builds require the intended Firebase configuration and App Check:
 
-The included `scripts/deploy-production.sh` is configured for the maintainer's Firebase project and hosting target. Forks should use their own Firebase project, hosting target and deployed rules. Hosting and Firestore free quotas are finite; the project does not guarantee unlimited free usage.
+    VITE_USE_EMULATORS=false VITE_TEST_OFFLINE=false VITE_REQUIRE_APP_CHECK=true VITE_REQUIRE_FIREBASE_CONFIG=true VITE_ASSISTANT_ENABLED=true npm run build
 
-## Scope and next steps
+The Hosting workflow deploys the existing production target after successful quality checks on current main. Manual releases also require successful checks for that commit. It preserves public Firebase/App Check configuration and does not deploy a shared assistant key.
 
-The current app includes the university planner, assistant and opt-in installed-app reminders described here. External reply monitoring, binary attachment uploads, nested sections and permanent background Moodle synchronization are not implemented. [The roadmap](ROADMAP_AR.md) records earlier plans; the feature list above describes the current implementation.
+Opt-in Web Push uses a separately configured Cloudflare Worker, D1 and Queues. Hosting deployment does not replace that Worker. See the [push setup and device checks](docs/PUSH_NOTIFICATIONS_AR.md).
 
-Automated checks do not establish complete coverage, penetration-test certification or production IAM/abuse resistance. Offline copies cannot be remotely erased after access is revoked. Group administration needs connectivity. These limits are documented in [SECURITY.md](SECURITY.md).
+## Scope
 
-Built by **[Adam Abu Toamy](https://www.linkedin.com/in/adam-abu-toamy-383250363/)**.
+Permanent Moodle account synchronization, external reply monitoring and binary attachment uploads are not implemented. Account-scoped caching cannot guarantee remote erasure from an offline device. Physical-device checks and operational limitations are documented in the readiness checklist.
 
-## Architecture and browser credentials
-
-See [architecture decisions](docs/ARCHITECTURE.md) for domain objects, storage interfaces, adapters and the production write path. See [credential boundaries](docs/CLIENT_SECURITY.md) for public Firebase identifiers, server-only secrets, deployment guards and cloud settings that require account-side verification.
-
-`npm run build` checks browser source/assets before bundling and generated assets afterward for credential patterns. Unknown `VITE_*` variables are rejected. `scripts/deploy-production.sh` requires complete Firebase configuration and a public reCAPTCHA Enterprise site key; deploy only after verifying App Check metrics and enforcement in the Firebase project.
-
-## More projects by Adam Abu Toamy
-
-[**DeskPages — Windows 11 desktop icon organizer**](https://github.com/AdamAbuToamy/DeskPages) organizes the original Windows desktop into pages while keeping file paths unchanged. [Downloads and release notes](https://github.com/AdamAbuToamy/DeskPages/releases).
-
-
-## Free installed-app notifications / إشعارات التطبيق المثبّت
-
-Opt-in Web Push reminders use Cloudflare Workers Free, D1 and Queues. Firebase stays on Spark; no Blaze upgrade or payment card is required for this deployment. Free quotas apply and service may pause when exhausted. Configure the separate Worker before publishing the app. See [setup and phone testing](docs/PUSH_NOTIFICATIONS_AR.md).
-
-
-### Assistant execution coverage
-
-The assistant can propose up to 50 domain operations and 20 reviewed site controls in one reply. This includes card ordering/archive/restore, section changes, courses/tasks/classes, appearance, language, sleep and workflow preferences, and opening existing views with filters. Multi-part replies can include a per-task execution ledger; only confirmed receipts produce a saved status. A missing action list never counts as a completed change. The Arabic/Hebrew 14-class timetable request has a direct validated import path with exact course matching and duplicate prevention.
-
-Browser permissions, account/security and group membership operations use their existing UI with an explicit handoff. Device settings are separate from the Firestore data transaction. The model is not guaranteed to understand every possible request. See the [execution contract, limits and verification notes](docs/ASSISTANT_CAPABILITIES_AR.md).
-
-Course-name differences in timetable lists now use a compact cloud model identity-resolution request instead of requiring an exact saved title. Only existing course IDs are accepted; class times and types remain under client validation. Cloud mode needs no local model download.
-
-The older Cloudflare workspace path uses an independent intent inventory before action generation; the current Groq path uses one native tool plan instead. Each requested field is checked against the proposal, with one bounded semantic repair; incomplete task sets are rejected. Creating a card, assigning its due date and appending a note count as three requests even if implemented by one write. Card notes use the existing editable description field. Provider inference quality is separate from the injected-response persistence tests. See [the capability audit](docs/ASSISTANT_UI_AUDIT_AR.md).
-
-Cloudflare's free allowance is 10,000 neurons/day shared by the account, not unlimited per-user messages. Cloudflare AI needs no external API key or model download; the optional Groq provider needs one owner server secret. No automatic provider fallback is configured. [Official model](https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b/) · [Pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
-
-[Assistant failure analysis and 618-request acceptance matrix](docs/ASSISTANT_FAILURE_ANALYSIS_AR.md). The live runner is `npm run test:assistant:live -- --limit=618 --resume`; injected tests do not certify model comprehension.
-
-
-Alternative cloud provider: [Groq setup and actual free-tier limits](docs/GROQ_ASSISTANT_AR.md). Use `node scripts/setup-groq-assistant.mjs` after a three-case live probe. The server secret is owner-only; end users need no key or model download.
-
-Groq workspace requests now use one native function call to select the existing app operations and arguments, with code-side schema/coverage checks and the unchanged client planner, permissions and verified save path. The older Cloudflare inventory path is unchanged. Free quotas still apply; the authored 618-case contract matrix is not live inference evidence.
-
-The assistant connection was rebuilt with stage-specific errors, protected no-inference health checks, deployment protocol/CORS verification, and a single model path for chat input. See [the rebuild audit, official sources and verification limits](docs/ASSISTANT_REBUILD_AR.md).
-
-Google Gemini setup: [instructions and limits](docs/GEMINI_ASSISTANT_AR.md).
-
-[Deployment from GitHub and a phone](docs/DEPLOY_FROM_PHONE_AR.md).
+[Privacy](https://where-i-left-off.web.app/privacy.html) · [Extension privacy](docs/EXTENSION_PRIVACY.md) · [Earlier test history](TEST_RESULTS.md)
