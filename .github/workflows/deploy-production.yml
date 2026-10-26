@@ -1,79 +1,11 @@
-name: Deploy Worker and website
+name: Deploy production website
 on:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: wilo-production
-  cancel-in-progress: false
+  actions: read
 jobs:
-  configuration:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    outputs:
-      ready: ${{ steps.credentials.outputs.ready }}
-    steps:
-      - name: Check deployment credentials without exposing them
-        id: credentials
-        env:
-          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
-          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
-          FIREBASE_CREDENTIAL: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          if [ -n "$CF_TOKEN" ] && [ -n "$CF_CONFIG" ] && [ -n "$FIREBASE_CREDENTIAL" ] && [ -n "$GEMINI_KEY" ]; then
-            echo 'ready=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'ready=false' >> "$GITHUB_OUTPUT"
-            echo 'Deployment is not configured. See docs/DEPLOY_FROM_PHONE_AR.md. No deployment was attempted.' >> "$GITHUB_STEP_SUMMARY"
-          fi
   deploy:
-    needs: configuration
-    if: needs.configuration.outputs.ready == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    env:
-      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.DEPLOY_SHA }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - name: Require current main commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          node --input-type=module <<'JS'
-          const r=await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/git/ref/heads/main`,{headers:{authorization:`Bearer ${process.env.GH_TOKEN}`,accept:'application/vnd.github+json'}});
-          if(!r.ok||(await r.json()).object.sha!==process.env.DEPLOY_SHA)throw new Error('Refusing to deploy a superseded or non-main commit.');
-          JS
-      - name: Install dependencies
-        run: |
-          npm ci --no-audit --no-fund
-          npm ci --prefix push-worker --no-audit --no-fund
-      - name: Deploy the owner-only Gemini pilot
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node scripts/deploy-assistant-pilot.mjs
-      - name: Verify Worker connection and prepare public Firebase configuration
-        run: |
-          node scripts/check-assistant-deployment.mjs
-          node scripts/prepare-hosting-config.mjs
-      - name: Build website
-        run: VITE_USE_EMULATORS=false VITE_TEST_OFFLINE=false VITE_REQUIRE_APP_CHECK=true VITE_REQUIRE_FIREBASE_CONFIG=true npm run build
-      - name: Deploy existing Firebase Hosting site
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: where-i-left-off-b5683
-          channelId: live
-          target: production
-          firebaseToolsVersion: 15.33.0
-      - name: Remove temporary configuration
-        if: always()
-        run: rm -f push-worker/wrangler.local.json .env.production.local
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy-hosting.yml
+    secrets: inherit

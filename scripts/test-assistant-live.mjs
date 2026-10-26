@@ -12,10 +12,10 @@ import {acceptanceSummary,providerStop} from './lib/assistantAcceptance.mjs';
 import {blockedProviderCodes} from '../push-worker/src/assistantErrors.mjs';
 import {ASSISTANT_MODEL} from '../push-worker/src/assistant.mjs';
 import {runAcceptanceCase} from '../tests/fixtures/assistant/runCase.mjs';
-import {assistantProvider,GROQ_MODEL,GEMINI_MODEL} from '../push-worker/src/assistantProvider.mjs';
+import {assistantProvider,GROQ_MODEL,GEMINI_MODEL,ZAI_MODEL} from '../push-worker/src/assistantProvider.mjs';
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const args=process.argv.slice(2),provider=args.find(a=>a.startsWith('--provider='))?.split('=')[1]||'cloudflare';
-const settings={cloudflare:{model:ASSISTANT_MODEL},groq:{model:GROQ_MODEL,key:'GROQ_API_KEY',label:'Groq'},gemini:{model:GEMINI_MODEL,key:'GEMINI_API_KEY',label:'Gemini'}}[provider];
+const settings={cloudflare:{model:ASSISTANT_MODEL},groq:{model:GROQ_MODEL,key:'GROQ_API_KEY',label:'Groq'},gemini:{model:GEMINI_MODEL,key:'GEMINI_API_KEY',label:'Gemini'},zai:{model:ZAI_MODEL,key:'ZAI_API_KEY',label:'Z.ai'}}[provider];
 if(!settings)throw new Error('Unknown provider.');
 const model=settings.model,requestedIds=args.filter(a=>a.startsWith('--case=')).map(a=>a.slice(7));
 if(requestedIds.some(id=>!acceptanceCases.some(c=>c.id===id)))throw new Error('Unknown case ID. Use --list to see the case catalog.');
@@ -47,7 +47,7 @@ try{
  const server=createNetServer();await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});const port=server.address().port;await new Promise(yes=>server.close(yes));
  const config=join(folder,'wrangler.json');
  writeFileSync(config,JSON.stringify({name:'wilo-local-ai-acceptance',main:resolve('tests/fixtures/assistant/live-worker.mjs'),compatibility_date:'2026-10-23',ai:{binding:'AI',remote:true},vars:{TEST_TOKEN:token}}));
- const childEnv={...process.env,WRANGLER_SEND_METRICS:'false'};delete childEnv.GROQ_API_KEY;delete childEnv.GEMINI_API_KEY;
+ const childEnv={...process.env,WRANGLER_SEND_METRICS:'false'};delete childEnv.GROQ_API_KEY;delete childEnv.GEMINI_API_KEY;delete childEnv.ZAI_API_KEY;
  child=spawn(process.execPath,[cli,'dev','--config',config,'--ip','127.0.0.1','--port',String(port),'--show-interactive-dev-session=false'],{stdio:['ignore','pipe','pipe'],env:childEnv});
  let diagnostics='';for(const stream of [child.stdout,child.stderr])stream.on('data',d=>{diagnostics=(diagnostics+d).slice(-6000);});
  const origin=`http://127.0.0.1:${port}`,deadline=Date.now()+30000;
@@ -58,7 +58,7 @@ try{
  }
  executeCase=async testCase=>{const response=await fetch(origin,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({id:testCase.id}),signal:AbortSignal.any([cancellation.signal,AbortSignal.timeout(120000)])});return response.json();};
  }
- const {createServer}=await import('vite');vite=await createServer({server:{middlewareMode:true,hmr:false},appType:'custom'});
+ const {createServer}=await import('vite');vite=await createServer({server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
  const {evaluateAcceptance}=await vite.ssrLoadModule('/tests/fixtures/assistant/oracle.ts');
  let attempted=0,consecutiveUnavailable=0;
  // Diagnose the reported compound-card failure before spending quota on the larger matrix.
@@ -86,5 +86,5 @@ try{
  report.selection={ids:selected.map(c=>c.id),summary:acceptanceSummary(report.results.filter(r=>selected.some(c=>c.id===r.id)),selected.length)};
  save();if(report.selection.summary.failed||report.selection.summary.blocked||report.selection.summary.notRun)process.exitCode=2;
  console.log(JSON.stringify(report.summary));
-}catch(error){report.stopped=cancellation.signal.aborted?'interrupted':/^cloudflare-|^live-worker-|^(groq|gemini)-key-required$/.test(error.message)?error.message:'local-harness-unavailable';save();console.error(report.stopped);process.exitCode=cancellation.signal.aborted?130:2;}
+}catch(error){report.stopped=cancellation.signal.aborted?'interrupted':/^cloudflare-|^live-worker-|^(groq|gemini|zai)-key-required$/.test(error.message)?error.message:'local-harness-unavailable';save();console.error(report.stopped);process.exitCode=cancellation.signal.aborted?130:2;}
 finally{await vite?.close();child?.kill('SIGTERM');rmSync(folder,{recursive:true,force:true});}

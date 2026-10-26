@@ -1,0 +1,1 @@
+export const LOCAL_RELEASE: Readonly<{version:string;model:string;runtime:string;weightBytes:number;requestTimeoutMs:number;readinessTimeoutMs:number;contextWindow:number;maxOutputTokens:number;temperature:number;seed:number}>;

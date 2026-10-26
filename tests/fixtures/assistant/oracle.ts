@@ -1,3 +1,4 @@
+import {checklistItems} from '../../../src/lib/taskOverview';
 import {parseAssistantReply,planAssistantChanges,resolveProposalControls} from '../../../src/assistant/actions';
 import type {AssistantData,Change} from '../../../src/assistant/actions';
 import {acceptanceContext} from './corpus.mjs';
@@ -25,6 +26,15 @@ export function evaluateAcceptance(testCase:Case,text:string){
    const expected=['courseId','sectionId'].includes(field)&&typeof value==='string'?aliases.get(value)||value:value;
    if(['archivedAt','trashedAt'].includes(field)&&Number(expected)>0){if(!(Number(actual[field])>0))throw new Error('oracle-timestamp');continue;}
    if(field==='due'&&typeof actual[field]==='string'&&expected){if(Date.parse(actual[field] as string)!==Date.parse(String(expected)))throw new Error('oracle-due');continue;}
+   if(field==='checklist'&&typeof expected==='string'&&typeof actual[field]==='string'){
+    const rendered=(value:string)=>checklistItems(value).map(({text,done})=>({text,done}));
+    if(JSON.stringify(rendered(actual[field] as string))!==JSON.stringify(rendered(expected)))throw new Error('oracle-field:projects.checklist');continue;
+   }
+   if(field==='topics'&&Array.isArray(expected)&&Array.isArray(actual[field])){
+    const topics=actual[field] as {id:string;title:string;done:boolean}[],prior=(baseline as {topics?:{id:string}[]}|undefined)?.topics||[];
+    const correct=topics.length===expected.length&&expected.every(topic=>topics.some(item=>item.title===topic.title&&item.done===topic.done&&(!prior.some(old=>old.id===topic.id)||item.id===topic.id)));
+    if(!correct)throw new Error('oracle-field:'+action.target+'.'+field);continue;
+   }
    if(JSON.stringify(actual[field])!==JSON.stringify(expected))throw new Error('oracle-field:'+action.target+'.'+field);
   }
  }

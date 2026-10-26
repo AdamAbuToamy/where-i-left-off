@@ -1,3 +1,4 @@
+import {assistantFileName} from './fileName';
 import { validDate } from '../lib/projects';
 import { parseTasks } from './taskLedger';
 import type { AssistantTask } from './taskLedger';
@@ -7,8 +8,8 @@ import { createClientId } from '../lib/clientId'
 import { ProjectEntity } from '../lib/projectEntity';
 import type { ProjectChanges } from '../lib/projectEntity';
 import type { Project, Section } from '../types';
-import { emptyUniversity } from '../university/model';
-import type { UniversityState } from '../university/model';
+import { emptyUniversity } from '../university/state';
+import type { UniversityState } from '../university/state';
 import { parsePlanBackup } from '../university/planImport';
 export type AssistantScope = { id: string; name: string; role?:'manager'|'member'; members?:{uid:string;name:string;role:string}[]; projects: Project[]; sections: Section[] };
 export type AssistantData = { study: UniversityState; scopes: AssistantScope[] };
@@ -44,7 +45,7 @@ export function parseAssistantReply(text: string): AssistantReply {
    const values=object(a.values||{});
    if(Object.keys(values).some(k=>!fields[a.target as Action['target']].includes(k)))invalid('assistant-fields');
   }
-  const files=value.files.map(raw=>{const f=object(raw);if(typeof f.name!=='string'||typeof f.content!=='string'||f.content.length>30000||!f.name.trim()||f.name.length>100)throw new Error();return {name:Array.from(f.name).map(c=>c==='/'||c==='\\'||c.charCodeAt(0)<32?'_':c).join('').replace(/\.[^.]+$/,'')+'.txt',content:f.content};});
+  const files=value.files.map(raw=>{const f=object(raw);if(typeof f.name!=='string'||typeof f.content!=='string'||f.content.length>30000||!f.name.trim()||f.name.length>100)throw new Error();return {name:assistantFileName(f.name),content:f.content};});
   let clarification:CreationClarification|undefined;
   if(value.clarification!==undefined){const c=object(value.clarification);if(c.kind!=='creation-details'||!['projects','courses','tasks'].includes(String(c.target))||typeof c.scope!=='string'||!/^[-\w]{1,100}$/.test(c.scope)||typeof c.name!=='string'||!c.name.trim()||c.name.length>500||value.actions.length)throw new Error('assistant-format');clarification=c as unknown as CreationClarification;}
   const controls=parseControls(value.controls);

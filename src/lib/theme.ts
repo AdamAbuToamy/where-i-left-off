@@ -1,7 +1,7 @@
-export const themes = ['original', 'ocean', 'olive', 'violet', 'cobalt', 'emerald', 'sunset', 'rose'] as const
-export type SiteTheme = typeof themes[number]
-export const backgrounds = ['dots', 'paper', 'grid', 'linen', 'mist', 'plain'] as const
-export type SiteBackground = typeof backgrounds[number]
+import {themes,backgrounds} from './appearanceCatalog';
+import type {SiteTheme,SiteBackground} from './appearanceCatalog';
+export {themes,backgrounds};
+export type {SiteTheme,SiteBackground};
 
 function readChoice<T extends string>(key: string, choices: readonly T[], fallback: T): T {
   try {

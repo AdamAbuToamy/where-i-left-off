@@ -1,6 +1,6 @@
 import { createClientId } from '../lib/clientId'
-import { resourceUrl, validateCourse } from './model';
-import type { Course, CourseDetails, Lesson, StudyTask, UniversityState } from './model';
+import { resourceUrl, validateCourse } from './state';
+import type { Course, CourseDetails, Lesson, StudyTask, UniversityState } from './state';
 export type ImportMode = 'courses' | 'tasks' | 'lessons';
 export type PlanPreview = {
     courses: Course[];

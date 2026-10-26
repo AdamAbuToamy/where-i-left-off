@@ -24,6 +24,9 @@ const env = {
   VITE_APP_CHECK_PROVIDER: bundle.match(/VITE_APP_CHECK_PROVIDER\s*:\s*[`"'](recaptcha-enterprise|recaptcha-v3)[`"']/)?.[1] || 'recaptcha-enterprise',
   VITE_USE_EMULATORS: 'false',
   VITE_TEST_OFFLINE: 'false',
+  VITE_ASSISTANT_ENABLED: 'true',
+  VITE_REQUIRE_APP_CHECK: 'true',
+  VITE_REQUIRE_FIREBASE_CONFIG: 'true',
 }
 for (const [name, value] of Object.entries(env)) {
   if (typeof value !== 'string' || !value || /[\r\n]/.test(value)) throw new Error(`Invalid browser configuration: ${name}`)

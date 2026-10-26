@@ -9,7 +9,7 @@ type Personal=AssistantData['scopes'][number];
 
 const singular=/^(?:احذفها|إحذفها|امسحها|احذف البطاقة|delete it|delete the card|מחק אותה)$/i;
 const plural=/^(?:احذفهم|إحذفهم|امسحهم|احذف الاثنين|احذفهما|delete both|delete them|מחק את שניהם)$/i;
-const sectionAlso=/^(?:احذف|إحذف|امسح)\s+(?:ال)?قسم\s+(?:أيضا|أيضاً|كمان|كذلك)$/i;
+const sectionAlso=/^(?:احذف|إحذف|امسح)\s+(?:ال)?قسم\s+(?:(?:أيضا|ايضا|أيضاً)|كمان|كذلك)$/i;
 const explicitPair=[
  /^(?:احذف|إحذف|امسح)\s+(?:ال)?قسم\s+(.+?)\s+وبطاقة\s+(.+)$/i,
  /^قسم\s+(.+?)\s+وبطاقة\s+(.+?)\s+(?:احذفهم|إحذفهم|امسحهم|احذفهما)$/i,

@@ -24,7 +24,7 @@ export type ProjectDetails = Pick<Project, 'projectUrl' | 'attachmentUrl' | 'lin
 function validHttpUrl(value: string) {
   if (!value) return true
   try {
-    if (/\s/.test(value)) return false
+    if (!/^https?:\/\//.test(value) || /\s/.test(value)) return false
     const parsed = new URL(value)
     return parsed.protocol === 'https:' || parsed.protocol === 'http:'
   } catch { return false }

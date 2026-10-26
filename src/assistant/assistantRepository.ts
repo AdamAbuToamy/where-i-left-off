@@ -117,12 +117,9 @@ export class AssistantRepository {
  }
 
 }
-export function assistantContext(snapshot:AssistantSnapshot,message?:string):string{
- // Imported course source can include entire Moodle pages. Send it only for content analysis,
- // while retaining IDs, notes, tasks and timetable for ordinary account operations.
- const needsSource=!message||/لخص|تلخيص|ملخص|محتو|اشرح|شرح|نصائح|نصيحه|نصيحة|summari[sz]|content|explain|advi[cs]|סכם|סיכום|תוכן|הסבר|עצה/i.test(message);
- const data=needsSource?snapshot.data:{...snapshot.data,study:{...snapshot.data.study,courses:snapshot.data.study.courses.map(c=>{const {source,...course}=c;return {...course,...(source?{sourceOmitted:true}:{})};})}};
- const context=JSON.stringify({now:new Date().toISOString(),localDate:localDateKey(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,...data,pending:snapshot.pending});
- if(context.length>44000)throw new Error('assistant-too-large');
- return context;
+/** Full authorized snapshot stays in the browser. Native tool requests expose only
+ * bounded catalogs and explicitly requested read pages, never this whole string. */
+export function assistantContext(snapshot:AssistantSnapshot,_message?:string):string{
+ void _message; // Kept for callers of the earlier message-dependent context API.
+ return JSON.stringify({now:new Date().toISOString(),localDate:localDateKey(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,...snapshot.data,pending:snapshot.pending});
 }

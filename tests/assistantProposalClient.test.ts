@@ -22,3 +22,10 @@ it('does not retry valid replies, provider failures, conflicts, reminders, accou
 it('stops after one failed repair and never silently accepts a partial proposal',async()=>{
  const call=vi.fn().mockResolvedValue({text:'not JSON'});await expect(new AssistantProposalClient(call,async()=>{}).prepare(request,validate,vi.fn())).rejects.toThrow('assistant-format');expect(call).toHaveBeenCalledTimes(2);
 });
+
+it('can repair a large browser-local snapshot without pretending it is all provider input',async()=>{
+ const call=vi.fn().mockResolvedValueOnce({text:'not JSON'}).mockResolvedValueOnce({text:valid});
+ const local={...request,contextMode:'local-snapshot' as const,context:'x'.repeat(200000)};
+ await expect(new AssistantProposalClient(call,async()=>{}).prepare(local,validate,vi.fn())).resolves.toBeTruthy();
+ expect(call.mock.calls[1][0].context).toBe(local.context);
+});

@@ -1,0 +1,38 @@
+name: WILO Linux GPU capability check
+on:
+  push:
+    branches: [fix/wilo-local-release-20261025]
+    paths: [.github/workflows/wilo-gpu-check.yml]
+permissions:
+  contents: read
+jobs:
+  gpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Inspect actual adapter capabilities
+        run: |
+          node --input-type=module <<'JS'
+          import {chromium} from '@playwright/test';
+          import {createServer} from 'node:http';
+          const server=createServer((q,r)=>{r.end('<!doctype html><title>GPU capability check</title>');});
+          await new Promise(r=>server.listen(8179,'127.0.0.1',r));
+          for(const args of [[],['--use-angle=vulkan','--enable-features=Vulkan','--disable-vulkan-surface'],['--use-angle=swiftshader','--enable-unsafe-swiftshader']]){
+            const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--ignore-gpu-blocklist',...args]});
+            try{
+              const page=await browser.newPage();await page.goto('http://127.0.0.1:8179');
+              const info=await page.evaluate(async()=>{const adapter=await navigator.gpu?.requestAdapter();return {secure:isSecureContext,adapter:!!adapter,features:adapter?[...adapter.features]:[],info:adapter?.info?{vendor:adapter.info.vendor,architecture:adapter.info.architecture,description:adapter.info.description}:null};});
+              console.log('CAPABILITY',JSON.stringify({args,...info}));
+            }catch(error){console.log('CAPABILITY_ERROR',error.message);}finally{await browser.close();}
+          }
+          server.close();
+          JS

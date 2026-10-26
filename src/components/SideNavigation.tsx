@@ -1,3 +1,4 @@
+import {LayoutGroup,motion,useReducedMotion} from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react'
 import type { Language } from '../translations'
 import type { PageName } from '../lib/navigation'
@@ -15,6 +16,7 @@ const paths: Record<string, string> = {
 }
 export default function SideNavigation({ language, page, admin }: { language: Language; page: PageName; admin: boolean }) {
   const [open, setOpen] = useState(false), root = useRef<HTMLDivElement>(null), toggle = useRef<HTMLButtonElement>(null), id = useId()
+  const reduced=useReducedMotion();
   const t = pageText[language], w = workflowText[language]
   useEffect(() => {
     const outside = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false) }
@@ -22,7 +24,7 @@ export default function SideNavigation({ language, page, admin }: { language: La
     document.addEventListener('pointerdown', outside); document.addEventListener('keydown', escape)
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape) }
   }, [])
-  return <div ref={root} className={`side-navigation ${open ? 'is-open' : ''}`}
+  return <LayoutGroup id={id}><div ref={root} className={`side-navigation ${open ? 'is-open' : ''}`}
     onPointerEnter={e => { if (e.pointerType === 'mouse') setOpen(true) }}
     onPointerLeave={() => { if (!root.current?.contains(document.activeElement)) setOpen(false) }}
     onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false) }}>
@@ -32,9 +34,10 @@ export default function SideNavigation({ language, page, admin }: { language: La
     </button>
     <nav id={id} className="page-navigation" aria-label={labels[language]} aria-hidden={!open} inert={!open} onFocus={() => setOpen(true)}>
       {(['resume', 'personal', 'groups', 'library', 'analytics', 'university', 'settings', ...(admin ? ['admin'] : [])] as PageName[]).map(item => <a key={item} href={`#/${item}`} aria-current={page === item ? 'page' : undefined} onClick={() => { setOpen(false); toggle.current?.focus() }}>
+        {page===item&&<motion.span className="site-navigation-marker" layoutId="active-page" transition={{type:'spring',stiffness:380,damping:34,duration:reduced?0:undefined}} aria-hidden="true"/>}
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[item]} /></svg>
         <span>{item === 'university' ? ({ar:'الجامعة',en:'University',he:'אוניברסיטה'}[language]) : item === 'library' ? w.library : item === 'analytics' ? w.analytics : t[item as keyof typeof t]}</span>
       </a>)}
     </nav>
-  </div>
+  </div></LayoutGroup>
 }

@@ -1,4 +1,3 @@
-import { withWorkspaceLock } from './workspaceLock'
 import { shouldArchive } from './workflow'
 import type { Project, Section } from '../types'
 import type { ProjectDetails } from './projects'
@@ -7,7 +6,7 @@ import type { ProjectOperation, ProjectChanges } from './projectEntity'
 import { DomainError } from './appError'
 import { emptyState, nextMutation, normalizedProject, normalizedSection, projectedState } from './workspaceModel'
 import type { LocalEntity, Mutation, OfflineState } from './workspaceModel'
-import type { WorkspaceRemote, WorkspaceStore } from './workspacePorts'
+import type { WorkspaceConnectivity, WorkspaceLock, WorkspaceRemote, WorkspaceStore } from './workspacePorts'
 
 export type OfflineSnapshot = ReturnType<typeof projectedState> & { queued: number; syncing: boolean; conflicts: Mutation[]; error: unknown; cached: boolean }
 export class OfflineWorkspace {
@@ -18,6 +17,10 @@ export class OfflineWorkspace {
   private cached = true
   private retryAt = 0
   private stops: (() => void)[] = []
+  private remoteStops: (() => void)[] = []
+  private remoteReady = false
+  private watchGeneration = 0
+  private readFailures = new Map<string, unknown>()
   readonly key: string
   private readonly local: WorkspaceStore
   private readonly remote: WorkspaceRemote
@@ -25,13 +28,17 @@ export class OfflineWorkspace {
   private readonly isCurrentUser: () => boolean
   private readonly receive: (snapshot: OfflineSnapshot) => void
   private readonly now: () => number
+  private readonly lock: WorkspaceLock
+  private readonly connectivity: WorkspaceConnectivity
   constructor(options: {
-    key: string; local: WorkspaceStore; remote: WorkspaceRemote; personal: boolean
+    key: string; local: WorkspaceStore; remote: WorkspaceRemote; lock: WorkspaceLock; connectivity:WorkspaceConnectivity; personal: boolean
     isCurrentUser: () => boolean; receive: (snapshot: OfflineSnapshot) => void; now?: () => number
   }) {
     this.key = options.key
     this.local = options.local
     this.remote = options.remote
+    this.lock = options.lock
+    this.connectivity = options.connectivity
     this.personal = options.personal
     this.isCurrentUser = options.isCurrentUser
     this.receive = options.receive
@@ -39,26 +46,47 @@ export class OfflineWorkspace {
   }
   start() {
     this.stops.push(this.local.listen(() => { void this.refresh().catch(error => this.fail(error)) }))
-    const resume = () => { this.retryAt = 0; void this.flush() }
-    window.addEventListener('online', resume)
-    this.stops.push(() => window.removeEventListener('online', resume))
-    const interval = window.setInterval(() => { void this.flush() }, 10000)
+    const resume = () => this.retry()
+    this.stops.push(this.connectivity.whenOnline(resume))
+    const interval = setInterval(() => { void this.flush() }, 10000)
     this.stops.push(() => clearInterval(interval))
     void this.refresh().then(() => {
       if (this.stopped) return
-      this.stops.push(this.remote.watchProjects((projects, cached) => {
-        this.cached = cached
-        if (!cached) void this.update(state => ({ ...state, projects: projects.map(p => normalizedProject(p.id, p)) })).catch(error => this.fail(error))
-        else this.publish()
-      }, error => this.fail(error)))
-      this.stops.push(this.remote.watchSections((sections, cached) => {
-        if (!cached) void this.update(state => ({ ...state, sections: sections.map(s => normalizedSection(s.id, s)) })).catch(error => this.fail(error))
-      }, error => this.fail(error)))
+      this.remoteReady = true
+      this.connectRemote()
     }).catch(error => this.fail(error))
-    return () => { this.stopped = true; this.stops.forEach(stop => stop()) }
+    return () => { this.stopped = true; this.watchGeneration++; this.remoteStops.forEach(stop => stop()); this.stops.forEach(stop => stop()) }
+  }
+  /** Firestore terminates a listener after an error; retry must subscribe again. */
+  private connectRemote() {
+    if (this.stopped || !this.remoteReady || !this.isCurrentUser()) return
+    const generation = ++this.watchGeneration
+    this.remoteStops.forEach(stop => stop()); this.remoteStops = []
+    const active = () => !this.stopped && generation === this.watchGeneration && this.isCurrentUser()
+    const failRead = (target: string, error: unknown) => {
+      if (!active()) return
+      this.readFailures.set(target, error)
+      if (target === 'projects') this.cached = true
+      this.publish()
+    }
+    this.remoteStops.push(this.remote.watchProjects((projects, cached) => {
+      if (!active()) return
+      this.cached = cached
+      if (!cached) {
+        this.readFailures.delete('projects')
+        void this.update(state => ({ ...state, projects: projects.map(p => normalizedProject(p.id, p)) })).then(() => this.refresh()).catch(error => this.fail(error))
+      } else this.publish()
+    }, error => failRead('projects', error)))
+    this.remoteStops.push(this.remote.watchSections((sections, cached) => {
+      if (!active()) return
+      if (!cached) {
+        this.readFailures.delete('sections')
+        void this.update(state => ({ ...state, sections: sections.map(s => normalizedSection(s.id, s)) })).then(() => this.refresh()).catch(error => this.fail(error))
+      }
+    }, error => failRead('sections', error)))
   }
   private publish() {
-    if (!this.stopped) this.receive({ ...projectedState(this.state), queued: this.state.operations.length, syncing: this.syncing, conflicts: this.state.operations.filter(op => op.conflict), error: this.failure, cached: this.cached })
+    if (!this.stopped) this.receive({ ...projectedState(this.state), queued: this.state.operations.length, syncing: this.syncing, conflicts: this.state.operations.filter(op => op.conflict), error: this.failure || this.readFailures.values().next().value || null, cached: this.cached })
   }
   private fail(error: unknown) { this.failure = error; this.publish() }
   private async refresh() {
@@ -125,13 +153,13 @@ export class OfflineWorkspace {
     })
   }
   async flush() {
-    if (this.stopped || this.syncing || !navigator.onLine || !this.isCurrentUser() || this.now() < this.retryAt) return
+    if (this.stopped || this.syncing || !this.connectivity.isOnline() || !this.isCurrentUser() || this.now() < this.retryAt) return
     this.syncing = true
     this.publish()
     try {
-      await withWorkspaceLock(this.key, async () => {
+      await this.lock.run(this.key, async () => {
       for (;;) {
-        if (this.stopped || !navigator.onLine || !this.isCurrentUser()) break
+        if (this.stopped || !this.connectivity.isOnline() || !this.isCurrentUser()) break
         const state = await this.local.read()
         const op = nextMutation(state)
         if (!op) break
@@ -176,5 +204,5 @@ export class OfflineWorkspace {
     this.failure = null
     await this.refresh()
   }
-  retry() { this.retryAt = 0; this.failure = null; void this.flush() }
+  retry() { this.retryAt = 0; this.failure = null; if (this.readFailures.size || this.cached) this.connectRemote(); void this.flush() }
 }

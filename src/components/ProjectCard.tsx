@@ -91,7 +91,7 @@ export default function ProjectCard({
     event.preventDefault()
     if (!name.trim()) return
 
-    if (!await onUpdate(project.id, name.trim(), nextStep.trim(), { projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, links:links.map(url=>url.trim()).filter(Boolean), ...metadata }, revisionRef.current)) return
+    if (!await onUpdate(project.id, name.trim(), nextStep.trim(), { ...metadata, projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, links:links.map(url=>url.trim()).filter(Boolean) }, revisionRef.current)) return
     finishEditing()
   }
 

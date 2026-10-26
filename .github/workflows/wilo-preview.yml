@@ -44,4 +44,4 @@ jobs:
           channelId: wilo-lab
           target: production
           expires: 7d
-          firebaseToolsVersion: 15.33.0
+          firebaseToolsVersion: 15.34.1

@@ -19,19 +19,26 @@
     "prebuild": "node scripts/check-credentials.mjs",
     "test:assistant:live": "node scripts/test-assistant-live.mjs --live",
     "test:auth:recovery": "firebase emulators:exec --project demo-where-i-left-off --only auth \"env TEST_SUITE=auth vitest run\"",
-    "test:e2e:layout": "node scripts/run-browser-tests.mjs tests/browser/layout.spec.ts --grep 'ar desktop|he desktop' --repeat-each=5 --max-failures=1"
+    "test:e2e:layout": "node scripts/run-browser-tests.mjs tests/browser/layout.spec.ts --grep 'ar desktop|he desktop' --repeat-each=5 --max-failures=1",
+    "check:architecture": "node scripts/check-architecture.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@mlc-ai/web-llm": "0.2.86",
+    "@mlc-ai/web-llm": "0.2.82",
+    "@pollinations/sdk": "5.0.0",
     "firebase": "^12.0.0",
     "jspdf": "^4.2.1",
+    "lucide-react": "1.61.0",
+    "motion": "14.6.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint/js": "^10.0.1",
     "@firebase/rules-unit-testing": "^5.0.0",
     "@napi-rs/canvas": "^1.0.11",
@@ -46,7 +53,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
     "firebase-admin": "^14.5.0",
-    "firebase-tools": "15.33.0",
+    "firebase-tools": "15.34.1",
     "globals": "^17.12.0",
     "jsdom": "^30.1.2",
     "nodemailer": "^10.1.0",

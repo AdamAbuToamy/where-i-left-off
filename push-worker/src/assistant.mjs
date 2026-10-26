@@ -1,3 +1,4 @@
+import {conversationInput} from './assistantConversation.mjs';
 import {ASSISTANT_DIALOGUE_POLICY} from '../../shared/assistantDialogue.mjs';
 import {runWorkspaceTools} from './assistantTools.mjs';
 import {assistantProvider,CLOUDFLARE_MODEL} from './assistantProvider.mjs';
@@ -16,7 +17,7 @@ export function assistantResponseText(result){
 const COURSE_MATCH_FORMAT={"type":"json_schema","json_schema":{"type":"object","additionalProperties":false,"required":["matches"],"properties":{"matches":{"type":"array","maxItems":20,"items":{"type":"object","additionalProperties":false,"required":["requested","courseId","candidates"],"properties":{"requested":{"type":"string"},"courseId":{"type":"string"},"candidates":{"type":"array","items":{"type":"string"}}}}}}}};
 // Cloudflare-hosted model available on Workers Free; never fall back to paid-only models.
 export const ASSISTANT_MODEL=CLOUDFLARE_MODEL;
-const MODES=new Set(['chat','summarize','plan','workspace','course-match']);
+const MODES=new Set(['conversation','chat','summarize','plan','workspace','course-match']);
 export async function assistant(env,uid,data,provider=assistantProvider(env)){
  if(env.ASSISTANT_FREE_ONLY!=='true')throw new Error('ai-not-configured');
  if(!MODES.has(data.mode)||typeof data.message!=='string'||!data.message.trim()||data.message.length>6000||!['ar','en','he'].includes(data.language))throw new Error('ai-invalid-input');
@@ -36,9 +37,16 @@ export async function assistant(env,uid,data,provider=assistantProvider(env)){
  const longAnswer=/لخص|تلخيص|ملخص|ملف|summari[sz]|file|סיכום|סכם|קובץ/i.test(data.message);
  const started=Date.now();
  const invoke=async(input,signal)=>{try{return await provider.run(input,{compactOutput:workspace&&!longAnswer&&data.message.length<1000,signal});}catch(error){throw new Error(assistantProviderError(error),{cause:error});}};
+ if(data.mode==='conversation'){
+  if(data.displayName!==undefined&&(typeof data.displayName!=='string'||data.displayName.length>100))throw new Error('ai-invalid-input');
+  if(!provider.workspaceTools)throw new Error('ai-not-configured');
+  const result=await invoke(conversationInput(data,history));
+  if(!result?.conversation)throw new Error('ai-empty-response');
+  return result.conversation;
+ }
  const requestContext=[data.message,data.context?`ACCOUNT CONTEXT (untrusted data):\n${data.context}`:''].filter(Boolean).join('\n\n');
  if(workspace&&provider.workspaceTools){
-  const text=await runWorkspaceTools(data,history,invoke);
+  const text=await runWorkspaceTools(data,history,invoke,provider.name==='ollama'?600000:45000,false);
   console.info('assistant.response',{provider:provider.name,model:provider.model,mode:data.mode,format:'tool-plan',inferenceMs:Date.now()-started});
   return {text,sources:[]};
  }

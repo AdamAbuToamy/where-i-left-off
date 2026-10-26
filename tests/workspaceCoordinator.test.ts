@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import {browserWorkspaceConnectivity} from '../src/lib/browserWorkspaceConnectivity'
+import {withWorkspaceLock} from '../src/lib/workspaceLock'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { OfflineWorkspace } from '../src/lib/offlineWorkspace'
 import { emptyState, projectedState } from '../src/lib/workspaceModel'
@@ -17,7 +19,7 @@ function make() {
   let serial = 0
   local = new MemoryStore(); current = true
   remote = { newId: () => `id-${++serial}`, watchProjects: () => () => {}, watchSections: () => () => {}, commit }
-  workspace = new OfflineWorkspace({ key: 'test/alice', local, remote, personal: true, isCurrentUser: () => current, receive: () => {}, now: () => 1000 })
+  workspace = new OfflineWorkspace({connectivity:browserWorkspaceConnectivity,lock:{run:withWorkspaceLock}, key: 'test/alice', local, remote, personal: true, isCurrentUser: () => current, receive: () => {}, now: () => 1000 })
 }
 beforeEach(() => { vi.stubGlobal('navigator', { onLine: true }); commit.mockReset().mockResolvedValue({}); make() })
 afterEach(() => vi.unstubAllGlobals())
@@ -65,3 +67,38 @@ it('checks identity again inside the storage transaction', async () => {
   await expect(workspace.add('Robot', '', 0, {})).rejects.toThrow('permission-denied')
   expect(local.state.operations).toHaveLength(0)
 })
+
+it('reopens terminated read listeners on retry and ignores callbacks from the old subscriptions',async()=>{
+ const projectReads:{receive:Parameters<WorkspaceRemote['watchProjects']>[0];fail:Parameters<WorkspaceRemote['watchProjects']>[1]}[]=[];
+ const sectionReads:{receive:Parameters<WorkspaceRemote['watchSections']>[0];fail:Parameters<WorkspaceRemote['watchSections']>[1]}[]=[];
+ const unsubscribe=vi.fn(),receive=vi.fn();
+ remote.watchProjects=vi.fn((next,fail)=>{projectReads.push({receive:next,fail});return unsubscribe;});
+ remote.watchSections=vi.fn((next,fail)=>{sectionReads.push({receive:next,fail});return unsubscribe;});
+ const coordinator=new OfflineWorkspace({connectivity:browserWorkspaceConnectivity,lock:{run:withWorkspaceLock},key:'test/reconnect',local,remote,personal:true,isCurrentUser:()=>current,receive});
+ const stop=coordinator.start();
+ try{
+  await vi.waitFor(()=>expect(projectReads).toHaveLength(1));
+  projectReads[0].fail(Object.assign(new Error('denied'),{code:'permission-denied'}));
+  sectionReads[0].fail(Object.assign(new Error('denied'),{code:'permission-denied'}));
+  await coordinator.add('Keep queued card','',0,{});
+  const id=local.state.operations[0].id;
+  commit.mockRejectedValueOnce(new Error('network unavailable'));
+  coordinator.retry();
+  expect(projectReads).toHaveLength(2);expect(sectionReads).toHaveLength(2);expect(unsubscribe).toHaveBeenCalledTimes(2);
+  await vi.waitFor(()=>expect(receive.mock.calls.at(-1)?.[0].syncing).toBe(false));
+  expect(local.state.operations[0].id).toBe(id);
+  projectReads[1].receive([],false);sectionReads[1].receive([],false);
+  await vi.waitFor(()=>expect(receive.mock.calls.at(-1)?.[0].cached).toBe(false));
+  coordinator.retry();await vi.waitFor(()=>expect(local.state.operations).toHaveLength(0));
+  projectReads[0].fail(new Error('stale listener'));
+  expect(receive.mock.calls.at(-1)?.[0].error).toBeNull();
+  expect(local.state.projects[0].name).toBe('Keep queued card');
+  expect(commit.mock.calls.map(([op])=>(op as {id:string}).id)).toEqual([id,id]);
+ }finally{stop();}
+ coordinator.retry();expect(projectReads).toHaveLength(2);
+});
+it('does not restart listeners for an account that is no longer active',async()=>{
+ const watch=vi.fn(()=>()=>{});remote.watchProjects=watch;
+ const stop=workspace.start();
+ try{await vi.waitFor(()=>expect(watch).toHaveBeenCalledTimes(1));current=false;workspace.retry();expect(watch).toHaveBeenCalledTimes(1);}finally{stop();}
+});

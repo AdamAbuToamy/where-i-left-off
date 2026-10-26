@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
 import {act} from 'react';import {createRoot} from 'react-dom/client';import {afterEach,beforeEach,expect,it,vi} from 'vitest';import type {User} from 'firebase/auth';
-const api=vi.hoisted(()=>({call:vi.fn(),read:vi.fn(),apply:vi.fn(),undo:vi.fn()}));
-vi.mock('../src/assistant/api',()=>({assistantRequest:api.call}));
+const api=vi.hoisted(()=>({call:vi.fn(),read:vi.fn(),apply:vi.fn(),undo:vi.fn(),load:vi.fn(),dispose:vi.fn(),smoke:vi.fn(),cloud:vi.fn(),cached:vi.fn(),context:vi.fn(),exportFile:vi.fn()}));
+vi.mock('../src/assistant/pollinationsClient',()=>({PollinationsAssistant:class{conversation=(payload:unknown)=>api.cloud(payload);workspace=(payload:unknown)=>api.call(payload,60000);}}));
+vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsConnected:()=>true,connectPollinations:vi.fn(),disconnectPollinations:vi.fn()}));
+vi.mock('../src/assistant/localModel',()=>({isLocalModelCached:api.cached,LocalAssistantModel:class{load=api.load;smoke=api.smoke;answer=api.call;dispose=api.dispose;}}));
 vi.mock('../src/lib/firebase',()=>({auth:{currentUser:{uid:'alice'}},db:null,emulatorMode:true}));
-vi.mock('../src/assistant/assistantRepository',()=>({AssistantRepository:class{read=api.read;apply=api.apply;undo=api.undo;},assistantContext:()=>'{"study":"account data"}'}));
+vi.mock('../src/assistant/assistantRepository',()=>({AssistantRepository:class{read=api.read;apply=api.apply;undo=api.undo;},assistantContext:()=>api.context()}));
+vi.mock('../src/assistant/pdfExport',()=>({downloadAssistantFile:api.exportFile}));
 import {providerReply} from './fixtures/assistantProvider';
 import AssistantWidget from '../src/assistant/AssistantWidget';import {blankAssistantData} from '../src/assistant/actions';
 let element:HTMLDivElement,root:ReturnType<typeof createRoot>;
-beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.clearAllMocks();api.read.mockResolvedValue({data:blankAssistantData(),pending:false,raw:new Map()});element=document.createElement('div');document.body.append(element);root=createRoot(element);});
-afterEach(()=>{act(()=>root.unmount());element.remove();vi.unstubAllGlobals();});
+beforeEach(()=>{localStorage.setItem('wilo-assistant-local','false');vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.clearAllMocks();api.context.mockReturnValue('{"study":"account data"}');api.cloud.mockResolvedValue({text:'',needsWorkspace:true});api.read.mockResolvedValue({data:blankAssistantData(),pending:false,raw:new Map()});element=document.createElement('div');document.body.append(element);root=createRoot(element);});
+afterEach(()=>{localStorage.removeItem('wilo-assistant-local');act(()=>root.unmount());element.remove();vi.unstubAllGlobals();});
 async function input(value:string){const box=element.querySelector('textarea')!;await act(async()=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value')!.set!.call(box,value);box.dispatchEvent(new Event('input',{bubbles:true}));});}
 async function open(language:'en'|'he'='en'){await act(async()=>root.render(<AssistantWidget user={{uid:'alice'} as User} language={language}/>));await act(async()=>(element.querySelector('button') as HTMLButtonElement).click());}
 async function submit(){await act(async()=>element.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));}
@@ -43,13 +46,11 @@ it('distinguishes a burst limit, provider quota and failed save confirmation',as
   api.call.mockRejectedValue(new Error(code));await input('Tell me something useful');await submit();expect(element.querySelectorAll('.assistant-message.is-assistant').length).toBeGreaterThan(0);expect(element.textContent).toContain(expected);
  }
 });
-it('preserves local-only preference across reloads and never silently sends a request to the cloud',async()=>{
- localStorage.setItem('wilo-assistant-local','true');
- try{await open();await input('Give me advice on studying');await submit();expect(api.call).not.toHaveBeenCalled();expect(element.textContent).toContain('not ready');
-  const cloud=[...element.querySelectorAll('button')].find(b=>b.textContent==='Use cloud assistant')!;expect(cloud).toBeDefined();await act(async()=>cloud.click());expect(localStorage.getItem('wilo-assistant-local')).toBeNull();
- }finally{localStorage.removeItem('wilo-assistant-local');}
-});
-it('announces real reading and response phases, then removes the waiting indicator when the reply arrives',async()=>{
+it('ignores old local-model preferences and answers chat without loading models or reading records',async()=>{
+ localStorage.setItem('wilo-assistant-local','true');api.cloud.mockResolvedValueOnce({text:'Hello!',needsWorkspace:false});
+ await open();expect(element.querySelector('textarea')?.disabled).toBe(false);expect(api.load).not.toHaveBeenCalled();
+ await input('Hello');await submit();expect(element.textContent).toContain('Hello!');expect(api.read).not.toHaveBeenCalled();expect(api.call).not.toHaveBeenCalled();expect(api.load).not.toHaveBeenCalled();
+});it('announces real reading and response phases, then removes the waiting indicator when the reply arrives',async()=>{
  let finishRead!:(value:unknown)=>void,finishReply!:(value:unknown)=>void;
  api.read.mockReturnValue(new Promise(resolve=>{finishRead=resolve;}));api.call.mockReturnValue(new Promise(resolve=>{finishReply=resolve;}));
  await open();await input('Please summarize my notes');await submit();
@@ -93,15 +94,11 @@ it('keeps the entire mixed request for cloud planning instead of silently handli
  await open();await input(message);await submit();expect(api.call).toHaveBeenCalledWith(expect.objectContaining({mode:'workspace',message}),60000);expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(3);expect(element.textContent).toContain('notes.txt');expect(api.apply).not.toHaveBeenCalled();
 });
 
-it('keeps the server failure stage visible and runs a no-inference connection check without losing the original error',async()=>{
- const {AssistantFailure}=await import('../src/assistant/failure');
- api.call.mockRejectedValueOnce(new AssistantFailure('ai-service-permission','account',{status:503,requestId:'11111111-1111-1111-1111-111111111111'}));
- await open();await input('Add a card');await submit();expect(element.textContent).toContain('technical issue');expect(element.textContent).toContain('Connection details');
- api.call.mockResolvedValueOnce({status:'ready',provider:'groq',protocol:'wilo-assistant-2026-10-v2',inferenceTested:false});
- const check=[...element.querySelectorAll('button')].find(b=>b.textContent==='Check assistant connection')!;await act(async()=>check.click());expect(api.call).toHaveBeenLastCalledWith({mode:'health'},20000);expect(element.textContent).toContain('This check used no AI request');expect(api.apply).not.toHaveBeenCalled();
-});
-
-it('keeps ordinary replies free of role labels, task ledgers and no-change notices; closing restores the workspace',async()=>{
+it('checks actual account reads and provider inference before reporting a healthy connection',async()=>{
+ api.call.mockRejectedValueOnce(new Error('assistant-invalid'));await open();await input('Add a card');await submit();
+ const check=[...element.querySelectorAll('button')].find(b=>b.textContent==='Check assistant connection')!;
+ api.cloud.mockResolvedValueOnce({text:'OK',needsWorkspace:false});await act(async()=>check.click());expect(api.read).toHaveBeenCalledTimes(2);expect(api.cloud).toHaveBeenCalledTimes(2);expect(element.textContent).toContain('Account reads and the assistant connection are working.');expect(api.apply).not.toHaveBeenCalled();
+});it('keeps ordinary replies free of role labels, task ledgers and no-change notices; closing restores the workspace',async()=>{
  api.call.mockResolvedValue({text:JSON.stringify({text:'Happy to help!',actions:[],controls:[],files:[],tasks:[{title:'Reply to kindness',outcome:'answer',actionIndexes:[],controlIndexes:[],detail:'Respond to the greeting'}]})});
  await open();expect(document.body.classList.contains('assistant-docked')).toBe(true);
  await input('Thank you!');await submit();
@@ -120,4 +117,83 @@ it('offers a clear skip-extras choice and continues the same draft without creat
  await open();await input('Create Algorithms');await submit();expect(api.apply).not.toHaveBeenCalled();
  const skip=[...element.querySelectorAll('button')].find(b=>b.textContent==='No extras')!;expect(skip).toBeDefined();await act(async()=>skip.click());
  expect(api.call.mock.calls[1][0].message).toBe('No extras');expect(api.call.mock.calls[1][0].history.some((turn:{content:string})=>turn.content.includes('creation-details'))).toBe(true);expect(api.apply).not.toHaveBeenCalled();expect(element.querySelectorAll('.assistant-proposal')).toHaveLength(1);
+});
+
+it('offers cloud chat on first visit without any model download',async()=>{
+ localStorage.removeItem('wilo-assistant-local');api.cloud.mockResolvedValueOnce({text:'Welcome',needsWorkspace:false});await open();
+ expect(element.querySelector('[data-local-activation]')).toBeNull();await input('مرحبا');await submit();expect(api.read).not.toHaveBeenCalled();expect(api.apply).not.toHaveBeenCalled();expect(api.load).not.toHaveBeenCalled();
+});it('sends follow-up requests and confirmed references to the model instead of matching fixed phrases',async()=>{
+ const data=blankAssistantData();
+ api.read.mockImplementation(async()=>({data:structuredClone(data),pending:false,raw:new Map()}));
+ api.call.mockResolvedValue({text:providerReply({text:'Review',actions:[
+  {target:'sections',action:'create',id:'new-section',scope:'personal',values:{name:'Section A'}},
+  {target:'projects',action:'create',id:'new-card',scope:'personal',values:{name:'Card A',sectionId:'new-section',dueDate:'2026-10-26'}}
+ ],files:[]})});
+ api.apply.mockImplementation(async(_snapshot,changes)=>{
+  for(const c of changes){if(c.target==='projects')data.scopes[0].projects.push(c.after);if(c.target==='sections')data.scopes[0].sections.push(c.after);}
+  return {changes,mutations:new Map()};
+ });
+ await open();await input('Create a card Card A in new section Section A for October 26, 2026');await submit();
+ const apply=[...element.querySelectorAll('button')].find(b=>b.textContent==='Apply changes')!;
+ await act(async()=>apply.click());
+ expect(data.scopes[0].projects).toHaveLength(1);expect(data.scopes[0].sections).toHaveLength(1);
+ api.call.mockResolvedValue({text:providerReply({text:'Review removal',actions:[
+  {target:'projects',action:'trash',scope:'personal',id:data.scopes[0].projects[0].id,values:{}},
+  {target:'sections',action:'delete',scope:'personal',id:data.scopes[0].sections[0].id,values:{}}
+ ],files:[]})});
+ await input('delete them');await submit();
+ expect(JSON.stringify(api.call.mock.calls[1][0].history)).toContain(data.scopes[0].projects[0].id);
+ expect(api.call).toHaveBeenCalledTimes(2);expect(api.apply).toHaveBeenCalledTimes(1);
+ expect(element.querySelectorAll('.assistant-proposal details')).toHaveLength(2);
+});
+
+it('never restores an installed local model when opening the cloud assistant',async()=>{
+ api.cached.mockResolvedValueOnce(true);localStorage.setItem('wilo-assistant-local','true');await open();expect(api.cached).not.toHaveBeenCalled();expect(api.load).not.toHaveBeenCalled();
+});
+it('offers reconnection after an expired provider credential without reading or writing account data',async()=>{
+ api.cloud.mockRejectedValueOnce(new Error('ai-provider-access'));await open();await input('Hello');await submit();
+ expect(element.textContent).toContain('Reconnect your assistant account');expect([...element.querySelectorAll('button')].some(b=>b.textContent==='Connect assistant')).toBe(true);expect(api.read).not.toHaveBeenCalled();expect(api.apply).not.toHaveBeenCalled();
+});
+it('retries the original failed request with one click without applying any changes',async()=>{
+ api.cloud.mockRejectedValueOnce(new Error('assistant-network')).mockResolvedValueOnce({text:'Hello again',needsWorkspace:false});await open();await input('Hello');await submit();
+ const retry=[...element.querySelectorAll('button')].find(b=>b.textContent==='Try again')!;expect(retry).toBeDefined();await act(async()=>retry.click());expect(api.cloud).toHaveBeenCalledTimes(2);expect(api.cloud.mock.calls[1][0].message).toBe('Hello');expect(element.textContent).toContain('Hello again');expect(api.apply).not.toHaveBeenCalled();
+});
+it('keeps an unsaved card across why/clarification and supersedes it only when the completed replacement draft arrives',async()=>{
+ const original='اضف بطاقة عمار لقسم ادم مع ملاحظة مروان ورابط https://example.test/video وضع البطاقة بتاريخ 28 الشهر';
+ api.call.mockResolvedValueOnce({text:providerReply({text:'Review',actions:[{target:'projects',action:'create',id:'new-card',values:{name:'عمار',description:'مروان',projectUrl:'https://example.test/video',dueDate:'2026-10-28'}}],files:[]})});
+ await open();await input(original);await submit();expect([...element.querySelectorAll('button')].filter(b=>b.textContent==='Apply changes')).toHaveLength(1);
+ api.call.mockResolvedValueOnce({text:providerReply({text:'Section Adam is missing. Create it?',actions:[],files:[]})});await input('لماذا لم تضعها في قسم ادم؟');await submit();
+ expect([...element.querySelectorAll('button')].filter(b=>b.textContent==='Apply changes')).toHaveLength(1);
+ api.call.mockResolvedValueOnce({text:providerReply({text:'Review complete',actions:[{target:'sections',action:'create',id:'new-section',values:{name:'ادم'}},{target:'projects',action:'create',id:'new-card',values:{name:'عمار',description:'مروان',projectUrl:'https://example.test/video',dueDate:'2026-10-28',sectionId:'new-section'}}],files:[]})});
+ await input('قسم جديد باسم ادم ضع فيه البطاقة بالتفاصيل التي طلبتها منك');await submit();
+ const history=api.call.mock.calls[2][0].history;expect(history[0].content).toBe(original);expect(JSON.stringify(history)).toContain('مروان');expect(JSON.stringify(history)).toContain('https://example.test/video');expect(JSON.stringify(history)).toContain('2026-10-28');expect([...element.querySelectorAll('button')].filter(b=>b.textContent==='Apply changes')).toHaveLength(1);expect(api.apply).not.toHaveBeenCalled();
+});it('sends a large local snapshot through paged workspace inference without rejecting it',async()=>{
+ api.context.mockReturnValue(JSON.stringify({study:{courses:[{id:'large-course',source:{description:'x'.repeat(200000)}}]}}));
+ api.call.mockResolvedValue({text:providerReply({text:'Your courses summary',actions:[],files:[]})});
+ await open();await input('Summarize my courses');await submit();
+ expect(api.call).toHaveBeenCalledTimes(1);expect(element.textContent).toContain('Your courses summary');expect(api.apply).not.toHaveBeenCalled();
+});it('downloads the requested PDF through the renderer without applying database changes',async()=>{
+ api.call.mockResolvedValue({text:providerReply({text:'PDF ready',actions:[],files:[{name:'courses.pdf',content:'# Courses'}]})});
+ await open();await input('give me pdf of all my courses');await submit();
+ const download=[...element.querySelectorAll('button')].find(b=>b.textContent?.includes('courses.pdf'))!;
+ expect(download).toBeTruthy();await act(async()=>download.click());
+ expect(api.exportFile).toHaveBeenCalledWith({name:'courses.pdf',content:'# Courses'},'en');expect(api.apply).not.toHaveBeenCalled();
+});
+it('suggestions fill the composer without sending a request',async()=>{
+ await open();const suggestion=element.querySelector<HTMLButtonElement>('.assistant-suggestions button')!;await act(async()=>suggestion.click());
+ expect(element.querySelector('textarea')!.value).toBe('Summarize my courses');expect(api.cloud).not.toHaveBeenCalled();
+});
+it('stops a pending request and ignores a late provider reply without applying anything',async()=>{
+ let finish!:(value:unknown)=>void;api.cloud.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+ await open();await input('Create a card');await submit();
+ const stop=element.querySelector<HTMLButtonElement>('.assistant-stop')!;expect(stop).toBeTruthy();await act(async()=>stop.click());
+ expect(element.textContent).toContain('Request stopped');expect(element.querySelector('.assistant-waiting')).toBeNull();
+ await act(async()=>finish({text:'Late reply must not appear',needsWorkspace:false}));
+ expect(element.textContent).not.toContain('Late reply must not appear');expect(api.apply).not.toHaveBeenCalled();
+});
+it('renders readable Markdown and tables while blocking HTML and remote images',async()=>{
+ api.cloud.mockResolvedValue({text:'## Course overview\n\n**Math**\n\n| Course | Date |\n| --- | --- |\n| Math | 28 Oct |\n\n![remote](https://example.test/tracker.png)\n\n<script>alert(1)</script>',needsWorkspace:false});
+ await open();await input('Summary');await submit();
+ expect(element.querySelector('.assistant-rich-text h2')?.textContent).toBe('Course overview');expect(element.querySelector('.assistant-rich-text strong')?.textContent).toBe('Math');
+ expect(element.querySelector('.assistant-rich-text table')).toBeTruthy();expect(element.querySelector('script')).toBeNull();expect(element.querySelector('img')).toBeNull();
 });

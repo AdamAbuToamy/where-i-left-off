@@ -1,9 +1,9 @@
 import { validDate } from '../lib/projects';
-import { backgrounds, themes } from '../lib/theme';
-export type AssistantControl={kind:'appearance'|'language'|'sleep'|'workflow'|'navigate'|'tour';values:Record<string,unknown>};
+import { backgrounds, themes } from '../lib/appearanceCatalog';
+export type AssistantControl={kind:'profile'|'appearance'|'language'|'sleep'|'workflow'|'navigate'|'tour';values:Record<string,unknown>};
 export type ControlPlan={control:AssistantControl;before:Record<string,unknown>;after:Record<string,unknown>};
 export type ControlResult={plan:ControlPlan;ok:boolean;reason?:string};
-const fields={appearance:['theme','background'],language:['language'],sleep:['enabled'],workflow:['autoArchive','reminders','desktop','reviewDays'],navigate:['page','groupId','tab','courseId','view','filter','search','section','mine','weekOf'],tour:[]};
+const fields={profile:['displayName'],appearance:['theme','background'],language:['language'],sleep:['enabled'],workflow:['autoArchive','reminders','desktop','reviewDays'],navigate:['page','groupId','tab','courseId','view','filter','search','section','mine','weekOf'],tour:[]};
 const pages=['personal','resume','university','groups','settings','notifications','library','analytics','logs','support'];
 const invalid=()=>{throw new Error('assistant-invalid');};
 export function parseControls(raw:unknown):AssistantControl[]{
@@ -13,7 +13,11 @@ export function parseControls(raw:unknown):AssistantControl[]{
   if(!value||typeof value!=='object'||Array.isArray(value))return invalid();
   const c=value as AssistantControl;
   if(!Object.hasOwn(fields,c.kind)||Object.keys(c).some(k=>!['kind','values'].includes(k))||!c.values||typeof c.values!=='object'||Array.isArray(c.values))return invalid();
-  const v=c.values;
+  const v={...c.values};
+  if(c.kind==='profile'){
+   if(typeof v.displayName!=='string'||!v.displayName.trim()||v.displayName.length>100)return invalid();
+   v.displayName=v.displayName.trim();
+  }
   if(Object.keys(v).some(key=>!(fields[c.kind] as string[]).includes(key)))return invalid();
   if(c.kind!=='tour'&&!Object.keys(v).length)return invalid();
   if('theme' in v&&!themes.includes(v.theme as never)||'background' in v&&!backgrounds.includes(v.background as never))return invalid();

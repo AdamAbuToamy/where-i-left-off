@@ -1,0 +1,237 @@
+{
+  "kind": "live-provider-windows-network",
+  "provider": "pollinations",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "status": "passed",
+  "results": [
+    {
+      "id": "greeting",
+      "status": "passed",
+      "totalMs": 514,
+      "progress": [
+        {
+          "state": "waiting",
+          "ms": 1
+        },
+        {
+          "state": "receiving",
+          "ms": 508
+        }
+      ],
+      "timings": [
+        {
+          "stage": "conversation",
+          "attempt": 1,
+          "inputChars": 5418,
+          "tools": 1,
+          "totalMs": 513,
+          "outcome": "ok",
+          "headersMs": 505,
+          "httpStatus": 200,
+          "firstDeltaMs": 507
+        }
+      ],
+      "reply": {
+        "text": "مرحبا! أنا بخير، شكرًا لسؤالك 😊\n\nكيف بقدر أساعدك اليوم؟ إذا بدك تتابع بطاقات مشاريعك، أو مواعيد جامعتك (محاضرات، تمارين، مختبرات)، أو أي شي تاني بالمُنظّم — خبرني."
+      }
+    },
+    {
+      "id": "simple-card",
+      "status": "passed",
+      "totalMs": 1612,
+      "progress": [
+        {
+          "state": "waiting",
+          "ms": 0
+        },
+        {
+          "state": "receiving",
+          "ms": 1302
+        },
+        {
+          "state": "waiting",
+          "ms": 1318
+        },
+        {
+          "state": "receiving",
+          "ms": 1607
+        }
+      ],
+      "timings": [
+        {
+          "stage": "conversation",
+          "attempt": 1,
+          "inputChars": 5439,
+          "tools": 1,
+          "totalMs": 1302,
+          "outcome": "ok",
+          "headersMs": 1302,
+          "httpStatus": 200,
+          "firstDeltaMs": 1302
+        },
+        {
+          "stage": "workspace",
+          "attempt": 1,
+          "inputChars": 10788,
+          "tools": 2,
+          "totalMs": 292,
+          "outcome": "ok",
+          "headersMs": 289,
+          "httpStatus": 200,
+          "firstDeltaMs": 289
+        }
+      ],
+      "reply": {
+        "text": "راجع التغييرات المطلوبة.",
+        "actions": [
+          {
+            "target": "projects",
+            "action": "create",
+            "id": "wilo-new-c05f3ee1-8b33-4fb9-ac0a-908e358ff825",
+            "scope": "personal",
+            "values": {
+              "name": "اختبار القياس 2601"
+            }
+          }
+        ],
+        "controls": [],
+        "files": [],
+        "tasks": [
+          {
+            "title": "راجع التغييرات المطلوبة.",
+            "outcome": "proposed",
+            "actionIndexes": [
+              0
+            ],
+            "controlIndexes": [],
+            "detail": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "compound-and-pdf",
+      "status": "passed",
+      "totalMs": 615,
+      "progress": [
+        {
+          "state": "waiting",
+          "ms": 0
+        },
+        {
+          "state": "receiving",
+          "ms": 290
+        },
+        {
+          "state": "waiting",
+          "ms": 292
+        },
+        {
+          "state": "receiving",
+          "ms": 603
+        }
+      ],
+      "timings": [
+        {
+          "stage": "conversation",
+          "attempt": 1,
+          "inputChars": 5641,
+          "tools": 1,
+          "totalMs": 291,
+          "outcome": "ok",
+          "headersMs": 290,
+          "httpStatus": 200,
+          "firstDeltaMs": 290
+        },
+        {
+          "stage": "workspace",
+          "attempt": 1,
+          "inputChars": 16375,
+          "tools": 5,
+          "totalMs": 322,
+          "outcome": "ok",
+          "headersMs": 310,
+          "httpStatus": 200,
+          "firstDeltaMs": 310
+        }
+      ],
+      "reply": {
+        "text": "راجع التغييرات المطلوبة.",
+        "actions": [
+          {
+            "target": "sections",
+            "action": "create",
+            "id": "this_week",
+            "scope": "personal",
+            "values": {
+              "name": "هذا الأسبوع"
+            }
+          },
+          {
+            "target": "projects",
+            "action": "create",
+            "id": "wilo-new-e06e46af-e461-42df-80fe-5e69987107e2",
+            "scope": "personal",
+            "values": {
+              "name": "مشروع البرمجة",
+              "resourceType": "project",
+              "sectionId": "this_week",
+              "dueDate": "2026-10-28",
+              "description": "خلصت التصميم بس والواجهة لسا مش كاملة"
+            }
+          },
+          {
+            "target": "projects",
+            "action": "create",
+            "id": "wilo-new-058875c9-3db7-4a96-946d-74cc66868a66",
+            "scope": "personal",
+            "values": {
+              "name": "مراجعة",
+              "sectionId": "this_week",
+              "dueDate": "2026-10-26"
+            }
+          }
+        ],
+        "controls": [],
+        "files": [
+          {
+            "name": "التغييرات-المقترحة.pdf",
+            "content": "التغييرات المقترحة والمواعيد\n\nالقسم الجديد\n- الاسم: هذا الأسبوع\n\nالبطاقات\n1) مشروع البرمجة\n- القسم: هذا الأسبوع\n- النوع: مشروع\n- تاريخ الاستحقاق: 2026-10-28 (28 من الشهر الحالي)\n- الملاحظة: خلصت التصميم بس والواجهة لسا مش كاملة\n\n2) مراجعة\n- القسم: هذا الأسبوع\n- تاريخ الاستحقاق: 2026-10-26 (قبل مشروع البرمجة بيومين)\n\nملاحظات\n- الملاحظة النهائية على بطاقة مشروع البرمجة صُححت لتصبح: خلصت التصميم بس والواجهة لسا مش كاملة.\n- هذه التغييرات مقترحة وتصبح نافذة بعد الموافقة عليها."
+          }
+        ],
+        "tasks": [
+          {
+            "title": "راجع التغييرات المطلوبة.",
+            "outcome": "proposed",
+            "actionIndexes": [
+              0
+            ],
+            "controlIndexes": [],
+            "detail": ""
+          },
+          {
+            "title": "راجع التغييرات المطلوبة.",
+            "outcome": "proposed",
+            "actionIndexes": [
+              1
+            ],
+            "controlIndexes": [],
+            "detail": ""
+          },
+          {
+            "title": "راجع التغييرات المطلوبة.",
+            "outcome": "proposed",
+            "actionIndexes": [
+              2
+            ],
+            "controlIndexes": [],
+            "detail": ""
+          }
+        ]
+      }
+    }
+  ],
+  "productionWrites": 0,
+  "persistenceTested": false,
+  "checkedAt": "2026-10-26T09:20:00.535Z"
+}

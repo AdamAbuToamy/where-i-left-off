@@ -9,7 +9,7 @@ export async function runAcceptanceCase(testCase,provider){
  const traced={name:provider.name,model:provider.model,workspaceTools:provider.workspaceTools,async run(input,options){
   const inventory=input.response_format===INTENT_FORMAT,prior=trace.filter(t=>inventory?t.stage.startsWith('inventory'):!t.stage.startsWith('inventory')).length;
   const stage=input.tools?'tool-plan':inventory?(prior?'inventory-repair':'inventory'):(prior?'repair':'proposal'),began=Date.now();
-  let result;try{result=await provider.run(input,options);}catch(error){trace.push({stage,model:provider.model,ms:Date.now()-began,error:assistantProviderError(error),providerFailure:safeProviderFailure(error)});throw error;}
+  let result;try{result=await provider.run(input,options);}catch(error){trace.push({stage,model:provider.model,ms:Date.now()-began,error:assistantProviderError(error),providerFailure:safeProviderFailure(error),...(provider.name==='ollama'&&/^ollama-(?:runner-missing|http-[45][0-9]{2}|timeout|connection-error|empty-response)$/.test(error.message)?{localError:error.message}:{})});throw error;}
   trace.push({stage,model:provider.model,ms:Date.now()-began,text:assistantResponseText(result),...(result.contextRequest?{reads:[{callId:result.toolCall?.id,request:result.contextRequest}]}:result.contextRequests?{reads:result.contextRequests.map(r=>({callId:r.toolCall?.id,request:r.contextRequest}))}:{})});return result;
  }};
  try{
