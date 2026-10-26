@@ -1115,3 +1115,27 @@
 .study-today>header>a,.study-today>header>a:visited {display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:7px 12px;border:1px solid var(--site-border,#d1c4ab);border-radius:10px;background:var(--site-input,#fffdf5);color:var(--site-primary,#385c4b);font-size:13px;font-weight:600;text-decoration:none;transition:background .16s ease,border-color .16s ease}
 .study-today>header>a:hover {background:var(--site-soft,#e9ecdf);border-color:var(--site-primary,#385c4b)}
 @media(prefers-reduced-motion:reduce) {.study-today>header>a {transition:none}}
+
+/* Compact course navigation keeps long syllabuses out of the course picker. */
+.study-course-browser {position:sticky;top:20px}
+.study-course-search {display:grid;gap:8px;font-size:13px;margin-bottom:12px}
+.study-course-search input {width:100%;min-width:0;min-height:42px;box-sizing:border-box;padding:10px;border:1px solid var(--study-border);border-radius:10px;background:var(--study-paper);color:inherit;font:inherit}
+.study-course-choices {display:grid;gap:8px;margin-block:12px}
+.study-page .study-course-choice {display:grid;gap:6px;width:100%;text-align:start;justify-content:stretch;border-inline-start:4px solid;padding:12px;background:var(--study-paper)}
+.study-course-choice-title {display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.study-course-choice strong {overflow-wrap:anywhere;min-width:0}
+.study-course-choice small {color:var(--site-muted);font-size:12px}
+.study-page .study-course-choice[aria-pressed="true"] {border-color:var(--site-primary,#385c4b);background:var(--site-soft,#e9ecdf);box-shadow:inset 0 0 0 1px var(--site-primary,#385c4b)}
+.study-current-course {font-size:11px;border-radius:6px;padding:3px 7px;background:var(--site-primary,#385c4b);color:white}
+.study-course-pages {display:flex;align-items:center;justify-content:space-between;gap:8px}
+.study-course-pages span {font-size:12px;white-space:nowrap}
+.study-page .study-all-courses {width:100%}
+.study-page .study-all-courses[aria-pressed="true"] {border-color:var(--site-primary,#385c4b)}
+.study-task-list > .study-course {margin-bottom:24px}
+.study-course-notes h4 {font-size:13px;margin-bottom:8px}
+.study-course-notes p {line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
+.study-notice {display:flex;align-items:center;justify-content:space-between;gap:16px}
+.study-notice span {min-width:0;overflow-wrap:anywhere}
+.study-notice button {flex:none}
+.study-next-course {font-weight:700;color:var(--site-primary,#385c4b);overflow-wrap:anywhere}
+@media(max-width:760px){.study-course-browser {position:static}.study-layout > .study-course-browser {display:block}}

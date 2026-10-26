@@ -14,6 +14,7 @@ vi.mock("../src/university/reminders", () => ({
     syncReminder: reminder.sync,
     prepareReminder: reminder.prepare,
 }));
+import CourseNavigator from '../src/university/CourseNavigator';
 import UniversityPage from "../src/university/UniversityPage";
 import { ADMIN_EMAIL } from "../src/lib/admin";
 const user = {
@@ -163,4 +164,50 @@ it('builds lectures and tutorials on several days and displays their rooms',asyn
 });
 it('shows no Arabic interface text on an empty English or Hebrew University page',async()=>{
  for(const language of ['en','he'] as const){await render(user,language);expect(container.querySelector('.study-page')?.getAttribute('dir')).toBe(language==='en'?'ltr':'rtl');expect(container.textContent).not.toMatch(/[\u0600-\u06ff]/);}
+});
+
+it('paginates courses, finds the last course and marks its open details without translating notes', async () => {
+    const courses = Array.from({length:14}, (_,i) => ({id:`course-${i}`, name:`Course ${i + 1}`, notes:`Notes ${i + 1} https://example.test/course/${i + 1}`, url:'', requires:[], x:0, y:0}));
+    localStorage.setItem('wilo-university-v1/demo/pilot',JSON.stringify({version:1,courses,tasks:[],lessons:[],importedAt:""}));
+    await act(async () => root.unmount());root=createRoot(container);await render();
+    expect(container.querySelectorAll('.study-course-choice')).toHaveLength(6);
+    await click('التالي');expect(container.querySelector('.study-course-pages')?.textContent).toContain('2 / 3');
+    await click('التالي');expect(container.querySelectorAll('.study-course-choice')).toHaveLength(2);
+    const search=container.querySelector('input[type=search]') as HTMLInputElement;
+    await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(search,'Course 14');search.dispatchEvent(new Event('input',{bubbles:true}));});
+    expect(container.querySelectorAll('.study-course-choice')).toHaveLength(1);
+    await act(async()=>(container.querySelector('.study-course-choice') as HTMLButtonElement).click());
+    expect(container.querySelector('.study-course-choice[aria-pressed=true]')?.textContent).toContain('Course 14');
+    expect(container.querySelector('.study-current-course')?.textContent).toBe('الكورس المفتوح');
+    expect(container.querySelector('[data-study-course="course-13"]')).not.toBeNull();
+    expect(container.querySelector('.study-course-notes a')?.getAttribute('href')).toBe('https://example.test/course/14');
+    await render(user,'en');expect(container.querySelector('.study-current-course')?.textContent).toBe('Current course');
+    expect(container.querySelector('.study-course-pages')?.textContent).toContain('Previous');
+    await click('All courses');expect(container.querySelectorAll('.study-course-choice[aria-pressed=true]')).toHaveLength(0);
+    expect(container.querySelector('[data-study-course]')).toBeNull();
+});
+it('labels the next deadline with its course and supports dismissing and expiring reminder notices', async () => {
+    await click('إضافة كورس');await submit({name:'Networks',notes:'',url:''});
+    await click('إضافة مهمة');await submit({title:'Lab report',due:'2099-11-10T14:30',notes:'',url:''});
+    expect(container.querySelector('.study-next-course')?.textContent).toBe('Networks');
+    reminder.prepare.mockImplementation(t=>t);
+    // Adapter is injected here: no production account or push settings are changed.
+    reminder.sync.mockImplementation(async (_uid,t)=>({...t,reminderProjectId:'linked'}));
+    await click('تذكير على الهاتف');expect(container.querySelector('.study-notice')).not.toBeNull();
+    await act(async()=>(container.querySelector('[aria-label="إغلاق الرسالة"]') as HTMLButtonElement).click());
+    expect(container.querySelector('.study-notice')).toBeNull();
+    vi.useFakeTimers();
+    try {await click('تحديث التذكير');expect(container.querySelector('.study-notice')).not.toBeNull();await act(async()=>vi.advanceTimersByTime(10000));expect(container.querySelector('.study-notice')).toBeNull();}
+    finally {vi.useRealTimers();}
+    expect(container.querySelector('.study-task')?.textContent).toContain('Lab report');
+});
+
+it('keeps the current course on its page when a cloud snapshot reorders courses',async()=>{
+    const courses=Array.from({length:14},(_,i)=>({id:`stable-${i}`,name:`Course ${i+1}`,notes:'',url:'',requires:[],x:0,y:0}));
+    const props={tasks:[],selectedId:'stable-13',filter:'stable-13',onSelect:vi.fn(),courseColor:()=> '#385c4b',onAdd:vi.fn()};
+    await act(async()=>root.render(<CourseNavigator courses={courses} {...props}/>));
+    expect(container.querySelector('.study-course-choice[aria-pressed=true]')?.textContent).toContain('Course 14');
+    await act(async()=>root.render(<CourseNavigator courses={[...courses].reverse()} {...props}/>));
+    expect(container.querySelector('.study-course-choice[aria-pressed=true]')?.textContent).toContain('Course 14');
+    expect(container.querySelectorAll('.study-course-choice')).toHaveLength(2);
 });
