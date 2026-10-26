@@ -587,3 +587,16 @@ test('manager announcements reach members across pages without a reply form', as
     await expect(member.locator('.group-announcements form')).toHaveCount(0)
   } finally {await context.close()}
 })
+
+test('extension auto capture saves exactly once and survives a reload',async({page})=>{
+ const email=`capture-auto-${Date.now()}@example.test`;
+ await login(page,email,true);
+ const query=new URLSearchParams({capture:'tab',auto:'1',title:'Extension saved page',url:'https://example.test/reference'});
+ await page.goto('/?'+query);
+ await expect(page.getByRole('heading',{name:'Extension saved page',exact:true})).toHaveCount(1);
+ await expect(page.locator('.sync-status')).toHaveText('Synced with your account');
+ await expect(page).not.toHaveURL(/capture=tab/);
+ await page.reload();
+ await expect(page.getByRole('heading',{name:'Extension saved page',exact:true})).toHaveCount(1);
+ await expect(page.locator('a[href="https://example.test/reference"]')).toBeVisible();
+});

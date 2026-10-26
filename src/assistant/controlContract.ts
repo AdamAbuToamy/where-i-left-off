@@ -1,5 +1,5 @@
 import { validDate } from '../lib/projects';
-import { backgrounds, themes } from '../lib/theme';
+import { backgrounds, themes } from '../lib/appearanceCatalog';
 export type AssistantControl={kind:'profile'|'appearance'|'language'|'sleep'|'workflow'|'navigate'|'tour';values:Record<string,unknown>};
 export type ControlPlan={control:AssistantControl;before:Record<string,unknown>;after:Record<string,unknown>};
 export type ControlResult={plan:ControlPlan;ok:boolean;reason?:string};

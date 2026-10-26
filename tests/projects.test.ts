@@ -80,3 +80,13 @@ it('checklists toggle one item without changing the other items', () => {
 it('accepts a phone share with a URL inside text and no title', () => {
   expect(parseTabCapture('?capture=tab&text=https%3A%2F%2Fexample.com%2Fassignment')).toEqual({ name: 'example.com', projectUrl: 'https://example.com/assignment' })
 })
+
+it('reports invalid links as validation errors instead of blaming Firebase',()=>{
+ for(const language of ['ar','en','he'] as const){
+  const message=errorText(Object.assign(new Error(),{code:'invalid-project-url'}),language);
+  expect(message).toContain('https://');expect(message).toContain('500');expect(message).not.toContain('Firebase');
+  expect(errorText(new Error('invalid-attachment-url'),language)).not.toBe(cloudText[language].error);
+ }
+ for(const projectUrl of ['https:example.com','https:/example.com','HTTPS://example.com'])expect(()=>validateProject('Card','',{projectUrl})).toThrow('invalid-project-url');
+ expect(()=>validateProject('Card','',{projectUrl:'https://example.com'})).not.toThrow();
+});

@@ -1,16 +1,12 @@
-import { isAdmin } from './admin'
-
-/** Production pilot: verified admin ONLY; emulator tests can opt in explicitly.
- * The browser flag is not an authorization control. Firestore/Worker still
- * enforce their own permissions, and no model proposal saves without review.
+/** Assistant visibility for signed-in users (the caller checks authentication).
+ * Email verification matches workspace access; roles and record permissions are
+ * still checked independently by Firestore and the existing action planner.
  */
 export function assistantAccess(
   enabled: string | undefined,
   emulatorMode: boolean,
-  email: string | null | undefined,
+  _email: string | null | undefined,
   emailVerified: boolean,
 ): boolean {
-  if (!emailVerified) return false
-  if (emulatorMode) return enabled === 'true'
-  return isAdmin(email, emailVerified)
+  return emailVerified && (emulatorMode ? enabled === 'true' : enabled !== 'false')
 }

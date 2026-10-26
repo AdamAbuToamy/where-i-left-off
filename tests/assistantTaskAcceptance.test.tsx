@@ -5,18 +5,21 @@ import {afterAll,beforeAll,expect,it,vi} from 'vitest';
 import {initializeTestEnvironment} from '@firebase/rules-unit-testing';import type {RulesTestEnvironment} from '@firebase/rules-unit-testing';import type {User} from 'firebase/auth';
 const runtime=vi.hoisted(()=>({db:null as unknown,auth:{currentUser:{uid:'acceptance'}},call:vi.fn()}));
 vi.mock('../src/lib/firebase',()=>({get db(){return runtime.db;},auth:runtime.auth}));
-vi.mock('../src/assistant/api',()=>({assistantRequest:runtime.call}));
+vi.mock('../src/assistant/pollinationsClient',()=>({PollinationsAssistant:class{conversation=async()=>({text:'',needsWorkspace:true});workspace=(payload:unknown)=>runtime.call(payload,60000);}}));
+vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsConnected:()=>true,connectPollinations:vi.fn(),disconnectPollinations:vi.fn()}));
 vi.mock('../src/lib/indexedDbWorkspaceStore',()=>({IndexedDbWorkspaceStore:class{read=async()=>({projects:[],sections:[],operations:[]});}}));
 import {providerReply} from './fixtures/assistantProvider';
 import AssistantWidget from '../src/assistant/AssistantWidget';import {AssistantRepository} from '../src/assistant/assistantRepository';
 let env:RulesTestEnvironment;
 beforeAll(async()=>{
+ // These persistence tests inject the hosted provider boundary; local inference is tested separately.
+ localStorage.setItem('wilo-assistant-local','false');
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
  env=await initializeTestEnvironment({projectId:'demo-assistant-acceptance',firestore:{host:'127.0.0.1',port:8080,rules:readFileSync('firestore.rules','utf8')}});
  await env.clearFirestore();runtime.db=env.authenticatedContext('acceptance',{email_verified:true}).firestore();
  runtime.call.mockRejectedValue(new Error('Unexpected provider call in this fixture'));
 });
-afterAll(async()=>{await env?.cleanup();vi.unstubAllGlobals();});
+afterAll(async()=>{await env?.cleanup();localStorage.removeItem('wilo-assistant-local');vi.unstubAllGlobals();});
 it('persists injected provider proposals through the actual chat Apply button and verifies server data, with timings',async()=>{
  const element=document.createElement('div');document.body.append(element);const root=createRoot(element),repo=new AssistantRepository('acceptance');
  const timings:{task:string;proposalMs:number;saveAndReadMs:number}[]=[];
@@ -24,7 +27,7 @@ it('persists injected provider proposals through the actual chat Apply button an
   await act(async()=>root.render(<AssistantWidget user={{uid:'acceptance'} as User} language="ar"/>));await act(async()=>(element.querySelector('button') as HTMLButtonElement).click());
   async function idle(){
    const deadline=Date.now()+10000;
-   while(element.querySelector('.assistant-actions button')?.textContent==='جارٍ المعالجة…'){
+   while(element.querySelector('.assistant-panel')?.getAttribute('aria-busy')==='true'){
     if(Date.now()>deadline)throw new Error('Chat did not finish within ten seconds on the local emulator');
     await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10));});
    }
@@ -55,7 +58,7 @@ it('persists injected provider proposals through the actual chat Apply button an
 it('imports all fourteen real requested classes through Apply, remounts chat and reads persisted data without duplicates',async()=>{
  const {weeklyRequest,timetableData,expectedSessions}=await import('./fixtures/weeklyTimetable');
  const {planAssistantChanges}=await import('../src/assistant/actions');
- await env.clearFirestore();localStorage.clear();
+ await env.clearFirestore();localStorage.clear();localStorage.setItem('wilo-assistant-local','false');
  const repo=new AssistantRepository('acceptance');const snapshot=await repo.read();
  const data=timetableData();
  const receipt=await repo.apply(snapshot,planAssistantChanges(snapshot.data,data.study.courses.map(c=>({target:'courses' as const,action:'create' as const,id:c.id,values:{name:c.name}}))));

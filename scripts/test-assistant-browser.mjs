@@ -65,7 +65,7 @@ if(args.includes('--verify-report')){
  console.log('REPORT:',reportPath);
 }else{
 try{
- vite=await createViteServer({configFile:false,root:process.cwd(),server:{middlewareMode:true,hmr:false},appType:'custom',logLevel:'error'});
+ vite=await createViteServer({configFile:false,root:process.cwd(),server:{middlewareMode:true,hmr:false,ws:false},appType:'custom',logLevel:'error'});
  http=createHttpServer((req,res)=>{
   if(req.url==='/__wilo_acceptance'){
    res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-store'});

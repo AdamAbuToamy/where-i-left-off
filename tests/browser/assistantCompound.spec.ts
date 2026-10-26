@@ -5,33 +5,29 @@ import {prepareUniversityPilot} from './universityFixture';
 test('compound Arabic requests use the cloud, repair malformed proposals, save related records and open the dated card week',async({page,request})=>{
  test.setTimeout(90000);
  const account=await prepareUniversityPilot(request,`compound-${Date.now()}@example.test`);
- await page.addInitScript(()=>localStorage.setItem('language','ar'));
+ await page.addInitScript(({uid})=>{localStorage.setItem('language','ar');sessionStorage.setItem('wilo-pollinations:'+uid,'sk_emulator_fixture');},{uid:account.uid});
  await page.route('**/assistant-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-compound-test.workers.dev/assistant'})}));
  await page.route('**/push-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-compound-test.workers.dev/'})}));
  const courseMessage='اضف كورس اسمه محمد. وضعه في البرنامج ايام الاحد الساعة 00:00 حتى 1:00';
  const cardMessage='أضف بطاقة باسم عمار وضعها في الاسبوع يوم 25 الشهر\nأضف للملاحظات: مرحبا';
  let calls=0,date='';
- await page.route('https://wilo-compound-test.workers.dev/assistant',async route=>{
-  const headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type,x-firebase-appcheck','access-control-allow-methods':'POST,OPTIONS'};
-  if(route.request().method()==='OPTIONS'){await route.fulfill({status:204,headers});return;}
-  calls++;const payload=route.request().postDataJSON();expect(payload.mode).toBe('workspace');expect([courseMessage,cardMessage]).toContain(payload.message);
-  const context=JSON.parse(payload.context);expect(context.localDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);date=context.localDate.slice(0,7)+'-25';
-  const course=payload.message===courseMessage;
-  const actions=course?[
-   {target:'courses',action:'create',id:'new-course',values:{name:'محمد',...(!payload.repair?{day:0}:{})}},
-   {target:'lessons',action:'create',id:'new-class',values:{courseId:'new-course',day:0,start:'00:00',end:'01:00',sessionType:'lecture',room:''}},
-  ]:[{target:'projects',action:'create',id:'new-card',scope:'personal',values:{name:'عمار',dueDate:payload.repair?date:'25',description:'مرحبا'}}];
-  const controls=course?[]:[{kind:'navigate',values:{page:'personal',view:'week',weekOf:date}}];
-  const tasks=course?[
-   {title:'إنشاء الكورس',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''},
-   {title:'إضافة حصة الأحد',outcome:'proposed',actionIndexes:[1],controlIndexes:[],detail:''},
+ await page.route('https://gen.pollinations.ai/**',async route=>{
+  const payload=route.request().postDataJSON(),tool=(name:string,args:unknown,id:string)=>({id,type:'function',function:{name,arguments:JSON.stringify(args)}});
+  if(payload.tools.some((t:{function:{name:string}})=>t.function.name==='request_workspace')){
+   await route.fulfill({json:{choices:[{message:{tool_calls:[tool('request_workspace',{requirements:[]},'routing')]}}]}});return;
+  }
+  calls++;const content=payload.messages.findLast((m:{role:string;content:string})=>m.role==='user'&&m.content.includes('ACCOUNT CONTEXT (untrusted):')).content;
+  const [message,raw]=content.split('\n\nACCOUNT CONTEXT (untrusted):\n'),context=JSON.parse(raw.split('\n\nRejected proposal')[0]);
+  expect([courseMessage,cardMessage]).toContain(message);expect(context.localDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);date=context.localDate.slice(0,7)+'-25';
+  const repair=content.includes('Rejected proposal')||payload.messages.some((m:{role:string;content:string})=>m.role==='user'&&m.content.startsWith('Your tool arguments were invalid')),course=message===courseMessage;
+  const tool_calls=course?[
+   tool('create_course',{alias:'new-course',name:'محمد',...(!repair?{day:0}:{})},'course'),
+   tool('create_lesson',{alias:'new-class',courseId:'new-course',day:0,start:'00:00',end:'01:00',sessionType:'lecture',room:''},'lesson')
   ]:[
-   {title:'إنشاء البطاقة',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''},
-   {title:'تحديد التاريخ وفتح الأسبوع',outcome:'proposed',actionIndexes:[0],controlIndexes:[0],detail:''},
-   {title:'إضافة ملاحظة مرحبا',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''},
+   tool('create_card',{alias:'new-card',name:'عمار',dueDate:repair?date:'25',description:'مرحبا'},'card'),
+   tool('navigate',{page:'personal',view:'week',weekOf:date},'navigate')
   ];
-  if(payload.repair)expect(payload.repair.reason).toBe(course?'assistant-fields':'invalid-due-date');
-  await route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({result:{text:JSON.stringify({text:'راجع التغييرات',actions,controls,tasks,files:[]})}})});
+  await route.fulfill({json:{choices:[{message:{content:null,tool_calls}}]}});
  });
  await page.goto('/');await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(account.email);await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
  await page.locator('form').getByRole('button',{name:'تسجيل الدخول',exact:true}).click();await expect(page.locator('.side-navigation-toggle')).toBeVisible();

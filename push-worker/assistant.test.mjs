@@ -61,7 +61,7 @@ test('batch requests expose all control contracts and budget output for multiple
  assert.equal(calls[0][1].max_tokens,6144);
  const schema=calls[0][1].response_format.json_schema;
  assert.equal(schema.properties.actions.maxItems,50);
- assert.deepEqual(schema.properties.controls.items.anyOf.map(branch=>branch.properties.kind.enum[0]),['appearance','language','sleep','workflow','navigate','tour']);
+ assert.deepEqual(schema.properties.controls.items.anyOf.map(branch=>branch.properties.kind.enum[0]),['profile','appearance','language','sleep','workflow','navigate','tour']);
  assert.match(calls[0][1].messages[0].content,/Do not silently drop a task/);
 });
 test('course identity resolution uses the cloud model with a compact structured response and semantic matching instructions',async()=>{

@@ -28,7 +28,7 @@ for(const lang of ['en','ar','he'] as const)for(const mobile of [false,true])tes
   await page.getByRole('button',{name:'Robotics',exact:false}).first().click()
   const selected=page.locator('.section-navigation button[aria-pressed=true]')
   await expect(selected).toContainText('Robotics')
-  expect(await selected.evaluate(el=>getComputedStyle(el).color)).toBe('rgb(255, 255, 255)')
+  await expect(selected).toHaveCSS('color','rgb(255, 255, 255)')
   await page.getByRole('button',{name:'Manage sections',exact:true}).click()
   await page.getByRole('button',{name:'All sections',exact:true}).click()
   if(lang!=='en'){

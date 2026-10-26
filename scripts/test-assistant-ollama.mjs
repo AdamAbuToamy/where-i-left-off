@@ -54,9 +54,9 @@ for(const name of ['SIGINT','SIGTERM'])process.once(name,()=>aborter.abort());
 let vite;
 try{
  const ready=await provider.ready();
- console.log('LOCAL inference:,ready.model,'on',ready.endpoint,'(no Cloudflare or API key)');
+ console.log('LOCAL inference:',ready.model,'on',ready.endpoint,'(no Cloudflare or API key)');
  const {createServer}=await import('vite');
- vite=await createServer({server:{middlewareMode:true,hmr:false},appType:'custom'});
+ vite=await createServer({server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
  const {evaluateAcceptance}=await vite.ssrLoadModule('/tests/fixtures/assistant/oracle.ts');
  const priority=id=>id.startsWith('compound-card')?0:id.startsWith('new-course-lesson')?1:id.startsWith('ten-cards')?2:3;
  const ordered=[...selected].sort((a,b)=>priority(a.id)-priority(b.id));
@@ -67,13 +67,15 @@ try{
   if(attempted>=limit)break;
   attempted++;
   const result=await runAcceptanceCase(testCase,provider);
+  const localError=result.trace.findLast(step=>step.localError)?.localError;
+  if(localError)result.error=localError;
   if(aborter.signal.aborted)break;
   const item={id:testCase.id,language:testCase.language,status:'passed',elapsedMs:result.elapsedMs,trace:result.trace,reply:result.text};
   try{
    if(result.error)throw new Error(result.error);
    evaluateAcceptance(testCase,result.text);
   }catch(error){
-   item.status=blockedProviderCodes.has(result.error)?'blocked':'failed';
+   item.status=(blockedProviderCodes.has(result.error)||/^ollama-/.test(result.error||''))?'blocked':'failed';
    item.reason=error.message;
    item.details=result.details;
   }

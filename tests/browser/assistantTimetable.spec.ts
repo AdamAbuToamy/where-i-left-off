@@ -1,21 +1,23 @@
 import {test,expect} from '@playwright/test';
-import {providerReply} from '../fixtures/assistantProvider';
 import {prepareUniversityPilot} from './universityFixture';
 import {courseNames,weeklyRequest,expectedSessions,timetableData} from '../fixtures/weeklyTimetable';
 for(const semantic of [false,true])test(`assistant imports fourteen weekly sessions ${semantic?'using cloud course matching for numbered names':'with exact course names'} and survives browser reload`,async({page,request})=>{
  test.setTimeout(90000);
  const account=await prepareUniversityPilot(request,`timetable-${Date.now()}@example.test`);
- await page.addInitScript(()=>localStorage.setItem('language','ar'));
+ await page.addInitScript(({uid})=>{localStorage.setItem('language','ar');sessionStorage.setItem('wilo-pollinations:'+uid,'sk_emulator_fixture');},{uid:account.uid});
  await page.route('**/assistant-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-course-test.workers.dev/assistant'})}));
  await page.route('**/push-config.json',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({endpoint:'https://wilo-course-test.workers.dev/'})}));
  let cloudMatches=0;
- await page.route('https://wilo-course-test.workers.dev/assistant',async route=>{
-  const headers={'access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type,x-firebase-appcheck','access-control-allow-methods':'POST,OPTIONS'};
-  if(route.request().method()==='OPTIONS'){await route.fulfill({status:204,headers});return;}
-  const payload=route.request().postDataJSON();expect(payload.mode).toBe('workspace');expect(payload.message).toBe(weeklyRequest);const context=JSON.parse(payload.context);cloudMatches++;
-  expect(context.study.courses).toHaveLength(6);
-  const actions=context.study.lessons.length?[]:expectedSessions.map((values,i)=>({target:'lessons',action:'create',id:'new-'+i,values:{...values,courseId:context.study.courses.find((c:{name:string})=>c.name.includes(timetableData().study.courses.find(course=>course.id===values.courseId)!.name))!.id}}));
-  await route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({result:{text:providerReply({text:'Review',actions})}})});
+ await page.route('https://gen.pollinations.ai/**',async route=>{
+  const payload=route.request().postDataJSON(),tool=(name:string,args:unknown,id:string)=>({id,type:'function',function:{name,arguments:JSON.stringify(args)}});
+  if(payload.tools.some((t:{function:{name:string}})=>t.function.name==='request_workspace')){
+   await route.fulfill({json:{choices:[{message:{tool_calls:[tool('request_workspace',{requirements:[],functions:['create_lesson']},'routing')]}}]}});return;
+  }
+  const content=payload.messages.findLast((m:{role:string;content:string})=>m.role==='user'&&m.content.includes('ACCOUNT CONTEXT (untrusted):')).content;
+  const [message,raw]=content.split('\n\nACCOUNT CONTEXT (untrusted):\n'),context=JSON.parse(raw.split('\n\nRejected proposal')[0]);expect(message).toBe(weeklyRequest);cloudMatches++;
+  const courses=context.studyCatalog.courses.items;expect(courses).toHaveLength(6);
+  const tool_calls=context.studyCounts.lessons?[]:expectedSessions.map((values,i)=>tool('create_lesson',{alias:'new-'+i,...values,courseId:courses.find((c:{name:string})=>c.name.includes(timetableData().study.courses.find(course=>course.id===values.courseId)!.name))!.id},'lesson-'+i));
+  await route.fulfill({json:{choices:[{message:tool_calls.length?{content:null,tool_calls}:{content:'الحصص موجودة بالفعل؛ لم أضف نسخًا مكررة.'}}]}});
  });
  await page.goto('/');await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(account.email);
  await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
@@ -30,8 +32,7 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();
  const chat=page.locator('#wilo-assistant');await chat.getByLabel('رسالتك',{exact:true}).fill(weeklyRequest);await chat.getByRole('button',{name:'إرسال',exact:true}).click();
  await expect(chat.locator('.assistant-proposal details')).toHaveCount(14);
- const dock=await page.evaluate(()=>({panel:document.querySelector('#wilo-assistant')!.getBoundingClientRect().right,content:document.querySelector('main.workspace')!.getBoundingClientRect().left}));
- expect(dock.content).toBeGreaterThanOrEqual(dock.panel);await page.screenshot({path:'test-results/layout-review/assistant-dock-desktop.png',fullPage:false});
+ await expect.poll(()=>page.evaluate(()=>document.querySelector('main.workspace')!.getBoundingClientRect().left-document.querySelector('#wilo-assistant')!.getBoundingClientRect().right)).toBeGreaterThanOrEqual(0);await page.screenshot({path:'test-results/layout-review/assistant-dock-desktop.png',fullPage:false});
 
  await expect(page.locator('.study-lesson')).toHaveCount(0);
  await chat.getByRole('button',{name:'تطبيق التغييرات',exact:true}).click();

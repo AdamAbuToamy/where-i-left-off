@@ -38,7 +38,10 @@ export class OllamaAcceptanceProvider {
   }
   if(!response.ok){
    // Do not emit raw provider responses: they may contain user context.
-   throw new Error('ollama-http-'+response.status);
+   let diagnostic='';
+   try{const payload=await response.json();diagnostic=String(payload?.error?.message??payload?.error??'');}catch{}
+   const code=/llama-server binary not found/i.test(diagnostic)?'ollama-runner-missing':'ollama-http-'+response.status;
+   const error=new Error(code);error.status=response.status;throw error;
   }
   const data=await response.json();
   const choice=data?.choices?.[0];

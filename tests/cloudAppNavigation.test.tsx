@@ -41,25 +41,23 @@ it('isolates a feature render error and lets navigation recover without reloadin
  } finally {fake.crash='';act(()=>root.unmount());node.remove();errors.mockRestore();vi.unstubAllGlobals();}
 });
 
-it('production navigation does not load WILO for an ordinary account',async()=>{
+it('production navigation shows WILO for an ordinary verified account when enabled',async()=>{
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.stubEnv('VITE_ASSISTANT_ENABLED','true');const node=document.createElement('div');document.body.append(node);const root=createRoot(node);
- try{await act(async()=>root.render(<CloudApp/>));expect(node.querySelector('[data-screen]')).not.toBeNull();expect(fake.assistantImports).toBe(0);}
+ try{await act(async()=>root.render(<CloudApp/>));expect(node.querySelector('[data-screen]')).not.toBeNull();expect(node.querySelector('[data-assistant]')).not.toBeNull();}
  finally{act(()=>root.unmount());node.remove();vi.unstubAllGlobals();vi.unstubAllEnvs();}
 });
 
 
-it('exposes the isolated production pilot only to the verified owner',async()=>{
- vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const node=document.createElement('div');document.body.append(node);const root=createRoot(node),prior={...fake.user};
+it('rolls out to verified accounts of any role and retains the feature switch and verification requirement',async()=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.stubEnv('VITE_ASSISTANT_ENABLED','true');const node=document.createElement('div');document.body.append(node);const root=createRoot(node),prior={...fake.user};
  try{
-  fake.user.email='adam2002hosny@gmail.com';fake.user.emailVerified=false;
-  await act(async()=>root.render(<CloudApp key="unverified"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
-  fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="verified-off"/>));expect(node.querySelector('[data-assistant]')).not.toBeNull();
-  // Vite evaluates import.meta.env flags when the module is imported; a
-  // runtime stub here cannot emulate a fresh production build.
+  fake.user.email='ordinary@example.test';fake.user.emailVerified=false;await act(async()=>root.render(<CloudApp key="unverified"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
+  fake.user.emailVerified=true;await act(async()=>root.render(<CloudApp key="ordinary"/>));expect(node.querySelector('[data-assistant]')).not.toBeNull();
+  expect(assistantAccess('true',false,'ordinary@example.test',true)).toBe(true);
   expect(assistantAccess('true',false,'adam2002hosny@gmail.com',true)).toBe(true);
-  expect(assistantAccess('false',false,'adam2002hosny@gmail.com',true)).toBe(true);
-  expect(assistantAccess('true',false,'adam2002hosny@gmail.com',false)).toBe(false);
-  expect(assistantAccess('true',false,'other@example.test',true)).toBe(false);
-  fake.user.email='other@example.test';await act(async()=>root.render(<CloudApp key="other"/>));expect(node.querySelector('[data-assistant]')).toBeNull();
- }finally{Object.assign(fake.user,prior);act(()=>root.unmount());node.remove();vi.unstubAllGlobals();}
+  expect(assistantAccess('false',false,'adam2002hosny@gmail.com',true)).toBe(false);
+  expect(assistantAccess('true',false,'ordinary@example.test',false)).toBe(false);
+  expect(assistantAccess('true',true,'ordinary@example.test',true)).toBe(true);
+  expect(assistantAccess(undefined,false,'ordinary@example.test',true)).toBe(true);
+ }finally{Object.assign(fake.user,prior);act(()=>root.unmount());node.remove();vi.unstubAllGlobals();vi.unstubAllEnvs();}
 });

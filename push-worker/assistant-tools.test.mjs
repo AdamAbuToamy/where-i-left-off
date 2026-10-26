@@ -53,3 +53,29 @@ test('normalizes equivalent card title/notes tool fields without changing reques
 test('never silently resolves conflicting alias values or accepts unrelated unknown fields',()=>{
  for(const values of [{name:'A',title:'B'},{description:'A',notes:'B'},{name:'A',execute:'bad'}]){const p=good();p.actions[0].values=values;assert.throws(()=>readWorkspaceToolProposal(JSON.stringify(p)),/ai-incomplete-proposal/);}
 });
+
+test('the model selects operations while code creates review task references',()=>{
+ const plan=good();delete plan.tasks;
+ const reply=JSON.parse(readWorkspaceToolProposal(JSON.stringify(plan)));
+ assert.equal(WORKSPACE_TOOL.function.parameters.properties.tasks,undefined);
+ assert.equal(WORKSPACE_TOOL.function.parameters.required.includes('tasks'),false);
+ assert.deepEqual(reply.actions,plan.actions);
+ assert.deepEqual(reply.tasks[0].actionIndexes,[0]);
+ plan.actions[0].values.eval='invalid';
+ assert.throws(()=>readWorkspaceToolProposal(JSON.stringify(plan)),/ai-incomplete-proposal/);
+});
+test('the app assigns missing creation aliases, without changing explicit linked aliases or existing IDs',()=>{
+ const p=good();p.actions[0].id='';let result=JSON.parse(readWorkspaceToolProposal(JSON.stringify(p)));
+ assert.match(result.actions[0].id,/^wilo-new-[-\w]+$/);assert.equal(result.actions[0].values.name,'Robot');
+ delete p.actions[0].id;result=JSON.parse(readWorkspaceToolProposal(JSON.stringify(p)));assert.ok(result.actions[0].id);
+ p.actions[0].action='update';p.actions[0].id='';assert.throws(()=>readWorkspaceToolProposal(JSON.stringify(p)),/ai-incomplete-proposal/);
+ const linked=good();linked.actions=[{target:'sections',action:'create',id:'new-section',values:{name:'New'}},{target:'projects',action:'create',id:'new-card',values:{name:'Robot',sectionId:'new-section'}}];delete linked.tasks;
+ assert.deepEqual(JSON.parse(readWorkspaceToolProposal(JSON.stringify(linked))).actions,linked.actions);
+});
+test('conversation focus uses confirmed receipt IDs that still exist in the actual account, never fabricated history names',()=>{
+ const context=acceptanceContext(),history=[{role:'assistant',content:JSON.stringify({text:'Saved',status:'saved',saved:[{target:'projects',scope:'personal',id:'card',name:'fabricated name'},{target:'projects',scope:'someone-else',id:'foreign'},{target:'projects',scope:'personal',id:'nonexistent'}]})}];
+ const content=workspaceToolInput({message:'Move it',language:'en',context:JSON.stringify(context)},history).messages.at(-1).content;
+ const overview=JSON.parse(content.split('ACCOUNT CONTEXT (untrusted):\n')[1]);assert.deepEqual(overview.recentConfirmedRecords,[{target:'projects',scope:'personal',id:'card',name:'عمار'}]);
+ history.push({role:'assistant',content:JSON.stringify({text:'Undone',status:'undone',saved:[]})});
+ const undone=JSON.parse(workspaceToolInput({message:'Move it',language:'en',context:JSON.stringify(context)},history).messages.at(-1).content.split('ACCOUNT CONTEXT (untrusted):\n')[1]);assert.deepEqual(undone.recentConfirmedRecords,[]);
+});

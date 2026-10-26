@@ -1,0 +1,3 @@
+import type {WorkspaceToolInput} from './assistantTools.mjs';
+export function conversationInput(data:{message:string;language:string;displayName?:string},history:{role:'user'|'assistant';content:string}[]):WorkspaceToolInput;
+export function readConversationChoice(choice:unknown,language?:string):{conversation:{text:string;needsWorkspace:boolean;functions?:string[];outputFormat?:string;requirements?:{target:string;fields:string[]}[]}};

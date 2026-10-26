@@ -5,7 +5,7 @@ const state={localDate:'2026-10-24',timezone:'Asia/Jerusalem',controls:{language
 const context=JSON.stringify(state),data={language:'ar',message:'عدّل بطاقة محمد وأضف new note إلى ملاحظتها',context};
 const plan={text:'Review',actions:[{target:'projects',action:'update',id:'p',scope:'personal',values:{description:'old note\nnew note'}}],controls:[],files:[],tasks:[{title:'Append note',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''}]};
 test('a greeting with a large account does not send account bodies or require a read',async()=>{
- const input=workspaceToolInput({...data,message:'مرحبا'},[]),wire=JSON.stringify(input);assert.ok(wire.length<9000);assert.equal(wire.includes('private course body'),false);assert.equal(wire.includes('old note'),false);
+ const input=workspaceToolInput({...data,message:'مرحبا'},[]),wire=JSON.stringify(input);assert.ok(wire.length<11000);assert.equal(wire.includes('private course body'),false);assert.equal(wire.includes('old note'),false);
  const answer={text:'أهلًا، كيف أساعدك؟',actions:[],controls:[],files:[],tasks:[{title:'Greeting',outcome:'answer',actionIndexes:[],controlIndexes:[],detail:''}]};let calls=0;
  const reply=await runWorkspaceTools({...data,message:'مرحبا'},[],async()=>{calls++;return {response:JSON.stringify(answer)};});assert.equal(calls,1);assert.equal(JSON.parse(reply).text,answer.text);
 });
@@ -18,7 +18,7 @@ test('the model reads exact existing record data then proposes an append through
 test('reads cannot cross account scopes; IDs are discovered from authorized context only',()=>{
  assert.throws(()=>readWorkspaceContext(context,{requests:[{target:'projects',view:'details',scope:'someone-else'}]}),/ai-incomplete-proposal/);
  assert.deepEqual(readWorkspaceContext(context,{requests:[{target:'projects',view:'details',ids:['foreign-id']}]}).results[0].items,[]);
- for(const request of [{target:'users',view:'details'},{target:'projects',view:'details',limit:999},{target:'courses',view:'details',scope:'other'}])assert.throws(()=>readWorkspaceContext(context,{requests:[request]}),/ai-incomplete-proposal/);
+ for(const request of [{target:'users',view:'details'},{target:'courses',view:'details',scope:'other'}])assert.throws(()=>readWorkspaceContext(context,{requests:[request]}),/ai-incomplete-proposal/);
 });
 test('pagination and oversized content are explicit; selected fields stay exact',()=>{
  const result=readWorkspaceContext(context,{requests:[{target:'courses',view:'details'}]}).results[0];assert.deepEqual(result.tooLarge,['c']);assert.equal(result.items.length,0);
@@ -71,4 +71,31 @@ test('reused provider IDs across successive reads are correlated with unique can
   const toolMessages=input.messages.filter(m=>m.role==='tool');const toolCalls=input.messages.filter(m=>m.role==='assistant').flatMap(m=>m.tool_calls||[]);
   assert.equal(new Set(toolCalls.map(c=>c.id)).size,2);assert.deepEqual(toolMessages.map(m=>m.tool_call_id),toolCalls.map(c=>c.id));return {response:JSON.stringify(plan)};
  });assert.equal(JSON.parse(result).actions[0].id,'p');assert.equal(calls,3);
+});
+
+test('oversized read limits return a bounded page rather than rejecting the whole request',()=>{
+ const source={scopes:[{id:'personal',projects:Array.from({length:60},(_,i)=>({id:'p'+i,name:'Card '+i}))}]};
+ const page=readWorkspaceContext(JSON.stringify(source),{requests:[{target:'projects',view:'catalog',limit:999}]}).results[0];
+ assert.equal(page.items.length,25);assert.equal(page.hasMore,true);assert.equal(page.nextOffset,25);
+});
+test('empty optional ID filters do not hide the catalog and compact catalogs never include notes',()=>{
+ const read=readWorkspaceContext(context,{requests:[{target:'projects',view:'catalog',ids:[]}]});assert.equal(read.results[0].items[0].id,'p');
+ const input=workspaceToolInput(data,[]),overview=JSON.parse(input.messages.at(-1).content.split('ACCOUNT CONTEXT (untrusted):\n')[1]);
+ assert.deepEqual(overview.scopes[0].projectCatalog.items,[{id:'p',name:'محمد'}]);assert.equal(JSON.stringify(overview).includes('old note'),false);
+ const large=structuredClone(state);large.scopes[0].sections=Array.from({length:40},(_,i)=>({id:'s'+i,name:'Section '+i}));
+ const page=JSON.parse(workspaceToolInput({...data,context:JSON.stringify(large)},[]).messages.at(-1).content.split('ACCOUNT CONTEXT (untrusted):\n')[1]).scopes[0].sectionCatalog;
+ assert.equal(page.items.length,25);assert.equal(page.hasMore,true);
+});
+test('large source bodies are explicitly paged and reconstruct exactly',()=>{
+ const body='large imported academic source '.repeat(1000),state={study:{courses:[{id:'long',name:'Course',notes:'brief',source:{description:body}}]}},text=JSON.stringify(state);
+ const details=readWorkspaceContext(text,{requests:[{target:'courses',view:'details'}]}).results[0];
+ assert.equal(details.items[0].source,undefined);assert.equal(details.items[0].sourceAvailable,true);
+ let offset=0,joined='';do{const page=readWorkspaceContext(text,{requests:[{target:'courses',view:'content',ids:['long'],fields:['source.description'],textOffset:offset,textLimit:4000}]}).results[0];joined+=page.text;offset=page.nextOffset;if(!page.hasMore)break;}while(offset<body.length);
+ assert.equal(joined,body);
+ assert.throws(()=>readWorkspaceContext(text,{requests:[{target:'courses',view:'content',ids:['long'],fields:['__proto__.x']}]}),/ai-incomplete-proposal/);
+});
+test('details pagination never skips records when the shared character budget fills',()=>{
+ const courses=Array.from({length:35},(_,i)=>({id:'course-'+i,name:'Course '+i,notes:'n'.repeat(1500)})),text=JSON.stringify({study:{courses}});
+ let offset=0,ids=[];for(let i=0;i<35;i++){const page=readWorkspaceContext(text,{requests:[{target:'courses',view:'details',offset}]}).results[0];ids.push(...page.items.map(item=>item.id));if(!page.hasMore)break;assert.ok(page.nextOffset>offset);offset=page.nextOffset;}
+ assert.deepEqual(ids,courses.map(item=>item.id));
 });

@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import './Experience.css'
 import { sharedInvite } from './lib/inviteLink'
 const incomingInvite = sharedInvite(location.search, location.origin)
 if (incomingInvite) history.replaceState({}, '', `/?groupInvite=${incomingInvite}`)

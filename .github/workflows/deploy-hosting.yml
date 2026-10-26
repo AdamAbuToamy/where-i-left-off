@@ -1,10 +1,14 @@
 name: Deploy Firebase Hosting
-# Production assistant pilot is restricted to the verified owner in the client and Worker.
+# All verified users connect their own Pollinations account; hosting never deploys a shared AI key.
 on:
   workflow_run:
     workflows: [Quality checks]
     types: [completed]
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      FIREBASE_SERVICE_ACCOUNT:
+        required: true
 permissions:
   contents: read
   actions: read
@@ -14,7 +18,7 @@ concurrency:
 jobs:
   deploy:
     if: >-
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      ((github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository)
     env:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -31,6 +35,17 @@ jobs:
           node --input-type=module <<'JS'
           const r=await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/git/ref/heads/main`,{headers:{authorization:`Bearer ${process.env.GH_TOKEN}`,accept:'application/vnd.github+json'}});
           if(!r.ok||(await r.json()).object.sha!==process.env.DEPLOY_SHA)throw new Error('Refusing to deploy a superseded or non-main commit.');
+          JS
+      - name: Require successful quality checks for manual releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRIGGER_EVENT: ${{ github.event_name }}
+        run: |
+          node --input-type=module <<'JS'
+          if(process.env.TRIGGER_EVENT!=='workflow_run'){
+            const r=await fetch('https://api.github.com/repos/'+process.env.GITHUB_REPOSITORY+'/actions/runs?head_sha='+process.env.DEPLOY_SHA+'&per_page=50',{headers:{authorization:'Bearer '+process.env.GH_TOKEN,accept:'application/vnd.github+json'}});
+            if(!r.ok||!(await r.json()).workflow_runs.some(run=>run.name==='Quality checks'&&run.conclusion==='success'))throw new Error('Current commit must pass Quality checks before production deployment.');
+          }
           JS
       - name: Require requested dialogue canary before deploying its behavior
         env:
@@ -58,27 +73,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Check owner pilot deployment credentials
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          node --input-type=module <<'JS'
-          const required=['CLOUDFLARE_API_TOKEN','CLOUDFLARE_WORKER_CONFIG','GEMINI_API_KEY'];
-          const missing=required.filter(name=>!process.env[name]?.trim());
-          if(missing.length)throw new Error('Missing repository secrets: '+missing.join(', ')+'. Existing production site was not changed.');
-          JS
-      - name: Install existing Worker dependencies
-        run: npm ci --prefix push-worker --no-audit --no-fund
-      - name: Deploy Gemini pilot restricted to the verified owner
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_WORKER_CONFIG: ${{ secrets.CLOUDFLARE_WORKER_CONFIG }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node scripts/deploy-assistant-pilot.mjs
-      - name: Verify deployed Worker protocol and CORS
-        run: node scripts/check-assistant-deployment.mjs
       - name: Preserve public production configuration and App Check
         run: node scripts/prepare-hosting-config.mjs
       - name: Diagnose public Auth origins without administrative permissions
@@ -100,7 +94,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Build production application
-        run: npm run build
+        run: |
+          npm run check:architecture
+          npm run build
+          node scripts/generate-cloud-release.mjs
+          node scripts/generate-sw.mjs
       - name: Run unit tests
         run: npm test
       - name: Deploy existing production hosting target only
@@ -110,7 +108,7 @@ jobs:
           projectId: where-i-left-off-b5683
           channelId: live
           target: production
-          firebaseToolsVersion: 15.33.0
+          firebaseToolsVersion: 15.34.1
       - name: Remove temporary public configuration
         if: always()
         run: rm -f .env.production.local

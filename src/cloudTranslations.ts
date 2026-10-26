@@ -15,6 +15,14 @@ export const cloudText = {
 export function errorText(error: unknown, language: keyof typeof cloudText): string {
   const t = cloudText[language]
   const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : error instanceof Error ? error.message : ''
+  const validation:Record<string,[string,string,string]>={
+    'invalid-project-url':['تحقق من رابط البطاقة والروابط الإضافية: يجب أن تبدأ بـ https:// أو http://، دون مسافات، وبحد أقصى 500 حرف لكل رابط. لم تُحفظ البطاقة بعد.','Check the card URL and additional links: use https:// or http://, no spaces, and at most 500 characters per link. The card has not been saved.','בדקו את קישור הכרטיס והקישורים הנוספים: יש להתחיל ב־https:// או http://, ללא רווחים ועד 500 תווים לקישור. הכרטיס טרם נשמר.'],
+    'invalid-attachment-url':['رابط المرفق غير صالح. استخدم رابطًا يبدأ بـ https:// أو http:// ولا يتجاوز 500 حرف.','The attachment URL is invalid. Use https:// or http:// and at most 500 characters.','קישור הקובץ אינו תקין. השתמשו ב־https:// או http:// ועד 500 תווים.'],
+    'invalid-due-date':['تاريخ الموعد غير صالح. اختر تاريخًا صحيحًا ثم أعد الحفظ.','The due date is invalid. Choose a valid date and save again.','תאריך היעד אינו תקין. בחרו תאריך תקין ושמרו שוב.'],
+    'invalid-project':['تحقق من اسم البطاقة وحقولها وحدود أطوال النصوص ثم أعد الحفظ.','Check the card name, fields and text length limits, then save again.','בדקו את שם הכרטיס, השדות ומגבלות אורך הטקסט ושמרו שוב.'],
+  }
+  if (validation[code]) return validation[code][language==='ar'?0:language==='en'?1:2]
+  if (['unavailable','deadline-exceeded','auth/network-request-failed'].includes(code)) return language==='ar'?'تعذّر الوصول إلى الخادم الآن. تحقق من اتصالك ثم اضغط إعادة المحاولة.':language==='he'?'לא ניתן להגיע לשרת כעת. בדקו את החיבור ונסו שוב.':'The server is currently unreachable. Check your connection and retry.'
   if (code === 'local-storage-unavailable') return language === 'ar' ? 'لم أتمكن من الحفظ على الجهاز. تحقق من مساحة التخزين وإعدادات المتصفح؛ التعديل لم يُحفظ.' : language === 'he' ? 'לא ניתן לשמור במכשיר. בדקו את מקום האחסון והגדרות הדפדפן; השינוי לא נשמר.' : 'Could not save on this device. Check storage space and browser settings; the change was not saved.'
   if (code.includes('operation-not-allowed')) return language === 'ar' ? 'طريقة تسجيل الدخول غير مفعّلة. فعّل Email/Password أو Google في Firebase Authentication.' : language === 'he' ? 'שיטת הכניסה אינה פעילה. יש להפעיל Email/Password או Google ב-Firebase Authentication.' : 'This sign-in method is disabled. Enable Email/Password or Google in Firebase Authentication.'
   if (code === 'conflict') return t.conflict

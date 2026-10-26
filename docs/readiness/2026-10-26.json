@@ -1,0 +1,886 @@
+{
+  "status": "automated-passed-manual-checks-pending",
+  "generatedAt": "2026-10-26T09:45:46.860Z",
+  "timezone": "Asia/Jerusalem",
+  "fingerprint": "0400fb8e10c0c795e60f91e176bc610b4500a12f729b710d272f8f24e01413eb",
+  "tests": {
+    "unit": 1123,
+    "security": 675,
+    "worker": 867,
+    "browser": 37,
+    "auth": 3
+  },
+  "automatedTotal": 2705,
+  "architecture": {
+    "status": "passed",
+    "roots": [
+      "src/lib/projectEntity.ts",
+      "src/lib/offlineWorkspace.ts",
+      "src/assistant/actions.ts",
+      "src/university/planImport.ts"
+    ],
+    "checkedModules": 14,
+    "violations": []
+  },
+  "dependencyAudit": {
+    "production": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "all": {
+      "info": 0,
+      "low": 0,
+      "moderate": 5,
+      "high": 0,
+      "critical": 0,
+      "total": 5
+    }
+  },
+  "liveProvider": {
+    "latest": {
+      "kind": "live-provider-windows-network",
+      "provider": "pollinations",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "status": "passed",
+      "results": [
+        {
+          "id": "greeting",
+          "status": "passed",
+          "totalMs": 514,
+          "progress": [
+            {
+              "state": "waiting",
+              "ms": 1
+            },
+            {
+              "state": "receiving",
+              "ms": 508
+            }
+          ],
+          "timings": [
+            {
+              "stage": "conversation",
+              "attempt": 1,
+              "inputChars": 5418,
+              "tools": 1,
+              "totalMs": 513,
+              "outcome": "ok",
+              "headersMs": 505,
+              "httpStatus": 200,
+              "firstDeltaMs": 507
+            }
+          ],
+          "reply": {
+            "text": "مرحبا! أنا بخير، شكرًا لسؤالك 😊\n\nكيف بقدر أساعدك اليوم؟ إذا بدك تتابع بطاقات مشاريعك، أو مواعيد جامعتك (محاضرات، تمارين، مختبرات)، أو أي شي تاني بالمُنظّم — خبرني."
+          }
+        },
+        {
+          "id": "simple-card",
+          "status": "passed",
+          "totalMs": 1612,
+          "progress": [
+            {
+              "state": "waiting",
+              "ms": 0
+            },
+            {
+              "state": "receiving",
+              "ms": 1302
+            },
+            {
+              "state": "waiting",
+              "ms": 1318
+            },
+            {
+              "state": "receiving",
+              "ms": 1607
+            }
+          ],
+          "timings": [
+            {
+              "stage": "conversation",
+              "attempt": 1,
+              "inputChars": 5439,
+              "tools": 1,
+              "totalMs": 1302,
+              "outcome": "ok",
+              "headersMs": 1302,
+              "httpStatus": 200,
+              "firstDeltaMs": 1302
+            },
+            {
+              "stage": "workspace",
+              "attempt": 1,
+              "inputChars": 10788,
+              "tools": 2,
+              "totalMs": 292,
+              "outcome": "ok",
+              "headersMs": 289,
+              "httpStatus": 200,
+              "firstDeltaMs": 289
+            }
+          ],
+          "reply": {
+            "text": "راجع التغييرات المطلوبة.",
+            "actions": [
+              {
+                "target": "projects",
+                "action": "create",
+                "id": "wilo-new-c05f3ee1-8b33-4fb9-ac0a-908e358ff825",
+                "scope": "personal",
+                "values": {
+                  "name": "اختبار القياس 2601"
+                }
+              }
+            ],
+            "controls": [],
+            "files": [],
+            "tasks": [
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  0
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "compound-and-pdf",
+          "status": "passed",
+          "totalMs": 615,
+          "progress": [
+            {
+              "state": "waiting",
+              "ms": 0
+            },
+            {
+              "state": "receiving",
+              "ms": 290
+            },
+            {
+              "state": "waiting",
+              "ms": 292
+            },
+            {
+              "state": "receiving",
+              "ms": 603
+            }
+          ],
+          "timings": [
+            {
+              "stage": "conversation",
+              "attempt": 1,
+              "inputChars": 5641,
+              "tools": 1,
+              "totalMs": 291,
+              "outcome": "ok",
+              "headersMs": 290,
+              "httpStatus": 200,
+              "firstDeltaMs": 290
+            },
+            {
+              "stage": "workspace",
+              "attempt": 1,
+              "inputChars": 16375,
+              "tools": 5,
+              "totalMs": 322,
+              "outcome": "ok",
+              "headersMs": 310,
+              "httpStatus": 200,
+              "firstDeltaMs": 310
+            }
+          ],
+          "reply": {
+            "text": "راجع التغييرات المطلوبة.",
+            "actions": [
+              {
+                "target": "sections",
+                "action": "create",
+                "id": "this_week",
+                "scope": "personal",
+                "values": {
+                  "name": "هذا الأسبوع"
+                }
+              },
+              {
+                "target": "projects",
+                "action": "create",
+                "id": "wilo-new-e06e46af-e461-42df-80fe-5e69987107e2",
+                "scope": "personal",
+                "values": {
+                  "name": "مشروع البرمجة",
+                  "resourceType": "project",
+                  "sectionId": "this_week",
+                  "dueDate": "2026-10-28",
+                  "description": "خلصت التصميم بس والواجهة لسا مش كاملة"
+                }
+              },
+              {
+                "target": "projects",
+                "action": "create",
+                "id": "wilo-new-058875c9-3db7-4a96-946d-74cc66868a66",
+                "scope": "personal",
+                "values": {
+                  "name": "مراجعة",
+                  "sectionId": "this_week",
+                  "dueDate": "2026-10-26"
+                }
+              }
+            ],
+            "controls": [],
+            "files": [
+              {
+                "name": "التغييرات-المقترحة.pdf",
+                "content": "التغييرات المقترحة والمواعيد\n\nالقسم الجديد\n- الاسم: هذا الأسبوع\n\nالبطاقات\n1) مشروع البرمجة\n- القسم: هذا الأسبوع\n- النوع: مشروع\n- تاريخ الاستحقاق: 2026-10-28 (28 من الشهر الحالي)\n- الملاحظة: خلصت التصميم بس والواجهة لسا مش كاملة\n\n2) مراجعة\n- القسم: هذا الأسبوع\n- تاريخ الاستحقاق: 2026-10-26 (قبل مشروع البرمجة بيومين)\n\nملاحظات\n- الملاحظة النهائية على بطاقة مشروع البرمجة صُححت لتصبح: خلصت التصميم بس والواجهة لسا مش كاملة.\n- هذه التغييرات مقترحة وتصبح نافذة بعد الموافقة عليها."
+              }
+            ],
+            "tasks": [
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  0
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              },
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  1
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              },
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  2
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              }
+            ]
+          }
+        }
+      ],
+      "productionWrites": 0,
+      "persistenceTested": false,
+      "checkedAt": "2026-10-26T09:20:00.535Z"
+    },
+    "firstMeasurement": {
+      "kind": "live-provider-windows-network",
+      "provider": "pollinations",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "status": "passed",
+      "results": [
+        {
+          "id": "greeting",
+          "status": "passed",
+          "totalMs": 4742,
+          "progress": [
+            {
+              "state": "waiting",
+              "ms": 2
+            },
+            {
+              "state": "receiving",
+              "ms": 4612
+            }
+          ],
+          "timings": [
+            {
+              "stage": "conversation",
+              "attempt": 1,
+              "inputChars": 5418,
+              "tools": 1,
+              "totalMs": 4740,
+              "outcome": "ok",
+              "headersMs": 2906,
+              "httpStatus": 200,
+              "firstDeltaMs": 4610
+            }
+          ],
+          "reply": {
+            "text": "مرحبا! أنا بخير، شكرًا لسؤالك 😊\n\nكيف بقدر أساعدك اليوم؟ إذا بدك تتابع بطاقات مشاريعك، أو مواعيد جامعتك (محاضرات، تمارين، مختبرات)، أو أي شي تاني بالمُنظّم — خبرني."
+          }
+        },
+        {
+          "id": "simple-card",
+          "status": "passed",
+          "totalMs": 6709,
+          "progress": [
+            {
+              "state": "waiting",
+              "ms": 0
+            },
+            {
+              "state": "receiving",
+              "ms": 4145
+            },
+            {
+              "state": "waiting",
+              "ms": 4223
+            },
+            {
+              "state": "receiving",
+              "ms": 6699
+            }
+          ],
+          "timings": [
+            {
+              "stage": "conversation",
+              "attempt": 1,
+              "inputChars": 5439,
+              "tools": 1,
+              "totalMs": 4159,
+              "outcome": "ok",
+              "headersMs": 3903,
+              "httpStatus": 200,
+              "firstDeltaMs": 4145
+            },
+            {
+              "stage": "workspace",
+              "attempt": 1,
+              "inputChars": 10788,
+              "tools": 2,
+              "totalMs": 2481,
+              "outcome": "ok",
+              "headersMs": 1756,
+              "httpStatus": 200,
+              "firstDeltaMs": 2475
+            }
+          ],
+          "reply": {
+            "text": "راجع التغييرات المطلوبة.",
+            "actions": [
+              {
+                "target": "projects",
+                "action": "create",
+                "id": "wilo-new-1297c906-cb30-45a0-a71c-d4d7fdf320f2",
+                "scope": "personal",
+                "values": {
+                  "name": "اختبار القياس 2601"
+                }
+              }
+            ],
+            "controls": [],
+            "files": [],
+            "tasks": [
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  0
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "compound-and-pdf",
+          "status": "passed",
+          "totalMs": 7420,
+          "progress": [
+            {
+              "state": "waiting",
+              "ms": 0
+            },
+            {
+              "state": "receiving",
+              "ms": 1759
+            },
+            {
+              "state": "waiting",
+              "ms": 1770
+            },
+            {
+              "state": "receiving",
+              "ms": 7308
+            }
+          ],
+          "timings": [
+            {
+              "stage": "conversation",
+              "attempt": 1,
+              "inputChars": 5641,
+              "tools": 1,
+              "totalMs": 1768,
+              "outcome": "ok",
+              "headersMs": 1375,
+              "httpStatus": 200,
+              "firstDeltaMs": 1759
+            },
+            {
+              "stage": "workspace",
+              "attempt": 1,
+              "inputChars": 16375,
+              "tools": 5,
+              "totalMs": 5649,
+              "outcome": "ok",
+              "headersMs": 3592,
+              "httpStatus": 200,
+              "firstDeltaMs": 5538
+            }
+          ],
+          "reply": {
+            "text": "راجع التغييرات المطلوبة.",
+            "actions": [
+              {
+                "target": "sections",
+                "action": "create",
+                "id": "this_week",
+                "scope": "personal",
+                "values": {
+                  "name": "هذا الأسبوع"
+                }
+              },
+              {
+                "target": "projects",
+                "action": "create",
+                "id": "wilo-new-259249a3-c1c9-46a5-88dd-aaf2b923b8ab",
+                "scope": "personal",
+                "values": {
+                  "name": "مشروع البرمجة",
+                  "resourceType": "project",
+                  "sectionId": "this_week",
+                  "dueDate": "2026-10-28",
+                  "description": "خلصت التصميم بس والواجهة لسا مش كاملة"
+                }
+              },
+              {
+                "target": "projects",
+                "action": "create",
+                "id": "wilo-new-ac5e2a65-c2a8-4fc9-b496-6e01fea1b9be",
+                "scope": "personal",
+                "values": {
+                  "name": "مراجعة",
+                  "sectionId": "this_week",
+                  "dueDate": "2026-10-26"
+                }
+              }
+            ],
+            "controls": [],
+            "files": [
+              {
+                "name": "التغييرات-المقترحة.pdf",
+                "content": "التغييرات المقترحة والمواعيد\n\nالقسم الجديد\n- الاسم: هذا الأسبوع\n\nالبطاقات\n1) مشروع البرمجة\n- القسم: هذا الأسبوع\n- النوع: مشروع\n- تاريخ الاستحقاق: 2026-10-28 (28 من الشهر الحالي)\n- الملاحظة: خلصت التصميم بس والواجهة لسا مش كاملة\n\n2) مراجعة\n- القسم: هذا الأسبوع\n- تاريخ الاستحقاق: 2026-10-26 (قبل مشروع البرمجة بيومين)\n\nملاحظات\n- الملاحظة النهائية على بطاقة مشروع البرمجة صُححت لتصبح: خلصت التصميم بس والواجهة لسا مش كاملة.\n- هذه التغييرات مقترحة وتصبح نافذة بعد الموافقة عليها."
+              }
+            ],
+            "tasks": [
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  0
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              },
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  1
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              },
+              {
+                "title": "راجع التغييرات المطلوبة.",
+                "outcome": "proposed",
+                "actionIndexes": [
+                  2
+                ],
+                "controlIndexes": [],
+                "detail": ""
+              }
+            ]
+          }
+        }
+      ],
+      "productionWrites": 0,
+      "persistenceTested": false,
+      "checkedAt": "2026-10-26T08:54:53.408Z"
+    }
+  },
+  "productionReadOnly": {
+    "checkedAt": "2026-10-26T11:18:28.131336+02:00",
+    "status": "passed",
+    "htmlStatus": 200,
+    "https": "https",
+    "headers": {
+      "nosniff": "nosniff",
+      "csp": "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+      "frameOptions": "DENY",
+      "hsts": "max-age=31556926; includeSubDomains; preload"
+    },
+    "firebaseProject": "where-i-left-off-b5683",
+    "release": "wilo-cloud-v12-experience-20261026",
+    "authenticatedProductionTest": false,
+    "postDeployment": {
+      "verifiedAt": "2026-10-26T09:33:54.1772414+00:00",
+      "version": "wilo-cloud-v13-readiness-20261026",
+      "fingerprint": "0d03544c1cfabad72168a06fd36297506925753beb150faebaf945adddc157c4"
+    }
+  },
+  "publicAuth": {
+    "status": "public-auth-checks-passed",
+    "checks": [
+      {
+        "origin": "https://where-i-left-off.web.app",
+        "status": 200,
+        "reason": "",
+        "projectMatches": true,
+        "missingAuthorizedDomains": []
+      },
+      {
+        "origin": "https://where-i-left-off-b5683.firebaseapp.com",
+        "status": 200,
+        "reason": "",
+        "projectMatches": true,
+        "missingAuthorizedDomains": []
+      }
+    ],
+    "oauthSignInVerified": false,
+    "emailLinkVerified": false
+  },
+  "ciRemoteRun": false,
+  "productionWrites": 0,
+  "groups": [
+    {
+      "name": "الحساب والخصوصية",
+      "checks": [
+        {
+          "label": "تسجيل الدخول والخروج والتحقق من البريد واستعادة كلمة المرور",
+          "status": "passed",
+          "evidence": "3 اختبارات Auth بالمحاكي، واختبارات المتصفح للحسابات."
+        },
+        {
+          "label": "تطابق مشروع Firebase ونطاقات Auth في الموقع المنشور",
+          "status": "passed",
+          "evidence": "فحص عام للقراءة فقط؛ النطاقان أعادا 200 دون نطاق مفقود."
+        },
+        {
+          "label": "عزل البيانات الشخصية والمجموعات ومنع انتحال الإدارة",
+          "status": "passed",
+          "evidence": "675 اختبار قواعد وحفظ، ومنها محاولات مرفوضة مقصودة."
+        },
+        {
+          "label": "منع ظهور تعديلات حساب سابق بعد تبديل الحساب أو الخروج",
+          "status": "passed",
+          "evidence": "اختبارات الحسابات والطابور المحلي والعمل دون اتصال."
+        },
+        {
+          "label": "حماية النصوص والروابط غير الموثوقة وعدم كشف الأسرار في التشخيص",
+          "status": "passed",
+          "evidence": "اختبارات العرض والأذونات وفحص أنماط الاعتمادات."
+        },
+        {
+          "label": "دخول Google الحقيقي ثم ربط Pollinations بعد الخروج والعودة",
+          "status": "manual",
+          "evidence": "المحاكيات لا تثبت موافقة Google/OAuth الحقيقية على جهاز المستخدم."
+        },
+        {
+          "label": "اكتمال حذف حساب تجريبي وبياناته في بيئة نشر مخصصة",
+          "status": "manual",
+          "evidence": "اختبارات القواعد موجودة؛ لم ننفذ حذف حساب إنتاجي."
+        }
+      ]
+    },
+    {
+      "name": "البطاقات والأقسام والمجموعات",
+      "checks": [
+        {
+          "label": "إضافة وتعديل وحذف واستعادة وأرشفة البطاقات والأقسام",
+          "status": "passed",
+          "evidence": "اختبارات المتصفح والحفظ وقواعد Firestore."
+        },
+        {
+          "label": "الملاحظات والقوائم والتقدم ونقطة التوقف والخطوة التالية",
+          "status": "passed",
+          "evidence": "اختبارات الكيانات والحقول والحفظ وإعادة التحميل."
+        },
+        {
+          "label": "المواعيد وعرض الأسبوع والفرز والبحث واللغات الثلاث",
+          "status": "passed",
+          "evidence": "اختبارات التنقل والتخطيط والنصوص الطويلة والهواتف."
+        },
+        {
+          "label": "دعوات المجموعات والأدوار والإسناد والمزامنة بين جلستين",
+          "status": "passed",
+          "evidence": "سيناريو مجموعات فعلي داخل محاكيات Firebase."
+        },
+        {
+          "label": "حفظ التغييرات دون اتصال وبقاؤها بعد إعادة التحميل",
+          "status": "passed",
+          "evidence": "اختبارات CRUD والطابور والمزامنة بعد عودة الاتصال."
+        },
+        {
+          "label": "تعارض جهازين لا يطمس التعديل الأحدث بصمت",
+          "status": "passed",
+          "evidence": "سيناريوهات التعارض والاختيار الصريح والتحقق من المراجعة."
+        }
+      ]
+    },
+    {
+      "name": "الجامعة",
+      "checks": [
+        {
+          "label": "الكورسات والمتطلبات ومنع الحلقات والمهام والمواعيد",
+          "status": "passed",
+          "evidence": "اختبارات حالة الجامعة والاستيراد والقواعد."
+        },
+        {
+          "label": "الجدول الأسبوعي والمحاضرات والتمارين والمختبرات",
+          "status": "passed",
+          "evidence": "استيراد 14 حصة عبر واجهة المساعد ثم الحفظ وإعادة التحميل."
+        },
+        {
+          "label": "مطابقة الأسماء المرقمة ومنع تكرار الحصص المحفوظة",
+          "status": "passed",
+          "evidence": "سيناريوهان للبرنامج الأسبوعي مع تأكيد العدد بعد إعادة الطلب."
+        },
+        {
+          "label": "الاستيراد والتحقق من النسخ الاحتياطية قبل الحفظ",
+          "status": "passed",
+          "evidence": "اختبارات المحلل وحالة الجامعة والتصدير."
+        },
+        {
+          "label": "عرض الهاتف وخريطة الكورسات والتوقيت والأيام",
+          "status": "passed",
+          "evidence": "اختبار الجامعة في المتصفح واختبارات التواريخ والمناطق الزمنية."
+        },
+        {
+          "label": "استعادة نسخة حقيقية ممثلة لحساب قديم في بيئة اختبار",
+          "status": "manual",
+          "evidence": "لم تُنسخ بيانات المستخدمين الإنتاجية أو تُغيّر أثناء الفحص."
+        }
+      ]
+    },
+    {
+      "name": "المساعد",
+      "checks": [
+        {
+          "label": "التحية تبقى محادثة ولا تقرأ الحساب أو تحفظ شيئًا",
+          "status": "passed",
+          "evidence": "اختبارات التوجيه وتجربة حية للتحية."
+        },
+        {
+          "label": "الأوامر دوال جاهزة ومخرجات المودل تُفحص قبل Apply",
+          "status": "passed",
+          "evidence": "اختبارات العقود والحقول والتغطية والحفظ من زر التطبيق."
+        },
+        {
+          "label": "طلب مركّب مع ترابط الأقسام والبطاقات والمواعيد والتصحيح الأخير",
+          "status": "passed",
+          "evidence": "تجربة حية بثلاث حالات واختبارات محاكية للحفظ."
+        },
+        {
+          "label": "عدم إسقاط PDF أو جزء من الطلب المركب بصمت",
+          "status": "passed",
+          "evidence": "تحقق اكتمال المقترح وتصحيح محدود عند النقص."
+        },
+        {
+          "label": "قراءة بيانات الكورسات الكبيرة على دفعات",
+          "status": "passed",
+          "evidence": "اختبارات السياق والصفحات؛ إثبات حي سابق على بيانات 1.5 مليون حرف."
+        },
+        {
+          "label": "الرد المتدرج لا ينفذ أوامر جزئية أو ردًا مقطوعًا",
+          "status": "passed",
+          "evidence": "اختبارات UTF-8 واستدعاءات متداخلة ونهاية مفقودة وإلغاء الطلب."
+        },
+        {
+          "label": "المهلة والإلغاء وإعادة المحاولة محدودة ولا تعيد الحفظ",
+          "status": "passed",
+          "evidence": "25 ثانية من الصمت وحد أقصى 60 ثانية، ولا إعادة توليد تلقائية بعد وصول خرج جزئي."
+        },
+        {
+          "label": "زر فحص الاتصال يقرأ الحساب ويفحص المودل فعلًا",
+          "status": "passed",
+          "evidence": "أزيل إعلان الجاهزية الوهمي؛ لا يظهر النجاح قبل نجاح الفحصين."
+        },
+        {
+          "label": "تشخيص زمني بلا رسائل المستخدم أو المفاتيح أو محتوى الحساب",
+          "status": "passed",
+          "evidence": "التشخيص يسجل المراحل والمدد والحجم والحالة فقط."
+        },
+        {
+          "label": "إصلاح المقترح لا ينتظر مهلة الخادم القديم ولا يرفض لقطة محلية كبيرة",
+          "status": "passed",
+          "evidence": "أزيل تأخير 3.2 ثانية لمسار المفتاح الشخصي، واختبار إصلاح لقطة 200 ألف حرف."
+        },
+        {
+          "label": "سرعة المزوّد وحصته المجانية ليستا تحت سيطرة الموقع",
+          "status": "limitation",
+          "evidence": "تجارب حية محدودة موثقة؛ الطلبات المكررة قد تستفيد من كاش المزوّد."
+        },
+        {
+          "label": "هذه الجولة ليست إعادة تشغيل 618 برومبتًا حيًا على المودل",
+          "status": "limitation",
+          "evidence": "اختبارات المنطق والقواعد تشمل مجموعات كبيرة بحقن ردود؛ الجولة الحية الجديدة ثلاث حالات."
+        },
+        {
+          "label": "البحث في الويب وإيجاد أول فيديو غير متاحين للمساعد",
+          "status": "limitation",
+          "evidence": "السلوك الصحيح طلب الرابط المباشر، وليس اختراع رابط أو الادعاء بالتصفح."
+        }
+      ]
+    },
+    {
+      "name": "التصدير والتصميم وإمكانية الوصول",
+      "checks": [
+        {
+          "label": "PDF فعلي قابل للفتح مع العربية وتقسيم الصفحات",
+          "status": "passed",
+          "evidence": "اختبارات PDF وفحص بصري سابق لملف عربي متعدد الصفحات."
+        },
+        {
+          "label": "امتدادات TXT/Markdown/CSV/JSON/PDF محفوظة وأسماء الملفات آمنة",
+          "status": "passed",
+          "evidence": "اختبارات محلل الرد وبطاقات التنزيل."
+        },
+        {
+          "label": "الهاتف والكمبيوتر وRTL/LTR وعدم تجاوز العرض",
+          "status": "passed",
+          "evidence": "37 سيناريو متصفح، بينها العربية والعبرية والإنجليزية."
+        },
+        {
+          "label": "التنقل بلوحة المفاتيح وإغلاق المساعد وإرجاع التركيز",
+          "status": "passed",
+          "evidence": "اختبارات القوائم والمساعد والاستجابات المتأخرة."
+        },
+        {
+          "label": "الحركة تحترم prefers-reduced-motion ولا تعطل الاستخدام",
+          "status": "passed",
+          "evidence": "فحص متصفح لحالة تقليل الحركة."
+        },
+        {
+          "label": "فحص axe الآلي لصفحة العمل والمساعد على الهاتف والكمبيوتر",
+          "status": "passed",
+          "evidence": "لم تظهر مخالفات في قواعد WCAG 2/2.1 A وAA ضمن الشاشات المفحوصة."
+        },
+        {
+          "label": "PDF الحالي صفحات مرسومة وليس نصًا قابلًا للبحث أو النسخ",
+          "status": "limitation",
+          "evidence": "هذا حد معروف، ولا يُعد التصدير فشلًا صامتًا."
+        },
+        {
+          "label": "تجربة قارئ شاشة حقيقي وSafari وFirefox على الأجهزة المستهدفة",
+          "status": "manual",
+          "evidence": "فحص Chromium ومحاكاة الهاتف لا يثبت هذه البيئات."
+        }
+      ]
+    },
+    {
+      "name": "الإضافة والتنبيهات والتشغيل",
+      "checks": [
+        {
+          "label": "التقاط الرابط والتوقيت وحفظ نسخة واحدة بعد التكرار",
+          "status": "passed",
+          "evidence": "اختبارات الالتقاط والإضافة التلقائية وإعادة التحميل."
+        },
+        {
+          "label": "تفضيلات التنبيهات والاشتراك الصريح وإلغاء الاشتراك",
+          "status": "passed",
+          "evidence": "اختبارات المتصفح وعقود Worker."
+        },
+        {
+          "label": "HTTPS ورؤوس CSP وHSTS وnosniff وحماية الإطارات",
+          "status": "passed",
+          "evidence": "فحص للموقع المنشور، دون كتابة إنتاجية."
+        },
+        {
+          "label": "الفحص البرمجي وقواعد البيانات والخادم والأنواع والبناء",
+          "status": "passed",
+          "evidence": "النتائج العددية أدناه، مع سجل فحص الاعتمادات."
+        },
+        {
+          "label": "تبعيات الإنتاج بلا ثغرات معلنة في نتيجة npm audit الحالية",
+          "status": "passed",
+          "evidence": "نتيجة audit --omit=dev: صفر."
+        },
+        {
+          "label": "فصل النواة عن التخزين والمتصفح وحقن القفل والاتصال",
+          "status": "passed",
+          "evidence": "فحص AST لأربع نقاط دخول و14 وحدة مترابطة."
+        },
+        {
+          "label": "اعتماد الإرشادات في الجذر وربطها بتعليمات المستودع",
+          "status": "passed",
+          "evidence": "PROJECT_ENGINEERING_GUIDELINES.md وAGENTS.md وقرار معماري."
+        },
+        {
+          "label": "إعدادات نشر متوافقة مع مفاتيح كل مستخدم دون Gemini المشترك",
+          "status": "passed",
+          "evidence": "تحديثات ملفات CI مفحوصة محليًا؛ لا تغيير لخادم push المنشور."
+        },
+        {
+          "label": "بقيت خمس ملاحظات متوسطة في أدوات التطوير التابعة لـFirebase CLI",
+          "status": "limitation",
+          "evidence": "أزيلت الملاحظات العالية بإصلاحات متوافقة. التراجع القسري لإصدار رئيسي أقدم لم يُنفذ."
+        },
+        {
+          "label": "تثبيت الإضافة من متجر Chrome واختبار الصلاحيات في ملف مستخدم حقيقي",
+          "status": "manual",
+          "evidence": "اختبارات الموقع والالتقاط لا تقوم مقام تثبيت المتجر."
+        },
+        {
+          "label": "تثبيت PWA والمشاركة وتنبيه يصل فعليًا لهاتف Android/iOS",
+          "status": "manual",
+          "evidence": "اختبارات التفضيلات والعقود لا تثبت تسليم إشعار لجهاز فعلي."
+        },
+        {
+          "label": "فحص App Check والكتابة من حساب إنتاجي عادي على النسخة النهائية",
+          "status": "manual",
+          "evidence": "فُحصت القواعد بالمحاكيات والتهيئة العامة؛ لم تُستخدم جلسة حساب إنتاجي."
+        },
+        {
+          "label": "تجربة استعادة تشغيلية وخطة مراقبة استخدام المزوّد والحصص",
+          "status": "manual",
+          "evidence": "لم تُنفذ اختبارات حمل طويل أو استعادة بيانات إنتاجية أو إرسال إشعار لمستخدمين."
+        },
+        {
+          "label": "تشغيل إعدادات GitHub الجديدة بعد رفعها",
+          "status": "manual",
+          "evidence": "الملفات اختُبرت محليًا؛ لم ننشئ commit أو نشغل workflow بعيدًا في هذه الجولة."
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/tmp/wilo-readiness-unit-final.log",
+      "modifiedAt": "2026-10-26T09:25:09.057Z"
+    },
+    {
+      "path": "/tmp/wilo-readiness-security-final.log",
+      "modifiedAt": "2026-10-26T09:17:30.885Z"
+    },
+    {
+      "path": "/tmp/wilo-readiness-worker-final.log",
+      "modifiedAt": "2026-10-26T09:25:11.361Z"
+    },
+    {
+      "path": "/tmp/wilo-readiness-browser-final.log",
+      "modifiedAt": "2026-10-26T09:20:24.613Z"
+    },
+    {
+      "path": "/tmp/wilo-readiness-auth.log",
+      "modifiedAt": "2026-10-26T09:24:30.897Z"
+    }
+  ]
+}

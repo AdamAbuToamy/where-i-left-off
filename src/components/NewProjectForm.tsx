@@ -59,7 +59,7 @@ export default function NewProjectForm({
 
     if (!name.trim()) return
 
-    if (!await onAdd(name.trim(), nextStep.trim(), { projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, links:links.map(url=>url.trim()).filter(Boolean), ...metadata })) return
+    if (!await onAdd(name.trim(), nextStep.trim(), { ...metadata, projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, links:links.map(url=>url.trim()).filter(Boolean) })) return
     setName('')
     setNextStep('')
     setProjectUrl('')

@@ -1,9 +1,12 @@
+import {readConversationChoice} from './assistantConversation.mjs';
+import {WORKSPACE_REPLY_FORMAT} from './assistantContract.mjs';
 import {geminiTools,geminiFailure} from './assistantGemini.mjs';
 import {workspaceToolStep} from './assistantTools.mjs';
 import {groqRateLimit,minuteRetry} from './groqLimits.mjs';
 export const CLOUDFLARE_MODEL='@cf/openai/gpt-oss-120b';
 export const GROQ_MODEL='openai/gpt-oss-120b';
 export const GEMINI_MODEL='gemini-3.5-flash-lite';
+export const ZAI_MODEL='glm-4.7-flash';
 
 class CloudflareInference {
  constructor(binding){this.binding=binding;this.model=CLOUDFLARE_MODEL;this.name='cloudflare';}
@@ -14,8 +17,20 @@ class CompatibleInference {
  constructor(key,signal,name,model,endpoint,onSyntheticDiagnostic){Object.assign(this,{key,signal,name,model,endpoint,onSyntheticDiagnostic,workspaceTools:true});}
  async run(input,{compactOutput=false,signal:requestSignal}={}){
   const body={model:this.model,messages:input.messages,temperature:input.temperature,max_completion_tokens:compactOutput?Math.min(input.max_tokens,3072):input.max_tokens,reasoning_effort:'low'};
-  if(this.name==='gemini'){body.max_tokens=body.max_completion_tokens;delete body.max_completion_tokens;delete body.reasoning_effort;}
+  if(this.name==='zai')body.thinking={type:'disabled'};
+  if(this.name==='gemini'||this.name==='zai'){body.max_tokens=body.max_completion_tokens;delete body.max_completion_tokens;delete body.reasoning_effort;}
   if(input.tools){body.tools=this.name==='gemini'?geminiTools(input.tools):input.tools;body.tool_choice=input.tool_choice;if(this.name==='groq')body.parallel_tool_calls=false;}
+  if(this.name==='zai'&&input.tools){
+   // GLM receives the actual typed domain branches, not an untyped values bag.
+   body.tools=body.tools.map(tool=>{
+    if(tool.function.name!=='propose_workspace_actions')return tool;
+    const parameters=structuredClone(WORKSPACE_REPLY_FORMAT.json_schema);
+    delete parameters.properties.tasks;parameters.required=parameters.required.filter(key=>key!=='tasks');
+    const scopes=tool.function.parameters.properties.actions.items.properties.scope.enum;
+    for(const branch of parameters.properties.actions.items.anyOf)branch.properties.scope={type:'string',enum:scopes};
+    return {...tool,function:{...tool.function,parameters}};
+   });
+  }
   if(input.response_format)body.response_format=input.response_format.type==='json_schema'
    ?{type:'json_object'}
    :input.response_format;
@@ -30,6 +45,7 @@ class CompatibleInference {
    let failure;const raw=await response.text().catch(()=>'');
    try{const payload=JSON.parse(raw);failure=payload?.error??payload?.[0]?.error??payload;if(typeof failure==='string')failure={message:failure};}catch{/* Preserve the HTTP status for a non-JSON response. */}
    if(typeof this.onSyntheticDiagnostic==='function')this.onSyntheticDiagnostic({status:response.status,body:raw});
+   if(this.name==='zai'&&attempt===0&&response.status===429&&String(failure?.code)==='1305'){await waitForRetry(3,signal);continue;}
    if(attempt===0&&[502,503,504].includes(response.status)){await waitForRetry(0.75,signal);continue;}
    const rate=this.name==='groq'&&[429,413].includes(response.status)?groqRateLimit(failure?.message,response.headers.get('retry-after')):undefined;
    if(response.status===429&&attempt===0&&rate&&minuteRetry(rate)){await waitForRetry(rate.retryAfterSeconds,signal);continue;}
@@ -39,6 +55,7 @@ class CompatibleInference {
   }
   const result=await response.json(),choice=result?.choices?.[0];
   if(choice?.finish_reason==='length')throw new Error('ai-response-too-large');
+  if(input.result_protocol==='conversation')return readConversationChoice(choice);
   if(input.tools){try{return workspaceToolStep(choice);}catch(error){
    if(typeof this.onSyntheticDiagnostic==='function'){const calls=Array.isArray(choice?.message?.tool_calls)?choice.message.tool_calls:[];this.onSyntheticDiagnostic({status:200,body:JSON.stringify({parseError:error.message,finishReason:choice?.finish_reason,callCount:calls.length,calls:calls.map(c=>{let args;try{args=JSON.parse(c?.function?.arguments);}catch{args='unparseable';}return {name:c?.function?.name,args};})})});}
    throw error;
@@ -52,6 +69,7 @@ export function assistantProvider(env,{signal,onSyntheticDiagnostic}={}){
  const name=env.ASSISTANT_PROVIDER||'cloudflare';
  if(name==='groq'&&typeof env.GROQ_API_KEY==='string'&&env.GROQ_API_KEY.trim())return new CompatibleInference(env.GROQ_API_KEY.trim(),signal,'groq',GROQ_MODEL,'https://api.groq.com/openai/v1/chat/completions',onSyntheticDiagnostic);
  if(name==='gemini'&&typeof env.GEMINI_API_KEY==='string'&&env.GEMINI_API_KEY.trim())return new CompatibleInference(env.GEMINI_API_KEY.trim(),signal,'gemini',GEMINI_MODEL,'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',onSyntheticDiagnostic);
+ if(name==='zai'&&typeof env.ZAI_API_KEY==='string'&&env.ZAI_API_KEY.trim())return new CompatibleInference(env.ZAI_API_KEY.trim(),signal,'zai',['glm-4.5-flash','glm-4.7-flash'].includes(env.ZAI_MODEL)?env.ZAI_MODEL:ZAI_MODEL,'https://api.z.ai/api/paas/v4/chat/completions',onSyntheticDiagnostic);
  if(name==='cloudflare'&&env.AI)return new CloudflareInference(env.AI);
  throw new Error('ai-not-configured');
 }

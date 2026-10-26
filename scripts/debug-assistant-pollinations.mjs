@@ -1,0 +1,7 @@
+import {readFileSync,writeFileSync} from 'node:fs';import {createServer} from 'vite';import {acceptanceCases,acceptanceContext} from '../tests/fixtures/assistant/corpus.mjs';
+const key=JSON.parse(readFileSync('.wrangler/polli-native-suite.private.json','utf8')).key;globalThis.sessionStorage={getItem:()=>key};const fetchOriginal=globalThis.fetch;let trace=[];
+globalThis.fetch=async(...args)=>{const response=await fetchOriginal(...args);if(String(args[0]).includes('gen.pollinations.ai')){const body=await response.clone().json().catch(()=>({}));trace.push({status:response.status,body:JSON.parse(JSON.stringify(body).replaceAll(key,'[redacted]'))});}return response;};
+const vite=await createServer({configFile:false,server:{middlewareMode:true,hmr:false,ws:false},appType:'custom',logLevel:'error'}),results=[];
+try{const {PollinationsAssistant}=await vite.ssrLoadModule('/src/assistant/pollinationsClient.ts');const client=new PollinationsAssistant('synthetic-debug');for(const id of process.argv.slice(2)){
+ trace=[];const c=acceptanceCases.find(c=>c.id===id);try{const route=await client.conversation({...c,history:[]});if(!route.needsWorkspace)throw new Error('route-no-workspace:'+route.text);const result=await client.workspace({...c,context:JSON.stringify(acceptanceContext(id)),history:[]});results.push({id,result,trace});}catch(e){results.push({id,error:e.message,trace});}console.log(JSON.stringify(results.at(-1)));}
+}finally{writeFileSync('.wrangler/polli-debug.private.json',JSON.stringify(results,null,2));await vite.close();}
