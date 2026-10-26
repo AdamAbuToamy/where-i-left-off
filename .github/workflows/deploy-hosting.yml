@@ -108,7 +108,9 @@ jobs:
           projectId: where-i-left-off-b5683
           channelId: live
           target: production
-          firebaseToolsVersion: 15.34.1
+          # Hosting-only compatibility pin: 15.34 requires additional Service Usage IAM access.
+          # Keep the existing least-privilege Hosting account; development CLI stays current.
+          firebaseToolsVersion: 15.33.0
       - name: Remove temporary public configuration
         if: always()
         run: rm -f .env.production.local
