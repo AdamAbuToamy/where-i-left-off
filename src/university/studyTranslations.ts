@@ -1,4 +1,12 @@
 export const studyTranslations:Record<string,[string,string]> = {
+  "اختر كورسًا لعرض ملاحظاته وخطة دراسته.": ["Choose a course to view its notes and study plan.", "בחרו קורס להצגת ההערות ותוכנית הלימוד שלו."],
+  "السابق": ["Previous", "הקודם"],
+  "التالي": ["Next", "הבא"],
+  "بحث عن كورس": ["Find a course", "חיפוש קורס"],
+  "الكورس المفتوح": ["Current course", "הקורס הפתוח"],
+  "لا توجد كورسات مطابقة": ["No matching courses", "לא נמצאו קורסים"],
+  "صفحات الكورسات": ["Course pages", "עמודי קורסים"],
+  "إغلاق الرسالة": ["Dismiss message", "סגירת ההודעה"],
   "خطة الدراسة": [
     "Study plan",
     "תוכנית לימוד"

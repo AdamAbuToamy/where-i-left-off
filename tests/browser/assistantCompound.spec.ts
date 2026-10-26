@@ -34,10 +34,10 @@ test('compound Arabic requests use the cloud, repair malformed proposals, save r
  const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click();
  await page.goto('/#/university');await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();const chat=page.locator('#wilo-assistant');
  async function ask(message:string){await chat.getByLabel('رسالتك',{exact:true}).fill(message);await chat.getByRole('button',{name:'إرسال',exact:true}).click();await expect(chat.getByRole('button',{name:'تطبيق التغييرات',exact:true})).toBeVisible({timeout:15000});await expect(chat.getByRole('alert')).toHaveCount(0);}
- await ask(courseMessage);await expect(chat.locator('.assistant-proposal details')).toHaveCount(2);await expect(page.locator('.study-course-name')).toHaveCount(0);
+ await ask(courseMessage);await expect(chat.locator('.assistant-proposal details')).toHaveCount(2);await expect(page.locator('.study-course-choice strong')).toHaveCount(0);
  await chat.getByRole('button',{name:'تطبيق التغييرات',exact:true}).click();await expect(chat.locator('.assistant-saved summary')).toHaveText('عرض التغييرات (2)');await expect(page.locator('[data-study-course].assistant-change-highlight')).toHaveCount(1);
  await page.getByRole('button',{name:'إغلاق المساعد',exact:true}).click();await page.reload();
- await expect(page.locator('.study-course-name')).toHaveText('محمد');await page.getByRole('button',{name:'الجدول الأسبوعي',exact:true}).click();
+ await expect(page.locator('.study-course-choice strong')).toHaveText('محمد');await page.getByRole('button',{name:'الجدول الأسبوعي',exact:true}).click();
  await expect(page.locator('.study-lesson')).toHaveCount(1);await expect(page.locator('.study-lesson')).toContainText('00:00');await expect(page.locator('.study-lesson')).toContainText('01:00');
  await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();await ask(cardMessage);await expect(chat.locator('.assistant-proposal details')).toHaveCount(2);
  await chat.getByRole('button',{name:'تطبيق التغييرات',exact:true}).click();await expect(chat).toContainText('تم تطبيق التغييرات في الموقع.');await expect(chat.locator('.assistant-message-author')).toHaveCount(0);await expect(page.locator('.week-item.assistant-change-highlight')).toHaveCount(1);await expect(page).toHaveURL(new RegExp('weekOf='+date));

@@ -1,3 +1,4 @@
+import LinkedText from '../components/LinkedText';
 import StudyLocalized from "./StudyLocale";
 import type { Course } from './model';
 export default function CourseContent({ course, busy, onToggleTopic }: {
@@ -17,8 +18,8 @@ export default function CourseContent({ course, busy, onToggleTopic }: {
   {source && <details className="study-saved-materials"><summary>مواد محفوظة سابقًا</summary>
    {source.shortName && <p dir="auto">{source.shortName}</p>}
    {!!source.teachers.length && <p dir="auto">المحاضرون: {source.teachers.join(' · ')}</p>}
-   {source.description && <p dir="auto">{source.description}</p>}
-   {source.sections.map(s => <details key={s.id}><summary dir="auto">{s.title}</summary>{s.description && <p dir="auto">{s.description}</p>}<ul>{s.activities.map(a => <li key={a.id}>{a.url ? <a href={a.url} target="_blank" rel="noopener" dir="auto">{a.title}</a> : <span dir="auto">{a.title}</span>}{a.description && <p dir="auto">{a.description}</p>}</li>)}</ul></details>)}
+   {source.description && <p dir="auto"><LinkedText text={source.description}/></p>}
+   {source.sections.map(s => <details key={s.id}><summary dir="auto">{s.title}</summary>{s.description && <p dir="auto"><LinkedText text={s.description}/></p>}<ul>{s.activities.map(a => <li key={a.id}>{a.url ? <a href={a.url} target="_blank" rel="noopener" dir="auto">{a.title}</a> : <span dir="auto">{a.title}</span>}{a.description && <p dir="auto"><LinkedText text={a.description}/></p>}</li>)}</ul></details>)}
   </details>}
  </div>}</StudyLocalized>;
 }

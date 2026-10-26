@@ -1,3 +1,5 @@
+import LinkedText from '../components/LinkedText'
+import CourseNavigator from './CourseNavigator'
 import { studyView } from '../lib/navigation'
 import { createClientId } from '../lib/clientId'
 import { translateStudyText, useStudyLanguage } from "./studyLocaleContext";
@@ -13,7 +15,7 @@ import { parseStudyCapture, acceptStudyCapture, captureMatches } from "./studyCa
 import PlanImport from "./PlanImport";
 import { lessonConflicts, mergePlan, parsePlanBackup, planBackup } from "./planImport";
 import type { PlanPreview } from "./planImport";
-import CourseContent from "./CourseContent";
+import CourseDetails from "./CourseDetails";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { User } from "firebase/auth";
@@ -96,6 +98,11 @@ function Workspace({ user }: {
         }
     });
     const [state, setState] = useState(initial.state), [error, setError] = useState(initial.error), [message, setMessage] = useState(""), [busy, setBusy] = useState(false);
+    useEffect(() => {
+        if (!message) return;
+        const timer = window.setTimeout(() => setMessage(""), 10000);
+        return () => window.clearTimeout(timer);
+    }, [message]);
     const [scheduleEdit,setScheduleEdit]=useState<UniversityState|null>(null);
     const [undo,setUndo] = useState<DeletedStudyItem|null>(null);
     const [tab, setTab] = useState<"overview" | "schedule" | "map">(()=>studyView().tab), [filter, setFilter] = useState(()=>studyView().courseId), [preview, setPreview] = useState<PlanPreview | null>(null), [batchOpen, setBatchOpen] = useState(false);
@@ -162,6 +169,7 @@ function Workspace({ user }: {
             setBusy(false);
         }
     }
+    const selectedCourse = state.courses.find(c => c.id === filter) || (state.courses.length === 1 ? state.courses[0] : undefined);
     const courseName = (id: string) => state.courses.find((c) => c.id === id)?.name || "بدون كورس";
     const courseColor = (id: string) => colors[Math.max(0, state.courses.findIndex((c) => c.id === id)) % colors.length];
     const visible = state.tasks
@@ -294,6 +302,7 @@ function Workspace({ user }: {
             <strong className="study-next" dir="auto">
               {next?next.title:<span data-study-ui="true">لا توجد مواعيد قادمة</span>}
             </strong>
+            {next && <small className="study-next-course" dir="auto">{courseName(next.courseId)}</small>}
             <small>
               {next
             ? summaryDate(next.due)
@@ -304,9 +313,10 @@ function Workspace({ user }: {
         {error && (<p className="study-error" role="alert">
             {error}
           </p>)}
-        {message && (<p className="study-success" role="status">
-            {message}
-          </p>)}
+        {message && (<div className="study-success study-notice">
+            <span role="status">{message}</span>
+            <button type="button" aria-label="إغلاق الرسالة" onClick={() => setMessage("")}>×</button>
+          </div>)}
         <nav className="study-tabs" aria-label="عرض مساحة الجامعة">
           {([
             ["overview", "الكورسات والمهام"],
@@ -337,42 +347,13 @@ function Workspace({ user }: {
           </div>
         </div>
         {tab === "overview" && (<div className="study-layout">
-            <aside>
-              <h3>كورساتي</h3>
-              {!state.courses.length && (<div className="study-empty">
-                  <strong>كورساتك تبدأ هنا</strong>
-                  <p>
-                    أضف كورسًا، أو الصق أسماء كورسات الفصل دفعة واحدة.
-                  </p>
-                  <button className="secondary-button" onClick={() => setBatchOpen(true)}>لصق قائمة كورسات</button>
-                </div>)}
-              {state.courses.map((c) => (<article data-study-course={c.id} className="study-course" key={c.id} style={{ borderInlineStartColor: courseColor(c.id) }}>
-                  <button className="study-course-name" dir="auto" onClick={() => setFilter(filter === c.id ? "" : c.id)} aria-pressed={filter === c.id}>
-                    {c.name}
-                  </button>
-                  <small>
-                    {state.tasks.filter((t) => t.courseId === c.id && !t.done)
-                    .length}{" "}
-                    مهام مفتوحة
-                  </small>
-                  {c.notes && <p dir="auto">{c.notes}</p>}
-                  <div>
-                    <button className="study-link-button" onClick={() => setEditing({ kind: "course", value: c })}>
-                      تعديل الكورس
-                    </button>
-                    <button className="study-link-button" onClick={()=>setEditing({kind:"course",value:courseTemplate(c,state.courses.length,translateStudyText('— فصل جديد',language))})}>استخدام كقالب</button>
-                    {c.url && (<a href={c.url} target="_blank" rel="noopener">
-                        فتح الكورس
-                      </a>)}
-                  </div>
-                  <CourseContent course={c} busy={busy} onToggleTopic={id => void run(() => commit({
-                    ...latest.current,
-                    courses: latest.current.courses.map(course => course.id === c.id ? { ...course, topics: (course.topics || []).map(topic => topic.id === id ? { ...topic, done: !topic.done } : topic) } : course)
-                }))}/>
-
-                </article>))}
-            </aside>
+            <CourseNavigator key={filter} courses={state.courses} tasks={state.tasks} selectedId={selectedCourse?.id || ""} filter={filter} onSelect={setFilter} courseColor={courseColor} onAdd={() => setBatchOpen(true)}/>
             <section className="study-task-list">
+              {selectedCourse ? <CourseDetails course={selectedCourse} color={courseColor(selectedCourse.id)} pendingCount={state.tasks.filter(t => t.courseId === selectedCourse.id && !t.done).length} busy={busy}
+                onEdit={() => setEditing({kind:"course", value:selectedCourse})}
+                onTemplate={() => setEditing({kind:"course", value:courseTemplate(selectedCourse,state.courses.length,translateStudyText('— فصل جديد',language))})}
+                onToggleTopic={id => void run(() => commit({...latest.current, courses:latest.current.courses.map(course => course.id === selectedCourse.id ? {...course, topics:(course.topics || []).map(topic => topic.id === id ? {...topic, done:!topic.done} : topic)} : course)}))}/>
+                : !!state.courses.length && <p className="study-hint">اختر كورسًا لعرض ملاحظاته وخطة دراسته.</p>}
               <h3>الواجبات والمواعيد</h3>
               {!visible.length && (<div className="study-empty">
                   <h4>لا توجد مهام للعرض</h4>
@@ -403,7 +384,7 @@ function Workspace({ user }: {
                       <p dir="auto">{t.sourceDescription}</p>
                     </details>)}
                   {t.notes && (<p className="study-task-notes" dir="auto">
-                      {t.notes}
+                      <LinkedText text={t.notes}/>
                     </p>)}
                   <footer>
                     <button disabled={busy} onClick={() => setEditing({ kind: "task", value: t })}>
@@ -582,6 +563,7 @@ function Workspace({ user }: {
                             y: Math.min(10000, Math.max(0, Number(f.get("y")))),
                         };
                         validateCourse(course, state.courses);
+                        setFilter(course.id);
                         commit({
                             ...latest.current,
                             courses: [
