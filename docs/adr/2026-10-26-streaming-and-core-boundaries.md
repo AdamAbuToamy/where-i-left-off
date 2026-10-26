@@ -27,3 +27,6 @@ Free-provider latency/quota remains external. The three live scenarios are trans
 
 ## Tooling assessment
 Production dependency audit found no advisories. Safe dependency fixes removed high-severity tooling findings. The current Firebase CLI still brings five moderate development-only advisory entries through telemetry/Google client dependencies. Avoid npm audit fix --force: its proposed downgrade crosses a CLI major version. Keep these findings in the readiness report and recheck upstream; they are not shipped in the browser bundle.
+
+## Hosting CLI compatibility follow-up
+The first automatic deployment after merge returned HTTP 403 for serviceusage.services.get. Firebase CLI 15.34 introduced an API-enablement lookup before Hosting deployment; the existing Hosting service account lacks that separate permission. Pin only the Hosting action to 15.33.0, whose Hosting preparation does not add that lookup. Keep the development CLI at 15.34.1, retain the same application build/security checks, and do not expand IAM roles. Revisit the pin after upstream compatibility or an explicitly reviewed permission change.
