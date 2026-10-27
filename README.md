@@ -25,6 +25,10 @@ Promotional illustration; not a screenshot of the live interface.
 
 <!-- recall-media:end -->
 
+## Administration design experiment
+
+Verified administrators can open **[WILO Studio](https://where-i-left-off.web.app/#/admin/studio)** from Administration. The redesigned workspace starts with demo data and supports an explicit read-only copy of the account. All experiment edits, settings, chats, undo/redo and checkpoints stay in this browser; the normal account interface and records remain unchanged. Preview reminders/groups do not send notifications or invitations. See the [dated readiness report](docs/readiness/2026-10-27-admin-studio.md) and [isolation decision](docs/adr/2026-10-27-admin-studio.md).
+
 ## Features
 
 | Area | What you can do |

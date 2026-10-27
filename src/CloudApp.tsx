@@ -1,5 +1,6 @@
 import { StudyLocaleProvider } from "./university/StudyLocale";
 import { lazy, Suspense } from 'react';
+const AdminStudio = lazy(()=>import('./studio/StudioApp'));
 const AssistantSandbox = /* @__PURE__ */ lazy(()=>import('./assistant/AssistantWidget'));
 import CloudPushSync from './components/CloudPushSync'
 import PushLifecycle from './components/PushLifecycle'
@@ -66,6 +67,9 @@ export default function App() {
     if (!auth) return
     return onAuthStateChanged(auth, current => { setUser(current); setLoading(false); if (current) { void flushLogs(); if (new URLSearchParams(location.search).has('groupInvite')) navigate('groups') } }, e => { setAuthError(e); setLoading(false); logEvent('auth.subscription', e) })
   }, [])
+  if (page === 'admin' && location.hash.split('?')[0] === '#/admin/studio' && user && isAdmin(user.email, user.emailVerified)) {
+    return <ErrorBoundary embedded><Suspense fallback={<p role="status">{c.loading}</p>}><AdminStudio key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>
+  }
   return <StudyLocaleProvider value={language}><IdleSleep key={user?.uid || 'signed-out'} uid={user?.uid} user={user || undefined} language={language}><main className={`workspace language-${language}`}>
     <PushLifecycle user={user} />
     <header className="page-header"><div className="heading-copy"><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', async () => { try { await preparePushSignOut() } catch { /* Local delivery gate is already cleared. */ } await signOut(auth!) }).catch(() => {})}>{c.logout}</button>}</div></header>
