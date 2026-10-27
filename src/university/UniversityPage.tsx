@@ -1,3 +1,10 @@
+import {lazy,Suspense} from 'react';
+import {FlaskConical,GitBranch,GraduationCap,CalendarDays,ChevronDown,ArrowRight} from 'lucide-react';
+import {isAdmin} from '../lib/admin';
+import {trialCourseColor} from './trialSelectors';
+import './university-trial.css';
+const UniversityTrial=lazy(()=>import('./UniversityTrial'));
+const UniversityTrialSchedule=lazy(()=>import('./UniversityTrialSchedule'));
 import LinkedText from '../components/LinkedText'
 import CourseNavigator from './CourseNavigator'
 import { studyView } from '../lib/navigation'
@@ -75,8 +82,15 @@ function Modal({ title, children, close, }: {
       {children}
     </dialog>)}</StudyLocalized>;
 }
-function Workspace({ user }: {
+function setTrialLocation(nextTab: "overview"|"schedule"|"map", courseId: string) {
+  const params=new URLSearchParams(location.hash.split('?')[1]);
+  params.set('preview','1');params.set('tab',nextTab);
+  if(courseId)params.set('courseId',courseId);else params.delete('courseId');
+  location.hash='/university?'+params.toString();
+}
+function Workspace({ user, experimental }: {
     user: User;
+    experimental: boolean;
 }) {
     const language=useStudyLanguage();
     const [capture, setCapture] = useState(() => parseStudyCapture(location.hash));
@@ -171,12 +185,12 @@ function Workspace({ user }: {
     }
     const selectedCourse = state.courses.find(c => c.id === filter) || (state.courses.length === 1 ? state.courses[0] : undefined);
     const courseName = (id: string) => state.courses.find((c) => c.id === id)?.name || "بدون كورس";
-    const courseColor = (id: string) => colors[Math.max(0, state.courses.findIndex((c) => c.id === id)) % colors.length];
+    const courseColor = (id: string) => experimental ? trialCourseColor(id) : colors[Math.max(0, state.courses.findIndex((c) => c.id === id)) % colors.length];
     const visible = state.tasks
         .filter((t) => !filter || t.courseId === filter)
         .sort((a, b) => Number(a.done) - Number(b.done) ||
         (Date.parse(a.due) || Infinity) - (Date.parse(b.due) || Infinity));
-    const pending = state.tasks.filter((t) => !t.done);
+    const pending = state.tasks.filter((t) => !t.done && (!experimental || !filter || t.courseId === filter));
     const next = pending
         .filter((t) => t.due && Date.parse(t.due) > now)
         .sort((a, b) => Date.parse(a.due) - Date.parse(b.due))[0];
@@ -258,112 +272,10 @@ function Workspace({ user }: {
             setMessage("تمت إضافة الخطة مع الاحتفاظ ببياناتك السابقة. اختر تذكير الهاتف لكل مهمة تريدها.");
         });
     }
-    return <StudyLocalized>{(<section className="study-page" dir="rtl" aria-label="صفحة الجامعة">
-      <fieldset className="study-controls" disabled={busy}>
-        <header className="study-hero">
-          <div>
-            <span className="study-eyebrow">مساحتي الدراسية</span>
-            <h2>خطة الفصل</h2>
-            <p>من أول محاضرة إلى آخر امتحان؛ خطتك بين يديك.</p>
-          </div>
-          <div className="study-hero-actions">
-            <button className="primary-button" onClick={() => setBatchOpen(true)}>إضافة دفعة</button>
-            <label className="study-upload secondary-button">
-              استعادة نسخة احتياطية
-              <input type="file" accept=".json,application/json" disabled={busy} onChange={e => {
-            const file = e.target.files?.[0];
-            if (file)
-                void run(async () => {
-                    if (file.size > 4000000)
-                        throw new Error("حجم الملف أكبر من المسموح");
-                    setPreview(parsePlanBackup(JSON.parse(await file.text())));
-                });
-            e.target.value = "";
-        }}/>
-            </label>
-          </div>
-        </header>
-        <div className="study-storage" role="status">
-          {cloud.status.error || (!cloud.status.ready ? "خطتك محفوظة محليًا؛ جارٍ الاتصال بالمزامنة…" : cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : "تمت المزامنة مع حسابك · متاحة على أجهزتك")}
-          {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
-        </div>
-        {cloud.status.conflicts.map(key=><section className="study-sync-conflict" key={key}><p>عُدّل السجل نفسه على جهاز آخر. اختر النسخة التي تريد الاحتفاظ بها؛ لم نستبدل تعديلك تلقائيًا.</p><strong dir="auto">{key.startsWith('courses_')?state.courses.find(c=>c.id===key.slice(8))?.name:key.startsWith('tasks_')?state.tasks.find(t=>t.id===key.slice(6))?.title:state.lessons.find(l=>l.id===key.slice(8))?.room}</strong><button onClick={()=>cloud.resolve(key,'local')}>الاحتفاظ بتعديلي</button><button onClick={()=>cloud.resolve(key,'cloud')}>استخدام نسخة الحساب</button></section>)}
-        <div className="study-stats">
-          <article>
-            <span>كورسات الفصل</span>
-            <strong>{state.courses.length.toString().padStart(2, "0")}</strong>
-          </article>
-          <article>
-            <span>مهام مفتوحة</span>
-            <strong>{pending.length.toString().padStart(2, "0")}</strong>
-          </article>
-          <article>
-            <span>الموعد القادم</span>
-            <strong className="study-next" dir="auto">
-              {next?next.title:<span data-study-ui="true">لا توجد مواعيد قادمة</span>}
-            </strong>
-            {next && <small className="study-next-course" dir="auto">{courseName(next.courseId)}</small>}
-            <small>
-              {next
-            ? summaryDate(next.due)
-            : "أضف موعد تسليم أو امتحان"}
-            </small>
-          </article>
-        </div>
-        {error && (<p className="study-error" role="alert">
-            {error}
-          </p>)}
-        {message && (<div className="study-success study-notice">
-            <span role="status">{message}</span>
-            <button type="button" aria-label="إغلاق الرسالة" onClick={() => setMessage("")}>×</button>
-          </div>)}
-        <nav className="study-tabs" aria-label="عرض مساحة الجامعة">
-          {([
-            ["overview", "الكورسات والمهام"],
-            ["schedule", "الجدول الأسبوعي"],
-            ["map", "خريطة الكورسات"],
-        ] as const).map(([id, title]) => (<button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>
-              {title}
-            </button>))}
-        </nav>
-        <div className="study-toolbar">
-          <label>
-            الكورس
-            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value="">كل الكورسات</option>
-              {state.courses.map((c) => (<option key={c.id} value={c.id}>
-                  {c.name}
-                </option>))}
-            </select>
-          </label>
-          <div>
-            {tab==='schedule'&&<button className="secondary-button" disabled={!state.courses.length} onClick={()=>setScheduleEdit(latest.current)}>بناء جدول الأسبوع</button>}
-            <button className="secondary-button" onClick={newCourse}>
-              إضافة كورس
-            </button>
-            <button className="primary-button" onClick={tab === "schedule" ? newLesson : newTask}>
-              {tab === "schedule" ? "إضافة محاضرة" : "إضافة مهمة"}
-            </button>
-          </div>
-        </div>
-        {tab === "overview" && (<div className="study-layout">
-            <CourseNavigator key={filter} courses={state.courses} tasks={state.tasks} selectedId={selectedCourse?.id || ""} filter={filter} onSelect={setFilter} courseColor={courseColor} onAdd={() => setBatchOpen(true)}/>
-            <section className="study-task-list">
-              {selectedCourse ? <CourseDetails course={selectedCourse} color={courseColor(selectedCourse.id)} pendingCount={state.tasks.filter(t => t.courseId === selectedCourse.id && !t.done).length} busy={busy}
-                onEdit={() => setEditing({kind:"course", value:selectedCourse})}
-                onTemplate={() => setEditing({kind:"course", value:courseTemplate(selectedCourse,state.courses.length,translateStudyText('— فصل جديد',language))})}
-                onToggleTopic={id => void run(() => commit({...latest.current, courses:latest.current.courses.map(course => course.id === selectedCourse.id ? {...course, topics:(course.topics || []).map(topic => topic.id === id ? {...topic, done:!topic.done} : topic)} : course)}))}/>
-                : !!state.courses.length && <p className="study-hint">اختر كورسًا لعرض ملاحظاته وخطة دراسته.</p>}
-              <h3>الواجبات والمواعيد</h3>
-              {!visible.length && (<div className="study-empty">
-                  <h4>لا توجد مهام للعرض</h4>
-                  <p>
-                    أضف وظيفة أو امتحانًا وحدد موعده، ثم اختر تذكير الهاتف إذا أردت.
-                  </p>
-                  <button className="primary-button" disabled={!state.courses.length} onClick={newTask}>إضافة أول مهمة</button>
-                  {!state.courses.length && <small>أضف كورسًا أولًا لربط المهمة به.</small>}
-                </div>)}
-              {visible.map((t) => (<article data-study-task={t.id} key={t.id} className={`study-task ${t.done ? "is-done" : ""}`}>
+    function updateTrialRoute(nextTab: "overview"|"schedule"|"map", courseId: string) {
+      setTab(nextTab);setFilter(courseId);setTrialLocation(nextTab,courseId);
+    }
+    function renderTasks(tasks: StudyTask[]) {return <>{tasks.map((t) => (<article data-study-task={t.id} key={t.id} className={`study-task ${t.done ? "is-done" : ""}`}>
                   <div className="study-task-top">
                     <label>
                       <input type="checkbox" checked={t.done} disabled={busy} onChange={(e) => void run(() => saveTask({ ...t, done: e.target.checked }))}/>
@@ -411,7 +323,130 @@ function Workspace({ user }: {
                     : "تذكير على الهاتف"}
                     </button>
                   </footer>
-                </article>))}
+                </article>))}</>}
+    return <StudyLocalized>{(<section className={"study-page"+(experimental?" study-university-trial":"")} dir="rtl" aria-label="صفحة الجامعة">
+      <fieldset className="study-controls" disabled={busy}>
+        <header className="study-hero">
+          <div>
+            <span className="study-eyebrow">مساحتي الدراسية</span>
+            <h2>خطة الفصل</h2>
+            <p>من أول محاضرة إلى آخر امتحان؛ خطتك بين يديك.</p>
+          </div>
+          <div className="study-hero-actions">{experimental?<details className="study-trial-tools"><summary><ChevronDown size={16}/>أدوات الخطة</summary><div>
+            <button className="primary-button" onClick={() => setBatchOpen(true)}>إضافة دفعة</button>
+            <label className="study-upload secondary-button">
+              استعادة نسخة احتياطية
+              <input type="file" accept=".json,application/json" disabled={busy} onChange={e => {
+            const file = e.target.files?.[0];
+            if (file)
+                void run(async () => {
+                    if (file.size > 4000000)
+                        throw new Error("حجم الملف أكبر من المسموح");
+                    setPreview(parsePlanBackup(JSON.parse(await file.text())));
+                });
+            e.target.value = "";
+        }}/>
+            </label>
+          </div></details>:<>
+            <button className="primary-button" onClick={() => setBatchOpen(true)}>إضافة دفعة</button>
+            <label className="study-upload secondary-button">
+              استعادة نسخة احتياطية
+              <input type="file" accept=".json,application/json" disabled={busy} onChange={e => {
+            const file = e.target.files?.[0];
+            if (file)
+                void run(async () => {
+                    if (file.size > 4000000)
+                        throw new Error("حجم الملف أكبر من المسموح");
+                    setPreview(parsePlanBackup(JSON.parse(await file.text())));
+                });
+            e.target.value = "";
+        }}/>
+            </label>
+          </>}</div>
+        </header>
+        {experimental?<aside className="study-trial-notice"><FlaskConical size={17}/><div><strong>تجربة صفحة الجامعة فقط</strong><span>التجربة تغيّر العرض فقط؛ البيانات والحفظ هما حسابك الفعلي.</span></div><a href="#/university"><ArrowRight size={15}/>العرض الأصلي</a></aside>:isAdmin(user.email,user.emailVerified)&&<a className="study-trial-entry" href="#/university?preview=1"><FlaskConical size={16}/>تجربة تحسين عرض الجامعة</a>}
+        <div className="study-storage" role="status">
+          {cloud.status.error || (!cloud.status.ready ? "خطتك محفوظة محليًا؛ جارٍ الاتصال بالمزامنة…" : cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : "تمت المزامنة مع حسابك · متاحة على أجهزتك")}
+          {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
+        </div>
+        {cloud.status.conflicts.map(key=><section className="study-sync-conflict" key={key}><p>عُدّل السجل نفسه على جهاز آخر. اختر النسخة التي تريد الاحتفاظ بها؛ لم نستبدل تعديلك تلقائيًا.</p><strong dir="auto">{key.startsWith('courses_')?state.courses.find(c=>c.id===key.slice(8))?.name:key.startsWith('tasks_')?state.tasks.find(t=>t.id===key.slice(6))?.title:state.lessons.find(l=>l.id===key.slice(8))?.room}</strong><button onClick={()=>cloud.resolve(key,'local')}>الاحتفاظ بتعديلي</button><button onClick={()=>cloud.resolve(key,'cloud')}>استخدام نسخة الحساب</button></section>)}
+        <div className="study-stats">
+          <article>
+            <span>كورسات الفصل</span>
+            <strong>{state.courses.length.toString().padStart(2, "0")}</strong>
+          </article>
+          <article>
+            <span>مهام مفتوحة</span>
+            <strong>{pending.length.toString().padStart(2, "0")}</strong>
+          </article>
+          <article>
+            <span>الموعد القادم</span>
+            <strong className="study-next" dir="auto">
+              {next?next.title:<span data-study-ui="true">لا توجد مواعيد قادمة</span>}
+            </strong>
+            {next && <small className="study-next-course" dir="auto">{courseName(next.courseId)}</small>}
+            <small>
+              {next
+            ? summaryDate(next.due)
+            : "أضف موعد تسليم أو امتحان"}
+            </small>
+          </article>
+        </div>
+        {error && (<p className="study-error" role="alert">
+            {error}
+          </p>)}
+        {message && (<div className="study-success study-notice">
+            <span role="status">{message}</span>
+            <button type="button" aria-label="إغلاق الرسالة" onClick={() => setMessage("")}>×</button>
+          </div>)}
+        <nav className="study-tabs" aria-label="عرض مساحة الجامعة">
+          {([
+            ["overview", "الكورسات والمهام"],
+            ["schedule", "الجدول الأسبوعي"],
+            ["map", "خريطة الكورسات"],
+        ] as const).map(([id, title]) => (<button key={id} aria-pressed={tab === id} onClick={() => experimental ? updateTrialRoute(id,filter) : setTab(id)}>
+              {experimental && (id==='map'?<GitBranch size={17}/>:id==='schedule'?<CalendarDays size={17}/>:<GraduationCap size={17}/>)}{title}{experimental&&id==='map'&&<small>UML</small>}
+            </button>))}
+        </nav>
+        <div className="study-toolbar">
+          {(!experimental||tab!=='overview')&&<label>
+            الكورس
+            <select value={filter} onChange={(e) => experimental?updateTrialRoute(tab,e.target.value):setFilter(e.target.value)}>
+              <option value="">كل الكورسات</option>
+              {state.courses.map((c) => (<option key={c.id} value={c.id}>
+                  {c.name}
+                </option>))}
+            </select>
+          </label>}
+          <div>
+            {tab==='schedule'&&<button className="secondary-button" disabled={!state.courses.length} onClick={()=>setScheduleEdit(latest.current)}>بناء جدول الأسبوع</button>}
+            <button className="secondary-button" onClick={newCourse}>
+              إضافة كورس
+            </button>
+            <button className="primary-button" onClick={tab === "schedule" ? newLesson : newTask}>
+              {tab === "schedule" ? "إضافة محاضرة" : "إضافة مهمة"}
+            </button>
+          </div>
+        </div>
+        {experimental&&tab==='overview'&&<Suspense fallback={<p role="status">…</p>}><UniversityTrial state={state} selected={selectedCourse} filter={filter} now={now} busy={busy} language={language} courseColor={courseColor} select={id=>updateTrialRoute('overview',id)} addCourse={()=>setBatchOpen(true)} addTask={newTask} editCourse={course=>setEditing({kind:'course',value:course})} template={course=>setEditing({kind:'course',value:courseTemplate(course,state.courses.length,translateStudyText('— فصل جديد',language))})} toggleTopic={(course,id)=>void run(()=>commit({...latest.current,courses:latest.current.courses.map(item=>item.id===course.id?{...item,topics:(item.topics||[]).map(topic=>topic.id===id?{...topic,done:!topic.done}:topic)}:item)}))} renderTasks={renderTasks}/></Suspense>}
+        {!experimental&&tab === "overview" && (<div className="study-layout">
+            <CourseNavigator key={filter} courses={state.courses} tasks={state.tasks} selectedId={selectedCourse?.id || ""} filter={filter} onSelect={setFilter} courseColor={courseColor} onAdd={() => setBatchOpen(true)}/>
+            <section className="study-task-list">
+              {selectedCourse ? <CourseDetails course={selectedCourse} color={courseColor(selectedCourse.id)} pendingCount={state.tasks.filter(t => t.courseId === selectedCourse.id && !t.done).length} busy={busy}
+                onEdit={() => setEditing({kind:"course", value:selectedCourse})}
+                onTemplate={() => setEditing({kind:"course", value:courseTemplate(selectedCourse,state.courses.length,translateStudyText('— فصل جديد',language))})}
+                onToggleTopic={id => void run(() => commit({...latest.current, courses:latest.current.courses.map(course => course.id === selectedCourse.id ? {...course, topics:(course.topics || []).map(topic => topic.id === id ? {...topic, done:!topic.done} : topic)} : course)}))}/>
+                : !!state.courses.length && <p className="study-hint">اختر كورسًا لعرض ملاحظاته وخطة دراسته.</p>}
+              <h3>الواجبات والمواعيد</h3>
+              {!visible.length && (<div className="study-empty">
+                  <h4>لا توجد مهام للعرض</h4>
+                  <p>
+                    أضف وظيفة أو امتحانًا وحدد موعده، ثم اختر تذكير الهاتف إذا أردت.
+                  </p>
+                  <button className="primary-button" disabled={!state.courses.length} onClick={newTask}>إضافة أول مهمة</button>
+                  {!state.courses.length && <small>أضف كورسًا أولًا لربط المهمة به.</small>}
+                </div>)}
+              {renderTasks(visible)}
             </section>
           </div>)}
         {tab === "schedule" && conflicts.size > 0 && <p className="study-overdue" role="status">يوجد تداخل في مواعيد {conflicts.size} محاضرات. افتح المحاضرة لتعديل وقتها.</p>}
@@ -420,7 +455,7 @@ function Workspace({ user }: {
               أضف المحاضرات والتمارين حسب نظام الجدول الجامعي. التوقيت:{" "}
               {Intl.DateTimeFormat().resolvedOptions().timeZone}.
             </p>
-            <Timetable lessons={state.lessons} courses={state.courses} courseFilter={filter} conflicts={conflicts} language={language} courseColor={courseColor} onEdit={lesson=>setEditing({kind:"lesson",value:lesson})}/>
+            {experimental?<Suspense fallback={<p role="status">…</p>}><UniversityTrialSchedule lessons={state.lessons} courses={state.courses} filter={filter} conflicts={conflicts} language={language} courseColor={courseColor} edit={lesson=>setEditing({kind:"lesson",value:lesson})}/></Suspense>:<Timetable lessons={state.lessons} courses={state.courses} courseFilter={filter} conflicts={conflicts} language={language} courseColor={courseColor} onEdit={lesson=>setEditing({kind:"lesson",value:lesson})}/> }
           </>)}
         {tab === "map" && (<>
             <p className="study-hint">
@@ -564,6 +599,7 @@ function Workspace({ user }: {
                         };
                         validateCourse(course, state.courses);
                         setFilter(course.id);
+                        if (experimental) setTrialLocation(tab, course.id);
                         commit({
                             ...latest.current,
                             courses: [
@@ -770,5 +806,7 @@ function Workspace({ user }: {
 export default function UniversityPage({ user }: {
     user: User;
 }) {
-    return <StudyLocalized>{user.emailVerified && db ? (<Workspace key={user.uid} user={user}/>) : (<p role="alert">فعّل بريد حسابك لفتح مساحة الجامعة.</p>)}</StudyLocalized>;
+    const [trial,setTrial]=useState(()=>new URLSearchParams(location.hash.split('?')[1]).get('preview')==='1');
+    useEffect(()=>{const changed=()=>setTrial(new URLSearchParams(location.hash.split('?')[1]).get('preview')==='1');window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed)},[]);
+    return <StudyLocalized>{user.emailVerified && db ? (<Workspace key={user.uid} user={user} experimental={trial&&isAdmin(user.email,user.emailVerified)}/>) : (<p role="alert">فعّل بريد حسابك لفتح مساحة الجامعة.</p>)}</StudyLocalized>;
 }
