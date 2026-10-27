@@ -258,15 +258,12 @@ function Workspace({ user }: {
     function updateUniversityRoute(nextTab: "overview"|"schedule"|"map", courseId: string) {
       setTab(nextTab);setFilter(courseId);setUniversityLocation(nextTab,courseId);
     }
-    function renderTasks(tasks: StudyTask[]) {return <>{tasks.map((t) => (<article data-study-task={t.id} key={t.id} className={`study-task ${t.done ? "is-done" : ""}`}>
+    function renderTasks(tasks: StudyTask[]) {return <>{tasks.map((t) => (<article aria-label={t.title+" — "+courseName(t.courseId)} data-study-task={t.id} key={t.id} className={`study-task ${t.done ? "is-done" : ""}`}>
                   <div className="study-task-top">
                     <label>
                       <input type="checkbox" checked={t.done} disabled={busy} onChange={(e) => void run(() => saveTask({ ...t, done: e.target.checked }))}/>
                       <span className="study-tag">{kinds[t.kind]}</span>
                     </label>
-                    {!selectedCourse&&<small dir="auto" style={{ color: courseColor(t.courseId) }}>
-                      {courseName(t.courseId)}
-                    </small>}
                   </div>
                   <h4 dir="auto">{t.title}</h4>
                   <p className={!t.done && t.due && Date.parse(t.due) < now
@@ -331,8 +328,8 @@ function Workspace({ user }: {
             </label>
           </div></details></div>
         </header>
-        <div className={"study-storage"+(cloud.status.ready&&!cloud.status.pending&&!cloud.status.error?" study-storage-settled":"")} role="status">
-          {cloud.status.error || (!cloud.status.ready ? "خطتك محفوظة محليًا؛ جارٍ الاتصال بالمزامنة…" : cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : "تمت المزامنة مع حسابك · متاحة على أجهزتك")}
+        <div className="study-storage" role="status" hidden={!cloud.status.error&&!cloud.status.pending} data-sync-state={cloud.status.error?'error':!cloud.status.ready?'connecting':cloud.status.pending?'pending':'ready'}>
+          {cloud.status.error || (cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : null)}
           {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
         </div>
         {cloud.status.conflicts.map(key=><section className="study-sync-conflict" key={key}><p>عُدّل السجل نفسه على جهاز آخر. اختر النسخة التي تريد الاحتفاظ بها؛ لم نستبدل تعديلك تلقائيًا.</p><strong dir="auto">{key.startsWith('courses_')?state.courses.find(c=>c.id===key.slice(8))?.name:key.startsWith('tasks_')?state.tasks.find(t=>t.id===key.slice(6))?.title:state.lessons.find(l=>l.id===key.slice(8))?.room}</strong><button onClick={()=>cloud.resolve(key,'local')}>الاحتفاظ بتعديلي</button><button onClick={()=>cloud.resolve(key,'cloud')}>استخدام نسخة الحساب</button></section>)}

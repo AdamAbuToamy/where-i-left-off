@@ -5,11 +5,12 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { User } from "firebase/auth";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+const syncStatus = vi.hoisted(() => ({ready:true,pending:0,conflicts:[] as string[],error:''}));
 const reminder = vi.hoisted(() => ({ sync: vi.fn(), prepare: vi.fn() }));
 vi.mock("../src/lib/firebase", () => ({
     db: { app: { options: { projectId: "demo" } } },
 }));
-vi.mock("../src/university/useStudySync",()=>({useStudySync:(store:{save:(s:unknown)=>void})=>({status:{ready:true,pending:0,conflicts:[],error:''},commit:(state:unknown)=>store.save(state),resolve:vi.fn(),retry:vi.fn()})}));
+vi.mock("../src/university/useStudySync",()=>({useStudySync:(store:{save:(s:unknown)=>void})=>({status:syncStatus,commit:(state:unknown)=>store.save(state),resolve:vi.fn(),retry:vi.fn()})}));
 vi.mock("../src/university/reminders", () => ({
     syncReminder: reminder.sync,
     prepareReminder: reminder.prepare,
@@ -38,6 +39,7 @@ async function submit(values: Record<string, string>) {
     await act(async () => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
 }
 beforeEach(async () => {
+    Object.assign(syncStatus,{ready:true,pending:0,conflicts:[],error:""});
     localStorage.clear();
     history.replaceState(null,"","/#/university");
     vi.stubGlobal("matchMedia", (media: string) => ({matches: media.includes("prefers-reduced-motion"), media, addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn()}));
@@ -216,4 +218,25 @@ it('keeps the current course on its page when a cloud snapshot reorders courses'
     await act(async()=>root.render(<CourseNavigator courses={[...courses].reverse()} {...props}/>));
     expect(container.querySelector('.study-course-choice[aria-pressed=true]')?.textContent).toContain('Course 14');
     expect(container.querySelectorAll('.study-course-choice')).toHaveLength(2);
+});
+
+it('never renders routine connecting/synced copy, even without CSS, while queued changes and failures remain visible',async()=>{
+ syncStatus.ready=false;await render();
+ expect(container.querySelector('.study-storage')?.hasAttribute('hidden')).toBe(true);
+ expect(container.querySelector('.study-storage')?.textContent?.trim()).toBe('');
+ syncStatus.ready=true;await render();
+ expect(container.querySelector('.study-storage')?.textContent?.trim()).toBe('');
+ syncStatus.pending=2;await render();
+ expect(container.querySelector('.study-storage')?.hasAttribute('hidden')).toBe(false);
+ expect(container.querySelector('.study-storage')?.textContent).toContain('2 تغييرات تنتظر المزامنة');
+ syncStatus.pending=0;syncStatus.error='تعذرت المزامنة';await render();
+ expect(container.querySelector('.study-storage')?.hasAttribute('hidden')).toBe(false);
+ expect(container.querySelector('.study-storage')?.textContent).toContain('إعادة المزامنة');
+});
+it('keeps course context in the heading and accessible task label without repeating it in task headers',async()=>{
+ await click('إضافة كورس');await submit({name:'Networks',notes:'',url:''});
+ await click('إضافة مهمة');await submit({title:'Assignment 1',due:'',notes:'',url:''});
+ expect(container.querySelector('.study-trial-course-heading h3')?.textContent).toBe('Networks');
+ expect(container.querySelector('.study-task-top')?.textContent).not.toContain('Networks');
+ expect(container.querySelector('.study-task')?.getAttribute('aria-label')).toContain('Networks');
 });
