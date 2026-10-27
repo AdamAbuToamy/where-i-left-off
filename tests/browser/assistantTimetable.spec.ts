@@ -27,7 +27,7 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  for(const courseName of courseNames){const name=semantic?'2026-2027 / 202-1-1234 '+courseName+' — סמסטר א':courseName;
   await page.locator('.study-toolbar').getByRole('button',{name:'إضافة كورس',exact:true}).click();
   await page.getByLabel('اسم الكورس',{exact:true}).fill(name);await page.getByRole('button',{name:'حفظ',exact:true}).click();
-  await expect(page.locator('.study-storage')).toContainText('تمت المزامنة مع حسابك');
+  await expect(page.locator('.study-storage')).toHaveAttribute('data-sync-state','ready');
  }
  await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();
  const chat=page.locator('#wilo-assistant');await chat.getByLabel('رسالتك',{exact:true}).fill(weeklyRequest);await chat.getByRole('button',{name:'إرسال',exact:true}).click();

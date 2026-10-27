@@ -106,7 +106,7 @@ test("course picker: pagination, selection, linked notes and next-course context
   await expect(page.locator('.study-trial-notes a')).toHaveCount(2);
   await expect(page.locator('.study-trial-notes a').first()).toHaveAttribute('href','https://example.test/notes');
   await expect(page.locator('.study-trial-notes a').last()).toHaveAttribute('href','https://www.example.test');
-  await expect(page.locator('.study-storage')).toContainText('تمت المزامنة مع حسابك');
+  await expect(page.locator('.study-storage')).toHaveAttribute('data-sync-state','ready');
   await expect(page.locator('.study-stats article').first().locator('strong')).toHaveText('14');
   await expect(page.locator('.study-current-course')).toBeVisible();
   await page.getByRole('button',{name:'إغلاق الرسالة',exact:true}).click();

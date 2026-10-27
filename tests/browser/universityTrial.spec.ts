@@ -5,9 +5,16 @@ import { prepareUniversityPilot } from "./universityFixture";
 async function signIn(page: Page, request: APIRequestContext, email?: string) {
   const user = await prepareUniversityPilot(request, email);
   await page.addInitScript(
-    () =>
-      !localStorage.getItem("language") &&
-      localStorage.setItem("language", "en"),
+    () => {
+      if (!localStorage.getItem("language")) localStorage.setItem("language", "en");
+      const removed = ["من أول محاضرة إلى آخر امتحان؛ خطتك بين يديك.", "تمت المزامنة مع حسابك · متاحة على أجهزتك", "خطتك محفوظة محليًا؛ جارٍ الاتصال بالمزامنة…", "اضغط على الحصة لتعديلها. مرّر داخل الجدول لرؤية بقية الأيام والساعات."];
+      const seen: string[] = [];
+      (window as Window & {universityCopyFlashes:string[]}).universityCopyFlashes = seen;
+      new MutationObserver(() => {
+        const text = document.querySelector(".study-page")?.textContent || "";
+        for (const phrase of removed) if (text.includes(phrase) && !seen.includes(phrase)) seen.push(phrase);
+      }).observe(document.documentElement, {childList:true,subtree:true,characterData:true});
+    },
   );
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
@@ -176,6 +183,9 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
     .filter({ hasText: "جبر التجربة" })
     .click();
   await expect(page.locator(".study-current-course")).toHaveCount(1);
+  await expect(page.locator(".study-storage")).toHaveAttribute("data-sync-state","ready");
+  await expect(page.locator(".study-storage")).toBeHidden();
+  await expect(page.locator(".study-task-top small")).toHaveCount(0);
   await page
     .locator(".study-trial-tabs")
     .getByRole("button", { name: "الملاحظات والمواد", exact: true })
@@ -193,7 +203,7 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
   await expect(
     page.getByRole("checkbox", { name: "موضوع التجربة", exact: true }),
   ).toBeChecked();
-  await expect(page.locator(".study-storage")).toContainText("تمت المزامنة");
+  await expect(page.locator(".study-storage")).toHaveAttribute("data-sync-state","ready");
   await page.reload();
   await expect(
     page.getByRole("checkbox", { name: "موضوع التجربة", exact: true }),
@@ -248,6 +258,7 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
   expect(axe.violations).toEqual([]);
+  expect(await page.evaluate(() => (window as Window & {universityCopyFlashes:string[]}).universityCopyFlashes)).toEqual([]);
 });
 test("a regular verified account gets the new default view and old preview links remain compatible", async ({
   page,
