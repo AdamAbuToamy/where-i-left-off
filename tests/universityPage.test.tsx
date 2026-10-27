@@ -39,6 +39,8 @@ async function submit(values: Record<string, string>) {
 }
 beforeEach(async () => {
     localStorage.clear();
+    history.replaceState(null,"","/#/university");
+    vi.stubGlobal("matchMedia", (media: string) => ({matches: media.includes("prefers-reduced-motion"), media, addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn()}));
     vi.stubGlobal('crypto',{getRandomValues:globalThis.crypto.getRandomValues.bind(globalThis.crypto)});
     reminder.sync.mockReset();
     reminder.prepare.mockReset();
@@ -52,6 +54,7 @@ beforeEach(async () => {
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
+    await Promise.all([import("../src/university/UniversityTrial"), import("../src/university/UniversityTrialSchedule")]);
     await render();
 });
 afterEach(() => {
@@ -64,6 +67,7 @@ it("creates and edits real course and task records, persists them, and never ena
     await submit({ name: "Algorithms", notes: "Practice every Sunday", url: "" });
     expect(container.textContent).toContain("Algorithms");
     expect(container.textContent).toContain("Practice every Sunday");
+    await click("ملخص الكورس");
     await click("إضافة مهمة");
     await submit({
         title: "Exercise 1",
@@ -74,6 +78,7 @@ it("creates and edits real course and task records, persists them, and never ena
     expect(container.textContent).toContain("Exercise 1");
     const check = container.querySelector(".study-task input[type=checkbox]") as HTMLInputElement;
     await act(async () => check.click());
+    await click("المهام والمواعيد");
     expect(container.querySelector(".study-task.is-done")).not.toBeNull();
     expect(reminder.sync).not.toHaveBeenCalled();
     await act(async () => root.unmount());
@@ -104,6 +109,7 @@ it('saves syllabus progress across edits and reload without showing a connection
     expect(container.textContent).not.toContain('Moodle');
     await click('إضافة كورس');
     await submit({ name: 'Algorithms', notes: '', url: '', topics: 'Proofs\nGraphs' });
+    await click('خطة الدراسة');
     const checkbox = container.querySelector('.study-topic-list input') as HTMLInputElement;
     await act(async () => checkbox.click());
     await click('تعديل الكورس');
@@ -180,7 +186,7 @@ it('paginates courses, finds the last course and marks its open details without 
     expect(container.querySelector('.study-course-choice[aria-pressed=true]')?.textContent).toContain('Course 14');
     expect(container.querySelector('.study-current-course')?.textContent).toBe('الكورس المفتوح');
     expect(container.querySelector('[data-study-course="course-13"]')).not.toBeNull();
-    expect(container.querySelector('.study-course-notes a')?.getAttribute('href')).toBe('https://example.test/course/14');
+    expect(container.querySelector('.study-trial-notes a')?.getAttribute('href')).toBe('https://example.test/course/14');
     await render(user,'en');expect(container.querySelector('.study-current-course')?.textContent).toBe('Current course');
     expect(container.querySelector('.study-course-pages')?.textContent).toContain('Previous');
     await click('All courses');expect(container.querySelectorAll('.study-course-choice[aria-pressed=true]')).toHaveLength(0);

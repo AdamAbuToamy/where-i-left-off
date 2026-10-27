@@ -1,12 +1,4 @@
-/* All refinements are restricted to the University's administrator opt-in view. */
-.study-page > .study-trial-entry {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0 0 15px;
-  color: var(--site-primary);
-  font-size: 13px;
-}
+/* University presentation; styles stay scoped to this page. */
 .study-university-trial .study-hero {
   padding: 16px 0;
   gap: 16px;
@@ -26,30 +18,10 @@
 .study-university-trial :is(button, a) {
   gap: 7px;
 }
-.study-university-trial .study-trial-notice {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  border-block: 1px solid var(--site-border);
-  padding: 10px 0;
-  margin: 8px 0 14px;
-  font-size: 12px;
-  color: var(--site-muted);
-}
-.study-university-trial .study-trial-notice > div {
-  display: grid;
-  gap: 4px;
-  flex: 1;
-}
-.study-university-trial .study-trial-notice strong {
-  color: var(--site-text);
-}
-.study-university-trial .study-trial-notice a {
-  display: inline-flex;
-  align-items: center;
-  color: var(--site-primary);
-  flex: none;
-}
+
+
+
+
 .study-university-trial .study-storage {
   margin: 8px 0 13px;
   font-size: 12px;
@@ -536,14 +508,8 @@
   .study-university-trial .study-hero-actions {
     width: auto;
   }
-  .study-university-trial .study-trial-notice {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    font-size: 11px;
-  }
-  .study-university-trial .study-trial-notice a {
-    margin-inline-start: auto;
-  }
+
+
   .study-university-trial .study-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;

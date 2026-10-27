@@ -37,9 +37,9 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
  await expect(page.locator('.study-lesson')).toHaveCount(0);
  await chat.getByRole('button',{name:'تطبيق التغييرات',exact:true}).click();
  await expect(chat.locator('.assistant-saved summary')).toHaveText('عرض التغييرات (14)');await expect(page.locator('.study-lesson.assistant-change-highlight')).toHaveCount(1);await expect(chat.getByRole('alert')).toHaveCount(0);
- await page.getByRole('button',{name:'إغلاق المساعد',exact:true}).click();await page.getByRole('button',{name:'الجدول الأسبوعي',exact:true}).click();
+ await page.getByRole('button',{name:'إغلاق المساعد',exact:true}).click();await page.locator('.study-tabs').getByRole('button',{name:'الجدول الأسبوعي',exact:true}).click();
  await expect(page.locator('.study-lesson')).toHaveCount(14);
- await page.reload();await page.getByRole('button',{name:'الجدول الأسبوعي',exact:true}).click();await expect(page.locator('.study-lesson')).toHaveCount(14);
+ await page.reload();await page.locator('.study-tabs').getByRole('button',{name:'الجدول الأسبوعي',exact:true}).click();await expect(page.locator('.study-lesson')).toHaveCount(14);
  const counts=[2,3,1,3,5,0,0];for(let day=0;day<7;day++)await expect(page.locator('.study-week > section').nth(day).locator('.study-lesson')).toHaveCount(counts[day]);
  await expect(page.locator('.study-lesson').filter({hasText:'כיתה הפוכה'})).toHaveCount(1);
  const timetable=page.locator('.study-timetable-scroll');await expect(timetable).toBeVisible();await expect(page.locator('.study-hour-label').first()).toHaveText('08:00');
