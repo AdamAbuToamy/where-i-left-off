@@ -25,10 +25,6 @@ Promotional illustration; not a screenshot of the live interface.
 
 <!-- recall-media:end -->
 
-## Administrator interface trial
-
-Verified administrators can open **[the original-interface preview](https://where-i-left-off.web.app/#/admin/preview)** from Administration. It preserves the current visual identity while testing compact controls, richer interaction motion and improved course views. Demo data and optional read-only account copies stay in a private browser journal, with undo, checkpoints and JSON recovery. The public interface is unchanged. [Readiness and limitations](docs/readiness/2026-10-27-original-interface-preview.md) · [Architecture decision](docs/adr/2026-10-27-original-interface-preview.md).
-
 ## Features
 
 | Area | What you can do |

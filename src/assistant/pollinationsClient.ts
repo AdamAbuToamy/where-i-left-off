@@ -10,8 +10,8 @@ import type {InferenceProgress} from './inferenceStream';
 export type InferenceTiming={stage:'conversation'|'workspace';attempt:number;inputChars:number;tools:number;headersMs?:number;firstDeltaMs?:number;totalMs:number;httpStatus?:number;outcome:'ok'|'failed'|'retry'};
 type WorkspaceRequest={message:string;language:string;context:string;history:{role:'user'|'assistant';content:string}[];repair?:{reason:string;proposal:string};functions?:string[];outputFormat?:string;requirements?:{target:string;fields:string[]}[]};
 export class PollinationsAssistant{
- private readonly credential:()=>string;private history:InferenceTiming[]=[];
- constructor(uid:string,credential?:()=>string){this.credential=credential||(()=>pollinationsKey(uid));}
+ private uid:string;private history:InferenceTiming[]=[];
+ constructor(uid:string){this.uid=uid;}
  timings(){return this.history.map(timing=>({...timing}));}
  private async complete(input:WorkspaceToolInput,parent?:AbortSignal,onProgress?:(progress:InferenceProgress)=>void):Promise<unknown>{
   const inputChars=JSON.stringify(input).length;
@@ -24,7 +24,7 @@ export class PollinationsAssistant{
     let received=false;
     try{
      budget.signal.throwIfAborted();budget.activity();onProgress?.('waiting');
-     const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+this.credential(),'Content-Type':'application/json'},body:JSON.stringify({model:config.model,messages:input.messages,tools:input.tools,tool_choice:'auto',parallel_tool_calls:true,reasoning_effort:'none',stream:true,stream_options:{include_usage:true},max_tokens:input.max_tokens||2048,temperature:0}),signal:budget.signal});
+     const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+pollinationsKey(this.uid),'Content-Type':'application/json'},body:JSON.stringify({model:config.model,messages:input.messages,tools:input.tools,tool_choice:'auto',parallel_tool_calls:true,reasoning_effort:'none',stream:true,stream_options:{include_usage:true},max_tokens:input.max_tokens||2048,temperature:0}),signal:budget.signal});
      timing.headersMs=Math.round(performance.now()-started);timing.httpStatus=response.status;
      if(!response.ok){
       if(!attempt&&[408,422,500,502,503,504].includes(response.status)){timing.outcome='retry';await new Promise(resolve=>setTimeout(resolve,250));continue;}
