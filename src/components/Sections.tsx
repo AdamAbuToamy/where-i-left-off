@@ -5,29 +5,27 @@ import type { Project, Section } from '../types'
 import { recallText } from '../recallTranslations'
 export default function Sections({ sections, projects, selected, onSelect, onSave, onDelete, language, disabled, canManage = true }: { sections: Section[]; projects: Project[]; selected: string; onSelect: (id: string) => void; onSave: (name: string, id?: string) => Promise<boolean>; onDelete: (id: string) => Promise<boolean>; language: Language; disabled: boolean; canManage?: boolean }) {
   const t = recallText[language]
-  const [expanded, setExpanded] = useState(false)
   const selectedName = selected === 'all' ? t.allSections : sections.find(section => section.id === selected)?.name || t.noSection
   const [manage, setManage] = useState(false), [name, setName] = useState(''), [editing, setEditing] = useState<string | undefined>()
-  return <details className="sections-panel sections-disclosure" open={expanded}
-    onToggle={event => setExpanded(event.currentTarget.open)}
-    onPointerEnter={event => { if (event.pointerType === 'mouse') setExpanded(true) }}
+  return <details className="sections-panel sections-disclosure"
+    onPointerEnter={event => { if (event.pointerType === 'mouse') event.currentTarget.open = true }}
     onPointerLeave={event => {
       if (event.pointerType !== 'mouse' || manage) return
       const panel = event.currentTarget
       if (panel.contains(document.activeElement)) panel.querySelector('summary')?.focus({preventScroll:true})
-      setExpanded(false)
+      panel.open = false
     }}
-    onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(':hover') && !manage) setExpanded(false) }}
+    onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(':hover') && !manage) event.currentTarget.open = false }}
     onKeyDown={event => {
       if (event.key !== 'Escape') return
-      event.preventDefault();setExpanded(false);setManage(false)
+      event.preventDefault();event.currentTarget.open = false;setManage(false)
       event.currentTarget.querySelector('summary')?.focus({preventScroll:true})
     }}>
     <summary className="sections-disclosure-trigger" onClick={event => {
       // A mouse enters before clicking: do not let the native toggle undo hover.
       // Touch and keyboard keep the native disclosure toggle.
       if ('pointerType' in event.nativeEvent && event.nativeEvent.pointerType === 'mouse') {
-        event.preventDefault();setExpanded(true)
+        event.preventDefault();event.currentTarget.closest('details')!.open = true
       }
     }}><PanelsTopLeft size={18} aria-hidden="true"/><span dir="auto">{selectedName}</span><ChevronDown size={16} aria-hidden="true"/></summary>
     <div className="sections-disclosure-body">

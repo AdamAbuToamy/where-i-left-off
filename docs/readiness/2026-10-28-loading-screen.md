@@ -37,3 +37,7 @@ Final unit count: 1132 / 95 files. TypeScript, lint (unchanged warning only), ar
 
 ### Hover/click regression
 The first exact-head CI run passed 43/44 browser journeys and caught a mouse timing race: entering the summary opened it, then the native click could close it again. Mouse clicks now keep the hover disclosure open; touch and keyboard retain native toggling. All 16 repeated layout/disclosure journeys passed locally after the fix (three languages, desktop/phone, two runs). Repeated section tests use separate emulator accounts to prevent duplicate fixture records. TypeScript, lint and production build were rechecked before the final push.
+
+
+### Native disclosure stabilization
+A subsequent CI run again passed 43/44 and caught a delayed re-open after keyboard Escape. The picker now uses the native `details.open` property as its sole open-state authority instead of mirroring asynchronous `toggle` events into React state. Hover, Escape and confirmed-record reveal update that native property; touch/keyboard retain the browser toggle. All 20 mouse/touch/keyboard journeys passed in ten repetitions under CI mode. TypeScript, lint and production build passed again. The final exact-head CI must pass before publishing.
