@@ -32,6 +32,8 @@ Local logs are stored in ignored `.wrangler/preview-*` files; CI repeats the che
 Chromium tests check palette equality with the original green, private CRUD, folded form-value preservation, pointer ordering, undo/redo, two-tab synchronization, checkpoints, downloads, linked notes, topic completion, course-labelled tasks, local reminder feedback, semester archive, three languages/desktop and phone layouts, live reduced-motion changes, keyboard dialogs, axe WCAG2/2.1 AA, provider-injected compound proposals and cancellation, account isolation, validated account-copy/import, and malformed-cache recovery. Demo screenshots were visually reviewed. Live OAuth and model acceptance are a separate verification category.
 
 
+The final focused rerun also verifies that a form opened before a second-tab update cannot recreate or overwrite the changed record. Persistence controls are disabled while a save is pending, including a palette change immediately after checkpoint creation. All six focused journeys passed after this correction.
+
 ## Limits and recovery
 This is a browser-local trial. Copying account data is explicit and read-only; model requests use only the copied/demo snapshot. There is no write-back, cross-device experiment synchronization, real group invitation or phone reminder. Preview reminders are labelled accordingly. Calendar integration is an ICS download, not automatic Google Calendar sync. Model/provider tests are injected-response tests through the real adapter; a new 618-prompt live model run and manual Google/Pollinations consent were not performed. Physical devices, Safari/Firefox, store installation and real push delivery are not certified by Chromium/emulator tests.
 

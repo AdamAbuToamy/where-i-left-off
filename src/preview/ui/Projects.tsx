@@ -37,7 +37,7 @@ import { normalizeSearch } from "../core/selectors";
 import { usePreview } from "./context";
 import Disclosure from "./Disclosure";
 export default function Projects() {
-  const { state, t, route, edit, act, notify } = usePreview(),
+  const { state, t, route, edit, act, notify, busy } = usePreview(),
     [search, setSearch] = useState(""),
     [section, setSection] = useState("all"),
     [filter, setFilter] = useState("all"),
@@ -65,7 +65,8 @@ export default function Projects() {
   );
   const pages = Math.max(1, Math.ceil(filtered.length / 20)),
     current = Math.min(page, pages - 1),
-    canDrag = !readonly && !search && section === "all" && filter === "all";
+    canDrag =
+      !readonly && !busy && !search && section === "all" && filter === "all";
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
     useSensor(KeyboardSensor, {
@@ -98,7 +99,7 @@ export default function Projects() {
         </h2>
         <button
           className="primary-button"
-          disabled={readonly}
+          disabled={readonly || busy}
           onClick={() => edit({ kind: "project" })}
         >
           <Plus size={18} />
@@ -203,7 +204,7 @@ export default function Projects() {
           {scope.sections.map((item) => (
             <button
               className="secondary-button"
-              disabled={readonly}
+              disabled={readonly || busy}
               key={item.id}
               onClick={() => edit({ kind: "section", value: item })}
             >
@@ -213,7 +214,7 @@ export default function Projects() {
           ))}
           <button
             className="text-button"
-            disabled={readonly}
+            disabled={readonly || busy}
             onClick={() => edit({ kind: "section" })}
           >
             <Plus size={16} />
@@ -297,7 +298,7 @@ export default function Projects() {
                     key={project.id}
                     project={project}
                     scope={scope.id}
-                    readonly={readonly}
+                    readonly={readonly || busy}
                     canDrag={canDrag}
                     checked={chosen.includes(project.id)}
                     select={() =>
@@ -364,7 +365,7 @@ function Card({
   select: () => void;
   move: (direction: number) => void;
 }) {
-  const { t, act, edit } = usePreview(),
+  const { t, act, edit, busy } = usePreview(),
     { attributes, listeners, setNodeRef, transform, transition, isDragging } =
       useSortable({ id: project.id, disabled: !canDrag });
   return (
@@ -391,7 +392,7 @@ function Card({
           <div className="preview-actions">
             <input
               type="checkbox"
-              disabled={readonly}
+              disabled={readonly || busy}
               checked={checked}
               aria-label={t("select") + " " + project.name}
               onChange={select}
@@ -433,7 +434,7 @@ function Card({
           <div className="preview-actions">
             <button
               className="text-button"
-              disabled={readonly}
+              disabled={readonly || busy}
               onClick={() => edit({ kind: "project", value: project })}
             >
               <Pencil size={16} />
@@ -441,7 +442,7 @@ function Card({
             </button>
             <button
               className="text-button"
-              disabled={readonly}
+              disabled={readonly || busy}
               onClick={() =>
                 void act([
                   {
@@ -461,7 +462,7 @@ function Card({
             </button>
             <button
               className="text-button"
-              disabled={readonly}
+              disabled={readonly || busy}
               onClick={() =>
                 void act([
                   {
@@ -479,7 +480,7 @@ function Card({
             </button>
             <button
               className="text-button preview-danger"
-              disabled={readonly}
+              disabled={readonly || busy}
               onClick={() =>
                 void act([
                   {

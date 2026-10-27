@@ -159,13 +159,30 @@ test("original palette, private CRUD, hidden form values, undo, checkpoint and b
       exact: true,
     }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await card.getByRole("button", { name: "Edit", exact: true }).click();
+  await other.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(
     other.getByRole("heading", {
       name: "Original-style private card",
       exact: true,
     }),
   ).toHaveCount(0);
+  await form
+    .getByLabel("Name", { exact: true })
+    .fill("Stale edit must not recreate the card");
+  await form.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Another tab changed the data" }),
+  ).toBeVisible();
+  await expect(
+    other.getByRole("heading", {
+      name: "Stale edit must not recreate the card",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await form.getByRole("button", { name: "Cancel", exact: true }).click();
   await other.close();
   await page
     .locator(".preview-main-tabs")

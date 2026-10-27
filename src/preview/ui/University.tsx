@@ -47,7 +47,7 @@ function dateLabel(value: string, language: string) {
     : "";
 }
 export default function University() {
-  const { state, route, t, edit, run, act, now } = usePreview(),
+  const { state, route, t, edit, run, act, now, busy } = usePreview(),
     [week, setWeek] = useState(false),
     [day, setDay] = useState(new Date().getDay());
   const courses = state.data.study.courses.filter((c) => {
@@ -171,6 +171,7 @@ export default function University() {
         <label>
           {t("semester")}
           <select
+            disabled={busy}
             aria-label={t("semester")}
             value={route.term}
             onChange={(e) =>
@@ -629,7 +630,7 @@ function TaskList({
   tasks: StudyTask[];
   filters?: boolean;
 }) {
-  const { state, route, now, t, edit, act, run, notify } = usePreview(),
+  const { state, route, now, t, edit, act, run, notify, busy } = usePreview(),
     [requestedPage, setPage] = useState(0);
   const filtered = tasks
     .filter(
@@ -699,6 +700,7 @@ function TaskList({
               <label className="preview-task-toggle">
                 <input
                   type="checkbox"
+                  disabled={busy}
                   checked={task.done}
                   aria-label={t("complete") + " " + task.title}
                   onChange={() =>

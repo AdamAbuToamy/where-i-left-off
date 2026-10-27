@@ -536,6 +536,7 @@ function Workspace({
                         <label>
                           {t("palette")}
                           <select
+                            disabled={busy}
                             aria-label={t("palette")}
                             value={state.settings.theme}
                             onChange={(e) =>

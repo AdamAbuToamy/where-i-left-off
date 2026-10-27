@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { FormEvent } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { createClientId } from "../../lib/clientId";
@@ -15,10 +16,11 @@ export default function Editor({
   value: EditorValue;
   close: () => void;
 }) {
-  const { state, route, t, run, act, busy, notify } = usePreview(),
+  const { state, route, t, run, busy, notify, journal } = usePreview(),
     scope =
       state.data.scopes.find((s) => s.id === route.scope) ||
       state.data.scopes[0];
+  const [revision] = useState(() => journal.revision);
   const old = "value" in value ? value.value : undefined;
   const titles = {
     course: t("newCourse"),
@@ -42,16 +44,19 @@ export default function Editor({
     try {
       if (value.kind === "semester") {
         if (
-          await run({
-            kind: "semester",
-            value: {
-              id: createClientId(),
-              name: str("name"),
-              start: str("start"),
-              end: str("end"),
-              archived: false,
+          await run(
+            {
+              kind: "semester",
+              value: {
+                id: createClientId(),
+                name: str("name"),
+                start: str("start"),
+                end: str("end"),
+                archived: false,
+              },
             },
-          })
+            revision,
+          )
         )
           close();
         return;
@@ -109,11 +114,14 @@ export default function Editor({
         scope: scope.id,
         values,
       };
-      const ok = await run({
-        kind: "actions",
-        actions: [action],
-        ...(value.kind === "course" ? { semesterId: str("semesterId") } : {}),
-      });
+      const ok = await run(
+        {
+          kind: "actions",
+          actions: [action],
+          ...(value.kind === "course" ? { semesterId: str("semesterId") } : {}),
+        },
+        revision,
+      );
       if (ok) close();
     } catch {
       notify(t("error"));
@@ -130,14 +138,20 @@ export default function Editor({
       return;
     }
     if (
-      await act([
+      await run(
         {
-          target: target[value.kind],
-          action: value.kind === "project" ? "trash" : "delete",
-          id: old.id,
-          scope: scope.id,
+          kind: "actions",
+          actions: [
+            {
+              target: target[value.kind],
+              action: value.kind === "project" ? "trash" : "delete",
+              id: old.id,
+              scope: scope.id,
+            },
+          ],
         },
-      ])
+        revision,
+      )
     ) {
       if (value.kind === "course") go({ course: "", tab: "overview" });
       close();
