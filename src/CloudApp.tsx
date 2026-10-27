@@ -1,6 +1,7 @@
 import { StudyLocaleProvider } from "./university/StudyLocale";
 import { lazy, Suspense } from 'react';
 const AssistantSandbox = /* @__PURE__ */ lazy(()=>import('./assistant/AssistantWidget'));
+import LoadingScreen from './components/LoadingScreen'
 import CloudPushSync from './components/CloudPushSync'
 import PushLifecycle from './components/PushLifecycle'
 import { useInstalledApp, preparePushSignOut } from './lib/pushNotifications'
@@ -71,7 +72,7 @@ export default function App() {
     <header className="page-header"><div className="heading-copy"><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', async () => { try { await preparePushSignOut() } catch { /* Local delivery gate is already cleared. */ } await signOut(auth!) }).catch(() => {})}>{c.logout}</button>}</div></header>
     {emulatorMode && <p className="notice">{c.demo}</p>}
     {authError !== null && <p className="notice error" role="alert">{errorText(authError, language)}</p>}
-    {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <p role="status">{c.loading}</p> : user ? page === 'support' ? <><Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} />{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>}</> : <><AccountLifecycle key={user.uid} user={user} language={language}>
+    {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <LoadingScreen language={language} status={c.loading} /> : user ? page === 'support' ? <><Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} />{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>}</> : <><AccountLifecycle key={user.uid} user={user} language={language}>
       {page !== 'settings' && <ExtensionInstall language={language} />}
       <CloudPushSync user={user}/><WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
       <WelcomeTour user={user} language={language} />

@@ -34,6 +34,15 @@ beforeEach(() => {
 })
 afterEach(() => { unmount();vi.restoreAllMocks();vi.unstubAllGlobals() })
 describe('account gate across offline reloads', () => {
+ it('shows the branded pending state until account verification finishes', () => {
+  mount()
+  expect(container.querySelector('.wilo-loading [role="status"]')?.textContent).toBe('Checking account status…')
+  expect(container.textContent).not.toContain('Offline outline completed')
+  expect(container.querySelector('.wilo-loading button')).toBeNull()
+  emit()
+  expect(container.querySelector('.wilo-loading')).toBeNull()
+  expect(container.textContent).toContain('Offline outline completed')
+ })
  it('opens cached projects offline after the server previously verified no deletion request', () => {
   mount();emit();expect(container.textContent).toContain('Offline outline completed')
   unmount();online=false;mount();emit('alice',null,true)

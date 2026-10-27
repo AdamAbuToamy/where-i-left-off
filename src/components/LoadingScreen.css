@@ -1,0 +1,165 @@
+/* A self-contained loading composition using the existing account palette. */
+.wilo-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(380px, 58dvh, 620px);
+  padding: 40px 20px 48px;
+  margin: 12px auto 24px;
+  text-align: center;
+  color: var(--site-text);
+  isolation: isolate;
+}
+.wilo-loading-art {
+  position: relative;
+  width: 224px;
+  height: 166px;
+  margin-bottom: 18px;
+  direction: ltr;
+}
+.wilo-loading-art::before {
+  content: '';
+  position: absolute;
+  inset: -18px -12px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--site-soft) 0%, transparent 72%);
+}
+.wilo-loading-orbit {
+  position: absolute;
+  inset: 4px 26px;
+  border: 1px dashed var(--site-border);
+  border-radius: 50%;
+  transform: rotate(-24deg);
+}
+.wilo-loading-card {
+  position: absolute;
+  border: 1px solid var(--site-border);
+  border-radius: 14px;
+  background: var(--site-surface);
+  box-shadow: 0 14px 28px -22px var(--site-primary);
+}
+.wilo-loading-card-back {
+  inset: 20px 28px auto auto;
+  width: 116px;
+  height: 87px;
+  padding: 19px 16px;
+  transform: rotate(10deg);
+  background: var(--site-soft);
+  animation: wilo-loading-back 3.8s ease-in-out infinite;
+}
+.wilo-loading-card i {
+  display: block;
+  height: 5px;
+  border-radius: 5px;
+  background: var(--site-border);
+}
+.wilo-loading-card-back i { margin-bottom: 8px; }
+.wilo-loading-card-back i:last-child { width: 55%; }
+.wilo-loading-card-front {
+  inset: 57px auto auto 24px;
+  width: 150px;
+  min-height: 86px;
+  padding: 17px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: rotate(-6deg);
+  animation: wilo-loading-front 3.8s ease-in-out infinite;
+}
+.wilo-loading-bookmark { display: inline-flex; color: var(--site-primary); }
+.wilo-loading-card-lines { flex: 1; }
+.wilo-loading-card-lines i:first-child { width: 100%; margin-bottom: 9px; background: var(--site-accent); }
+.wilo-loading-card-lines i:last-child { width: 65%; }
+.wilo-loading-check {
+  position: absolute;
+  inset: -9px -8px auto auto;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--site-bg);
+  border-radius: 50%;
+  color: var(--site-surface);
+  background: var(--site-primary);
+}
+.wilo-loading-return {
+  position: absolute;
+  inset: 126px 17px auto auto;
+  display: inline-flex;
+  color: var(--site-primary);
+}
+.wilo-loading-dot {
+  position: absolute;
+  inset: 20px auto auto 29px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--site-accent);
+}
+.wilo-loading-wordmark {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .24em;
+  color: var(--site-primary);
+  direction: ltr;
+}
+.wilo-loading-wordmark > span { color: var(--site-accent); }
+.wilo-loading h2 {
+  margin: 13px 0 8px;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: -.025em;
+}
+.wilo-loading-hint {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.wilo-loading-track {
+  width: 128px;
+  height: 3px;
+  margin-top: 28px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--site-border);
+  direction: ltr;
+}
+.wilo-loading-track > span {
+  display: block;
+  width: 44%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--site-primary);
+  animation: wilo-loading-track 1.7s ease-in-out infinite;
+}
+.wilo-loading-status {
+  margin: 13px 0 0;
+  max-width: 36ch;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--site-muted);
+}
+@keyframes wilo-loading-front {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-6px) rotate(-3deg); }
+}
+@keyframes wilo-loading-back {
+  0%, 100% { transform: translateY(0) rotate(10deg); }
+  50% { transform: translateY(3px) rotate(7deg); }
+}
+@keyframes wilo-loading-track {
+  0% { transform: translateX(-105%); }
+  100% { transform: translateX(335%); }
+}
+@media (max-width: 600px) {
+  .wilo-loading { min-height: 400px; padding: 28px 12px 36px; margin-top: 0; }
+  .wilo-loading-art { margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wilo-loading-card, .wilo-loading-track > span { animation: none; }
+  .wilo-loading-track > span { margin-inline: auto; }
+}
