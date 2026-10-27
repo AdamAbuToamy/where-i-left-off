@@ -129,6 +129,7 @@ export default function UniversityTrial(props: Props) {
           />
           <section className="study-task-list study-trial-panel">
             <header
+              data-study-course={selected?.id}
               className="study-trial-course-heading"
               style={{
                 borderInlineStartColor: selected

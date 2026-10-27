@@ -86,7 +86,7 @@ function plan() {
   };
 }
 async function seed(page: Page) {
-  await page.goto("/#/university?preview=1");
+  await page.goto("/#/university");
   await expect(page.locator(".study-university-trial")).toBeVisible();
   await page.locator(".study-trial-tools summary").click();
   await page.locator(".study-upload input").setInputFiles({
@@ -101,7 +101,7 @@ async function seed(page: Page) {
     "جبر التجربة",
   );
 }
-test("university-only trial keeps the original menu, assistant, personal cards and UML", async ({
+test("university default view keeps the original menu, assistant, personal cards and UML", async ({
   page,
   request,
 }) => {
@@ -158,8 +158,9 @@ test("university-only trial keeps the original menu, assistant, personal cards a
   await expect(page.locator(".admin-preview")).toHaveCount(0);
   await expect(page.locator(".study-university-trial")).toHaveCount(0);
   await page.goto("/#/university");
-  await expect(page.locator(".study-trial-entry")).toBeVisible();
-  await expect(page.locator(".study-trial-layout")).toHaveCount(0);
+  await expect(page.locator(".study-trial-entry")).toHaveCount(0);
+  await expect(page.locator(".study-trial-notice")).toHaveCount(0);
+  await expect(page.locator(".study-trial-layout")).toBeVisible();
   await expect(page.locator(".study-task-list")).toContainText(
     "امتحان التجربة",
   );
@@ -248,14 +249,16 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
     .analyze();
   expect(axe.violations).toEqual([]);
 });
-test("a non-administrator sees only the original university even with the trial query", async ({
+test("a regular verified account gets the new default view and old preview links remain compatible", async ({
   page,
   request,
 }) => {
   await signIn(page, request, "university-trial-nonadmin@example.test");
   await page.goto("/#/university?preview=1");
   await expect(page.locator(".study-page")).toBeVisible();
-  await expect(page.locator(".study-university-trial")).toHaveCount(0);
+  await expect(page.locator(".study-university-trial")).toBeVisible();
+  await expect(page.locator(".study-trial-layout")).toBeVisible();
+  await expect(page.locator(".study-trial-notice")).toHaveCount(0);
   await expect(page.locator(".study-trial-entry")).toHaveCount(0);
   await expect(page.locator(".side-navigation-toggle")).toBeVisible();
   await page.locator(".assistant-launcher").click();
