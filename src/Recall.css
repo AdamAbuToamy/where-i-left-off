@@ -27,3 +27,15 @@
 .conflict-versions p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .sync-conflict button { margin: 4px; }
 @media(max-width:600px) { .conflict-versions { grid-template-columns: 1fr; } }
+
+/* Compact section picker: hover with a mouse, native disclosure on touch/keyboard. */
+.sections-panel.sections-disclosure { padding: 8px 14px; border-radius: 14px; }
+.sections-disclosure-trigger { display: flex; align-items: center; gap: 9px; min-height: 42px; cursor: pointer; list-style: none; color: var(--site-primary); font-size: 14px; }
+.sections-disclosure-trigger::-webkit-details-marker { display: none; }
+.sections-disclosure-trigger > span { flex: 1; overflow-wrap: anywhere; }
+.sections-disclosure-trigger > svg:last-child { transition: transform .2s ease; flex-shrink: 0; }
+.sections-disclosure[open] > summary > svg:last-child { transform: rotate(180deg); }
+.sections-disclosure-trigger:focus-visible { outline: 2px solid var(--site-primary); outline-offset: 3px; border-radius: 6px; }
+.sections-disclosure-body { padding: 10px 0 6px; border-top: 1px solid var(--site-border); }
+.sections-disclosure[open] .sections-disclosure-body { animation: reveal-up .18s ease both; }
+@media (prefers-reduced-motion: reduce) { .sections-disclosure-trigger > svg:last-child { transition: none; } .sections-disclosure[open] .sections-disclosure-body { animation: none; } }

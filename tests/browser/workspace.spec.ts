@@ -163,6 +163,7 @@ test('browser tab capture opens a prefilled form and saves the link to the signe
 test('sections, waiting views, checkpoints and checklist edits synchronize across sessions', async ({ page, browser }) => {
   const email = `recall-${Date.now()}@example.test`
   await login(page, email, true)
+  if (!await page.locator('.sections-disclosure').evaluate(el => (el as HTMLDetailsElement).open)) await page.locator('.sections-disclosure-trigger').click()
   await page.getByRole('button', { name: 'Manage sections', exact: true }).click()
   await page.getByLabel('Section name', { exact: true }).fill('University')
   await page.getByRole('button', { name: 'Add section', exact: true }).click()
@@ -208,6 +209,7 @@ test('offline creation, edits, reorder, deletion and sections survive reload and
   await login(other, email)
   await context.setOffline(true)
   await expect(page.locator('.sync-status')).toContainText('offline')
+  if (!await page.locator('.sections-disclosure').evaluate(el => (el as HTMLDetailsElement).open)) await page.locator('.sections-disclosure-trigger').click()
   await page.getByRole('button', { name: 'Manage sections', exact: true }).click()
   await page.getByLabel('Section name', { exact: true }).fill('Offline university')
   await page.getByRole('button', { name: 'Add section', exact: true }).click()
@@ -267,6 +269,7 @@ test('offline creation, edits, reorder, deletion and sections survive reload and
   await expect(other.getByText('Latest phone draft', { exact: true })).toBeVisible()
   await expect(other.locator('article h2').first()).toHaveText('Existing card')
   await expect(other.getByRole('heading', { name: 'Delete offline', exact: true })).toHaveCount(0)
+  await other.locator('.sections-disclosure-trigger').click()
   await expect(other.getByRole('button', { name: /Offline university/ })).toBeVisible()
   await otherContext.close()
 })

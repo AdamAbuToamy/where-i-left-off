@@ -24,3 +24,9 @@ it('preserves an explicitly requested week when revealing a dated card and cance
  reveal.show({...course,target:'projects',after:{name:'Ammar',dueDate:'2026-10-25'}},true);expect(location.hash).toContain('weekOf=2026-10-25');
  await vi.advanceTimersByTimeAsync(80);reveal.dispose();const node=document.createElement('article');node.setAttribute('data-project',course.id);document.body.append(node);await Promise.resolve();expect(node.classList.contains('assistant-change-highlight')).toBe(false);
 });
+
+it('opens collapsed section ancestors before focusing a confirmed saved section',async()=>{
+ vi.useFakeTimers();document.body.innerHTML='<details class="sections-panel"><summary>All sections</summary><button data-section="saved-course">New section</button></details>';
+ const reveal=new AssistantChangeReveal();reveal.show({...course,target:'sections'});await vi.advanceTimersByTimeAsync(80);
+ expect(document.querySelector('details')!.open).toBe(true);expect(document.activeElement?.getAttribute('data-section')).toBe(course.id);reveal.dispose();
+});

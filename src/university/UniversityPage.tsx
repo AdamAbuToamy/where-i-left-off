@@ -264,9 +264,9 @@ function Workspace({ user }: {
                       <input type="checkbox" checked={t.done} disabled={busy} onChange={(e) => void run(() => saveTask({ ...t, done: e.target.checked }))}/>
                       <span className="study-tag">{kinds[t.kind]}</span>
                     </label>
-                    <small dir="auto" style={{ color: courseColor(t.courseId) }}>
+                    {!selectedCourse&&<small dir="auto" style={{ color: courseColor(t.courseId) }}>
                       {courseName(t.courseId)}
-                    </small>
+                    </small>}
                   </div>
                   <h4 dir="auto">{t.title}</h4>
                   <p className={!t.done && t.due && Date.parse(t.due) < now
@@ -313,7 +313,6 @@ function Workspace({ user }: {
           <div>
             <span className="study-eyebrow">مساحتي الدراسية</span>
             <h2>خطة الفصل</h2>
-            <p>من أول محاضرة إلى آخر امتحان؛ خطتك بين يديك.</p>
           </div>
           <div className="study-hero-actions"><details className="study-trial-tools"><summary><ChevronDown size={16}/>أدوات الخطة</summary><div>
             <button className="primary-button" onClick={() => setBatchOpen(true)}>إضافة دفعة</button>
@@ -332,7 +331,7 @@ function Workspace({ user }: {
             </label>
           </div></details></div>
         </header>
-        <div className="study-storage" role="status">
+        <div className={"study-storage"+(cloud.status.ready&&!cloud.status.pending&&!cloud.status.error?" study-storage-settled":"")} role="status">
           {cloud.status.error || (!cloud.status.ready ? "خطتك محفوظة محليًا؛ جارٍ الاتصال بالمزامنة…" : cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : "تمت المزامنة مع حسابك · متاحة على أجهزتك")}
           {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
         </div>
@@ -398,10 +397,6 @@ function Workspace({ user }: {
         {tab==='overview'&&<Suspense fallback={<p role="status">…</p>}><UniversityTrial state={state} selected={selectedCourse} filter={filter} now={now} busy={busy} language={language} courseColor={courseColor} select={id=>updateUniversityRoute('overview',id)} addCourse={()=>setBatchOpen(true)} addTask={newTask} editCourse={course=>setEditing({kind:'course',value:course})} template={course=>setEditing({kind:'course',value:courseTemplate(course,state.courses.length,translateStudyText('— فصل جديد',language))})} toggleTopic={(course,id)=>void run(()=>commit({...latest.current,courses:latest.current.courses.map(item=>item.id===course.id?{...item,topics:(item.topics||[]).map(topic=>topic.id===id?{...topic,done:!topic.done}:topic)}:item)}))} renderTasks={renderTasks}/></Suspense>}
         {tab === "schedule" && conflicts.size > 0 && <p className="study-overdue" role="status">يوجد تداخل في مواعيد {conflicts.size} محاضرات. افتح المحاضرة لتعديل وقتها.</p>}
         {tab === "schedule" && (<>
-            <p className="study-hint">
-              أضف المحاضرات والتمارين حسب نظام الجدول الجامعي. التوقيت:{" "}
-              {Intl.DateTimeFormat().resolvedOptions().timeZone}.
-            </p>
             <Suspense fallback={<p role="status">…</p>}><UniversityTrialSchedule lessons={state.lessons} courses={state.courses} filter={filter} conflicts={conflicts} language={language} courseColor={courseColor} edit={lesson=>setEditing({kind:"lesson",value:lesson})}/></Suspense>
           </>)}
         {tab === "map" && (<>

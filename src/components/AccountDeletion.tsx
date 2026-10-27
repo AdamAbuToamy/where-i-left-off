@@ -1,3 +1,4 @@
+import LoadingScreen from './LoadingScreen'
 import { supportText } from '../supportText'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -14,7 +15,7 @@ import type { Language } from '../translations'
 
 export function AccountLifecycle({ user, language, children }: { user: User; language: Language; children: ReactNode }) {
  const { request, loaded, cached } = useAccountDeletion(user.uid)
- if (!loaded) return <p role="status">{settingsText[language].checking}</p>
+ if (!loaded) return <LoadingScreen language={language} status={settingsText[language].checking} />
  if (request) return <AccountDeletion user={user} language={language} request={request} cached={cached} />
  return children
 }

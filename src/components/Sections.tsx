@@ -1,12 +1,36 @@
+import { ChevronDown, PanelsTopLeft } from 'lucide-react'
 import { useState } from 'react'
 import type { Language } from '../translations'
 import type { Project, Section } from '../types'
 import { recallText } from '../recallTranslations'
 export default function Sections({ sections, projects, selected, onSelect, onSave, onDelete, language, disabled, canManage = true }: { sections: Section[]; projects: Project[]; selected: string; onSelect: (id: string) => void; onSave: (name: string, id?: string) => Promise<boolean>; onDelete: (id: string) => Promise<boolean>; language: Language; disabled: boolean; canManage?: boolean }) {
   const t = recallText[language]
+  const selectedName = selected === 'all' ? t.allSections : sections.find(section => section.id === selected)?.name || t.noSection
   const [manage, setManage] = useState(false), [name, setName] = useState(''), [editing, setEditing] = useState<string | undefined>()
-  return <section className="sections-panel">
+  return <details className="sections-panel sections-disclosure"
+    onPointerEnter={event => { if (event.pointerType === 'mouse') event.currentTarget.open = true }}
+    onPointerLeave={event => {
+      if (event.pointerType !== 'mouse' || manage) return
+      const panel = event.currentTarget
+      if (panel.contains(document.activeElement)) panel.querySelector('summary')?.focus({preventScroll:true})
+      panel.open = false
+    }}
+    onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(':hover') && !manage) event.currentTarget.open = false }}
+    onKeyDown={event => {
+      if (event.key !== 'Escape') return
+      event.preventDefault();event.currentTarget.open = false;setManage(false)
+      event.currentTarget.querySelector('summary')?.focus({preventScroll:true})
+    }}>
+    <summary className="sections-disclosure-trigger" onClick={event => {
+      // A mouse enters before clicking: do not let the native toggle undo hover.
+      // Touch and keyboard keep the native disclosure toggle.
+      if ('pointerType' in event.nativeEvent && event.nativeEvent.pointerType === 'mouse') {
+        event.preventDefault();event.currentTarget.closest('details')!.open = true
+      }
+    }}><PanelsTopLeft size={18} aria-hidden="true"/><span dir="auto">{selectedName}</span><ChevronDown size={16} aria-hidden="true"/></summary>
+    <div className="sections-disclosure-body">
     <div className="section-navigation">{sections.length > 0 && <button className="secondary-button" aria-pressed={selected === 'all'} onClick={() => onSelect('all')}>{t.allSections}</button>}{sections.length > 0 && projects.some(p => !p.sectionId || !sections.some(s => s.id === p.sectionId)) && <button className="secondary-button" aria-pressed={selected === ''} onClick={() => onSelect('')}>{t.noSection}</button>}{sections.map(s => <button data-section={s.id} key={s.id} className="secondary-button" aria-pressed={selected === s.id} onClick={() => onSelect(s.id)}><span dir="auto">{s.name}</span><small>{projects.filter(p => p.sectionId === s.id).length}</small></button>)}{canManage && <button className="text-button" aria-expanded={manage} onClick={() => setManage(v => !v)}>{t.manage}</button>}</div>
     {manage && canManage && <fieldset className="section-editor" disabled={disabled}><form onSubmit={async e => { e.preventDefault(); if (await onSave(name, editing)) { setName(''); setEditing(undefined) } }}><label htmlFor="section-name">{t.sectionName}</label><input id="section-name" required dir="auto" maxLength={60} value={name} onChange={e => setName(e.target.value)} /><button className="primary-button" disabled={!name.trim()}>{editing ? t.rename : t.addSection}</button></form><div className="section-management">{sections.map(s => <div key={s.id}><strong dir="auto">{s.name}</strong><button className="text-button" onClick={() => { setEditing(s.id); setName(s.name) }}>{t.rename}</button>{<button className="text-button" title={t.removeSection} onClick={async () => { if (await onDelete(s.id)) { if (selected === s.id) onSelect('all'); if (editing === s.id) { setEditing(undefined); setName('') } } }}>{t.removeSection}</button>}</div>)}</div><p>{t.moveFirst}</p></fieldset>}
-  </section>
+    </div>
+  </details>
 }
