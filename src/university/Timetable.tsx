@@ -12,7 +12,6 @@ type Props={lessons:Lesson[];courses:Course[];courseFilter:string;conflicts:Set<
 export default function Timetable({lessons,courses,courseFilter,conflicts,language,courseColor,onEdit}:Props){
  const t=words[language],bounds=timetableBounds(lessons),names=new Map(courses.map(c=>[c.id,c.name]));
  return <>
-  <p className="study-hint">{t.hint}</p>
   <div className="study-timetable-scroll" role="region" aria-label={t.title} tabIndex={0} dir={language==='en'?'ltr':'rtl'}>
    <div className="study-week study-time-grid" style={{'--study-hour-height':`${TIMETABLE_HOUR_HEIGHT}px`,'--study-half-hour-height':`${TIMETABLE_HOUR_HEIGHT/2}px`} as CSSProperties}>
     <div className="study-time-axis" aria-hidden="true"><h3>{t.hour}</h3><div className="study-time-axis-track" style={{height:bounds.height}}>{bounds.hours.map(hour=><span key={hour} className="study-hour-label" style={{top:(hour-bounds.start)*TIMETABLE_HOUR_HEIGHT/60}} dir="ltr">{hourLabel(hour)}</span>)}</div></div>

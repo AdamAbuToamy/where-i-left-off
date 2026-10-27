@@ -14,8 +14,22 @@ Final local and exact-head CI results are recorded before deployment. Browser fi
 
 
 ## Local evidence
-- `npm test`: 1131 passed / 95 files, including account verification, pending-deletion and offline regressions.
+- `npm test`: 1132 passed / 95 files, including account verification, pending-deletion and offline regressions.
 - Focused Chromium/emulator loading journey: passed; responsive screenshots, three languages, five scoped axe checks, reduced motion, and transition after actual verification.
 - `npm run lint`: zero errors; one unchanged AssistantWidget ref-cleanup warning.
-- `npx tsc -b`, `npm run check:architecture`, production `npm run build` and `git diff --check`: passed. Credential-pattern scan passed for 635 source/asset files; existing bundle-size advisory remains.
+- `npx tsc -b`, `npm run check:architecture`, production `npm run build` and `git diff --check`: passed. Credential-pattern scan passed for 637 source/asset files; existing bundle-size advisory remains.
 - Full browser suite, Firebase rules, auth-recovery, worker and dependency checks run in the exact-head CI gate. Results and live deployment evidence are linked from the release PR; they are not treated as passed before completion.
+
+
+## Compact screen controls and copy
+Remove the specified resume introduction, analytics learning/books sentence, University slogan and repeated timetable editing/scroll/timezone hints. Keep routine successful University sync announcements available to assistive technology without occupying layout space; connecting, offline/queued, conflict and error states remain visible. Hide the task's repeated course label when one course is already selected; retain attribution in cross-course lists and the next-deadline summary. User course/task content is not deleted.
+
+The sections bar is now a native disclosure, initially closed with the selected section in its summary. Mouse hover opens it and leaving closes it; touch and keyboard use the summary. Keep it open while section management is active to protect editing. Escape collapses it and returns focus. Account permissions and section saves/deletes are unchanged. The existing assistant change-reveal helper opens enclosing disclosures before focusing a confirmed saved record; this does not alter inference or execution.
+
+Regression coverage includes mouse/touch sections, management, keyboard Enter/Tab/Escape, responsive layout and opening a saved section inside a collapsed ancestor. Existing section journeys now open the disclosure before using its controls.
+
+
+### Final compact-UI validation
+All 44 distinct Chromium/emulator journeys passed across the local runs. The first full run passed 33 then stopped at an old assertion expecting an expanded sections list on the second account. That assertion now explicitly opens the disclosure, and all 15 workspace journeys passed on the subsequent focused run. Mouse/touch/keyboard disclosure tests and the loader/theme accessibility journey passed. Exact-head CI re-runs the full suite together before merge.
+
+Final unit count: 1132 / 95 files. TypeScript, lint (unchanged warning only), architecture, production build and credential-pattern scan passed. The collapsed sections desktop screenshot was visually reviewed.

@@ -38,6 +38,8 @@ export class AssistantChangeReveal{
    const element=destination.attribute?Array.from(document.querySelectorAll<HTMLElement>('['+destination.attribute+']')).find(e=>e.getAttribute(destination.attribute!)===destination.id):document.querySelector<HTMLElement>(destination.container)||document.querySelector<HTMLElement>('.account-page-outlet');
    if(!element)return false;
    this.observer?.disconnect();clearTimeout(this.timer);
+   // Confirmed records can live inside collapsed section pickers or detail panels.
+   for(let disclosure=element.closest('details');disclosure;disclosure=disclosure.parentElement?.closest('details')||null)disclosure.open=true;
    const previous=element.getAttribute('tabindex');element.setAttribute('tabindex','-1');element.classList.add('assistant-change-highlight');
    element.scrollIntoView?.({block:'center',inline:'nearest',behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
    element.focus({preventScroll:true});
