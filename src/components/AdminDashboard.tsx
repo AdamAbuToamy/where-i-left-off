@@ -82,6 +82,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
         </article>})}
       </div>
     </>}
+    <a className="secondary-button" href="#/admin/preview">{language==='ar'?'تجربة تحسين الواجهة الأصلية':language==='he'?'ניסוי שיפורי הממשק המקורי':'Try original-interface improvements'}</a>
     <p className="admin-limits">{t.adminLimit}</p>
     <a className="primary-button admin-console-link" href="https://console.firebase.google.com/project/where-i-left-off-b5683/authentication/users" target="_blank" rel="noopener noreferrer">{t.firebaseUsers} ↗</a>
   </section>

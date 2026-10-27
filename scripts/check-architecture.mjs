@@ -3,7 +3,7 @@ import {existsSync,readFileSync} from 'node:fs';
 import {dirname,resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-export const CORE_ROOTS=['src/lib/projectEntity.ts','src/lib/offlineWorkspace.ts','src/assistant/actions.ts','src/university/planImport.ts'];
+export const CORE_ROOTS=['src/lib/projectEntity.ts','src/lib/offlineWorkspace.ts','src/assistant/actions.ts','src/university/planImport.ts','src/preview/core/repository.ts','src/preview/core/calendar.ts','src/preview/core/selectors.ts'];
 const browserGlobals=new Set(['window','document','navigator','localStorage','sessionStorage','indexedDB']);
 /** Follow runtime dependencies only; type-only DTO references never load an adapter. */
 export function checkCoreBoundaries(root=process.cwd()){
