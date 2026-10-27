@@ -6,5 +6,5 @@ import { readClientConfiguration } from './src/lib/clientConfiguration.ts'
 export default defineConfig(({ mode }) => {
   // Check values before Vite can inline them. Errors contain no credential values.
   readClientConfiguration(loadEnv(mode, process.cwd(), 'VITE_'))
-  return { build: { rolldownOptions: { output: { chunkFileNames: chunk => chunk.moduleIds.some(id => id.includes('/src/studio/')) ? 'assets/studio-[name]-[hash].js' : 'assets/[name]-[hash].js' } } }, plugins: [react()], resolve: {alias: [{find: /^@pollinations\/sdk$/, replacement: fileURLToPath(new URL('./node_modules/@pollinations/sdk/dist/index.js', import.meta.url))}]} }
+  return { plugins: [react()], resolve: {alias: [{find: /^@pollinations\/sdk$/, replacement: fileURLToPath(new URL('./node_modules/@pollinations/sdk/dist/index.js', import.meta.url))}]} }
 })
