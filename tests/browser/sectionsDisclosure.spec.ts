@@ -3,8 +3,8 @@ import { prepareUniversityPilot } from './universityFixture'
 
 for(const touch of [false,true])test.describe(touch ? 'touch sections' : 'mouse sections',()=>{
  test.use({viewport:touch?{width:390,height:844}:{width:1280,height:900},hasTouch:touch,isMobile:touch})
- test('compact picker opens intentionally and keeps section editing available',async({page,request})=>{
-  const account=await prepareUniversityPilot(request,`sections-disclosure-${touch}@example.test`)
+ test('compact picker opens intentionally and keeps section editing available',async({page,request},testInfo)=>{
+  const account=await prepareUniversityPilot(request,`sections-disclosure-${touch}-${testInfo.repeatEachIndex}@example.test`)
   await page.addInitScript(()=>localStorage.setItem('language','en'))
   await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(account.email);await page.getByLabel('Password',{exact:true}).fill(account.password)
   await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click()
@@ -15,6 +15,7 @@ for(const touch of [false,true])test.describe(touch ? 'touch sections' : 'mouse 
   await expect(trigger).toBeVisible();await expect(panel).not.toHaveAttribute('open','')
   if(touch)await trigger.tap();else await trigger.hover()
   await expect(panel).toHaveAttribute('open','')
+  if(!touch){await trigger.click();await expect(panel).toHaveAttribute('open','')}
   await page.getByRole('button',{name:'Manage sections',exact:true}).click()
   await page.getByLabel('Section name',{exact:true}).fill('My section')
   if(!touch){await page.locator('h1').hover();await expect(page.getByLabel('Section name',{exact:true})).toBeVisible()}

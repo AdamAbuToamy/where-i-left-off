@@ -33,3 +33,7 @@ Regression coverage includes mouse/touch sections, management, keyboard Enter/Ta
 All 44 distinct Chromium/emulator journeys passed across the local runs. The first full run passed 33 then stopped at an old assertion expecting an expanded sections list on the second account. That assertion now explicitly opens the disclosure, and all 15 workspace journeys passed on the subsequent focused run. Mouse/touch/keyboard disclosure tests and the loader/theme accessibility journey passed. Exact-head CI re-runs the full suite together before merge.
 
 Final unit count: 1132 / 95 files. TypeScript, lint (unchanged warning only), architecture, production build and credential-pattern scan passed. The collapsed sections desktop screenshot was visually reviewed.
+
+
+### Hover/click regression
+The first exact-head CI run passed 43/44 browser journeys and caught a mouse timing race: entering the summary opened it, then the native click could close it again. Mouse clicks now keep the hover disclosure open; touch and keyboard retain native toggling. All 16 repeated layout/disclosure journeys passed locally after the fix (three languages, desktop/phone, two runs). Repeated section tests use separate emulator accounts to prevent duplicate fixture records. TypeScript, lint and production build were rechecked before the final push.
