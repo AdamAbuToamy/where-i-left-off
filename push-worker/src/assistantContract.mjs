@@ -16,6 +16,7 @@ export const actionFields={
  sections:{name:text(60)},
 };
 export const controlFields={
+ session:{sessionId:id,expectedRevision:integer(0,9000000000000000),verb:enumeration('add_item','edit_item','complete_item','reopen_item','delete_item','add_note','edit_note','delete_note','undo'),id:id,text:text(1000)},
  profile:{displayName:{type:'string',minLength:1,maxLength:100}},
  appearance:{theme:enumeration('original','ocean','olive','violet','cobalt','emerald','sunset','rose'),background:enumeration('dots','paper','grid','linen','mist','plain')},
  language:{language:enumeration('ar','en','he')},sleep:{enabled:boolean},

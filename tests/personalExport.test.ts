@@ -6,7 +6,7 @@ import { exportPersonalData } from '../src/lib/feedback'
 it('exports only the signed-in personal collections and the explicitly permitted preference document',async()=>{
  vi.stubGlobal('navigator',{onLine:true})
  const result=await exportPersonalData({} as Firestore,'alice')
- expect(mocks.getDocs.mock.calls.map(c=>c[0])).toEqual(['users/alice/projects','users/alice/sections','users/alice/sessions'])
+ expect(mocks.getDocs.mock.calls.map(c=>c[0])).toEqual(['users/alice/projects','users/alice/sections','users/alice/sessions','users/alice/sessionWorkspaces'])
  expect(mocks.getDoc).toHaveBeenCalledWith('users/alice/preferences/workflow')
  expect(result.preferences.workflow).toEqual({reminders:true});expect(result.uid).toBe('alice')
  vi.unstubAllGlobals()

@@ -1,3 +1,4 @@
+export {planSessionOperations as planAssistantSessionOperations} from '../session/domain';
 import {assistantFileName} from './fileName';
 import { validDate } from '../lib/projects';
 import { parseTasks } from './taskLedger';

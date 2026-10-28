@@ -1,0 +1,178 @@
+{
+  "date": "2026-10-28T19:58:46.961Z",
+  "kind": "real-audio-production-worker",
+  "assetTransport": "local-mirror-of-pinned-public-files",
+  "results": [
+    {
+      "sample": "ar_eg",
+      "language": "ar",
+      "kind": "human-FLEURS",
+      "reference": "تشكلت في المحيط الأطلسي اليوم عاشر عاصفة مُسماة لموسم الأعاصير الأطلسية العاصفة شبه الاستوائية جيري",
+      "text": "تشكلت في المحيد الأطلس اليوم عشر عصفة مسمال مسم الأعصير الأطلسية العصفة شبه للستوائية جري",
+      "loadMs": 3822,
+      "inferenceMs": 4539,
+      "noise": {
+        "snrDb": 20,
+        "kind": "deterministic added white noise",
+        "text": "تشكلت في المخيط الأطلس اليوم عشر عصفة مسمع لموسم الأعصير الأطلسية العصفة شبه للستوائية الجري",
+        "inferenceMs": 4479
+      },
+      "errors": {
+        "wer": 0.6666666666666666,
+        "cer": 0.12244897959183673
+      },
+      "noiseErrors": {
+        "wer": 0.6,
+        "cer": 0.1326530612244898
+      }
+    },
+    {
+      "sample": "he_il",
+      "language": "he",
+      "kind": "human-FLEURS",
+      "reference": "מרטלי השביע אתמול ועדת בחירות זמנית cep חדשה בת תשעה חברים",
+      "text": "מרק לי שביע את מול ועדת פרירות זמנית חדשה בת תישה חברים",
+      "loadMs": 1803,
+      "inferenceMs": 3965,
+      "noise": {
+        "snrDb": 20,
+        "kind": "deterministic added white noise",
+        "text": "מה על תליש בית מול ועדת חדשה ועדת פריבוז מנית חדשה בת תישה חברים",
+        "inferenceMs": 3910
+      },
+      "errors": {
+        "wer": 0.7272727272727273,
+        "cer": 0.20689655172413793
+      },
+      "noiseErrors": {
+        "wer": 0.9090909090909091,
+        "cer": 0.5172413793103449
+      }
+    },
+    {
+      "sample": "en_us",
+      "language": "en",
+      "kind": "human-FLEURS",
+      "reference": "however due to the slow communication channels styles in the west could lag behind by 25 to 30 year",
+      "text": "However, due to the slow communication channels, styles in the West could lag behind by 25 to 30 years.",
+      "loadMs": 1779,
+      "inferenceMs": 3704,
+      "noise": {
+        "snrDb": 20,
+        "kind": "deterministic added white noise",
+        "text": "However, due to the slow communication channels, styles in the West could lag behind by 25 to 30 years.",
+        "inferenceMs": 3473
+      },
+      "errors": {
+        "wer": 0.05263157894736842,
+        "cer": 0.010101010101010102
+      },
+      "noiseErrors": {
+        "wer": 0.05263157894736842,
+        "cer": 0.010101010101010102
+      }
+    },
+    {
+      "sample": "command-ar",
+      "language": "ar",
+      "kind": "synthetic-OS-voice",
+      "reference": "أضف بند فحص تسجيل الدخول",
+      "text": "أضف بند فحسي تسجيل الدخول",
+      "loadMs": 1824,
+      "inferenceMs": 3513,
+      "noise": {
+        "snrDb": 20,
+        "kind": "deterministic added white noise",
+        "text": "أظف بند فحسي تسجيل دهول",
+        "inferenceMs": 3223
+      },
+      "errors": {
+        "wer": 0.2,
+        "cer": 0.08333333333333333
+      },
+      "noiseErrors": {
+        "wer": 0.6,
+        "cer": 0.25
+      }
+    },
+    {
+      "sample": "command-he",
+      "language": "he",
+      "kind": "synthetic-OS-voice",
+      "reference": "הוסף בדיקת התחברות לרשימה",
+      "text": "עוסף בדיקת התחברות לרשימה",
+      "loadMs": 1851,
+      "inferenceMs": 3438,
+      "noise": {
+        "snrDb": 20,
+        "kind": "deterministic added white noise",
+        "text": "עוסף ובקת את חביבות ל-Rashima",
+        "inferenceMs": 3221
+      },
+      "errors": {
+        "wer": 0.25,
+        "cer": 0.04
+      },
+      "noiseErrors": {
+        "wer": 1.5,
+        "cer": 0.64
+      }
+    },
+    {
+      "sample": "command-en",
+      "language": "en",
+      "kind": "synthetic-OS-voice",
+      "reference": "Add task check Firebase authentication",
+      "text": "Add Task Check Firebase Authentication",
+      "loadMs": 1892,
+      "inferenceMs": 3230,
+      "noise": {
+        "snrDb": 20,
+        "kind": "deterministic added white noise",
+        "text": "Add Task Check Firebase authentication.",
+        "inferenceMs": 3008
+      },
+      "errors": {
+        "wer": 0,
+        "cer": 0
+      },
+      "noiseErrors": {
+        "wer": 0,
+        "cer": 0
+      }
+    },
+    {
+      "sample": "command-mixed",
+      "language": "ar",
+      "kind": "synthetic-OS-voice",
+      "reference": "ضيف فحص Firebase Auth للتشيك ليست",
+      "text": "دي فن فحص فعر بيسف لتشيق لليزة",
+      "loadMs": 1856,
+      "inferenceMs": 3701,
+      "noise": {
+        "snrDb": 20,
+        "kind": "deterministic added white noise",
+        "text": "دعيبون فحص فعر بيسار لتشيط لليزة",
+        "inferenceMs": 3529
+      },
+      "errors": {
+        "wer": 1,
+        "cer": 0.6060606060606061
+      },
+      "noiseErrors": {
+        "wer": 0.8333333333333334,
+        "cer": 0.696969696969697
+      }
+    }
+  ],
+  "cache": {
+    "loadedOffline": true
+  },
+  "nonGetRequests": [],
+  "model": {
+    "id": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "dtype": "q8",
+    "device": "wasm"
+  }
+}

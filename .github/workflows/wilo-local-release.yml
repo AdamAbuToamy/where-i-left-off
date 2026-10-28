@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci --no-audit --no-fund
+      - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - run: npm run lint
       - run: VITE_USE_EMULATORS=false npm run build
       - run: npm test

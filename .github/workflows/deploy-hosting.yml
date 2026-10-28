@@ -72,7 +72,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci --no-audit --no-fund
+      - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - name: Preserve public production configuration and App Check
         run: node scripts/prepare-hosting-config.mjs
       - name: Diagnose public Auth origins without administrative permissions

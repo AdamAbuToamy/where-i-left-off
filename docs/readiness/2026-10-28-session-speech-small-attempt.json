@@ -1,0 +1,9 @@
+{
+  "model": "onnx-community/whisper-small",
+  "revision": "36050c46d777d46dc4b5f43f6d90574fc38f8732",
+  "weightsDownloadedAndSha256Verified": true,
+  "result": "not-qualified",
+  "stage": "first real-audio production worker load/inference",
+  "observedError": "page.evaluate: Target page, context or browser has been closed",
+  "cause": "Not established. No completed quality or latency measurement. Do not infer an accuracy comparison from this run."
+}

@@ -6,6 +6,7 @@ export function validateWorkspaceReply(_message:string,data:AssistantData,text:s
  const reply=parseAssistantReply(text);
 
  if((reply.actions.length||reply.controls?.length)&&!reply.tasks?.length)throw new Error('assistant-task-coverage');
+ if(reply.controls?.some(control=>control.kind==='session')&&(reply.actions.length||reply.controls.some(control=>control.kind!=='session')))throw new Error('assistant-task-coverage');
  const changes=planAssistantProposal(data,reply.actions);
  const controls=resolveProposalControls(data,reply.actions,changes,reply.controls||[]);
  return {reply,changes,controls};

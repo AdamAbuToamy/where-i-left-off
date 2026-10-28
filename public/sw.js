@@ -19,6 +19,14 @@ self.addEventListener('fetch', event => {
     return;
   }
   const pathname = new URL(event.request.url).pathname;
+  // Optional speech assets are cached only after explicit use, never on install.
+  if (/^\/assets\/(?:speech\.worker|ort-|onnxruntime|transformers)[^/]+\.(?:m?js|wasm)$/.test(pathname)) {
+    event.respondWith(caches.open(CACHE_NAME+'-speech-runtime').then(async cache => {
+      const saved=await cache.match(event.request);if(saved)return saved;
+      const response=await fetch(event.request);if(response.ok)await cache.put(event.request,response.clone());return response;
+    }));
+    return;
+  }
   if (PRECACHE.includes(pathname)) event.respondWith(caches.open(CACHE_NAME).then(cache => cache.match(pathname, { ignoreVary: true })).then(cached => cached || fetch(event.request)));
 });
 

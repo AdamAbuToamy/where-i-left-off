@@ -1,9 +1,10 @@
+import {parseSessionControlValues} from '../session/control';
 import { validDate } from '../lib/projects';
 import { backgrounds, themes } from '../lib/appearanceCatalog';
-export type AssistantControl={kind:'profile'|'appearance'|'language'|'sleep'|'workflow'|'navigate'|'tour';values:Record<string,unknown>};
+export type AssistantControl={kind:'profile'|'appearance'|'language'|'sleep'|'workflow'|'navigate'|'tour'|'session';values:Record<string,unknown>};
 export type ControlPlan={control:AssistantControl;before:Record<string,unknown>;after:Record<string,unknown>};
-export type ControlResult={plan:ControlPlan;ok:boolean;reason?:string};
-const fields={profile:['displayName'],appearance:['theme','background'],language:['language'],sleep:['enabled'],workflow:['autoArchive','reminders','desktop','reviewDays'],navigate:['page','groupId','tab','courseId','view','filter','search','section','mine','weekOf'],tour:[]};
+export type ControlResult={plan:ControlPlan;ok:boolean;reason?:string;pending?:boolean};
+const fields={profile:['displayName'],appearance:['theme','background'],language:['language'],sleep:['enabled'],workflow:['autoArchive','reminders','desktop','reviewDays'],navigate:['page','groupId','tab','courseId','view','filter','search','section','mine','weekOf'],tour:[],session:['sessionId','expectedRevision','verb','id','text']};
 const pages=['personal','resume','university','groups','settings','notifications','library','analytics','logs','support'];
 const invalid=()=>{throw new Error('assistant-invalid');};
 export function parseControls(raw:unknown):AssistantControl[]{
@@ -14,6 +15,7 @@ export function parseControls(raw:unknown):AssistantControl[]{
   const c=value as AssistantControl;
   if(!Object.hasOwn(fields,c.kind)||Object.keys(c).some(k=>!['kind','values'].includes(k))||!c.values||typeof c.values!=='object'||Array.isArray(c.values))return invalid();
   const v={...c.values};
+  if(c.kind==='session')return {kind:'session',values:{...parseSessionControlValues(v)}};
   if(c.kind==='profile'){
    if(typeof v.displayName!=='string'||!v.displayName.trim()||v.displayName.length>100)return invalid();
    v.displayName=v.displayName.trim();

@@ -30,7 +30,7 @@ export async function respondToFeedback(db:Firestore,id:string,status:FeedbackSt
 }
 export async function exportPersonalData(db:Firestore,uid:string) {
  if(!navigator.onLine)throw new Error('support-offline')
- const names=['projects','sections','sessions'] as const
+ const names=['projects','sections','sessions','sessionWorkspaces'] as const
  const entries=await Promise.all(names.map(async name=>[name,(await getDocsFromServer(collection(db,'users',uid,name))).docs.map(d=>({id:d.id,...d.data()}))]))
  const preference=await getDocFromServer(doc(db,'users',uid,'preferences','workflow'))
  return {preferences:preference.exists()?{workflow:preference.data()}:{},exportedAt:new Date().toISOString(),uid,scope:'Personal data only; excludes group content and server diagnostics.',...Object.fromEntries(entries)}

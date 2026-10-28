@@ -71,7 +71,7 @@ jobs:
           JS
       - name: Install the synthetic test harness
         if: steps.readiness.outputs.ready == 'true'
-        run: npm ci --no-audit --no-fund
+        run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - name: Run actual model inference with synthetic account data
         if: steps.readiness.outputs.ready == 'true'
         env:
