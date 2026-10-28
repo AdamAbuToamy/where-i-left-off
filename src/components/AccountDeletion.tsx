@@ -1,3 +1,4 @@
+import {BrowserSessionStore} from '../session/browserStore'
 import LoadingScreen from './LoadingScreen'
 import { supportText } from '../supportText'
 import { useEffect, useRef, useState } from 'react'
@@ -52,7 +53,7 @@ export default function AccountDeletion({ user, language, request = null, cached
    if (request) await cancelAccountDeletion(user.uid)
    else {
     await requestAccountDeletion(user.uid)
-    await clearLocalAccount(db!.app.options.projectId || '', user.uid).catch(error => logEvent('account.cache.clear', error))
+    await Promise.all([clearLocalAccount(db!.app.options.projectId || '', user.uid),BrowserSessionStore.clearAccount(db!.app.options.projectId || '',user.uid)]).catch(error => logEvent('account.cache.clear', error))
    }
    setConfirm(false); setTyped('')
   } catch (error) { setFailed(true); logEvent(request ? 'account.restore' : 'account.deletion.request', error) }

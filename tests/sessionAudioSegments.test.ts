@@ -1,0 +1,23 @@
+import { it, expect, vi } from "vitest";
+import { AudioSegmenter } from "../src/session/audioSegments";
+it("ignores silence and brief clicks, emits bounded utterances, and clears on stop", () => {
+  const start = vi.fn(),
+    complete = vi.fn(),
+    segmenter = new AudioSegmenter(start, complete),
+    silence = new Float32Array(640),
+    voice = new Float32Array(640).fill(0.1);
+  for (let i = 0; i < 100; i++) segmenter.push(silence);
+  expect(start).not.toHaveBeenCalled();
+  segmenter.push(voice);
+  for (let i = 0; i < 22; i++) segmenter.push(silence);
+  expect(complete).not.toHaveBeenCalled();
+  for (let i = 0; i < 8; i++) segmenter.push(voice);
+  for (let i = 0; i < 20; i++) segmenter.push(silence);
+  expect(complete).toHaveBeenCalledTimes(1);
+  expect(complete.mock.calls[0][0].length).toBeLessThanOrEqual(192000);
+  for (let i = 0; i < 310; i++) segmenter.push(voice);
+  expect(complete).toHaveBeenCalledTimes(2);
+  segmenter.clear();
+  for (let i = 0; i < 20; i++) segmenter.push(silence);
+  expect(complete).toHaveBeenCalledTimes(2);
+});

@@ -62,3 +62,11 @@ it('prepares PDF source for the browser renderer without database mutations',()=
  expect(selected.tools.map(t=>t.function.name)).toEqual(['create_card','create_section','prepare_file','read_workspace']);
  expect(JSON.stringify(selected).length).toBeLessThan(JSON.stringify(all).length*0.6);
 });
+it('requires explicit shared session context and exact session revision for native controls',()=>{
+ const base=acceptanceContext(),args={sessionId:'session',expectedRevision:4,verb:'add_item',text:'Check Firebase'};
+ expect(()=>nativeToolProposal([call('set_session',args)],base)).toThrow('assistant-session-local-only');
+ const context={...base,controls:{...base.controls,session:{available:true,shared:true,sessionId:'session',revision:4}}};
+ const reply=JSON.parse(nativeToolProposal([call('set_session',args)],context));expect(reply.controls).toEqual([{kind:'session',values:args}]);expect(reply.actions).toEqual([]);
+ expect(()=>nativeToolProposal([call('set_session',{...args,expectedRevision:3})],context)).toThrow('assistant-session-local-only');
+ const mixed=nativeToolProposal([call('set_session',args,'session'),call('set_appearance',{theme:'olive'},'appearance')],context);expect(()=>validateWorkspaceReply('',context,mixed)).toThrow('assistant-task-coverage');
+});

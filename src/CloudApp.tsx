@@ -1,6 +1,7 @@
 import { StudyLocaleProvider } from "./university/StudyLocale";
 import { lazy, Suspense } from 'react';
 const AssistantSandbox = /* @__PURE__ */ lazy(()=>import('./assistant/AssistantWidget'));
+import SessionOutboxSync from './session/SessionOutboxSync'
 import LoadingScreen from './components/LoadingScreen'
 import CloudPushSync from './components/CloudPushSync'
 import PushLifecycle from './components/PushLifecycle'
@@ -74,7 +75,7 @@ export default function App() {
     {authError !== null && <p className="notice error" role="alert">{errorText(authError, language)}</p>}
     {!configured ? <section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section> : loading ? <LoadingScreen language={language} status={c.loading} /> : user ? page === 'support' ? <><Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} />{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>}</> : <><AccountLifecycle key={user.uid} user={user} language={language}>
       {page !== 'settings' && <ExtensionInstall language={language} />}
-      <CloudPushSync user={user}/><WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
+      <SessionOutboxSync uid={user.uid}/><CloudPushSync user={user}/><WorkflowAgent user={user} language={language}/><AnnouncementInbox user={user} language={language} />
       <WelcomeTour user={user} language={language} />
       <SideNavigation language={language} page={page} admin={isAdmin(user.email, user.emailVerified)} />
       {!user.displayName?.trim() && page !== 'settings' && <section className="profile-prompt" aria-label={p.needsName}><span className="profile-prompt-icon" aria-hidden="true">✦</span><div className="profile-prompt-copy"><strong>{p.needsName}</strong><span>{p.profilePrompt}</span></div><a className="primary-button profile-prompt-action" href="#/settings">{p.editProfile} <span aria-hidden="true">↗</span></a></section>}

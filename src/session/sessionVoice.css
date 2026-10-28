@@ -1,0 +1,305 @@
+.focus-dialog:has(.session-workspace) {
+  width: min(760px, calc(100vw - 28px));
+}
+.session-workspace {
+  margin-block: 20px;
+  padding: 16px;
+  border: 1px solid var(--site-border);
+  border-radius: 14px;
+  background: var(--site-surface);
+  color: var(--site-text);
+  min-width: 0;
+}
+.session-workspace-heading,
+.session-voice-toolbar,
+.session-inline-actions,
+.session-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.session-workspace-heading {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.session-workspace h3 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+}
+.session-workspace h4 {
+  margin-block: 18px 10px;
+}
+.session-workspace small,
+.session-workspace time {
+  color: var(--site-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.session-workspace button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--site-border);
+  border-radius: 9px;
+  background: var(--site-soft);
+  color: var(--site-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.session-workspace button.primary-button {
+  background: var(--site-primary);
+  color: var(--site-surface);
+}
+.session-workspace button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.session-workspace :is(button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--site-primary);
+  outline-offset: 3px;
+}
+.session-workspace input:not([type="checkbox"]),
+.session-workspace textarea,
+.session-workspace select {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--site-border);
+  border-radius: 9px;
+  background: var(--site-input);
+  color: var(--site-text);
+  font: inherit;
+}
+.session-workspace textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  margin-block: 6px 10px;
+}
+.session-workspace label {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.session-workspace input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--site-primary);
+}
+.session-mic-state {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-block: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.session-mic-state i {
+  width: 8px;
+  height: 8px;
+  background: var(--site-muted);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.session-mic-state[data-microphone="active"] i {
+  background: #ad302a;
+  box-shadow: 0 0 0 4px #ad302a18;
+  animation: session-mic-pulse 1.8s ease-in-out infinite;
+}
+.session-language {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.session-privacy {
+  margin-block: 12px;
+  font-size: 12px;
+  color: var(--site-muted);
+  line-height: 1.8;
+}
+.session-options {
+  display: grid;
+  gap: 9px;
+  margin-block: 12px;
+}
+.session-options label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.session-partial {
+  padding: 10px;
+  background: var(--site-soft);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--site-muted);
+}
+.session-proposal,
+.session-note-drafts article,
+.session-conflict {
+  padding: 12px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  margin-block: 12px;
+  background: var(--site-soft);
+}
+.session-proposal p {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.session-proposal small {
+  display: block;
+  margin-block: 6px;
+}
+.session-proposal > div {
+  display: flex;
+  gap: 8px;
+}
+.session-error {
+  padding: 10px;
+  border-inline-start: 3px solid #a14935;
+  line-height: 1.7;
+}
+.session-success {
+  font-size: 12px;
+  color: var(--site-primary);
+  line-height: 1.7;
+}
+.session-error button {
+  margin-inline-start: 8px;
+}
+.session-manual-controls {
+  border: 0;
+  padding: 12px 0 0;
+  margin-top: 14px;
+  border-top: 1px solid var(--site-border);
+  min-width: 0;
+}
+.session-manual-controls legend {
+  font-weight: 650;
+  padding-inline: 0 10px;
+}
+.session-input-row input {
+  flex: 1;
+}
+.session-checklist {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.session-checklist > li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--site-border);
+}
+.session-checklist label {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  min-width: 0;
+}
+.session-checklist label span {
+  overflow-wrap: anywhere;
+}
+.session-checklist .is-done {
+  text-decoration: line-through;
+  color: var(--site-muted);
+}
+.session-checklist > li > button {
+  font-size: 12px;
+  padding: 6px;
+  min-width: 36px;
+}
+.session-notes article {
+  padding: 12px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  margin-block: 8px;
+}
+.session-notes p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0 0 7px;
+}
+.session-notes article > div {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.session-inline-editor {
+  padding: 10px;
+  background: var(--site-soft);
+  border-radius: 10px;
+}
+.session-retained {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.session-retained p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.session-workspace progress {
+  width: 100%;
+  height: 6px;
+  accent-color: var(--site-primary);
+}
+@keyframes session-mic-pulse {
+  50% {
+    box-shadow: 0 0 0 7px #ad302a09;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .session-mic-state[data-microphone="active"] i {
+    animation: none;
+  }
+}
+@media (max-width: 600px) {
+  .session-workspace {
+    padding: 12px;
+  }
+  .session-workspace-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .session-voice-toolbar > button {
+    flex: 1;
+  }
+  .session-checklist > li {
+    flex-wrap: wrap;
+  }
+  .session-checklist label {
+    flex-basis: 65%;
+  }
+}
+
+@media (max-width: 560px) {
+  .session-voice-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .session-voice-toolbar > button:first-child {
+    grid-column: 1 / -1;
+  }
+  .session-voice-toolbar > button {
+    width: 100%;
+    word-break: normal;
+    overflow-wrap: normal;
+    text-wrap: balance;
+  }
+}

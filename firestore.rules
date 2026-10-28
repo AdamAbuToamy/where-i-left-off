@@ -381,6 +381,35 @@ service cloud.firestore {
       allow update: if validSession() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['receivedAt']);
       allow delete: if signedActive() && request.auth.uid==uid;
     }
+    // Private live-session content uses a revision-checked document, separate from
+    // immutable completed-session statistics. Existing session documents are unchanged.
+    match /users/{uid}/sessionWorkspaces/{sessionId} {
+      function ownSession() { return signedActive() && request.auth.uid==uid; }
+      function validSessionWorkspace() {
+        let d=request.resource.data;
+        return d.keys().hasAll(['projectId','groupId','startedAt','payload','revision','mutationId','updatedAt'])
+          && d.keys().hasOnly(['projectId','groupId','startedAt','payload','revision','mutationId','updatedAt'])
+          && sessionId.matches('^[A-Za-z0-9_-]{1,100}$')
+          && d.projectId is string && d.projectId.matches('^[A-Za-z0-9_-]{1,100}$')
+          && d.groupId is string && (d.groupId=='' || d.groupId.matches('^[A-Za-z0-9_-]{1,100}$'))
+          && d.startedAt is int && d.startedAt>=0
+          && d.payload is string && d.payload.size()>0 && d.payload.size()<=180000
+          && d.revision is int && d.revision>=0
+          && d.mutationId is string && d.mutationId.matches('^[A-Za-z0-9_-]{1,100}$')
+          && d.updatedAt==request.time;
+      }
+      allow read: if ownSession();
+      allow create: if ownSession() && validSessionWorkspace() && request.resource.data.revision==0
+        && (request.resource.data.groupId==''
+          ? exists(/databases/$(database)/documents/users/$(uid)/projects/$(request.resource.data.projectId))
+          : groupMember(request.resource.data.groupId) && exists(/databases/$(database)/documents/groups/$(request.resource.data.groupId)/projects/$(request.resource.data.projectId)));
+      allow update: if ownSession() && validSessionWorkspace()
+        && request.resource.data.projectId==resource.data.projectId
+        && request.resource.data.groupId==resource.data.groupId
+        && request.resource.data.startedAt==resource.data.startedAt
+        && request.resource.data.revision==resource.data.revision+1;
+      allow delete: if ownSession();
+    }
     match /appMetrics/{uid} {
       function owner() { return request.auth != null && request.auth.uid == uid; }
       function admin() {

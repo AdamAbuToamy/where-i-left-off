@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci --no-audit --no-fund
+      - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - run: npm ci --prefix push-worker --no-audit --no-fund
       - name: Test Worker and package
         run: |
@@ -43,7 +43,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm ci --no-audit --no-fund
+      - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - run: npm ci --prefix push-worker --no-audit --no-fund
       - run: npm run test:rules
   auth-recovery:
@@ -55,7 +55,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci --no-audit --no-fund
+      - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - run: npm run test:auth:recovery
   browser:
     runs-on: ubuntu-24.04
@@ -73,7 +73,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm ci --no-audit --no-fund
+      - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - name: Restore only failed browser case IDs on a retry
         if: github.run_attempt != '1'

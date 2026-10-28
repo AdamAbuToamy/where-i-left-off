@@ -1,3 +1,4 @@
+import {acquireLocalInference} from '../lib/localInferenceLease';
 import {readWorkspaceContext} from '../../push-worker/src/assistantContext.mjs';
 import {REQUEST_PLAN_PROMPT,REQUEST_PLAN_SCHEMA,parseRequestPlan} from './localPlanner';
 
@@ -32,6 +33,7 @@ export class LocalAssistantModel {
  private readonly release:typeof LOCAL_RELEASE;
  private readonly modelConfig:typeof qwenConfig;
  constructor(release=LOCAL_RELEASE,modelConfig=qwenConfig){this.release=release;this.modelConfig=modelConfig;}
+ private releaseResources:(()=>void)|null=null;
  private engine:WebWorkerMLCEngine|null=null;
  private worker:Worker|null=null;
  private loading:Promise<void>|null=null;
@@ -46,6 +48,8 @@ export class LocalAssistantModel {
   const generation=++this.generation;
   const cancelled=new Promise<never>((_,reject)=>{this.rejectLoad=reject;});
   const initialize=async()=>{
+   this.releaseResources=await acquireLocalInference('text');
+   if(generation!==this.generation){this.releaseResources();this.releaseResources=null;throw new Error('assistant-local-cancelled');}
    progress(0,'checking');
    const gpu=(navigator as unknown as {gpu?:{requestAdapter:()=>Promise<{features:Set<string>}|null>}}).gpu;
    const adapter=await gpu?.requestAdapter();
@@ -76,7 +80,10 @@ export class LocalAssistantModel {
    // Persistence is best-effort; browsers may decline or evict cached weights.
    void navigator.storage?.persist?.().catch(()=>false);
   };
-  this.loading=Promise.race([initialize(),cancelled]).finally(()=>{
+  this.loading=Promise.race([initialize(),cancelled]).catch(error=>{
+   if(generation===this.generation){this.releaseResources?.();this.releaseResources=null;this.worker?.terminate();this.worker=null;this.engine=null;}
+   throw error;
+  }).finally(()=>{
    if(generation===this.generation){this.loading=null;this.rejectLoad=null;}
   });
   return this.loading;
@@ -190,7 +197,7 @@ export class LocalAssistantModel {
   finally{clearTimeout(timeout);if(generation===this.generation){this.inFlight=false;this.rejectAnswer=null;}}
  }
  dispose(){
-  this.generation++;this.engine?.interruptGenerate();this.worker?.terminate();
+  this.generation++;this.releaseResources?.();this.releaseResources=null;this.engine?.interruptGenerate();this.worker?.terminate();
   this.rejectLoad?.(new Error('assistant-local-cancelled'));
   this.rejectAnswer?.(new Error('assistant-local-cancelled'));
   this.rejectLoad=null;this.rejectAnswer=null;this.loading=null;

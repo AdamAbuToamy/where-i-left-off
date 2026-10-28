@@ -40,3 +40,11 @@ it('opens the actual week of a requested card date and rejects impossible dates 
  for(const values of [{page:'personal',view:'week',weekOf:'2026-02-30'},{page:'personal',view:'board',weekOf:'2026-10-25'},{page:'university',weekOf:'2026-10-25'}])expect(()=>parseControls([{kind:'navigate',values}])).toThrow();
  expect(workspaceView('#/personal?view=week&weekOf=2026-02-30').weekOf).toBe('');
 });
+
+it('requires session consent and batches session controls before execution',async()=>{
+ const session={context:()=>({available:true,shared:true}),planBatch:vi.fn(values=>({control:{kind:'session' as const,values:values[0]},before:{},after:{values}})),apply:vi.fn(async()=>({pending:true}))};
+ const controls=[{kind:'session' as const,values:{sessionId:'s',expectedRevision:0,verb:'add_item',text:'Check'}},{kind:'session' as const,values:{sessionId:'s',expectedRevision:0,verb:'add_note',text:'Maybe Firebase'}}];
+ expect(()=>new AssistantControls('alice').plan(controls,'en',['personal'])).toThrow('assistant-session-local-only');
+ const executor=new AssistantControls('alice',session),plans=executor.plan(controls,'en',['personal']);expect(plans).toHaveLength(1);expect(session.planBatch).toHaveBeenCalledWith(controls.map(c=>c.values));expect(session.apply).not.toHaveBeenCalled();expect((await executor.apply(plans))[0]).toMatchObject({ok:true,pending:true});
+ expect(()=>parseControls([{kind:'session',values:{sessionId:'s',expectedRevision:0,verb:'retain_transcript',enabled:true}}])).toThrow();
+});

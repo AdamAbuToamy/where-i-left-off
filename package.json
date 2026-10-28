@@ -20,12 +20,14 @@
     "test:assistant:live": "node scripts/test-assistant-live.mjs --live",
     "test:auth:recovery": "firebase emulators:exec --project demo-where-i-left-off --only auth \"env TEST_SUITE=auth vitest run\"",
     "test:e2e:layout": "node scripts/run-browser-tests.mjs tests/browser/layout.spec.ts --grep 'ar desktop|he desktop' --repeat-each=5 --max-failures=1",
-    "check:architecture": "node scripts/check-architecture.mjs"
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "test:speech:audio": "node scripts/test-session-speech-audio.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@huggingface/transformers": "4.3.2",
     "@mlc-ai/web-llm": "0.2.82",
     "@pollinations/sdk": "5.0.0",
     "firebase": "^12.0.0",

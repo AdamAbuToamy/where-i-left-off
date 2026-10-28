@@ -1,3 +1,4 @@
+import type {SessionAssistantPort} from '../session/assistantPort';
 import type { Language } from '../translations';
 import { backgrounds, themes, readBackground, readTheme, saveBackground, saveTheme } from '../lib/theme';
 import { readSleepEnabled, saveSleepEnabled } from '../lib/idleSleep';
@@ -11,17 +12,23 @@ export type { AssistantControl,ControlPlan,ControlResult } from './controlContra
 const invalid=()=>{throw new Error('assistant-invalid');};
 export class AssistantControls {
  private readonly uid:string;
- constructor(uid:string){this.uid=uid;}
+ private readonly sessions?:SessionAssistantPort;
+ constructor(uid:string,sessions?:SessionAssistantPort){this.uid=uid;this.sessions=sessions;}
  private check(){if(auth?.currentUser?.uid!==this.uid)throw new Error('account-changed');}
- context(language:Language){this.check();return {...assistantAccountContext(auth?.currentUser||null,this.uid),appearance:{theme:readTheme(this.uid),background:readBackground(this.uid)},language:{language},sleep:{enabled:readSleepEnabled(this.uid)},workflow:readPreferences(this.uid)};}
+ context(language:Language){this.check();return {...assistantAccountContext(auth?.currentUser||null,this.uid),appearance:{theme:readTheme(this.uid),background:readBackground(this.uid)},language:{language},sleep:{enabled:readSleepEnabled(this.uid)},workflow:readPreferences(this.uid),session:this.sessions?.context()||{available:false}};}
  plan(controls:AssistantControl[],language:Language,scopeIds:string[]):ControlPlan[]{
   this.check();const state=structuredClone(this.context(language));
-  return parseControls(controls).map(control=>{
+  const parsed=parseControls(controls),sessions=parsed.filter(control=>control.kind==='session');
+  const sessionPlan=sessions.length?this.sessions?.planBatch(sessions.map(control=>control.values)):null;
+  if(sessions.length&&!sessionPlan)throw new Error('assistant-session-local-only');
+  let sessionAdded=false;
+  return parsed.flatMap(control=>{
+   if(control.kind==='session'){if(sessionAdded)return [];sessionAdded=true;return [sessionPlan!];}
    if(control.kind==='navigate'&&control.values.groupId&&!scopeIds.includes(String(control.values.groupId)))return invalid();
-   if(control.kind==='navigate'||control.kind==='tour')return {control,before:{},after:control.values};
+   if(control.kind==='navigate'||control.kind==='tour')return [{control,before:{},after:control.values}];
    const before={...state[control.kind]},after={...before,...control.values};
    Object.assign(state[control.kind],after);
-   return {control,before,after};
+   return [{control,before,after}];
   });
  }
  async apply(plans:ControlPlan[]):Promise<ControlResult[]>{
@@ -29,6 +36,7 @@ export class AssistantControls {
   for(const plan of plans){
    try{
     this.check();const {kind,values}=plan.control;
+    if(kind==='session'){if(!this.sessions)throw new Error('assistant-session-local-only');const saved=await this.sessions.apply(plan);results.push({plan,ok:true,pending:saved.pending});continue;}
     if(kind==='navigate'){const query=new URLSearchParams();for(const [key,value] of Object.entries(values))if(!['page','groupId'].includes(key))query.set(key,String(value));location.hash='/'+String(values.page)+(values.groupId?'/'+String(values.groupId):'')+(query.size?'?'+query.toString():'');}
     else if(kind==='tour'){window.dispatchEvent(new Event('replay-welcome-tour'));}
     else{

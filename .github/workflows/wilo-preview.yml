@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci --no-audit --no-fund
+      - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - name: Validate isolated browser build
         run: |
           npm run lint
