@@ -72,7 +72,9 @@ test('course identity resolution uses the cloud model with a compact structured 
 test('the provider schema constrains each target to typed domain fields instead of arbitrary values',async()=>{
  const {env,calls}=fixture();await assistant(env,'alice',{mode:'workspace',message:'Create a course then schedule it',language:'ar'});
  const schema=calls[0][1].response_format.json_schema,branches=schema.properties.actions.items.anyOf;
- assert.equal(branches.length,5);
+ assert.equal(branches.length,6);
+ const permanent=branches.find(b=>b.properties.target.enum[0]==='projects'&&b.properties.action.enum[0]==='delete');
+ assert.deepEqual(permanent.properties.scope.enum,['personal']);assert.deepEqual(permanent.properties.values.properties,{});assert.equal(permanent.properties.values.additionalProperties,false);
  const course=branches.find(b=>b.properties.target.enum[0]==='courses');assert.equal(course.properties.values.additionalProperties,false);assert.equal(course.properties.values.properties.name.type,'string');assert.equal(course.properties.values.properties.day,undefined);
  const lesson=branches.find(b=>b.properties.target.enum[0]==='lessons');assert.equal(lesson.properties.values.properties.day.type,'integer');assert.equal(lesson.properties.values.properties.courseId.type,'string');
  const card=branches.find(b=>b.properties.target.enum[0]==='projects');assert.deepEqual(card.properties.action.enum,['create','update','trash']);assert.match(card.properties.values.properties.dueDate.pattern,/0-9/);

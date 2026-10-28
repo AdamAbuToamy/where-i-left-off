@@ -24,7 +24,7 @@ export const controlFields={
 };
 export const WORKSPACE_REPLY_FORMAT={type:'json_schema',json_schema:object({
  text:text(12000),
- actions:array({anyOf:Object.entries(actionFields).map(([target,fields])=>object({target:enumeration(target),action:target==='projects'?enumeration('create','update','trash'):enumeration('create','update','delete'),id:reference,...(['projects','sections'].includes(target)?{scope:id}:{}),values:object(fields)},['target','action','id','values']))},50),
+ actions:array({anyOf:[...Object.entries(actionFields).map(([target,fields])=>object({target:enumeration(target),action:target==='projects'?enumeration('create','update','trash'):enumeration('create','update','delete'),id:reference,...(['projects','sections'].includes(target)?{scope:id}:{}),values:object(fields)},['target','action','id','values'])),object({target:enumeration('projects'),action:enumeration('delete'),id:reference,scope:enumeration('personal'),values:object({})},['target','action','id','scope','values'])]},50),
  controls:array({anyOf:Object.entries(controlFields).map(([kind,fields])=>object({kind:enumeration(kind),values:object(fields)},['kind','values']))},20),
  tasks:array(object({title:text(300),outcome:enumeration('proposed','answer','needs-input','unsupported'),actionIndexes:array(integer(0,49),50),controlIndexes:array(integer(0,19),20),detail:text(1500)},['title','outcome','actionIndexes','controlIndexes','detail']),50),
  files:array(object({name:text(100),content:text(30000)},['name','content']),3),
