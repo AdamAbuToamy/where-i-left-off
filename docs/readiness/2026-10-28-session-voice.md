@@ -1,6 +1,8 @@
 # Session voice assistant readiness — 2026-10-28
 
-Status: implemented and verified locally; **not deployed to production**. The review/manual/session-persistence path works. Local AR/HE recognition, especially mixed technical speech, has significant measured accuracy limits. This is not a claim of reliable hands-free understanding on every device.
+Release update: the user subsequently authorized production deployment; see [deployment evidence](2026-10-28-session-voice-deployment.md). The implementation-time snapshot below records the state before that approval.
+
+Status at implementation handoff: implemented and verified locally; **not deployed to production**. The review/manual/session-persistence path works. Local AR/HE recognition, especially mixed technical speech, has significant measured accuracy limits. This is not a claim of reliable hands-free understanding on every device.
 
 ## Delivered path and boundaries
 

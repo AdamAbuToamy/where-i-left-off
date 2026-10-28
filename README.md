@@ -25,9 +25,9 @@ Promotional illustration; not a screenshot of the live interface.
 
 <!-- recall-media:end -->
 
-## In this branch: session voice assistant
+## Session voice assistant
 
-Local speech transcription, reviewed session checklist operations and accepted notes are implemented for testing; this feature has not been deployed to the public site. See the [Arabic usage and privacy guide](docs/SESSION_VOICE_AR.md), [architecture decision](docs/adr/2026-10-28-private-session-voice.md) and [dated verification report](docs/readiness/2026-10-28-session-voice.md).
+Work sessions include local speech transcription, reviewed session checklist operations and accepted notes. Arabic/Hebrew and mixed-language transcripts may require correction before Apply. See the [Arabic usage and privacy guide](docs/SESSION_VOICE_AR.md), [architecture decision](docs/adr/2026-10-28-private-session-voice.md) and [dated verification report](docs/readiness/2026-10-28-session-voice.md).
 
 ## Features
 
