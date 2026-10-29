@@ -609,3 +609,16 @@
     animation: none !important;
   }
 }
+
+.session-cloud-consent {
+  padding: 12px;
+  margin-block: 10px 14px;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+  background: var(--site-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.session-cloud-consent p {
+  margin: 0 0 10px;
+}

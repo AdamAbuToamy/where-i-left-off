@@ -5,11 +5,9 @@ import {
   useImperativeHandle,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
 import {
   Mic,
-  Download,
   Square,
   LoaderCircle,
   FileText,
@@ -32,17 +30,13 @@ import type { SessionControlValues } from "./control";
 import { appendTranscript } from "./transcript";
 import { createSessionWorkspace, activeSessionWorkspaces } from "./composition";
 import type { SessionStatus } from "./repository";
-import { SessionClipController } from "./clipController";
+import { CloudSessionSpeechController } from "./cloudSpeechController";
+import {
+  BrowserCloudRecognition,
+  cloudRecognitionSupported,
+} from "./browserCloudRecognition";
 import { SessionClipDraft } from "./SessionClipDraft";
 import type { SpeechEvent } from "./speechController";
-import {
-  speechDownloadSnapshot,
-  subscribeSpeechDownload,
-  refreshSpeechDownload,
-  startSpeechDownload,
-} from "./speechDownload";
-import { BrowserSpeech } from "./browserSpeech";
-import { BrowserMicrophone } from "./browserMicrophone";
 import type { SpokenSegment } from "./commands";
 import { sessionWords, sessionErrorText } from "./words";
 import { transcriptionWords } from "./transcriptionWords";
@@ -70,13 +64,16 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
   ) {
     const t = transcriptionWords[language],
       legacy = sessionWords[language];
-    const download = useSyncExternalStore(
-      subscribeSpeechDownload,
-      speechDownloadSnapshot,
-    );
-    useEffect(() => {
-      void refreshSpeechDownload();
-    }, []);
+    const [cloudConsent, setCloudConsent] = useState(() => {
+      try {
+        return (
+          localStorage.getItem("wilo-session-cloud-consent-v1:" + uid) === "yes"
+        );
+      } catch {
+        return false;
+      }
+    });
+    const cloudSupported = cloudRecognitionSupported();
     const [repository] = useState(() => createSessionWorkspace(uid, identity));
     const [state, setState] = useState<SessionState>(() =>
       emptySession(identity),
@@ -111,7 +108,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       return () => clearInterval(timer);
     }, [speech.microphone]);
     const alive = useRef(false),
-      controller = useRef<SessionClipController | null>(null),
+      controller = useRef<CloudSessionSpeechController | null>(null),
       editing = useRef<string | null>(null),
       handled = useRef(new Set<string>()),
       pending = useRef(new Map<string, SpokenSegment>()),
@@ -204,6 +201,12 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
           editing.current,
           true,
         );
+        if (!current.retainTranscript)
+          proposal.operations.unshift({
+            verb: "retain_transcript",
+            enabled: true,
+            operationId: segment.id + "-consent",
+          });
         if (target === "note")
           proposal.operations.push({
             verb: "add_note",
@@ -257,9 +260,9 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
     }, [repository, uid, identity.id, language]);
     useEffect(() => {
       let mounted = true;
-      const speechController = new SessionClipController({
-        speech: () => new BrowserSpeech(),
-        microphone: () => new BrowserMicrophone(true),
+      const speechController = new CloudSessionSpeechController({
+        recognition: (language) => new BrowserCloudRecognition(language),
+        newId: createClientId,
         current: () => repository.current(),
         language: voiceLanguage,
         now: Date.now,
@@ -322,29 +325,12 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       [repository, t.reviewBeforeClose],
     );
     useImperativeHandle(ref, () => ({ beforeFinish: finish }), [finish]);
-    async function start() {
-      await refreshSpeechDownload();
-      if (speechDownloadSnapshot().stage !== "ready") return;
+    function start() {
+      if (!cloudConsent || !cloudSupported) return;
       setError("");
       setTab("transcript");
-      const current = repository.current();
-      if (!current.retainTranscript) {
-        const ok = await save({
-          sessionId: current.id,
-          baseRevision: current.contentRevision,
-          origin: "manual",
-          operations: [
-            {
-              verb: "retain_transcript",
-              operationId: createClientId(),
-              enabled: true,
-            },
-          ],
-        });
-        if (!ok) return;
-      }
       setRecordedSeconds(0);
-      await controller.current?.start();
+      controller.current?.start();
     }
     async function correct(id: string, text: string, original: string) {
       const current = repository.current();
@@ -534,74 +520,72 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         >
           {!historical && (
             <>
+              {!cloudConsent && (
+                <aside className="session-cloud-consent">
+                  <p>{t.cloudConsent}</p>
+                  <button
+                    type="button"
+                    disabled={!cloudSupported}
+                    onClick={() => {
+                      try {
+                        localStorage.setItem(
+                          "wilo-session-cloud-consent-v1:" + uid,
+                          "yes",
+                        );
+                      } catch {
+                        /* Consent remains in this session. */
+                      }
+                      setCloudConsent(true);
+                    }}
+                  >
+                    {t.enableCloud}
+                  </button>
+                </aside>
+              )}
+              {!cloudSupported && (
+                <p className="session-error" role="alert">
+                  {t.cloudUnsupported}
+                </p>
+              )}
               <div
                 className="session-record-bar"
                 data-recording={speech.microphone ? "true" : "false"}
-                data-working={
-                  speech.stage === "loading" || finishing ? "true" : "false"
-                }
+                data-working={active && !speech.microphone ? "true" : "false"}
               >
                 <button
                   type="button"
-                  className={
-                    download.stage === "ready"
-                      ? "primary-button session-clip-record"
-                      : "primary-button"
-                  }
+                  className="primary-button session-clip-record"
                   aria-label={
-                    download.stage === "ready"
-                      ? speech.microphone
-                        ? t.stopClip
-                        : speech.stage === "error"
-                          ? t.retry
-                          : t.recordClip
-                      : undefined
-                  }
-                  title={
-                    download.stage === "ready"
-                      ? speech.microphone
-                        ? t.stopClip
+                    speech.microphone
+                      ? t.stopClip
+                      : speech.stage === "error"
+                        ? t.retry
                         : t.recordClip
-                      : undefined
                   }
                   disabled={
                     disabled ||
-                    (active && !speech.microphone) ||
-                    download.stage === "checking" ||
-                    download.stage === "downloading" ||
-                    download.stage === "saving"
+                    !cloudConsent ||
+                    !cloudSupported ||
+                    (active && !speech.microphone)
                   }
                   onClick={() => {
                     if (active)
                       void finish(true).catch(() => setError(t.unsaved));
-                    else if (download.stage !== "ready")
-                      void startSpeechDownload();
-                    else if (speech.stage === "error" && controller.current?.hasPendingAudio) void finish(true);
-                    else void start();
+                    else start();
                   }}
                 >
                   {active && !speech.microphone ? (
                     <LoaderCircle className="session-clip-spinner" size={22} />
                   ) : active ? (
                     <Square size={20} fill="currentColor" />
-                  ) : download.stage === "ready" ? (
-                    <Mic size={17} />
                   ) : (
-                    <Download size={17} />
-                  )}{" "}
-                  {download.stage !== "ready" &&
-                    (download.stage === "saving"
-                      ? t.savingModel
-                      : download.stage === "downloading"
-                        ? t.downloading
-                        : download.loaded > 0
-                          ? t.resumeDownload
-                          : t.download)}
+                    <Mic size={22} />
+                  )}
                 </button>
                 <select
                   aria-label={t.language}
                   value={voiceLanguage}
-                  disabled={active || finishing || speech.stage === "error"}
+                  disabled={active || finishing}
                   onChange={(event) =>
                     setVoiceLanguage(event.target.value as Language)
                   }
@@ -630,38 +614,9 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                   )}
                 </span>
               </div>
-              {(download.stage === "downloading" ||
-                download.stage === "saving") && (
-                <div className="session-download" role="status">
-                  <Download
-                    className="session-download-icon"
-                    size={22}
-                    aria-hidden="true"
-                  />
-                  <progress
-                    aria-label={t.downloading}
-                    max={download.total}
-                    value={download.loaded}
-                  />
-                  <small>
-                    {Math.floor((download.loaded / download.total) * 100)}% ·{" "}
-                    {download.background
-                      ? t.backgroundDownload
-                      : t.foregroundDownload}
-                  </small>
-                </div>
-              )}
-              {download.stage === "error" && (
-                <p className="session-error" role="alert">
-                  {download.error &&
-                  ["speech-gpu-required", "speech-cache"].includes(
-                    download.error,
-                  )
-                    ? sessionErrorText(download.error, language)
-                    : t.downloadError}
-                </p>
-              )}
-              {(speech.stage === "error" || speech.stage === "processing") && (
+              {(speech.stage === "error" ||
+                speech.stage === "processing" ||
+                speech.stage === "loading") && (
                 <button
                   type="button"
                   className="session-quiet-button"
@@ -680,16 +635,8 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                     ? t.processingClip
                     : t.clipHint}
               </small>
-              {(speech.stage === "loading" || speech.stage === "processing") &&
-                speech.progress && (
-                  <progress
-                    aria-label={t.loading}
-                    max={speech.progress.total}
-                    value={speech.progress.loaded}
-                  />
-                )}
               <small className="session-transcription-privacy">
-                {t.privacy} {download.stage !== "ready" && t.modelDownload}
+                {t.cloudPrivacy}
               </small>
             </>
           )}

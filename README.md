@@ -27,7 +27,7 @@ Promotional illustration; not a screenshot of the live interface.
 
 ## Session voice assistant
 
-Work sessions have three simple tabs: short local voice messages with editable text reviewed before approval, manually written notes and a manual checklist. Record first, stop to transcribe, then approve adding a note or card next step. Speech never executes commands or creates automatic notes. Whisper Large V3 Turbo downloads on demand (~565 MB), resumes verified parts and retains installed weights. Supporting Chrome/Edge versions can finish downloading after WILO tabs close; other browsers explicitly require an open tab. It requires WebGPU with shader-f16; Arabic dialects, Hebrew and mixed speech may need corrections. See the [Arabic usage and privacy guide](docs/SESSION_VOICE_AR.md), [architecture decision](docs/adr/2026-10-28-private-session-voice.md) and [dictation verification report](docs/readiness/2026-10-29-session-dictation.md) and [download recovery verification](docs/readiness/2026-10-29-session-download-recovery.md).
+Work sessions have browser-provided cloud dictation with explicit audio consent, editable previews, manual notes and a checklist. No model download, API key or additional provider account is required. Approve a preview before adding a note or card next step. Palestinian Arabic (`ar-PS`), Hebrew and English are requested from the browser service. Browser support, service availability and recognition accuracy vary; no unlimited-service guarantee is made. See the [Arabic privacy/usage guide](docs/SESSION_VOICE_AR.md) and [cloud dictation verification](docs/readiness/2026-10-29-session-cloud-dictation.md).
 
 ## Features
 

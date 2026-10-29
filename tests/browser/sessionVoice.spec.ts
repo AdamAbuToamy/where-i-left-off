@@ -108,21 +108,49 @@ test("simple tabs, manual notes/checklist and offline corrections survive reload
 test("voice message captures until stop and waits for approval before adding", async ({
   page,
 }) => {
-  await page.addInitScript(() =>
-    Object.defineProperty(navigator, "gpu", {
+  await page.addInitScript(() => {
+    (window as typeof window & { wiloCloudStarts: number }).wiloCloudStarts = 0;
+    class Recognition {
+      onstart: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      onresult: ((event: unknown) => void) | null = null;
+      onerror: ((event: unknown) => void) | null = null;
+      start() {
+        (window as typeof window & { wiloCloudStarts: number })
+          .wiloCloudStarts++;
+        this.onstart?.();
+        this.onresult?.({
+          results: [
+            Object.assign([{ transcript: "Complete recorded sentence" }], {
+              isFinal: true,
+            }),
+          ],
+        });
+      }
+      stop() {
+        this.onend?.();
+      }
+      abort() {}
+    }
+    Object.defineProperty(window, "SpeechRecognition", {
       configurable: true,
-      value: {
-        requestAdapter: async () => ({ features: new Set(["shader-f16"]) }),
-      },
-    }),
-  );
-  await page.route("**/assets/speech.worker-*.js", (route) =>
-    route.fulfill({
-      contentType: "application/javascript",
-      body: `self.onmessage=e=>{const r=e.data;if(r.type==='load')self.postMessage({type:'loaded',requestId:r.requestId});else self.postMessage({type:'final',requestId:r.requestId,text:'Complete recorded sentence'});};`,
-    }),
-  );
-  await setup(page, true);
+      value: Recognition,
+    });
+  });
+  await setup(page);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as typeof window & { wiloCloudStarts: number }).wiloCloudStarts,
+    ),
+  ).toBe(0);
+  await page
+    .locator(".session-workspace")
+    .getByRole("button", {
+      name: "Agree and enable cloud dictation",
+      exact: true,
+    })
+    .click();
   const panel = page.locator(".session-workspace");
   await panel
     .getByRole("button", { name: "Record voice message", exact: true })
@@ -190,7 +218,10 @@ test("mobile RTL session is compact and tabs follow keyboard direction", async (
   await expect(panel).toHaveAttribute("dir", "rtl");
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await expect(
-    panel.getByRole("button", { name: "تنزيل نموذج الصوت", exact: true }),
+    panel.getByRole("button", {
+      name: "أوافق، تفعيل التفريغ السحابي",
+      exact: true,
+    }),
   ).toBeVisible();
   expect(
     await page

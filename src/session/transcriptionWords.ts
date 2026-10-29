@@ -1,6 +1,13 @@
 import { SESSION_SPEECH_MODEL } from "./speechModel";
 import type { Language } from "../translations";
 const en = {
+  enableCloud: "Agree and enable cloud dictation",
+  cloudConsent:
+    "Your browser sends microphone audio to its speech-recognition service. No model download, API key or separate service account. Availability and recognition accuracy depend on your browser and connection. Text is added only after your approval.",
+  cloudPrivacy:
+    "Cloud dictation provided by your browser · no API key or download · review text before saving",
+  cloudUnsupported:
+    "Cloud dictation is unavailable in this browser. Try Chrome, or use manual notes.",
   recordClip: "Record voice message",
   stopClip: "Stop and transcribe",
   reviewClip: "Review recording",
@@ -72,6 +79,13 @@ const en = {
   itemText: "Item text",
 };
 const ar: typeof en = {
+  enableCloud: "أوافق، تفعيل التفريغ السحابي",
+  cloudConsent:
+    "يرسل المتصفح صوت الميكروفون إلى خدمة التعرف الصوتي التابعة له. دون تنزيل نموذج أو مفتاح API أو حساب خدمة منفصل. التوفر والدقة يعتمدان على المتصفح والاتصال. لا يُضاف النص إلا بعد موافقتك.",
+  cloudPrivacy:
+    "تفريغ سحابي عبر المتصفح · دون تنزيل أو مفتاح API · راجع النص قبل الحفظ",
+  cloudUnsupported:
+    "التفريغ السحابي غير متاح في هذا المتصفح. جرّب Chrome أو استخدم الملاحظات اليدوية.",
   recordClip: "تسجيل مقطع صوتي",
   stopClip: "إيقاف وتحويل لكتابة",
   reviewClip: "راجع نص المقطع",
@@ -141,6 +155,13 @@ const ar: typeof en = {
   itemText: "نص البند",
 };
 const he: typeof en = {
+  enableCloud: "אישור והפעלת תמלול בענן",
+  cloudConsent:
+    "הדפדפן שולח את שמע המיקרופון לשירות זיהוי הדיבור שלו. ללא הורדת מודל, מפתח API או חשבון נפרד. הזמינות והדיוק תלויים בדפדפן ובחיבור. טקסט נוסף רק לאחר אישורכם.",
+  cloudPrivacy:
+    "תמלול בענן באמצעות הדפדפן · ללא הורדה או מפתח API · בדיקה לפני שמירה",
+  cloudUnsupported:
+    "תמלול בענן אינו זמין בדפדפן הזה. נסו Chrome או כתבו הערות ידנית.",
   recordClip: "הקלטת הודעה קולית",
   stopClip: "עצירה ותמלול",
   reviewClip: "בדיקת התמלול",
