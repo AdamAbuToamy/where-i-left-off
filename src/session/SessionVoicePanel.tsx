@@ -309,7 +309,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         document.removeEventListener("visibilitychange", hide);
         window.removeEventListener("pagehide", leave);
       };
-    }, [repository, voiceLanguage, identity.id, saveFinal, t.unsaved]);
+    }, [repository, voiceLanguage, identity.id, saveFinal, t.unsaved, language]);
     const finish = useCallback(
       async (keepModel = false) => {
         setFinishing(true);
