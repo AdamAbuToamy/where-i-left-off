@@ -12,7 +12,7 @@ Whole-file Background Fetch failed at full weight size despite a passing small f
 
 ## Verification performed
 
-- Unit/application: 1,204 tests passed before the final adapter error-mapping refinement; the subsequent focused adapter/repository/service-worker regression run passed all 12 tests, including the added failure-mapping case.
+- Unit/application: GitHub PR quality checks passed all 1,205 tests on the final implementation. The separate focused adapter/repository/service-worker regression run passed all 12 tests, including the added failure-mapping case.
 - Firestore rules/persistence: 680 passed; authentication recovery: 3 passed.
 - Browser journeys: 49 passed, one opt-in real-audio test skipped in the ordinary suite. Includes mobile Arabic geometry and real Background Fetch/OPFS with synthetic bytes.
 - Separate native Windows/NVIDIA real-model audio journey: 1 passed, including download while the session dialog was closed, actual inference, emulator persistence, reload and cached restart with model-host requests blocked. Legal WAV input through a simulated microphone; no production account writes.
@@ -24,4 +24,12 @@ Whole-file Background Fetch failed at full weight size despite a passing small f
 
 Background completion requires supporting Chrome/Edge; the fallback needs the site tab open. Browser exit, device shutdown, storage eviction, insufficient disk and weak WebGPU remain limits. Download volume is still about 565 MB and connection speed determines network duration. No guarantee of perfect Palestinian/Shami Arabic, Hebrew, English or mixed speech; previous measured accuracy limitations remain. Physical microphones and phones were not newly verified.
 
-No schema migration, Firestore rule change or backend deployment is required. Roll back the frontend to main commit `fa0427c` if necessary. Existing model files and session records remain compatible. Production build and deployment evidence will be recorded separately after publication.
+No schema migration, Firestore rule change or backend deployment is required. Roll back the frontend to main commit `fa0427c` if necessary. Existing model files and session records remain compatible. Production build passed. Publication and read-only verification are recorded below.
+
+
+## Published release
+
+- [PR #45](https://github.com/AdamAbuToamy/where-i-left-off/pull/45) merged as `2ff3b13c9a0152fb26234d2306c3a81d276d74ed` after all five [PR quality jobs](https://github.com/AdamAbuToamy/where-i-left-off/actions/runs/40914393106) passed.
+- The merged source fingerprint matched the locally built production assets. Firebase CLI deployed Hosting only to `where-i-left-off-b5683` on 2026-10-29; no Worker or Firestore rules were changed.
+- Production HTTP verification passed for the source fingerprint, session panel, download worker, background-fetch service-worker manifest and exact installer helper SHA-256. [Read-only verification evidence](2026-10-29-session-download-production.json).
+- The automatic main-branch quality rerun was still in progress when this publication evidence was recorded. It is distinct from the already successful PR checks and local verification; it is not reported as passed here.
