@@ -41,20 +41,27 @@ export class SessionSpeechController {
   private processing = false;
   private drainTask: Promise<void> | null = null;
   private active = false;
+  private modelReady = false;
   private disposed = false;
   constructor(options: Options) {
     this.options = options;
   }
   async start() {
     if (this.disposed) throw new Error("speech-cancelled");
-    const stopped = this.pause(),
+    const warm =
+      this.modelReady &&
+      this.speech &&
+      !this.active &&
+      !this.processing &&
+      !this.microphone;
+    const stopped = warm ? Promise.resolve() : this.pause(),
       releasedGeneration = this.generation;
     await stopped;
     if (this.disposed || releasedGeneration !== this.generation) return;
     const generation = ++this.generation,
       abort = new AbortController();
     this.abort = abort;
-    const speech = this.options.speech(),
+    const speech = warm ? this.speech! : this.options.speech(),
       microphone = this.options.microphone();
     this.speech = speech;
     this.microphone = microphone;
@@ -73,19 +80,21 @@ export class SessionSpeechController {
         throw new Error("speech-unsupported");
       await microphone.prepare?.();
       if (await stale()) return;
-      await speech.load(
-        this.options.language,
-        (progress) => {
-          if (generation === this.generation)
-            this.options.changed({
-              stage: "loading",
-              microphone: false,
-              progress,
-            });
-        },
-        AbortSignal.any([abort.signal, AbortSignal.timeout(600000)]),
-      );
+      if (!warm)
+        await speech.load(
+          this.options.language,
+          (progress) => {
+            if (generation === this.generation)
+              this.options.changed({
+                stage: "loading",
+                microphone: false,
+                progress,
+              });
+          },
+          AbortSignal.any([abort.signal, AbortSignal.timeout(600000)]),
+        );
       if (await stale()) return;
+      this.modelReady = true;
       await microphone.start(
         (id) => {
           if (generation !== this.generation) return;
@@ -175,7 +184,7 @@ export class SessionSpeechController {
     return task;
   }
   /** An explicit pause finishes captured words before releasing the local model. */
-  async finish() {
+  async finish(keepModel = false) {
     const generation = this.generation,
       microphone = this.microphone;
     await microphone?.stop(true);
@@ -187,7 +196,11 @@ export class SessionSpeechController {
       microphone: false,
     });
     if (this.drainTask) await this.drainTask;
-    if (generation === this.generation) await this.pause();
+    if (generation === this.generation) {
+      if (keepModel && this.modelReady && this.speech)
+        this.options.changed({ stage: "paused", microphone: false });
+      else await this.pause();
+    }
   }
   private async drain(generation: number) {
     if (this.processing) return;
@@ -260,6 +273,7 @@ export class SessionSpeechController {
     this.queue = [];
     this.snapshots.clear();
     this.submitted.clear();
+    this.modelReady = false;
     this.speech?.dispose();
     this.speech = null;
     const microphone = this.microphone;

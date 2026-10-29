@@ -286,6 +286,27 @@ export default function FocusSession({
                   uid={user.uid}
                   identity={activeIdentity}
                   language={language}
+                  onSaveNextStep={async (text) => {
+                    if (busy) return false;
+                    setBusy(true);
+                    setFailed(false);
+                    try {
+                      const ok = await onSave(
+                        { nextStep: text },
+                        revision.current,
+                      );
+                      if (ok) {
+                        revision.current++;
+                        setNext(text);
+                      } else setFailed(true);
+                      return ok;
+                    } catch {
+                      setFailed(true);
+                      return false;
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
                 />
               )}
             </Suspense>

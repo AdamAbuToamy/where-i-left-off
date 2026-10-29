@@ -26,7 +26,7 @@ test("simple tabs, manual notes/checklist and offline corrections survive reload
   ).toHaveCount(0);
   await expect(panel.getByRole("checkbox")).toHaveCount(0);
   await expect(panel.locator(".session-options")).toHaveCount(0);
-  await panel.getByRole("tab", { name: "Notes", exact: true }).click();
+  await panel.getByRole("tab", { name: /^Notes/ }).click();
   await panel
     .getByLabel("Note text", { exact: true })
     .fill("Written note only");
@@ -141,8 +141,36 @@ test("dictation is literal text, corrections save directly, and spoken commands 
     .locator(".session-transcript-paragraph")
     .first()
     .fill("Corrected literal conversation");
-  await panel.getByRole("tab", { name: "Notes", exact: true }).click();
+  const entry = panel.locator(".session-transcript-entry").first();
+  await entry
+    .getByRole("button", { name: "Approve and save", exact: true })
+    .click();
+  await expect(
+    entry.getByRole("button", { name: "Saved", exact: true }),
+  ).toBeDisabled();
+  await panel.getByRole("tab", { name: /^Notes/ }).click();
+  await expect(panel.locator("[data-session-note]")).toContainText(
+    "Corrected literal conversation",
+  );
+  await panel.getByRole("tab", { name: "Transcript", exact: true }).click();
+  await entry.getByLabel("Save as", { exact: true }).selectOption("nextStep");
+  await entry
+    .getByRole("button", { name: "Approve and save", exact: true })
+    .click();
+  await expect(
+    entry.getByRole("button", { name: "Saved", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.locator(".focus-checkpoint-details textarea").nth(1),
+  ).toHaveValue("Corrected literal conversation");
+  await panel.getByRole("tab", { name: /^Notes/ }).click();
   await expect(panel).toHaveAttribute("aria-busy", "false");
+  await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
+  await panel.getByRole("tab", { name: "Transcript", exact: true }).click();
+  const previousParagraphs = await panel.locator(".session-transcript-paragraph").count();
+  await panel.getByRole("button", { name: "Start transcription", exact: true }).click();
+  await expect.poll(() => panel.locator(".session-transcript-paragraph").count(), { timeout: 20000 }).toBeGreaterThan(previousParagraphs);
+  await panel.getByRole("button", { name: "Pause", exact: true }).click();
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "Work session", exact: true }).click();
@@ -150,7 +178,10 @@ test("dictation is literal text, corrections save directly, and spoken commands 
     panel.locator(".session-transcript-paragraph").first(),
   ).toHaveValue("Corrected literal conversation");
   await expect(panel.locator("[data-session-item]")).toHaveCount(0);
-  await expect(panel.locator("[data-session-note]")).toHaveCount(0);
+  await panel.getByRole("tab", { name: /Notes/ }).click();
+  await expect(panel.locator("[data-session-note]")).toContainText(
+    "Corrected literal conversation",
+  );
 });
 test("mobile RTL session is compact and tabs follow keyboard direction", async ({
   page,

@@ -168,3 +168,21 @@ it("starts a new paragraph after a long pause or before exceeding the stored par
   );
   expect(proposal.operations[0].verb).toBe("transcript");
 });
+
+it("keeps a new recording on its own paragraph even immediately after the previous recording", () => {
+  let state = ready();
+  state = planSessionOperations(
+    state,
+    appendTranscript(state, segment("first", "First recording"), null),
+    100,
+  );
+  state = planSessionOperations(
+    state,
+    appendTranscript(state, segment("second", "New recording"), null, true),
+    101,
+  );
+  expect(state.transcripts.map((item) => item.text)).toEqual([
+    "First recording",
+    "New recording",
+  ]);
+});

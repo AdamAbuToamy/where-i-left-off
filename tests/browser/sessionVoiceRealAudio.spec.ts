@@ -175,7 +175,7 @@ test("real local dictation goes through microphone, domain, Firestore and reload
         }),
       { timeout: 30000 },
     )
-    .toEqual({ tracksStopped: true, workersTerminated: true });
+    .toEqual({ tracksStopped: true, workersTerminated: false });
   await expect(panel.locator("[data-session-item]")).toHaveCount(0);
   await expect(panel.locator("[data-session-note]")).toHaveCount(0);
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
@@ -197,6 +197,7 @@ test("real local dictation goes through microphone, domain, Firestore and reload
     timeout: 30000,
   });
   await panel.getByRole("button", { name: "Pause", exact: true }).click();
+  await page.getByRole("button", { name: "Save draft and close", exact: true }).click();
   await expect
     .poll(
       () =>

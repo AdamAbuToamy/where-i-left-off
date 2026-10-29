@@ -6,12 +6,14 @@ export function appendTranscript(
   state: SessionState,
   segment: FinalText,
   editingId: string | null,
+  newParagraph = false,
 ): SessionProposal {
   if (segment.sessionId !== state.id) throw new SessionError("session-target");
   const text = segment.text.trim(),
     last = state.transcripts.at(-1);
   const combined = last ? last.text + " " + text : text;
   const merge =
+    !newParagraph &&
     last &&
     last.id !== editingId &&
     combined.length <= 1000 &&

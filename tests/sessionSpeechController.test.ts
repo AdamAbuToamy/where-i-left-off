@@ -319,3 +319,14 @@ it("batches waiting raw utterances in order for literal conversation transcripti
   ]);
   controller.dispose();
 });
+
+it("keeps the loaded model between explicit recordings but releases it on close", async () => {
+  const h = harness();
+  await h.controller.start();
+  await h.controller.finish(true);
+  expect(h.speech.dispose).not.toHaveBeenCalled();
+  await h.controller.start();
+  expect(h.speech.load).toHaveBeenCalledTimes(1);
+  await h.controller.finish();
+  expect(h.speech.dispose).toHaveBeenCalledOnce();
+});
