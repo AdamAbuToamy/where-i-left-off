@@ -267,7 +267,16 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         language: voiceLanguage,
         now: Date.now,
         changed: (event) => {
-          if (mounted) setSpeech(event);
+          if (mounted) {
+            setSpeech(event);
+            if (event.stage === "error")
+              setError(
+                sessionErrorText(
+                  event.error || "speech-cloud-service",
+                  language,
+                ),
+              );
+          }
         },
         final: (segment) => {
           if (

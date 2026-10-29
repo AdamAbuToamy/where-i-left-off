@@ -126,7 +126,10 @@ export class CloudSessionSpeechController {
       this.complete = resolve;
     });
     const task = this.completing;
-    this.deadline = setTimeout(() => this.publish(), 4000);
+    this.deadline = setTimeout(
+      () => this.publish("speech-cloud-service"),
+      4000,
+    );
     try {
       this.voice.stop();
     } catch {

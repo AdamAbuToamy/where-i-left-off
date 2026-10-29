@@ -102,3 +102,20 @@ it("bounds a stalled service and exposes partial text only as a draft with an er
     expect.objectContaining({ text: "partial" }),
   );
 });
+
+it("labels a missing final service acknowledgement as incomplete instead of silent success", async () => {
+  vi.useFakeTimers();
+  const h = harness();
+  h.controller.start();
+  h.events[0].result("last partial words");
+  h.ports[0].stop = vi.fn();
+  const stopped = h.controller.finish();
+  await vi.advanceTimersByTimeAsync(4000);
+  await stopped;
+  expect(h.changed).toHaveBeenLastCalledWith(
+    expect.objectContaining({ stage: "error", error: "speech-cloud-service" }),
+  );
+  expect(h.final).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ text: "last partial words" }),
+  );
+});
