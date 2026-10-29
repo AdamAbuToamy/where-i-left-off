@@ -218,3 +218,104 @@ it("a superseded preparation cleans only its own ports and never loads the repla
   expect(oldSpeech.dispose).toHaveBeenCalled();
   controller.dispose();
 });
+
+it("finishes the last captured utterance before releasing the model on explicit pause", async () => {
+  const h = harness();
+  h.microphone.stop = vi.fn(async (flush) => {
+    if (flush) h.say("last-words");
+  });
+  await h.controller.start();
+  await h.controller.finish();
+  expect(h.final).toHaveBeenCalledWith(
+    expect.objectContaining({ id: "last-words", text: "add task Firebase" }),
+  );
+  expect(h.microphone.stop).toHaveBeenCalledWith(true);
+  expect(h.speech.dispose).toHaveBeenCalled();
+  expect(h.changed).toHaveBeenLastCalledWith({
+    stage: "paused",
+    microphone: false,
+  });
+});
+it("waits for an in-flight transcription on explicit finish, but cancellation still aborts immediately", async () => {
+  const h = harness();
+  let resolve!: (text: string) => void;
+  h.speech.transcribe = vi.fn(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  await h.controller.start();
+  h.say("a");
+  const stopped = h.controller.finish();
+  await tick();
+  expect(h.speech.dispose).not.toHaveBeenCalled();
+  resolve("final full sentence");
+  await stopped;
+  expect(h.final).toHaveBeenCalledWith(
+    expect.objectContaining({ text: "final full sentence" }),
+  );
+  expect(h.speech.dispose).toHaveBeenCalled();
+});
+
+it("batches waiting raw utterances in order for literal conversation transcription", async () => {
+  let begin!: (id: string) => void, deliver!: (segment: AudioSegment) => void;
+  const pending: ((text: string) => void)[] = [];
+  const speech: SpeechPort = {
+    load: async () => {},
+    transcribe: vi.fn(() => new Promise((resolve) => pending.push(resolve))),
+    dispose: vi.fn(),
+  };
+  const microphone: MicrophonePort = {
+    start: async (a, b) => {
+      begin = a;
+      deliver = b;
+    },
+    stop: async () => {},
+  };
+  const final = vi.fn(),
+    state = emptySession({
+      id: "s",
+      projectId: "p",
+      groupId: "",
+      startedAt: 1,
+    });
+  const controller = new SessionSpeechController({
+    speech: () => speech,
+    microphone: () => microphone,
+    current: () => state,
+    language: "ar",
+    now: () => 1,
+    changed: () => {},
+    final,
+    batchTranscription: true,
+  });
+  await controller.start();
+  const say = (id: string, value: number) => {
+    begin(id);
+    deliver({
+      id,
+      sequence: value,
+      audio: new Float32Array(16000).fill(value),
+      at: value,
+      sampleRate: 16000,
+    });
+  };
+  say("a", 1);
+  say("b", 2);
+  say("c", 3);
+  pending[0]("first");
+  await tick();
+  const calls = vi.mocked(speech.transcribe).mock.calls;
+  expect(calls).toHaveLength(2);
+  expect(calls[1][1].length).toBe(32000);
+  expect(calls[1][1][0]).toBe(2);
+  expect(calls[1][1][16000]).toBe(3);
+  pending[1]("second and third");
+  await tick();
+  expect(final.mock.calls.map((call) => call[0].text)).toEqual([
+    "first",
+    "second and third",
+  ]);
+  controller.dispose();
+});

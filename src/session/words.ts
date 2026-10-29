@@ -1,3 +1,4 @@
+import { transcriptionWords } from "./transcriptionWords";
 import { SESSION_SPEECH_MODEL } from "./speechModel";
 import type { Language } from "../translations";
 const en = {
@@ -288,25 +289,34 @@ export const sessionWords = { ar, en, he } satisfies Record<
 >;
 export function sessionErrorText(code: string, language: Language) {
   const t = sessionWords[language];
-  return code === "speech-error"
-    ? t.error
-    : code === "speech-permission"
-      ? t.permission
-      : code === "speech-no-device" || code === "speech-device-lost"
-        ? t.noDevice
-        : code === "local-inference-busy"
-          ? t.busy
-          : code === "speech-unsupported" || code === "speech-audio-suspended"
-            ? t.unsupported
-            : code === "speech-backlog"
-              ? t.backlog
-              : code === "session-capacity"
-                ? t.capacity
-                : code === "session-undo-conflict"
-                  ? t.undoConflict
-                  : code === "session-conflict"
-                    ? t.stale
-                    : code.startsWith("speech-")
-                      ? t.modelError
-                      : t.failed;
+  return code === "speech-cache"
+    ? language === "ar"
+      ? "تعذر حفظ نموذج الصوت على الجهاز. وفر مساحة أو استخدم نافذة متصفح عادية ثم أعد المحاولة."
+      : language === "he"
+        ? "לא ניתן לשמור את מודל הקול במכשיר. פנו מקום או השתמשו בחלון דפדפן רגיל ונסו שוב."
+        : "The speech model could not be saved on this device. Free storage or use a regular browser window, then retry."
+    : code === "speech-gpu-required"
+      ? transcriptionWords[language].gpuRequired
+      : code === "speech-error"
+        ? t.error
+        : code === "speech-permission"
+          ? t.permission
+          : code === "speech-no-device" || code === "speech-device-lost"
+            ? t.noDevice
+            : code === "local-inference-busy"
+              ? t.busy
+              : code === "speech-unsupported" ||
+                  code === "speech-audio-suspended"
+                ? t.unsupported
+                : code === "speech-backlog"
+                  ? t.backlog
+                  : code === "session-capacity"
+                    ? t.capacity
+                    : code === "session-undo-conflict"
+                      ? t.undoConflict
+                      : code === "session-conflict"
+                        ? t.stale
+                        : code.startsWith("speech-")
+                          ? t.modelError
+                          : t.failed;
 }

@@ -66,6 +66,9 @@ it('requires explicit shared session context and exact session revision for nati
  const base=acceptanceContext(),args={sessionId:'session',expectedRevision:4,verb:'add_item',text:'Check Firebase'};
  expect(()=>nativeToolProposal([call('set_session',args)],base)).toThrow('assistant-session-local-only');
  const context={...base,controls:{...base.controls,session:{available:true,shared:true,sessionId:'session',revision:4}}};
+ const input=(value:unknown)=>nativeWorkspaceInput({message:'Add a session note',language:'en',context:JSON.stringify(value)},[]);
+ expect(input(base).tools.some(tool=>tool.function.name==='set_session')).toBe(false);
+ expect(input(context).tools.some(tool=>tool.function.name==='set_session')).toBe(true);
  const reply=JSON.parse(nativeToolProposal([call('set_session',args)],context));expect(reply.controls).toEqual([{kind:'session',values:args}]);expect(reply.actions).toEqual([]);
  expect(()=>nativeToolProposal([call('set_session',{...args,expectedRevision:3})],context)).toThrow('assistant-session-local-only');
  const mixed=nativeToolProposal([call('set_session',args,'session'),call('set_appearance',{theme:'olive'},'appearance')],context);expect(()=>validateWorkspaceReply('',context,mixed)).toThrow('assistant-task-coverage');

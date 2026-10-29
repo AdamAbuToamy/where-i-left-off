@@ -8,15 +8,21 @@ test.use({
   serviceWorkers: "block",
   permissions: ["microphone"],
   launchOptions: {
+    ...(process.env.TEST_CHROMIUM_PATH
+      ? { executablePath: process.env.TEST_CHROMIUM_PATH }
+      : {}),
     args: [
       "--no-sandbox",
+      ...(process.env.SPEECH_TEST_GPU_HIGH_PERFORMANCE === "true"
+        ? ["--force-high-performance-gpu"]
+        : []),
       "--use-fake-device-for-media-stream",
       "--use-fake-ui-for-media-stream",
       ...(file ? ["--use-file-for-fake-audio-capture=" + resolve(file)] : []),
     ],
   },
 });
-test("real local ASR command goes through microphone, review, domain, Firestore and reload", async ({
+test("real local dictation goes through microphone, domain, Firestore and reload", async ({
   page,
 }) => {
   test.skip(
@@ -31,14 +37,29 @@ test("real local ASR command goes through microphone, review, domain, Firestore 
     const name = pathname.split(marker)[1];
     if (!/^(?:[\w.-]+\.json|onnx\/[\w.-]+\.onnx)$/.test(name))
       throw new Error("Unexpected speech asset");
+    if (process.env.SPEECH_TEST_MIRROR_ORIGIN) {
+      await route.fulfill({
+        status: 307,
+        headers: {
+          "access-control-allow-origin": "*",
+          location:
+            process.env.SPEECH_TEST_MIRROR_ORIGIN +
+            "/.wrangler/session-voice-audio/turbo-model/" +
+            name,
+        },
+      });
+      return;
+    }
     await route.fulfill({
       headers: { "access-control-allow-origin": "*" },
       body: await readFile(
         resolve(
           ".wrangler/session-voice-audio/" +
-            (SESSION_SPEECH_MODEL.id.endsWith("small")
-              ? "small-model"
-              : "model"),
+            (SESSION_SPEECH_MODEL.id.endsWith("whisper-large-v3-turbo")
+              ? "turbo-model"
+              : SESSION_SPEECH_MODEL.id.endsWith("small")
+                ? "small-model"
+                : "model"),
           name,
         ),
       ),
@@ -91,49 +112,92 @@ test("real local ASR command goes through microphone, review, domain, Firestore 
     };
   });
   await setup(page);
+  const supported = await page.evaluate(async () => {
+    const gpu = (
+      navigator as Navigator & {
+        gpu?: {
+          requestAdapter: (options: { powerPreference: string }) => Promise<{
+            features: { has: (name: string) => boolean };
+          } | null>;
+        };
+      }
+    ).gpu;
+    const adapter = await gpu?.requestAdapter({
+      powerPreference: "high-performance",
+    });
+    return !!adapter?.features.has("shader-f16");
+  });
+  test.skip(
+    !supported,
+    "The stronger local model requires a real WebGPU device; do not replace inference with a mock here.",
+  );
   const panel = page.locator(".session-workspace");
   await panel
-    .getByRole("button", { name: "Start listening", exact: true })
+    .getByRole("button", { name: "Start transcription", exact: true })
     .click();
   await expect(panel.locator("[data-microphone=active]")).toBeVisible({
     timeout: 30000,
   });
-  await expect(panel.locator(".session-proposal")).toBeVisible({
-    timeout: 50000,
-  });
-  await panel
-    .getByRole("button", { name: "Pause microphone", exact: true })
-    .click();
-  expect(
-    await page.evaluate(() => {
-      const testing = window as typeof window & {
-        wiloVoiceTracks: MediaStreamTrack[];
-        wiloVoiceWorkers: { terminated: boolean }[];
-      };
-      return {
-        tracksStopped:
-          testing.wiloVoiceTracks.length > 0 &&
-          testing.wiloVoiceTracks.every(
-            (track) => track.readyState === "ended",
-          ),
-        workersTerminated:
-          testing.wiloVoiceWorkers.length > 0 &&
-          testing.wiloVoiceWorkers.every((worker) => worker.terminated),
-      };
-    }),
-  ).toEqual({ tracksStopped: true, workersTerminated: true });
+  await expect(
+    panel.locator(".session-transcript-paragraph").first(),
+  ).toHaveValue(/check.*authentication/i, { timeout: 60000 });
+  await panel.getByRole("button", { name: "Pause", exact: true }).click();
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const testing = window as typeof window & {
+            wiloVoiceTracks: MediaStreamTrack[];
+            wiloVoiceWorkers: { terminated: boolean }[];
+          };
+          return {
+            tracksStopped:
+              testing.wiloVoiceTracks.length > 0 &&
+              testing.wiloVoiceTracks.every(
+                (track) => track.readyState === "ended",
+              ),
+            workersTerminated:
+              testing.wiloVoiceWorkers.length > 0 &&
+              testing.wiloVoiceWorkers.every((worker) => worker.terminated),
+          };
+        }),
+      { timeout: 30000 },
+    )
+    .toEqual({ tracksStopped: true, workersTerminated: true });
   await expect(panel.locator("[data-session-item]")).toHaveCount(0);
-  await panel
-    .getByRole("button", { name: "Apply proposal", exact: true })
-    .click();
-  await expect(panel.locator("[data-session-item]")).toContainText(
-    /check.*authentication/i,
-  );
+  await expect(panel.locator("[data-session-note]")).toHaveCount(0);
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "Work session", exact: true }).click();
-  await expect(panel.locator("[data-session-item]")).toContainText(
-    /check.*authentication/i,
-  );
+  await expect(
+    panel.locator(".session-transcript-paragraph").first(),
+  ).toHaveValue(/check.*authentication/i);
   await expect(panel.locator("[data-microphone=off]")).toBeVisible();
+  // A second worker must reuse model weights with all Hugging Face requests blocked.
+  await page.unroute("https://huggingface.co/**");
+  await page.route("https://huggingface.co/**", (route) =>
+    route.abort("internetdisconnected"),
+  );
+  await panel
+    .getByRole("button", { name: "Start transcription", exact: true })
+    .click();
+  await expect(panel.locator("[data-microphone=active]")).toBeVisible({
+    timeout: 30000,
+  });
+  await panel.getByRole("button", { name: "Pause", exact: true }).click();
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const state = window as typeof window & {
+            wiloVoiceWorkers: { terminated: boolean }[];
+          };
+          return (
+            state.wiloVoiceWorkers.length > 0 &&
+            state.wiloVoiceWorkers.every((worker) => worker.terminated)
+          );
+        }),
+      { timeout: 30000 },
+    )
+    .toBe(true);
 });

@@ -2,6 +2,7 @@
 import {
   env,
   AutoTokenizer,
+  AutoConfig,
   AutoProcessor,
   WhisperForConditionalGeneration,
   AutomaticSpeechRecognitionPipeline,
@@ -9,6 +10,7 @@ import {
   WhisperTokenizer,
 } from "@huggingface/transformers";
 
+import { createSpeechAssetCache } from "./speechAssetCache";
 import { SESSION_SPEECH_MODEL } from "./speechModel";
 const worker = self as unknown as DedicatedWorkerGlobalScope;
 let transcriber: AutomaticSpeechRecognitionPipeline | null = null,
@@ -24,12 +26,25 @@ worker.onmessage = async (event: MessageEvent) => {
   try {
     if (request.type === "load") {
       language = request.language;
+      const assetCache = await createSpeechAssetCache();
+      env.useCustomCache = true;
+      env.customCache = assetCache;
       // Explicit public components avoid pipeline auto-discovery's unpinned metadata requests.
       const modelId = SESSION_SPEECH_MODEL.id;
-      const options = {
+      const config = await AutoConfig.from_pretrained(modelId, {
         revision: SESSION_SPEECH_MODEL.revision,
-        device: "wasm" as const,
-        dtype: "q8" as const,
+      });
+      config["transformers.js_config"] = {
+        ...config["transformers.js_config"],
+        use_external_data_format: false,
+      };
+      const options = {
+        config,
+        revision: SESSION_SPEECH_MODEL.revision,
+        device: SESSION_SPEECH_MODEL.device,
+        dtype: SESSION_SPEECH_MODEL.dtype,
+        // Quantized weights are self-contained; never fetch the FP32 external tensor file.
+        use_external_data_format: false,
         progress_callback: (
           value: import("@huggingface/transformers").ProgressInfo,
         ) => {
@@ -48,6 +63,14 @@ worker.onmessage = async (event: MessageEvent) => {
         AutoTokenizer.from_pretrained(modelId, options),
         AutoProcessor.from_pretrained(modelId, options),
       ]);
+      // Never claim a one-time installation if the browser could not retain either weight.
+      for (const file of [
+        "encoder_model_q4f16.onnx",
+        "decoder_model_merged_q4f16.onnx",
+      ]) {
+        const url = `https://huggingface.co/${modelId}/resolve/${SESSION_SPEECH_MODEL.revision}/onnx/${file}`;
+        if (!(await assetCache.match(url))) throw new Error("speech-cache");
+      }
       transcriber = new AutomaticSpeechRecognitionPipeline({
         task: "automatic-speech-recognition",
         model,
@@ -77,10 +100,10 @@ worker.onmessage = async (event: MessageEvent) => {
         const output = await transcriber(audio, {
           language,
           task: "transcribe",
-          max_new_tokens: 192,
+          max_new_tokens: 448,
           return_timestamps: false,
-          chunk_length_s: 15,
-          stride_length_s: 2,
+          chunk_length_s: 30,
+          stride_length_s: 3,
           streamer,
         });
         const result = Array.isArray(output) ? output[0] : output;
@@ -101,7 +124,11 @@ worker.onmessage = async (event: MessageEvent) => {
       type: "error",
       requestId: request.requestId,
       code:
-        request.type === "load" ? "speech-model-load" : "speech-transcription",
+        error instanceof Error && error.message === "speech-cache"
+          ? "speech-cache"
+          : request.type === "load"
+            ? "speech-model-load"
+            : "speech-transcription",
       detail: error instanceof Error ? error.name : "Error",
     });
   }

@@ -26,6 +26,11 @@ afterEach(() => {
   workers.length = 0;
 });
 function setup() {
+  vi.stubGlobal("navigator", {
+    gpu: {
+      requestAdapter: async () => ({ features: new Set(["shader-f16"]) }),
+    },
+  });
   vi.stubGlobal("Worker", FakeWorker);
   vi.stubGlobal("isSecureContext", true);
   return new BrowserSpeech();
@@ -87,6 +92,17 @@ it("releases the lease even if creating a Worker throws", async () => {
   await expect(
     speech.load("en", () => {}, new AbortController().signal),
   ).rejects.toThrow("speech-worker");
+  const release = await acquireLocalInference("text");
+  release();
+});
+
+it("rejects unsupported GPUs before creating a worker or downloading a model", async () => {
+  const speech = setup();
+  vi.stubGlobal("navigator", { gpu: { requestAdapter: async () => null } });
+  await expect(
+    speech.load("ar", () => {}, new AbortController().signal),
+  ).rejects.toThrow("speech-gpu-required");
+  expect(workers).toHaveLength(0);
   const release = await acquireLocalInference("text");
   release();
 });

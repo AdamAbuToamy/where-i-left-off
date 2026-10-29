@@ -6,9 +6,9 @@ FLEURS: Google, CC-BY-4.0, https://huggingface.co/datasets/google/fleurs
 import argparse, concurrent.futures, csv, hashlib, io, json, tarfile, urllib.request
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent / '.wrangler/session-voice-audio'
-MODEL = 'onnx-community/whisper-base'
-REVISION = '1846881b6b3a3024392c1eea3ad983695bc23925'
-FILES = ['config.json','preprocessor_config.json','tokenizer.json','tokenizer_config.json','generation_config.json','onnx/encoder_model_quantized.onnx','onnx/decoder_model_merged_quantized.onnx']
+MODEL = 'onnx-community/whisper-large-v3-turbo'
+REVISION = '360ebcde2559d60bb474678be3c1de9ef347d01a'
+FILES = ['config.json','preprocessor_config.json','tokenizer.json','tokenizer_config.json','generation_config.json','onnx/encoder_model_q4f16.onnx','onnx/decoder_model_merged_q4f16.onnx']
 def get(url):
     return urllib.request.urlopen(url, timeout=60)
 def fixture(language):
@@ -30,7 +30,7 @@ def fixture(language):
     (ROOT/(language+'-row.json')).write_text(json.dumps(metadata,ensure_ascii=False),encoding='utf8')
     print(language, len(audio), 'bytes', flush=True)
 def model_file(file):
-    target = ROOT/'model'/file
+    target = ROOT/'turbo-model'/file
     target.parent.mkdir(parents=True,exist_ok=True)
     with get(f'https://huggingface.co/{MODEL}/resolve/{REVISION}/{file}') as response:
         with target.open('wb') as output:
@@ -39,7 +39,7 @@ def model_file(file):
     return {'file':file,'bytes':target.stat().st_size,'sha256':hashlib.sha256(target.read_bytes()).hexdigest()}
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--model',action='store_true',help='Also download ~80 MB model assets for a transport-only test mirror')
+    parser.add_argument('--model',action='store_true',help='Also download ~565 MB model assets for a transport-only test mirror')
     args=parser.parse_args();ROOT.mkdir(parents=True,exist_ok=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         list(executor.map(fixture,['ar_eg','he_il','en_us']))
