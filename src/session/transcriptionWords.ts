@@ -1,6 +1,15 @@
 import { SESSION_SPEECH_MODEL } from "./speechModel";
 import type { Language } from "../translations";
 const en = {
+  recordClip: "Record voice message",
+  stopClip: "Stop and transcribe",
+  reviewClip: "Review recording",
+  discardClip: "Discard recording",
+  clipHint:
+    "Tap the microphone, speak, then stop. Up to 24 seconds per message.",
+  clipRecording: "Recording your message · tap stop when finished",
+  processingClip: "Recording stopped · transcribing the whole message",
+  reviewBeforeClose: "Approve or discard the recorded text before closing.",
   asNote: "Note",
   asNextStep: "Next step",
   approve: "Approve and save",
@@ -30,8 +39,7 @@ const en = {
   pause: "Pause",
   language: "Speech language",
   empty: "Your conversation appears here as text.",
-  privacy:
-    "Audio stays on this device. The transcript is saved to your account.",
+  privacy: "Audio stays on this device. Text is saved only after you approve.",
   edit: "Edit transcript",
   part: "Transcript paragraph",
   save: "Save",
@@ -64,6 +72,14 @@ const en = {
   itemText: "Item text",
 };
 const ar: typeof en = {
+  recordClip: "تسجيل مقطع صوتي",
+  stopClip: "إيقاف وتحويل لكتابة",
+  reviewClip: "راجع نص المقطع",
+  discardClip: "إلغاء المقطع",
+  clipHint: "اضغط الميكروفون، احكِ ثم أوقف التسجيل. حتى 24 ثانية للمقطع.",
+  clipRecording: "نسجّل كلامك · اضغط إيقاف عندما تنتهي",
+  processingClip: "توقف التسجيل · نحوّل المقطع كاملًا لكتابة",
+  reviewBeforeClose: "وافق على إضافة النص أو ألغِ المقطع قبل الإغلاق.",
   asNote: "ملاحظة",
   asNextStep: "خطوة قادمة",
   approve: "موافقة وحفظ",
@@ -93,7 +109,7 @@ const ar: typeof en = {
   pause: "إيقاف مؤقت",
   language: "لغة الكلام",
   empty: "ستظهر محادثتك هنا مكتوبة.",
-  privacy: "الصوت يبقى على جهازك. يُحفظ النص في حسابك.",
+  privacy: "الصوت يبقى على جهازك. لا يُحفظ النص إلا بعد موافقتك.",
   edit: "تعديل التفريغ",
   part: "فقرة التفريغ",
   save: "حفظ",
@@ -125,6 +141,14 @@ const ar: typeof en = {
   itemText: "نص البند",
 };
 const he: typeof en = {
+  recordClip: "הקלטת הודעה קולית",
+  stopClip: "עצירה ותמלול",
+  reviewClip: "בדיקת התמלול",
+  discardClip: "ביטול ההקלטה",
+  clipHint: "לחצו על המיקרופון, דברו ואז עצרו. עד 24 שניות להודעה.",
+  clipRecording: "מקליט · לחצו לעצירה בסיום",
+  processingClip: "ההקלטה נעצרה · מתמלל את כל ההודעה",
+  reviewBeforeClose: "אשרו או בטלו את התמלול לפני הסגירה.",
   asNote: "הערה",
   asNextStep: "הצעד הבא",
   approve: "אישור ושמירה",

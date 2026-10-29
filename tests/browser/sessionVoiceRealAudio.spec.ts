@@ -142,18 +142,23 @@ test("real local dictation goes through microphone, domain, Firestore and reload
   await page.getByRole("button", { name: "Work session", exact: true }).click();
 
   await expect(
-    panel.getByRole("button", { name: "Start transcription", exact: true }),
+    panel.getByRole("button", { name: "Record voice message", exact: true }),
   ).toBeEnabled({ timeout: 60000 });
   await panel
-    .getByRole("button", { name: "Start transcription", exact: true })
+    .getByRole("button", { name: "Record voice message", exact: true })
     .click();
   await expect(panel.locator("[data-microphone=active]")).toBeVisible({
     timeout: 30000,
   });
+  // A voice message is captured completely before the model runs.
+  await page.waitForTimeout(10000);
+  await expect(panel.locator(".session-clip-draft")).toHaveCount(0);
+  await panel
+    .getByRole("button", { name: "Stop and transcribe", exact: true })
+    .click();
   await expect(
-    panel.locator(".session-transcript-paragraph").first(),
+    panel.getByLabel("Review recording", { exact: true }),
   ).toHaveValue(/check.*authentication/i, { timeout: 60000 });
-  await panel.getByRole("button", { name: "Pause", exact: true }).click();
   await expect
     .poll(
       () =>
@@ -178,6 +183,11 @@ test("real local dictation goes through microphone, domain, Firestore and reload
     .toEqual({ tracksStopped: true, workersTerminated: false });
   await expect(panel.locator("[data-session-item]")).toHaveCount(0);
   await expect(panel.locator("[data-session-note]")).toHaveCount(0);
+  await expect(panel.locator(".session-transcript-paragraph")).toHaveCount(0);
+  await panel
+    .getByRole("button", { name: "Approve and save", exact: true })
+    .click();
+  await expect(panel.locator(".session-clip-draft")).toHaveCount(0);
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "Work session", exact: true }).click();
@@ -191,13 +201,24 @@ test("real local dictation goes through microphone, domain, Firestore and reload
     route.abort("internetdisconnected"),
   );
   await panel
-    .getByRole("button", { name: "Start transcription", exact: true })
+    .getByRole("button", { name: "Record voice message", exact: true })
     .click();
   await expect(panel.locator("[data-microphone=active]")).toBeVisible({
     timeout: 30000,
   });
-  await panel.getByRole("button", { name: "Pause", exact: true }).click();
-  await page.getByRole("button", { name: "Save draft and close", exact: true }).click();
+  await page.waitForTimeout(10000);
+  await panel
+    .getByRole("button", { name: "Stop and transcribe", exact: true })
+    .click();
+  await expect(
+    panel.getByLabel("Review recording", { exact: true }),
+  ).toBeVisible({ timeout: 60000 });
+  await panel
+    .getByRole("button", { name: "Discard recording", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Save draft and close", exact: true })
+    .click();
   await expect
     .poll(
       () =>

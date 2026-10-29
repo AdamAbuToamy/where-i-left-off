@@ -542,3 +542,70 @@
     transition: none !important;
   }
 }
+
+.session-workspace .session-clip-record {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.session-clip-record svg {
+  width: 25px;
+  height: 25px;
+}
+[data-recording="true"] > .session-clip-record {
+  background: #b34747;
+  border-color: #b34747;
+  animation: session-breathe 1.5s ease-in-out infinite;
+}
+.session-clip-hint {
+  display: block;
+  margin-block: 8px 14px;
+  color: var(--site-muted);
+}
+.session-clip-draft {
+  padding: 14px;
+  margin-block: 12px;
+  border: 1px solid var(--site-primary);
+  border-radius: 14px;
+  background: var(--site-soft);
+}
+.session-clip-draft textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-block: 8px;
+  resize: vertical;
+  line-height: 1.8;
+}
+.session-clip-draft label {
+  font-size: 13px;
+  color: var(--site-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .session-workspace .session-clip-record {
+    animation: none !important;
+  }
+}
+
+.session-clip-time {
+  font-variant-numeric: tabular-nums;
+  margin-inline-start: 10px;
+  font-size: 12px;
+}
+.session-clip-spinner {
+  animation: session-clip-turn 1s linear infinite;
+}
+@keyframes session-clip-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .session-clip-spinner {
+    animation: none !important;
+  }
+}

@@ -13,6 +13,18 @@ class SessionAudioCapture extends AudioWorkletProcessor {
   private phase = 0;
   private sum = 0;
   private count = 0;
+  constructor() {
+    super();
+    this.port.onmessage = (event) => {
+      if (event.data?.type !== "flush") return;
+      if (this.offset) {
+        const tail = this.buffer.slice(0, this.offset);
+        this.port.postMessage(tail, [tail.buffer]);
+        this.offset = 0;
+      }
+      this.port.postMessage({ type: "flushed" });
+    };
+  }
   process(inputs: Float32Array[][], outputs: Float32Array[][]) {
     for (const output of outputs) for (const channel of output) channel.fill(0);
     const input = inputs[0]?.[0];
