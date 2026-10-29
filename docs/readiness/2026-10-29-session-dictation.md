@@ -29,7 +29,7 @@ FLEURS: Google, CC-BY-4.0. Casablanca: UBC-NLP/Talafha et al., CC-BY-NC-ND-4.0, 
 
 Requires a compatible GPU; unsupported devices retain manual notes/checklist with a clear error before model download. Model load time and recognition speed depend on device/network. Transcript text is saved to the account after explicit Start; audio remains local. Clearing transcript preserves notes/items. Existing 100-paragraph/1000-operation/180k-character limits remain; paragraphs group consecutive chunks. Browser cache persistence is best effort. No cloud fallback. Forced browser close may lose audio not yet transcribed.
 
-No rule/schema migration. Rollback frontend to e3f29a6 (previous main) and restore prior Worker version 9a6c9200-87c4-452f-8cb0-7b71f543e489 if needed; saved state schema is compatible. Deployment not yet verified in this report.
+No rule/schema migration. Rollback frontend to e3f29a6 (previous main) and restore prior Worker version 9a6c9200-87c4-452f-8cb0-7b71f543e489 if needed; saved state schema is compatible. Production deployment verified; see [deployment evidence](2026-10-29-session-dictation-deployment.md).
 
 
 ## Cache regression found and fixed
