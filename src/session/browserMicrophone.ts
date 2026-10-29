@@ -86,7 +86,8 @@ export class BrowserMicrophone implements MicrophonePort {
       throw error;
     }
   }
-  async stop() {
+  async stop(flush = false) {
+    if (flush) this.segments?.finish();
     this.generation++;
     this.segments?.clear();
     this.segments = null;

@@ -1,5 +1,3 @@
-import { SessionProposalSummary } from "./SessionProposalSummary";
-import { sessionReviewRows } from "./sessionReview";
 import {
   forwardRef,
   useCallback,
@@ -8,31 +6,38 @@ import {
   useRef,
   useState,
 } from "react";
-import { Mic, Pause, Square, Undo2 } from "lucide-react";
+import {
+  Mic,
+  Pause,
+  FileText,
+  StickyNote,
+  ListChecks,
+  Trash2,
+} from "lucide-react";
 import type { Language } from "../translations";
 import { createClientId } from "../lib/clientId";
-import { planAssistantSessionOperations } from "../assistant/actions";
 import { emptySession, SessionError } from "./domain";
 import type {
   SessionIdentity,
   SessionState,
   SessionProposal,
   SessionOperation,
-  SessionNote,
+  TranscriptSegment,
 } from "./domain";
 import { prepareSessionProposal } from "./control";
 import type { SessionControlValues } from "./control";
-import { understandSessionSpeech, sessionTextKey } from "./commands";
-import type { SpokenSegment, SessionUnderstanding } from "./commands";
+import { appendTranscript } from "./transcript";
 import { createSessionWorkspace, activeSessionWorkspaces } from "./composition";
 import type { SessionStatus } from "./repository";
-import { sessionAssistantBridge } from "./assistantBridge";
 import { SessionSpeechController } from "./speechController";
+import type { SpeechEvent } from "./speechController";
 import { BrowserSpeech } from "./browserSpeech";
 import { BrowserMicrophone } from "./browserMicrophone";
-import type { SpeechEvent } from "./speechController";
+import type { SpokenSegment } from "./commands";
 import { sessionWords, sessionErrorText } from "./words";
+import { transcriptionWords } from "./transcriptionWords";
 import { SessionManualEditor } from "./SessionManualEditor";
+import { TranscriptParagraph } from "./TranscriptParagraph";
 import "./sessionVoice.css";
 export type SessionWorkspaceHandle = { beforeFinish: () => Promise<void> };
 type Props = {
@@ -41,21 +46,19 @@ type Props = {
   language: Language;
   historical?: boolean;
 };
-type Draft = {
-  id: string;
-  text: string;
-  original: string;
-  category: SessionNote["category"];
-  segmentId: string;
+type Tab = "transcript" | "notes" | "checklist";
+const icons = {
+  transcript: FileText,
+  notes: StickyNote,
+  checklist: ListChecks,
 };
-type Pending = { number: number; proposal: SessionProposal; label: string };
-
 const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
   function SessionVoicePanel(
     { uid, identity, language, historical = false },
     ref,
   ) {
-    const t = sessionWords[language];
+    const t = transcriptionWords[language],
+      legacy = sessionWords[language];
     const [repository] = useState(() => createSessionWorkspace(uid, identity));
     const [state, setState] = useState<SessionState>(() =>
       emptySession(identity),
@@ -66,50 +69,35 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       conflict: false,
       error: "",
     });
+    const [tab, setTab] = useState<Tab>("transcript"),
+      [voiceLanguage, setVoiceLanguage] = useState<Language>(language);
     const [speech, setSpeech] = useState<SpeechEvent>({
       stage: "off",
       microphone: false,
     });
-    const [voiceLanguage, setVoiceLanguage] = useState<Language>(language),
-      [automatic, setAutomatic] = useState(false),
-      [sharing, setSharing] = useState(false);
-    const [transcript, setTranscript] = useState(""),
-      [message, setMessage] = useState(""),
-      [error, setError] = useState(""),
-      [busy, setBusy] = useState(false);
-    const [pending, setPending] = useState<Pending | null>(null),
-      [understanding, setUnderstanding] = useState<SessionUnderstanding | null>(
-        null,
-      ),
-      [drafts, setDrafts] = useState<Draft[]>([]);
-    const mounted = useRef(false),
-      speechController = useRef<SessionSpeechController | null>(null),
-      preferences = useRef({ automatic: false, sharing: false }),
-      pendingRef = useRef<Pending | null>(null),
-      proposalNumber = useRef(0),
+    const [busy, setBusy] = useState(false),
+      [finishing, setFinishing] = useState(false),
+      [error, setError] = useState("");
+    const [unsaved, setUnsaved] = useState<TranscriptSegment[]>([]);
+    const alive = useRef(false),
+      controller = useRef<SessionSpeechController | null>(null),
+      editing = useRef<string | null>(null),
       handled = useRef(new Set<string>()),
+      pending = useRef(new Map<string, SpokenSegment>()),
+      finalChain = useRef<Promise<unknown>>(Promise.resolve()),
       saving = useRef(0);
-    const setProposal = useCallback((value: Pending | null) => {
-      pendingRef.current = value;
-      setPending(value);
-    }, []);
     const save = useCallback(
       async (proposal: SessionProposal) => {
         saving.current++;
-        if (mounted.current) {
+        if (alive.current) {
           setBusy(true);
           setError("");
-          setMessage("");
         }
         try {
           await repository.apply(proposal);
-          if (mounted.current) {
-            setMessage(sessionWords[language].saved);
-            setProposal(null);
-          }
           return true;
         } catch (cause) {
-          if (mounted.current)
+          if (alive.current)
             setError(
               sessionErrorText(
                 cause instanceof Error ? cause.message : "session-save-failed",
@@ -119,10 +107,10 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
           return false;
         } finally {
           saving.current--;
-          if (mounted.current) setBusy(saving.current > 0);
+          if (alive.current) setBusy(saving.current > 0);
         }
       },
-      [repository, language, setProposal],
+      [repository, language],
     );
     const manual = useCallback(
       async (
@@ -131,8 +119,9 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         id?: string,
       ) => {
         try {
-          const current = repository.current(),
-            proposal = prepareSessionProposal(
+          const current = repository.current();
+          return await save(
+            prepareSessionProposal(
               current,
               [
                 {
@@ -146,8 +135,8 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
               "manual",
               createClientId,
               Date.now(),
-            );
-          return await save(proposal);
+            ),
+          );
         } catch (cause) {
           setError(
             sessionErrorText(
@@ -158,90 +147,45 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
           return false;
         }
       },
-      [repository, save, language],
+      [repository, language, save],
     );
-    const analyze = useCallback(
-      (segment: SpokenSegment) => {
-        const current = repository.current(),
-          result = understandSessionSpeech(segment, current);
-        setUnderstanding(result);
-        setProposal(null);
-        setError("");
-        setMessage("");
-        if (result.kind === "command") {
-          try {
-            const proposal = prepareSessionProposal(
-              current,
-              [result.values],
-              "voice",
-              createClientId,
-              Date.now(),
-            );
-            for (const operation of proposal.operations)
-              if (operation.verb === "add_note") {
-                operation.segmentId = segment.id;
-                if (current.retainTranscript)
-                  operation.sourceText = segment.text;
-              }
-            planAssistantSessionOperations(current, proposal, Date.now());
-            setProposal({
-              number: ++proposalNumber.current,
-              proposal,
-              label: segment.text,
-            });
-          } catch (cause) {
-            setError(
-              sessionErrorText(
-                cause instanceof Error ? cause.message : "session-invalid",
-                language,
-              ),
-            );
-          }
-        } else if (result.kind === "speech") {
-          if (preferences.current.automatic) {
-            const key = sessionTextKey(result.text);
-            if (
-              key &&
-              !current.notes.some((note) => sessionTextKey(note.text) === key)
-            )
-              setDrafts((old) =>
-                old.some((draft) => sessionTextKey(draft.text) === key)
-                  ? old
-                  : old.length >= 10
-                    ? old
-                    : [
-                        ...old,
-                        {
-                          id: createClientId(),
-                          text: result.text,
-                          original: segment.text,
-                          category: result.category,
-                          segmentId: segment.id,
-                        },
-                      ],
-              );
-          }
-        }
+    const saveFinal = useCallback(
+      async (segment: SpokenSegment) => {
+        if (
+          !alive.current ||
+          segment.sessionId !== identity.id ||
+          !segment.final
+        )
+          return;
+        const ok = await save(
+          appendTranscript(
+            repository.current(),
+            segment,
+            saving.current
+              ? repository.current().transcripts.at(-1)?.id || null
+              : editing.current,
+          ),
+        );
+        if (ok) {
+          pending.current.delete(segment.id);
+          setUnsaved((old) => old.filter((item) => item.id !== segment.id));
+        } else await controller.current?.pause("session-save-failed");
       },
-      [repository, language, setProposal],
+      [repository, identity.id, save],
     );
     useEffect(() => {
-      let alive = true;
-      mounted.current = true;
+      let mounted = true;
+      alive.current = true;
       activeSessionWorkspaces.add(uid + "/" + identity.id);
-      const detach = sessionAssistantBridge(uid).attach(
-        repository,
-        () => preferences.current.sharing,
-      );
       void repository
-        .start((next, nextStatus) => {
-          if (alive) {
+        .start((next, storage) => {
+          if (mounted) {
             setState(next);
-            setStatus(nextStatus);
+            setStatus(storage);
           }
         })
         .catch((cause) => {
-          if (alive)
+          if (mounted)
             setError(
               sessionErrorText(
                 cause instanceof Error ? cause.message : "session-save-failed",
@@ -252,10 +196,9 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       const online = () => void repository.flush();
       window.addEventListener("online", online);
       return () => {
-        alive = false;
-        mounted.current = false;
+        mounted = false;
+        alive.current = false;
         repository.stop();
-        detach();
         activeSessionWorkspaces.delete(uid + "/" + identity.id);
         window.removeEventListener("online", online);
         window.dispatchEvent(
@@ -266,194 +209,132 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       };
     }, [repository, uid, identity.id, language]);
     useEffect(() => {
-      let alive = true;
-      let chain: Promise<unknown> = Promise.resolve();
-      const controller = new SessionSpeechController({
+      let mounted = true;
+      const speechController = new SessionSpeechController({
+        batchTranscription: true,
         speech: () => new BrowserSpeech(),
         microphone: () => new BrowserMicrophone(),
         current: () => repository.current(),
         language: voiceLanguage,
         now: Date.now,
         changed: (event) => {
-          if (alive) setSpeech(event);
+          if (mounted) setSpeech(event);
         },
         final: (segment) => {
-          chain = chain
-            .then(async () => {
-              if (!alive || historical || handled.current.has(segment.id))
-                return;
-              handled.current.add(segment.id);
-              setTranscript(segment.text);
-              const current = repository.current(),
-                result = understandSessionSpeech(segment, current);
-              if (result.kind === "confirm") {
-                const proposal = pendingRef.current;
-                if (
-                  !proposal ||
-                  proposal.number !== result.number ||
-                  proposal.proposal.sessionId !== current.id ||
-                  proposal.proposal.baseRevision !== current.contentRevision
-                ) {
-                  setError(t.confirmNumber);
-                  return;
-                }
-                await save(proposal.proposal);
-              }
-              if (current.retainTranscript) {
-                const latest = repository.current();
-                const retained = await save({
-                  sessionId: latest.id,
-                  baseRevision: latest.contentRevision,
-                  origin: "manual",
-                  operations: [
-                    {
-                      verb: "transcript",
-                      operationId: segment.id + "-keep",
-                      id: segment.id,
-                      text: segment.text,
-                    },
-                  ],
-                });
-                if (!retained) {
-                  await speechController.current?.pause("session-save-failed");
-                  return;
-                }
-              }
-              if (!alive || result.kind === "confirm") return;
-              analyze(segment);
-            })
-            .catch((cause) => {
-              if (alive)
-                setError(
-                  sessionErrorText(
-                    cause instanceof Error
-                      ? cause.message
-                      : "session-save-failed",
-                    language,
-                  ),
-                );
+          if (
+            !mounted ||
+            handled.current.has(segment.id) ||
+            !segment.final ||
+            segment.sessionId !== identity.id
+          )
+            return;
+          handled.current.add(segment.id);
+          pending.current.set(segment.id, segment);
+          setUnsaved((old) => [
+            ...old,
+            { id: segment.id, text: segment.text, at: segment.at },
+          ]);
+          finalChain.current = finalChain.current
+            .then(() => (mounted ? saveFinal(segment) : undefined))
+            .catch(() => {
+              if (mounted) setError(t.unsaved);
             });
         },
       });
-      speechController.current = controller;
+      controller.current = speechController;
       const hide = () => {
-          if (document.visibilityState !== "visible") void controller.pause();
+          if (document.visibilityState !== "visible")
+            void speechController.pause();
         },
-        leave = () => void controller.stop();
+        leave = () => void speechController.stop();
       document.addEventListener("visibilitychange", hide);
       window.addEventListener("pagehide", leave);
       return () => {
-        alive = false;
-        controller.dispose();
-        if (speechController.current === controller)
-          speechController.current = null;
+        mounted = false;
+        speechController.dispose();
+        if (controller.current === speechController) controller.current = null;
         document.removeEventListener("visibilitychange", hide);
         window.removeEventListener("pagehide", leave);
       };
-    }, [
-      repository,
-      voiceLanguage,
-      language,
-      historical,
-      analyze,
-      save,
-      t.confirmNumber,
-    ]);
-    useImperativeHandle(
-      ref,
-      () => ({
-        beforeFinish: async () => {
-          await speechController.current?.stop();
-          const current = repository.status();
-          if (current.conflict) throw new SessionError("session-conflict");
-          if (current.ready) await repository.flush();
-          if (repository.status().conflict)
-            throw new SessionError("session-conflict");
-        },
-      }),
-      [repository],
-    );
-    const finalSegment = (text: string): SpokenSegment => {
+    }, [repository, voiceLanguage, identity.id, saveFinal, t.unsaved]);
+    const finish = useCallback(async () => {
+      setFinishing(true);
+      try {
+        await controller.current?.finish();
+        await finalChain.current;
+        if (pending.current.size) throw new SessionError("session-save-failed");
+        if (repository.status().conflict)
+          throw new SessionError("session-conflict");
+        if (repository.status().ready) await repository.flush();
+        if (repository.status().conflict)
+          throw new SessionError("session-conflict");
+      } finally {
+        if (alive.current) setFinishing(false);
+      }
+    }, [repository]);
+    useImperativeHandle(ref, () => ({ beforeFinish: finish }), [finish]);
+    async function start() {
+      setError("");
+      setTab("transcript");
       const current = repository.current();
-      return {
-        id: createClientId(),
-        sequence: 0,
-        text,
-        at: Date.now(),
-        final: true,
+      if (!current.retainTranscript) {
+        const ok = await save({
+          sessionId: current.id,
+          baseRevision: current.contentRevision,
+          origin: "manual",
+          operations: [
+            {
+              verb: "retain_transcript",
+              operationId: createClientId(),
+              enabled: true,
+            },
+          ],
+        });
+        if (!ok) return;
+      }
+      await controller.current?.start();
+    }
+    async function correct(id: string, text: string, original: string) {
+      const current = repository.current();
+      const operation: SessionOperation = text.trim()
+        ? {
+            verb: "edit_transcript",
+            id,
+            text,
+            sourceText: original,
+            operationId: createClientId(),
+          }
+        : {
+            verb: "delete_transcript",
+            id,
+            sourceText: original,
+            operationId: createClientId(),
+          };
+      return save({
         sessionId: current.id,
-        revision: current.contentRevision,
-        order: current.items.map((item) => item.id),
-      };
-    };
-    async function retention(enabled: boolean) {
+        baseRevision: current.contentRevision,
+        origin: "manual",
+        operations: [operation],
+      });
+    }
+    async function clear() {
+      if (!window.confirm(t.confirmClear)) return;
+      await finish();
       const current = repository.current();
       await save({
         sessionId: current.id,
         baseRevision: current.contentRevision,
         origin: "manual",
         operations: [
-          { operationId: createClientId(), verb: "retain_transcript", enabled },
+          {
+            verb: "retain_transcript",
+            enabled: false,
+            operationId: createClientId(),
+          },
         ],
       });
     }
-    async function acceptDraft(draft: Draft) {
-      const current = repository.current(),
-        operation: SessionOperation = {
-          operationId: draft.id + "-accept",
-          verb: "add_note",
-          id: draft.id,
-          text: draft.text,
-          category: draft.category,
-          segmentId: draft.segmentId,
-          ...(current.retainTranscript ? { sourceText: draft.original } : {}),
-        };
-      if (
-        await save({
-          sessionId: current.id,
-          baseRevision: current.contentRevision,
-          origin: "voice",
-          operations: [operation],
-        })
-      )
-        setDrafts((old) => old.filter((item) => item.id !== draft.id));
-    }
-    function proposeAsNote() {
-      const segment = finalSegment(transcript);
-      try {
-        const current = repository.current(),
-          proposal = prepareSessionProposal(
-            current,
-            [
-              {
-                sessionId: current.id,
-                expectedRevision: current.contentRevision,
-                verb: "add_note",
-                text: transcript,
-              },
-            ],
-            "voice",
-            createClientId,
-            Date.now(),
-          );
-        proposal.operations[0].segmentId = segment.id;
-        if (current.retainTranscript)
-          proposal.operations[0].sourceText = transcript;
-        setProposal({
-          number: ++proposalNumber.current,
-          proposal,
-          label: transcript,
-        });
-      } catch (cause) {
-        setError(
-          sessionErrorText(
-            cause instanceof Error ? cause.message : "session-invalid",
-            language,
-          ),
-        );
-      }
-    }
-    async function resolveConflict(choice: "local" | "remote") {
+    async function resolve(choice: "local" | "remote") {
       try {
         await repository.resolve(choice);
       } catch (cause) {
@@ -465,27 +346,88 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         );
       }
     }
-    const disabled = !status.ready || status.conflict || busy;
-    const canUndo = state.lastVoice?.revision === state.contentRevision;
-    const active =
-      speech.stage === "loading" ||
-      speech.stage === "listening" ||
-      speech.stage === "processing";
-    const stageLabel =
-      speech.stage === "error"
+    const disabled = !status.ready || status.conflict || busy || finishing;
+    const active = ["loading", "listening", "processing"].includes(
+      speech.stage,
+    );
+    const phase = finishing
+      ? t.finishing
+      : speech.stage === "error"
         ? sessionErrorText(speech.error || "speech-error", language)
         : t[speech.stage];
+    const tabs: Tab[] = ["transcript", "notes", "checklist"];
+    const sync = status.ready
+      ? status.pending
+        ? t.local
+        : state.applied.length
+          ? t.synced
+          : legacy.connected
+      : legacy.ready;
     return (
       <section
-        className="session-workspace"
+        className="session-workspace session-transcription"
+        aria-busy={busy}
         dir={language === "en" ? "ltr" : "rtl"}
         aria-label={t.title}
       >
         <header className="session-workspace-heading">
-          <h3>
-            <Mic size={19} />
-            {historical ? t.history : t.title}
-          </h3>
+          <div className="session-tabs" role="tablist" aria-label={t.title}>
+            {tabs.map((value) => {
+              const Icon = icons[value],
+                count =
+                  value === "notes"
+                    ? state.notes.length
+                    : value === "checklist"
+                      ? state.items.length
+                      : 0;
+              return (
+                <button
+                  type="button"
+                  role="tab"
+                  key={value}
+                  id={identity.id + "-tab-" + value}
+                  aria-controls={identity.id + "-panel-" + value}
+                  aria-selected={tab === value}
+                  tabIndex={tab === value ? 0 : -1}
+                  onClick={() => setTab(value)}
+                  onKeyDown={(event) => {
+                    if (
+                      !["ArrowRight", "ArrowLeft", "Home", "End"].includes(
+                        event.key,
+                      )
+                    )
+                      return;
+                    event.preventDefault();
+                    const index = tabs.indexOf(value),
+                      next =
+                        event.key === "Home"
+                          ? tabs[0]
+                          : event.key === "End"
+                            ? tabs[2]
+                            : tabs[
+                                (index +
+                                  ((
+                                    language === "en"
+                                      ? event.key === "ArrowRight"
+                                      : event.key === "ArrowLeft"
+                                  )
+                                    ? 1
+                                    : 2)) %
+                                  3
+                              ];
+                    setTab(next);
+                    document
+                      .getElementById(identity.id + "-tab-" + next)
+                      ?.focus();
+                  }}
+                >
+                  <Icon size={16} />
+                  {t[value]}
+                  {count > 0 && <small>{count}</small>}
+                </button>
+              );
+            })}
+          </div>
           <small
             role="status"
             data-session-sync={
@@ -498,17 +440,11 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                     : "loading"
             }
           >
-            {status.ready
-              ? status.pending
-                ? t.local
-                : state.applied.length
-                  ? t.synced
-                  : t.connected
-              : t.ready}
+            {sync}
           </small>
         </header>
         {(error || status.error) && (
-          <p className="session-error" role="alert">
+          <p role="alert" className="session-error">
             {error || sessionErrorText(status.error, language)}
             {status.error && (
               <button type="button" onClick={() => void repository.flush()}>
@@ -520,353 +456,161 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         {status.conflict && (
           <aside className="session-conflict">
             <p>{t.conflict}</p>
-            <button type="button" onClick={() => void resolveConflict("local")}>
+            <button type="button" onClick={() => void resolve("local")}>
               {t.keepLocal}
             </button>
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(t.confirmRemote))
-                  void resolveConflict("remote");
+                if (window.confirm(t.confirmRemote)) void resolve("remote");
               }}
             >
               {t.keepRemote}
             </button>
           </aside>
         )}
-        {!historical && (
-          <>
-            <div className="session-voice-toolbar">
-              <button
-                type="button"
-                className="primary-button"
-                disabled={disabled || active}
-                onClick={() => void speechController.current?.start()}
-              >
-                <Mic size={16} />
-                {t.start}
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!active}
-                onClick={() => void speechController.current?.pause()}
-              >
-                <Pause size={16} />
-                {t.pause}
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={speech.stage === "off"}
-                onClick={() => void speechController.current?.stop()}
-              >
-                <Square size={15} />
-                {t.stop}
-              </button>
-            </div>
-            <div
-              className="session-mic-state"
-              data-microphone={speech.microphone ? "active" : "off"}
-              role="status"
-            >
-              <i aria-hidden="true" />
-              {speech.microphone ? t.microphone + " · " : ""}
-              {stageLabel}
-            </div>
-            {speech.progress && speech.stage === "loading" && (
-              <progress
-                aria-label={t.loading}
-                max={speech.progress.total}
-                value={speech.progress.loaded}
-              />
-            )}
-            <label className="session-language">
-              {t.language}
-              <select
-                value={voiceLanguage}
-                disabled={active}
-                onChange={(event) =>
-                  setVoiceLanguage(event.target.value as Language)
-                }
-              >
-                <option value="ar">العربية</option>
-                <option value="he">עברית</option>
-                <option value="en">English</option>
-              </select>
-            </label>
-            <p className="session-accuracy-hint">{t.speakClear}</p>
-            <details className="session-privacy">
-              <summary>{t.privacy}</summary>
-              <p>{t.private}</p>
-
-              <p>{t.retentionHint}</p>
-              <p>{t.sharingHint}</p>
-            </details>
-            <div className="session-options">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={automatic}
-                  onChange={(event) => {
-                    preferences.current.automatic = event.target.checked;
-                    setAutomatic(event.target.checked);
-                  }}
-                />
-                {t.automatic}
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={state.retainTranscript}
+        <div
+          role="tabpanel"
+          id={identity.id + "-panel-transcript"}
+          aria-labelledby={identity.id + "-tab-transcript"}
+          hidden={tab !== "transcript"}
+        >
+          {!historical && (
+            <>
+              <div className="session-record-bar">
+                <button
+                  type="button"
+                  className="primary-button"
                   disabled={disabled}
-                  onChange={(event) => void retention(event.target.checked)}
-                />
-                {t.retention}
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={sharing}
-                  disabled={!status.ready}
-                  onChange={(event) => {
-                    preferences.current.sharing = event.target.checked;
-                    setSharing(event.target.checked);
+                  onClick={() => {
+                    if (active) void finish().catch(() => setError(t.unsaved));
+                    else void start();
                   }}
+                >
+                  {active ? <Pause size={17} /> : <Mic size={17} />}{" "}
+                  {active ? t.pause : t.start}
+                </button>
+                <select
+                  aria-label={t.language}
+                  value={voiceLanguage}
+                  disabled={active || finishing}
+                  onChange={(event) =>
+                    setVoiceLanguage(event.target.value as Language)
+                  }
+                >
+                  <option value="ar">العربية</option>
+                  <option value="he">עברית</option>
+                  <option value="en">English</option>
+                </select>
+                <span
+                  className="session-record-state"
+                  role="status"
+                  data-microphone={speech.microphone ? "active" : "off"}
+                >
+                  <i aria-hidden="true" />
+                  {phase}
+                </span>
+              </div>
+              {speech.stage === "loading" && speech.progress && (
+                <progress
+                  aria-label={t.loading}
+                  max={speech.progress.total}
+                  value={speech.progress.loaded}
                 />
-                {t.sharing}
-              </label>
-            </div>
+              )}
+              <small className="session-transcription-privacy">
+                {t.privacy} {!state.transcripts.length && t.modelDownload}
+              </small>
+            </>
+          )}
+          <div className="session-conversation" aria-live="off">
+            {!state.transcripts.length &&
+              !unsaved.length &&
+              !speech.partial && (
+                <p className="session-transcript-empty">{t.empty}</p>
+              )}
+            {state.transcripts.map((segment, index) => (
+              <TranscriptParagraph
+                key={segment.id}
+                segment={segment}
+                label={t.part + " " + (index + 1)}
+                disabled={!status.ready || status.conflict}
+                onEditing={(id) => {
+                  editing.current = id;
+                }}
+                onCorrect={correct}
+              />
+            ))}
+            {unsaved.map((segment) => (
+              <p
+                className="session-transcript-unsaved"
+                key={segment.id}
+                dir="auto"
+              >
+                {segment.text}
+                <small>{t.unsaved}</small>
+                <button
+                  type="button"
+                  disabled={busy || status.conflict}
+                  onClick={() => {
+                    const original = pending.current.get(segment.id);
+                    if (original) void saveFinal(original);
+                  }}
+                >
+                  {t.retry}
+                </button>
+              </p>
+            ))}
             {speech.partial && (
-              <p className="session-partial" aria-label={t.partial} dir="auto">
+              <p className="session-partial" dir="auto">
                 {speech.partial}
               </p>
             )}
-            <label htmlFor={"session-transcript-" + identity.id}>
-              {t.transcript}
-            </label>
-            <textarea
-              id={"session-transcript-" + identity.id}
-              rows={2}
-              maxLength={1000}
-              value={transcript}
-              onChange={(event) => {
-                setTranscript(event.target.value);
-                setProposal(null);
-                setUnderstanding(null);
-              }}
+          </div>
+          <footer className="session-transcript-footer">
+            {!!state.transcripts.length && (
+              <button
+                type="button"
+                className="session-quiet-button"
+                disabled={disabled || active}
+                onClick={() => void clear().catch(() => setError(t.unsaved))}
+              >
+                <Trash2 size={14} />
+                {t.clear}
+              </button>
+            )}
+          </footer>
+        </div>
+        <div
+          role="tabpanel"
+          id={identity.id + "-panel-notes"}
+          aria-labelledby={identity.id + "-tab-notes"}
+          hidden={tab !== "notes"}
+        >
+          <div hidden={tab !== "notes"}>
+            <SessionManualEditor
+              state={state}
+              disabled={disabled}
+              language={language}
+              view="notes"
+              onAction={manual}
             />
-            <div className="session-inline-actions">
-              <button
-                type="button"
-                disabled={disabled || !transcript.trim()}
-                onClick={() => analyze(finalSegment(transcript))}
-              >
-                {t.analyze}
-              </button>
-              <button
-                type="button"
-                disabled={disabled || !transcript.trim()}
-                onClick={proposeAsNote}
-              >
-                {t.asNote}
-              </button>
-              <button
-                type="button"
-                disabled={disabled || !canUndo}
-                onClick={() => {
-                  const current = repository.current();
-                  void save({
-                    sessionId: current.id,
-                    baseRevision: current.contentRevision,
-                    origin: "voice",
-                    operations: [
-                      { operationId: createClientId(), verb: "undo" },
-                    ],
-                  });
-                }}
-              >
-                <Undo2 size={15} />
-                {t.undo}
-              </button>
-            </div>
-            {understanding?.kind === "stale" && <p role="status">{t.stale}</p>}
-            {understanding?.kind === "speech" && (
-              <p role="status">{t.speechOnly}</p>
-            )}
-            {understanding?.kind === "remaining" && (
-              <div role="status">
-                <strong>{t.remaining}</strong>
-                {understanding.items.length ? (
-                  <ul>
-                    {understanding.items.map((item) => (
-                      <li key={item.id} dir="auto">
-                        {item.text}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>{t.none}</p>
-                )}
-              </div>
-            )}
-            {understanding?.kind === "ambiguous" && (
-              <div className="session-clarification">
-                <p>{understanding.choices.length ? t.ambiguous : t.missing}</p>
-                {understanding.choices.map((item) => (
-                  <button
-                    type="button"
-                    key={item.id}
-                    onClick={() => {
-                      const current = repository.current();
-                      try {
-                        const proposal = prepareSessionProposal(
-                          current,
-                          [
-                            {
-                              sessionId: current.id,
-                              expectedRevision: current.contentRevision,
-                              verb: understanding.verb,
-                              id: item.id,
-                              ...(understanding.text
-                                ? { text: understanding.text }
-                                : {}),
-                            },
-                          ],
-                          "voice",
-                          createClientId,
-                          Date.now(),
-                        );
-                        setProposal({
-                          number: ++proposalNumber.current,
-                          proposal,
-                          label: item.text,
-                        });
-                        setUnderstanding(null);
-                      } catch (cause) {
-                        setError(
-                          sessionErrorText(
-                            cause instanceof Error
-                              ? cause.message
-                              : "session-invalid",
-                            language,
-                          ),
-                        );
-                      }
-                    }}
-                  >
-                    {item.text}
-                  </button>
-                ))}
-              </div>
-            )}
-            {pending && (
-              <section className="session-proposal" aria-label={t.proposal}>
-                <strong>
-                  {t.proposal} {pending.number}
-                </strong>
-                {pending.proposal.baseRevision !== state.contentRevision && (
-                  <p role="status">{t.stale}</p>
-                )}
-                <p dir="auto">{pending.label}</p>
-                <SessionProposalSummary
-                  rows={sessionReviewRows(state, pending.proposal)}
-                  language={language}
-                />
-                <small>
-                  {t.voiceConfirm} {pending.number}
-                </small>
-                <div>
-                  <button
-                    type="button"
-                    className="primary-button"
-                    disabled={
-                      disabled ||
-                      pending.proposal.baseRevision !== state.contentRevision
-                    }
-                    onClick={() => void save(pending.proposal)}
-                  >
-                    {t.apply}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProposal(null);
-                      setUnderstanding(null);
-                    }}
-                  >
-                    {t.cancel}
-                  </button>
-                </div>
-              </section>
-            )}
-            {!!drafts.length && (
-              <section className="session-note-drafts">
-                <h4>{t.drafts}</h4>
-                {drafts.length >= 10 && <p role="status">{t.draftLimit}</p>}
-                {drafts.map((draft) => (
-                  <article key={draft.id}>
-                    <textarea
-                      aria-label={t.note}
-                      value={draft.text}
-                      maxLength={1000}
-                      dir="auto"
-                      onChange={(event) =>
-                        setDrafts((old) =>
-                          old.map((item) =>
-                            item.id === draft.id
-                              ? { ...item, text: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                    />
-                    <button
-                      type="button"
-                      disabled={disabled || !draft.text.trim()}
-                      onClick={() => void acceptDraft(draft)}
-                    >
-                      {t.accept}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDrafts((old) =>
-                          old.filter((item) => item.id !== draft.id),
-                        )
-                      }
-                    >
-                      {t.reject}
-                    </button>
-                  </article>
-                ))}
-              </section>
-            )}
-          </>
-        )}
-        {message && (
-          <p className="session-success" role="status">
-            {message} · {status.pending ? t.local : t.synced}
-          </p>
-        )}
-        <SessionManualEditor
-          state={state}
-          disabled={disabled}
-          language={language}
-          onAction={manual}
-        />
-        {state.retainTranscript && !!state.transcripts.length && (
-          <details className="session-retained">
-            <summary>
-              {t.retention} ({state.transcripts.length})
-            </summary>
-            {state.transcripts.map((segment) => (
-              <p key={segment.id} dir="auto">
-                {segment.text}
-              </p>
-            ))}
-          </details>
-        )}
+          </div>
+        </div>
+        <div
+          role="tabpanel"
+          id={identity.id + "-panel-checklist"}
+          aria-labelledby={identity.id + "-tab-checklist"}
+          hidden={tab !== "checklist"}
+        >
+          <SessionManualEditor
+            state={state}
+            disabled={disabled}
+            language={language}
+            view="checklist"
+            onAction={manual}
+          />
+        </div>
       </section>
     );
   },

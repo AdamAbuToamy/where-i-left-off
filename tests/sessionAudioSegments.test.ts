@@ -21,3 +21,14 @@ it("ignores silence and brief clicks, emits bounded utterances, and clears on st
   for (let i = 0; i < 20; i++) segmenter.push(silence);
   expect(complete).toHaveBeenCalledTimes(2);
 });
+
+it("flushes speech before trailing silence when the user explicitly finishes", () => {
+  const final = vi.fn(),
+    segmenter = new AudioSegmenter(() => {}, final);
+  for (let i = 0; i < 8; i++) segmenter.push(new Float32Array(640).fill(0.1));
+  segmenter.finish();
+  expect(final).toHaveBeenCalledTimes(1);
+  expect(final.mock.calls[0][0].length).toBe(5120);
+  segmenter.finish();
+  expect(final).toHaveBeenCalledTimes(1);
+});

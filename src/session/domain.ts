@@ -55,6 +55,8 @@ export type SessionVerb =
   | "delete_note"
   | "retain_transcript"
   | "transcript"
+  | "edit_transcript"
+  | "delete_transcript"
   | "undo";
 export type SessionOperation = {
   operationId: string;
@@ -90,6 +92,8 @@ const verbs: SessionVerb[] = [
   "delete_note",
   "retain_transcript",
   "transcript",
+  "edit_transcript",
+  "delete_transcript",
   "undo",
 ];
 export class SessionError extends Error {
@@ -313,6 +317,7 @@ export function parseSessionOperation(value: unknown): SessionOperation {
       "add_note",
       "edit_note",
       "transcript",
+      "edit_transcript",
     ].includes(verb);
   if (
     (needsId && !id(v.id)) ||
@@ -347,7 +352,13 @@ export function planSessionOperations(
     fail();
   if (operations.every((o) => state.applied.includes(o.operationId)))
     return state;
-  if (proposal.baseRevision !== state.contentRevision) fail("session-conflict");
+  const transcriptOnly = operations.every((operation) =>
+    ["transcript", "edit_transcript", "delete_transcript"].includes(
+      operation.verb,
+    ),
+  );
+  if (proposal.baseRevision !== state.contentRevision && !transcriptOnly)
+    fail("session-conflict");
   const changes = new Map<string, Inverse>();
   let undone = false;
   for (const operation of operations) {
@@ -390,6 +401,20 @@ export function planSessionOperations(
         });
         state.lastVoice = null;
       }
+    } else if (verb === "edit_transcript" || verb === "delete_transcript") {
+      if (!state.retainTranscript) fail("session-retention-disabled");
+      const index = state.transcripts.findIndex(
+        (segment) => segment.id === operation.id,
+      );
+      if (index < 0) fail("session-reference");
+      if (operation.sourceText !== state.transcripts[index].text)
+        fail("session-conflict");
+      if (verb === "delete_transcript") state.transcripts.splice(index, 1);
+      else
+        state.transcripts[index] = {
+          ...state.transcripts[index],
+          text: operation.text!,
+        };
     } else if (verb === "transcript") {
       if (!state.retainTranscript) fail("session-retention-disabled");
       if (state.transcripts.length >= SESSION_LIMITS.transcripts)

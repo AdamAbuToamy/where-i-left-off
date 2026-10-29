@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-29",
+  "model": "onnx-community/whisper-large-v3-turbo",
+  "revision": "360ebcde2559d60bb474678be3c1de9ef347d01a",
+  "transport": "Pinned public assets mirrored locally, real native Windows Chrome WebGPU inference; no fake model output",
+  "gpu": "NVIDIA RTX 3050 Laptop for shipped/nvidia/fp16; Intel for warm",
+  "fixtures": "FLEURS CC-BY-4.0 Arabic/Hebrew/English; Casablanca Palestinian CC-BY-NC-ND-4.0 unchanged audio internal evaluation only; synthetic mixed Windows voices",
+  "limitations": [
+    "Small sample set, not a dialect benchmark",
+    "No natural Syrian sample or physical microphone tested",
+    "Synthetic mixed-language sample performed poorly",
+    "FP16 experiment did not improve Palestinian examples sufficiently to justify size",
+    "Intel inference substantially slower; mobile not verified"
+  ],
+  "measurements": [
+    {
+      "run": "turbo-shipped-results.json",
+      "sample": "ar_eg",
+      "inferenceMs": 2928,
+      "normalizedWordErrorRate": 0.067,
+      "referenceWords": 15
+    },
+    {
+      "run": "turbo-shipped-results.json",
+      "sample": "he_il",
+      "inferenceMs": 2901,
+      "normalizedWordErrorRate": 0.364,
+      "referenceWords": 11
+    },
+    {
+      "run": "turbo-shipped-results.json",
+      "sample": "en_us",
+      "inferenceMs": 2515,
+      "normalizedWordErrorRate": 0.053,
+      "referenceWords": 19
+    },
+    {
+      "run": "turbo-shipped-results.json",
+      "sample": "command-mixed",
+      "inferenceMs": 2507,
+      "normalizedWordErrorRate": 0.833,
+      "referenceWords": 6
+    },
+    {
+      "run": "turbo-shipped-results.json",
+      "sample": "Palestine-0",
+      "inferenceMs": 3339,
+      "normalizedWordErrorRate": 0.25,
+      "referenceWords": 20
+    },
+    {
+      "run": "turbo-nvidia-results.json",
+      "sample": "Palestine-0",
+      "inferenceMs": 3267,
+      "normalizedWordErrorRate": 0.25,
+      "referenceWords": 20
+    },
+    {
+      "run": "turbo-nvidia-results.json",
+      "sample": "Palestine-1",
+      "inferenceMs": 2210,
+      "normalizedWordErrorRate": 0.429,
+      "referenceWords": 21
+    },
+    {
+      "run": "turbo-nvidia-results.json",
+      "sample": "Palestine-2",
+      "inferenceMs": 2276,
+      "normalizedWordErrorRate": 0.5,
+      "referenceWords": 24
+    },
+    {
+      "run": "turbo-warm-results.json",
+      "sample": "Palestine-0",
+      "inferenceMs": 16381,
+      "normalizedWordErrorRate": 0.25,
+      "referenceWords": 20
+    },
+    {
+      "run": "turbo-warm-results.json",
+      "sample": "Palestine-1",
+      "inferenceMs": 14590,
+      "normalizedWordErrorRate": 0.429,
+      "referenceWords": 21
+    },
+    {
+      "run": "turbo-warm-results.json",
+      "sample": "Palestine-2",
+      "inferenceMs": 14764,
+      "normalizedWordErrorRate": 0.5,
+      "referenceWords": 24
+    },
+    {
+      "run": "turbo-fp16-results.json",
+      "sample": "Palestine-0",
+      "inferenceMs": 3610,
+      "normalizedWordErrorRate": 0.35,
+      "referenceWords": 20
+    },
+    {
+      "run": "turbo-fp16-results.json",
+      "sample": "Palestine-1",
+      "inferenceMs": 2380,
+      "normalizedWordErrorRate": 0.333,
+      "referenceWords": 21
+    },
+    {
+      "run": "turbo-fp16-results.json",
+      "sample": "Palestine-2",
+      "inferenceMs": 2477,
+      "normalizedWordErrorRate": 0.458,
+      "referenceWords": 24
+    }
+  ]
+}

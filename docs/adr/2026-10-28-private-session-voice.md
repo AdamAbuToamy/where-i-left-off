@@ -32,3 +32,12 @@ No production rules, Worker or hosting deployment is part of this change. A futu
 - [Transformers.js 4.3.2 release](https://github.com/huggingface/transformers.js/releases/tag/4.3.2).
 - [Whisper Base ONNX model assets](https://huggingface.co/onnx-community/whisper-base).
 - [FLEURS dataset and attribution/license](https://huggingface.co/datasets/google/fleurs).
+
+
+## 2026-10-29: dictation-only session experience
+
+The user rejected automatic notes, voice commands and the review-heavy interface. The session UI now exposes editable literal transcription, manually written notes and a manual checklist. It does not attach the cloud assistant bridge or interpret spoken commands. Prior saved notes/items and command-domain contracts remain compatible, but those voice controls are no longer offered in this UI.
+
+Whisper Base is replaced by pinned Whisper Large V3 Turbo q4f16 (~565 MB) on WebGPU with shader-f16. Real public-audio evaluation showed an improvement, with remaining Palestinian/Hebrew/mixed-language errors; this is not a promise of perfect dictation. FP16 encoder cost was not justified by the tested quality. Unsupported GPUs keep the manual tabs rather than silently switching to a weak model or uploading audio.
+
+Original-text comparison protects transcript corrections. Transcript-only operations can coexist with unrelated checklist edits; remote account revisions and atomic state validation remain enforced. Explicit recording pauses flush final speech before disposal; hidden-page cancellation remains immediate. See the 2026-10-29 readiness report for evidence and limitations.

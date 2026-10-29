@@ -12,7 +12,15 @@ if (!workerFile)
   throw new Error("Build the app before running the audio check");
 const browser = await chromium.launch({
   headless: true,
-  args: ["--no-sandbox"],
+  ...(process.env.TEST_CHROMIUM_PATH
+    ? { executablePath: process.env.TEST_CHROMIUM_PATH }
+    : {}),
+  args: [
+    "--no-sandbox",
+    ...(process.env.SPEECH_TEST_GPU_HIGH_PERFORMANCE === "true"
+      ? ["--force-high-performance-gpu"]
+      : []),
+  ],
 });
 const context = await browser.newContext({ ignoreHTTPSErrors: true });
 const page = await context.newPage();
@@ -50,7 +58,11 @@ if (mirror) {
       body: await readFile(
         resolve(
           root,
-          SESSION_SPEECH_MODEL.id.endsWith("small") ? "small-model" : "model",
+          SESSION_SPEECH_MODEL.id.endsWith("whisper-large-v3-turbo")
+            ? "turbo-model"
+            : SESSION_SPEECH_MODEL.id.endsWith("small")
+              ? "small-model"
+              : "model",
           file,
         ),
       ),

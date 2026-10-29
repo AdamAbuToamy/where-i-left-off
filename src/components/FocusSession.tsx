@@ -1,3 +1,5 @@
+import { Pause, Play, X } from "lucide-react";
+import { transcriptionWords } from "../session/transcriptionWords";
 import { sessionWords } from "../session/words";
 import type { SessionIdentity } from "../session/domain";
 import type { SessionWorkspaceHandle } from "../session/SessionVoicePanel";
@@ -141,12 +143,21 @@ export default function FocusSession({
     setRunning(clock.current.runningSince !== null);
     setOpen(true);
   }
-  function close() {
+  async function close() {
     if (busy) return;
-    if (clock.current) clock.current = pauseClock(clock.current);
-    setRunning(false);
-    dialog.current?.close();
-    setOpen(false);
+    setBusy(true);
+    try {
+      await sessionWorkspace.current?.beforeFinish();
+      if (clock.current) clock.current = pauseClock(clock.current);
+      setRunning(false);
+      dialog.current?.close();
+      setOpen(false);
+    } catch (error) {
+      setFailed(true);
+      logEvent("session.close", error);
+    } finally {
+      setBusy(false);
+    }
   }
   async function finish() {
     if (busy || !clock.current) return;
@@ -206,95 +217,38 @@ export default function FocusSession({
             close();
           }}
         >
-          <h2 id={`focus-title-${project.id}`}>{project.name}</h2>
-          <p>{t.sessionHint}</p>
-          <output className="focus-timer" aria-label={t.session}>
-            {String(Math.floor(seconds / 60)).padStart(2, "0")}:
-            {String(seconds % 60).padStart(2, "0")}
-          </output>
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={busy || seconds >= MAX_SESSION_SECONDS}
-            onClick={() => {
-              if (!clock.current) return;
-              clock.current = running
-                ? pauseClock(clock.current)
-                : { ...clock.current, runningSince: Date.now() };
-              setRunning(!running);
-              setNow(Date.now());
-            }}
-          >
-            {running ? t.pause : t.resume}
-          </button>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void finish();
-            }}
-          >
-            <label htmlFor={`focus-checkpoint-${project.id}`}>
-              {t.checkpoint}
-            </label>
-            <textarea
-              id={`focus-checkpoint-${project.id}`}
-              rows={3}
-              maxLength={1000}
-              value={checkpoint}
-              disabled={busy}
-              onChange={(e) => setCheckpoint(e.target.value)}
-              required
-            />
-            <label htmlFor={`focus-next-${project.id}`}>{t.next}</label>
-            <textarea
-              id={`focus-next-${project.id}`}
-              rows={2}
-              maxLength={1000}
-              value={next}
-              disabled={busy}
-              onChange={(e) => setNext(e.target.value)}
-            />
-            {["book", "course", "series"].includes(
-              project.resourceType || "",
-            ) && (
-              <>
-                <label htmlFor={`focus-progress-${project.id}`}>
-                  {t.progress}
-                </label>
-                <input
-                  id={`focus-progress-${project.id}`}
-                  type="number"
-                  min={0}
-                  max={project.totalUnits || 1000000}
-                  value={progress}
-                  disabled={busy}
-                  onChange={(e) => setProgress(Number(e.target.value))}
-                />
-              </>
-            )}
-            <button
-              className="primary-button"
-              disabled={busy || !checkpoint.trim() || !!historySession}
-            >
-              {busy ? "…" : t.finish}
-            </button>
+          <header className="focus-session-header">
+            <h2 id={`focus-title-${project.id}`}>{project.name}</h2>
+            <output className="focus-timer" aria-label={t.session}>
+              {String(Math.floor(seconds / 60)).padStart(2, "0")}:
+              {String(seconds % 60).padStart(2, "0")}
+            </output>
             <button
               type="button"
               className="secondary-button"
-              disabled={busy}
-              onClick={close}
-              aria-label={
-                language === "ar"
-                  ? "إغلاق وحفظ المسودة"
-                  : language === "he"
-                    ? "שמירת טיוטה וסגירה"
-                    : "Save draft and close"
-              }
+              disabled={busy || seconds >= MAX_SESSION_SECONDS}
+              onClick={() => {
+                if (!clock.current) return;
+                clock.current = running
+                  ? pauseClock(clock.current)
+                  : { ...clock.current, runningSince: Date.now() };
+                setRunning(!running);
+                setNow(Date.now());
+              }}
+              aria-label={t.session + ": " + (running ? t.pause : t.resume)}
             >
-              ×
+              {running ? <Pause size={15} /> : <Play size={15} />}
             </button>
-            {failed && <p role="alert">{t.fail}</p>}
-          </form>
+            <button
+              type="button"
+              className="focus-session-close"
+              disabled={busy}
+              onClick={() => void close()}
+              aria-label={transcriptionWords[language].close}
+            >
+              <X size={18} />
+            </button>
+          </header>
           <Suspense fallback={<p role="status">…</p>}>
             {historySession ? (
               <>
@@ -332,6 +286,66 @@ export default function FocusSession({
               />
             )}
           </Suspense>
+          <details className="focus-checkpoint-details">
+            <summary>{transcriptionWords[language].checkpoint}</summary>
+            <form
+              id={"focus-checkpoint-form-" + project.id}
+              onSubmit={(e) => {
+                e.preventDefault();
+                void finish();
+              }}
+            >
+              <label htmlFor={`focus-checkpoint-${project.id}`}>
+                {t.checkpoint}
+              </label>
+              <textarea
+                id={`focus-checkpoint-${project.id}`}
+                rows={3}
+                maxLength={1000}
+                value={checkpoint}
+                disabled={busy}
+                onChange={(e) => setCheckpoint(e.target.value)}
+              />
+              <label htmlFor={`focus-next-${project.id}`}>{t.next}</label>
+              <textarea
+                id={`focus-next-${project.id}`}
+                rows={2}
+                maxLength={1000}
+                value={next}
+                disabled={busy}
+                onChange={(e) => setNext(e.target.value)}
+              />
+              {["book", "course", "series"].includes(
+                project.resourceType || "",
+              ) && (
+                <>
+                  <label htmlFor={`focus-progress-${project.id}`}>
+                    {t.progress}
+                  </label>
+                  <input
+                    id={`focus-progress-${project.id}`}
+                    type="number"
+                    min={0}
+                    max={project.totalUnits || 1000000}
+                    value={progress}
+                    disabled={busy}
+                    onChange={(e) => setProgress(Number(e.target.value))}
+                  />
+                </>
+              )}
+            </form>
+          </details>
+          <footer className="focus-session-footer">
+            {failed && <p role="alert">{t.fail}</p>}
+            <button
+              className="primary-button"
+              type="submit"
+              form={"focus-checkpoint-form-" + project.id}
+              disabled={busy || !!historySession}
+            >
+              {busy ? "…" : transcriptionWords[language].end}
+            </button>
+          </footer>
           <details>
             <summary>{t.history}</summary>
             {matchingHistory.slice(0, historyLimit).map((s) => (

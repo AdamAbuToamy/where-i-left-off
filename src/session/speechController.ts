@@ -23,6 +23,7 @@ type Options = {
   now: () => number;
   changed: (event: SpeechEvent) => void;
   final: (segment: SpokenSegment) => void;
+  batchTranscription?: boolean;
 };
 /** Cancel by generation, serialize segments and cap backlog. Never executes operations. */
 export class SessionSpeechController {
@@ -36,7 +37,9 @@ export class SessionSpeechController {
     { sessionId: string; revision: number; order: string[] }
   >();
   private queue: AudioSegment[] = [];
+  private submitted = new Set<string>();
   private processing = false;
+  private drainTask: Promise<void> | null = null;
   private active = false;
   private disposed = false;
   constructor(options: Options) {
@@ -101,13 +104,38 @@ export class SessionSpeechController {
             segment.audio.fill(0);
             return;
           }
+          if (this.submitted.has(segment.id)) {
+            segment.audio.fill(0);
+            return;
+          }
+          this.submitted.add(segment.id);
+          const tail = this.queue.at(-1);
+          if (
+            this.options.batchTranscription &&
+            tail &&
+            tail.sampleRate === segment.sampleRate &&
+            tail.audio.length + segment.audio.length <= 448000 &&
+            this.snapshots.get(tail.id)?.sessionId ===
+              this.snapshots.get(segment.id)?.sessionId
+          ) {
+            const joined = new Float32Array(
+              tail.audio.length + segment.audio.length,
+            );
+            joined.set(tail.audio);
+            joined.set(segment.audio, tail.audio.length);
+            tail.audio.fill(0);
+            segment.audio.fill(0);
+            tail.audio = joined;
+            this.snapshots.delete(segment.id);
+            return;
+          }
           if (this.queue.length >= 2) {
             segment.audio.fill(0);
             void this.pause("speech-backlog");
             return;
           }
           this.queue.push(segment);
-          void this.drain(generation);
+          void this.runDrain(generation);
         },
         (code) => {
           if (generation === this.generation) void this.pause(code);
@@ -136,6 +164,30 @@ export class SessionSpeechController {
             : "speech-error",
         );
     }
+  }
+  private runDrain(generation: number): Promise<void> {
+    if (this.processing) return this.drainTask || Promise.resolve();
+    const task = this.drain(generation);
+    this.drainTask = task;
+    void task.finally(() => {
+      if (this.drainTask === task) this.drainTask = null;
+    });
+    return task;
+  }
+  /** An explicit pause finishes captured words before releasing the local model. */
+  async finish() {
+    const generation = this.generation,
+      microphone = this.microphone;
+    await microphone?.stop(true);
+    if (generation !== this.generation) return;
+    this.microphone = null;
+    this.active = false;
+    this.options.changed({
+      stage: this.processing ? "processing" : "paused",
+      microphone: false,
+    });
+    if (this.drainTask) await this.drainTask;
+    if (generation === this.generation) await this.pause();
   }
   private async drain(generation: number) {
     if (this.processing) return;
@@ -203,9 +255,11 @@ export class SessionSpeechController {
     this.abort = null;
     this.active = false;
     this.processing = false;
+    this.drainTask = null;
     for (const segment of this.queue) segment.audio.fill(0);
     this.queue = [];
     this.snapshots.clear();
+    this.submitted.clear();
     this.speech?.dispose();
     this.speech = null;
     const microphone = this.microphone;

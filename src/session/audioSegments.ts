@@ -37,7 +37,7 @@ export class AudioSegmenter {
     )
       this.finish();
   }
-  private finish() {
+  finish() {
     if (this.voiced >= 3200) {
       const length = this.frames.reduce((sum, frame) => sum + frame.length, 0),
         audio = new Float32Array(length);

@@ -35,5 +35,5 @@ export interface MicrophonePort {
     onSegment: (segment: AudioSegment) => void,
     onError: (code: string) => void,
   ): Promise<void>;
-  stop(): Promise<void>;
+  stop(flush?: boolean): Promise<void>;
 }
