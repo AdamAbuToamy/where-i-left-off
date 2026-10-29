@@ -289,6 +289,15 @@ export const sessionWords = { ar, en, he } satisfies Record<
 >;
 export function sessionErrorText(code: string, language: Language) {
   const t = sessionWords[language];
+  if (code.startsWith("speech-cloud-")) {
+    if (code === "speech-cloud-unsupported")
+      return transcriptionWords[language].cloudUnsupported;
+    return language === "ar"
+      ? "لم تكتمل خدمة التعرف السحابي. تحقق من الاتصال وصلاحية الميكروفون. راجع المسودة؛ قد تحتاج إعادة تسجيل المقطع."
+      : language === "he"
+        ? "זיהוי הדיבור בענן לא הושלם. בדקו חיבור והרשאת מיקרופון, בדקו את הטיוטה והקליטו מחדש במידת הצורך."
+        : "Cloud recognition did not finish. Check your connection and microphone permission. Review any draft; you may need to record again.";
+  }
   return ["permission-denied", "unauthenticated"].includes(code)
     ? language === "ar"
       ? "تعذرت مزامنة الجلسة بسبب صلاحية الاتصال. تعديلاتك محفوظة على الجهاز. أعد تسجيل الدخول ثم أعد المحاولة."

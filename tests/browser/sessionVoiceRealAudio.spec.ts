@@ -3,6 +3,12 @@ import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { resolve, basename } from "node:path";
 import { setup } from "./sessionVoice.helpers";
+// Historical opt-in proof belongs to the previous local-model release.
+// The active cloud adapter is covered separately; do not report a local run as cloud evidence.
+test.skip(
+  true,
+  "Legacy local-model audio journey; session recording now uses browser cloud recognition",
+);
 const file = process.env.SPEECH_TEST_REAL_MIC_FILE;
 test.use({
   serviceWorkers: "block",
