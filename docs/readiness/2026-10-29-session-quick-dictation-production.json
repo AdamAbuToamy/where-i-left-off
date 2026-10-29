@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-29T18:27:07.913Z",
+  "ready": true,
+  "site": "https://where-i-left-off.web.app",
+  "fingerprint": "c5ebae9c624a8473441fa1da55e8014ba4f62f1bcf29d5084007d90eed82d2cb",
+  "panel": "SessionVoicePanel-Fv2lscg5.js",
+  "download": "speechDownload.worker-BM6iG1yZ.js",
+  "installerSha256": "31e057fc1c6ff9936761a13570107190343ce1a990fb39225cb99f1952a78f48",
+  "readOnly": true,
+  "productionAccountWrites": false,
+  "mergedCommit": "ba48fe1589cf351e7e76bf7c10cdeef638818718",
+  "pullRequest": "https://github.com/AdamAbuToamy/where-i-left-off/pull/46",
+  "qualityRun": "https://github.com/AdamAbuToamy/where-i-left-off/actions/runs/40929866179",
+  "deployment": "Firebase CLI Hosting only; tested merged source production build"
+}
