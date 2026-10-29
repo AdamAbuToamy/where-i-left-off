@@ -37,3 +37,8 @@ No rule/schema migration. Rollback frontend to e3f29a6 (previous main) and resto
 The original CacheStorage writer returned an internal browser error for the 370 MB encoder despite enough free quota; inference still worked but the file was absent on reopening. Large public weights now use origin-private filesystem storage, publishing size metadata only after the complete file commits. Smaller metadata/tokenizer files retain CacheStorage compatibility. The worker verifies both weights are retained before reporting successful installation, and reports a storage error if they are not. The native test stored ~563 MB in OPFS and successfully reinitialized with upstream model requests blocked. Storage eviction/deletion remains a browser/user action outside the application's guarantee.
 
 Existing persistence debt: a remote Firestore transaction is serialized with local repository work; dropping connectivity during an already-running transaction can temporarily delay subsequent edits. Offline edits begun after completed synchronization were tested. This pre-existing boundary was not rewritten in this UI correction.
+
+
+## Dependency audit
+
+GitHub identified a newly indexed high-severity [RE2JS lookbehind advisory](https://github.com/advisories/GHSA-gg6h-894w-4m9c) affecting the existing transitive 2.8.6 dependency. The lockfile now resolves 2.9.1 within the existing dependency range; no direct dependency was added. Production `npm audit --omit=dev` reports zero vulnerabilities after the update. Final CI revalidates the updated lockfile.
