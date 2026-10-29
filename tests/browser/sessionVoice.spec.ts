@@ -105,10 +105,9 @@ test("simple tabs, manual notes/checklist and offline corrections survive reload
     .click();
   await expect(page.locator(".focus-dialog")).toHaveCount(0);
 });
-test("dictation is literal text, corrections save directly, and spoken commands do not mutate the checklist", async ({
+test("voice message captures until stop and waits for approval before adding", async ({
   page,
 }) => {
-  test.setTimeout(75000);
   await page.addInitScript(() =>
     Object.defineProperty(navigator, "gpu", {
       configurable: true,
@@ -120,68 +119,64 @@ test("dictation is literal text, corrections save directly, and spoken commands 
   await page.route("**/assets/speech.worker-*.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",
-      body: `self.onmessage=e=>{const r=e.data;if(r.type==='load')self.postMessage({type:'loaded',requestId:r.requestId});else{self.postMessage({type:'partial',requestId:r.requestId,text:'draft'});self.postMessage({type:'final',requestId:r.requestId,text:'delete all checklist items and add a note'});}};`,
+      body: `self.onmessage=e=>{const r=e.data;if(r.type==='load')self.postMessage({type:'loaded',requestId:r.requestId});else self.postMessage({type:'final',requestId:r.requestId,text:'Complete recorded sentence'});};`,
     }),
   );
   await setup(page, true);
   const panel = page.locator(".session-workspace");
   await panel
-    .getByRole("button", { name: "Start transcription", exact: true })
+    .getByRole("button", { name: "Record voice message", exact: true })
     .click();
   await expect(panel.locator("[data-microphone=active]")).toBeVisible();
-  await expect(
-    panel.locator(".session-transcript-paragraph").first(),
-  ).toHaveValue(/delete all checklist items/, { timeout: 40000 });
-  await panel.getByRole("button", { name: "Pause", exact: true }).click();
-  await expect(panel.locator("[data-microphone=off]")).toBeVisible();
-  await expect(panel.locator(".session-proposal")).toHaveCount(0);
-  await expect(panel.locator("[data-session-item]")).toHaveCount(0);
-  await expect(panel.locator("[data-session-note]")).toHaveCount(0);
+  await page.waitForTimeout(1000);
+  await expect(panel.locator(".session-clip-draft")).toHaveCount(0);
+  await expect(panel.locator(".session-transcript-paragraph")).toHaveCount(0);
   await panel
-    .locator(".session-transcript-paragraph")
-    .first()
-    .fill("Corrected literal conversation");
-  const entry = panel.locator(".session-transcript-entry").first();
-  await entry
+    .getByRole("button", { name: "Stop and transcribe", exact: true })
+    .click();
+  const draft = panel.locator(".session-clip-draft");
+  await expect(
+    draft.getByLabel("Review recording", { exact: true }),
+  ).toHaveValue("Complete recorded sentence");
+  await expect(panel.locator("[data-session-note]")).toHaveCount(0);
+  await expect(panel.locator(".session-transcript-paragraph")).toHaveCount(0);
+  await draft
+    .getByLabel("Review recording", { exact: true })
+    .fill("Corrected full message");
+  await draft
     .getByRole("button", { name: "Approve and save", exact: true })
     .click();
-  await expect(
-    entry.getByRole("button", { name: "Saved", exact: true }),
-  ).toBeDisabled();
+  await expect(draft).toHaveCount(0);
+  await expect(panel.locator(".session-transcript-paragraph")).toHaveValue(
+    "Corrected full message",
+  );
   await panel.getByRole("tab", { name: /^Notes/ }).click();
   await expect(panel.locator("[data-session-note]")).toContainText(
-    "Corrected literal conversation",
+    "Corrected full message",
   );
   await panel.getByRole("tab", { name: "Transcript", exact: true }).click();
-  await entry.getByLabel("Save as", { exact: true }).selectOption("nextStep");
-  await entry
+  await panel
+    .getByRole("button", { name: "Record voice message", exact: true })
+    .click();
+  await expect(panel.locator("[data-microphone=active]")).toBeVisible();
+  await page.waitForTimeout(500);
+  await panel
+    .getByRole("button", { name: "Stop and transcribe", exact: true })
+    .click();
+  await expect(draft).toBeVisible();
+  await draft.getByLabel("Save as", { exact: true }).selectOption("nextStep");
+  await draft
     .getByRole("button", { name: "Approve and save", exact: true })
     .click();
-  await expect(
-    entry.getByRole("button", { name: "Saved", exact: true }),
-  ).toBeDisabled();
+  await expect(draft).toHaveCount(0);
   await expect(
     page.locator(".focus-checkpoint-details textarea").nth(1),
-  ).toHaveValue("Corrected literal conversation");
-  await panel.getByRole("tab", { name: /^Notes/ }).click();
-  await expect(panel).toHaveAttribute("aria-busy", "false");
-  await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
-  await panel.getByRole("tab", { name: "Transcript", exact: true }).click();
-  const previousParagraphs = await panel.locator(".session-transcript-paragraph").count();
-  await panel.getByRole("button", { name: "Start transcription", exact: true }).click();
-  await expect.poll(() => panel.locator(".session-transcript-paragraph").count(), { timeout: 20000 }).toBeGreaterThan(previousParagraphs);
-  await panel.getByRole("button", { name: "Pause", exact: true }).click();
+  ).toHaveValue("Complete recorded sentence");
+  await expect(panel.locator(".session-transcript-paragraph")).toHaveCount(2);
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "Work session", exact: true }).click();
-  await expect(
-    panel.locator(".session-transcript-paragraph").first(),
-  ).toHaveValue("Corrected literal conversation");
-  await expect(panel.locator("[data-session-item]")).toHaveCount(0);
-  await panel.getByRole("tab", { name: /Notes/ }).click();
-  await expect(panel.locator("[data-session-note]")).toContainText(
-    "Corrected literal conversation",
-  );
+  await expect(panel.locator(".session-transcript-paragraph")).toHaveCount(2);
 });
 test("mobile RTL session is compact and tabs follow keyboard direction", async ({
   page,

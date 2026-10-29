@@ -10,7 +10,8 @@ import {
 import {
   Mic,
   Download,
-  Pause,
+  Square,
+  LoaderCircle,
   FileText,
   StickyNote,
   ListChecks,
@@ -31,7 +32,8 @@ import type { SessionControlValues } from "./control";
 import { appendTranscript } from "./transcript";
 import { createSessionWorkspace, activeSessionWorkspaces } from "./composition";
 import type { SessionStatus } from "./repository";
-import { SessionSpeechController } from "./speechController";
+import { SessionClipController } from "./clipController";
+import { SessionClipDraft } from "./SessionClipDraft";
 import type { SpeechEvent } from "./speechController";
 import {
   speechDownloadSnapshot,
@@ -95,15 +97,29 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       [finishing, setFinishing] = useState(false),
       [error, setError] = useState("");
     const [unsaved, setUnsaved] = useState<TranscriptSegment[]>([]);
+    const [recordedSeconds, setRecordedSeconds] = useState(0);
+    useEffect(() => {
+      if (!speech.microphone) return;
+      const started = Date.now();
+      const timer = setInterval(
+        () =>
+          setRecordedSeconds(
+            Math.min(24, Math.floor((Date.now() - started) / 1000)),
+          ),
+        250,
+      );
+      return () => clearInterval(timer);
+    }, [speech.microphone]);
     const alive = useRef(false),
-      controller = useRef<SessionSpeechController | null>(null),
+      controller = useRef<SessionClipController | null>(null),
       editing = useRef<string | null>(null),
       handled = useRef(new Set<string>()),
       pending = useRef(new Map<string, SpokenSegment>()),
-      finalChain = useRef<Promise<unknown>>(Promise.resolve()),
       saving = useRef(0),
-      firstInRecording = useRef(true),
-      paragraphStarts = useRef(new Set<string>());
+      nextStepSaver = useRef(onSaveNextStep);
+    useEffect(() => {
+      nextStepSaver.current = onSaveNextStep;
+    }, [onSaveNextStep]);
     const save = useCallback(
       async (proposal: SessionProposal) => {
         saving.current++;
@@ -168,28 +184,39 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       [repository, language, save],
     );
     const saveFinal = useCallback(
-      async (segment: SpokenSegment) => {
+      async (
+        segment: SpokenSegment,
+        text = segment.text,
+        target: "note" | "nextStep" = "note",
+      ) => {
         if (
           !alive.current ||
           segment.sessionId !== identity.id ||
           !segment.final
         )
           return;
-        const ok = await save(
-          appendTranscript(
-            repository.current(),
-            segment,
-            saving.current
-              ? repository.current().transcripts.at(-1)?.id || null
-              : editing.current,
-            paragraphStarts.current.has(segment.id),
-          ),
+        if (target === "nextStep" && !(await nextStepSaver.current?.(text)))
+          return false;
+        const current = repository.current();
+        const proposal = appendTranscript(
+          current,
+          { ...segment, text },
+          editing.current,
+          true,
         );
+        if (target === "note")
+          proposal.operations.push({
+            verb: "add_note",
+            operationId: segment.id + "-note",
+            id: segment.id + "-note",
+            text,
+          });
+        const ok = await save(proposal);
         if (ok) {
           pending.current.delete(segment.id);
-          paragraphStarts.current.delete(segment.id);
           setUnsaved((old) => old.filter((item) => item.id !== segment.id));
-        } else await controller.current?.pause("session-save-failed");
+        }
+        return ok;
       },
       [repository, identity.id, save],
     );
@@ -230,10 +257,9 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
     }, [repository, uid, identity.id, language]);
     useEffect(() => {
       let mounted = true;
-      const speechController = new SessionSpeechController({
-        batchTranscription: false,
+      const speechController = new SessionClipController({
         speech: () => new BrowserSpeech(),
-        microphone: () => new BrowserMicrophone(),
+        microphone: () => new BrowserMicrophone(true),
         current: () => repository.current(),
         language: voiceLanguage,
         now: Date.now,
@@ -248,27 +274,18 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
             segment.sessionId !== identity.id
           )
             return;
-          if (firstInRecording.current) {
-            paragraphStarts.current.add(segment.id);
-            firstInRecording.current = false;
-          }
           handled.current.add(segment.id);
           pending.current.set(segment.id, segment);
           setUnsaved((old) => [
             ...old,
             { id: segment.id, text: segment.text, at: segment.at },
           ]);
-          finalChain.current = finalChain.current
-            .then(() => (mounted ? saveFinal(segment) : undefined))
-            .catch(() => {
-              if (mounted) setError(t.unsaved);
-            });
         },
       });
       controller.current = speechController;
       const hide = () => {
           if (document.visibilityState !== "visible")
-            void speechController.pause();
+            void speechController.finish(true);
         },
         leave = () => void speechController.stop();
       document.addEventListener("visibilitychange", hide);
@@ -286,9 +303,13 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         setFinishing(true);
         try {
           await controller.current?.finish(keepModel);
-          await finalChain.current;
-          if (pending.current.size)
-            throw new SessionError("session-save-failed");
+          if (
+            !keepModel &&
+            (pending.current.size || controller.current?.hasPendingAudio)
+          ) {
+            setError(t.reviewBeforeClose);
+            throw new SessionError("session-clip-review");
+          }
           if (repository.status().conflict)
             throw new SessionError("session-conflict");
           if (repository.status().ready) await repository.flush();
@@ -298,7 +319,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
           if (alive.current) setFinishing(false);
         }
       },
-      [repository],
+      [repository, t.reviewBeforeClose],
     );
     useImperativeHandle(ref, () => ({ beforeFinish: finish }), [finish]);
     async function start() {
@@ -322,7 +343,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         });
         if (!ok) return;
       }
-      firstInRecording.current = true;
+      setRecordedSeconds(0);
       await controller.current?.start();
     }
     async function correct(id: string, text: string, original: string) {
@@ -522,9 +543,30 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
               >
                 <button
                   type="button"
-                  className="primary-button"
+                  className={
+                    download.stage === "ready"
+                      ? "primary-button session-clip-record"
+                      : "primary-button"
+                  }
+                  aria-label={
+                    download.stage === "ready"
+                      ? speech.microphone
+                        ? t.stopClip
+                        : speech.stage === "error"
+                          ? t.retry
+                          : t.recordClip
+                      : undefined
+                  }
+                  title={
+                    download.stage === "ready"
+                      ? speech.microphone
+                        ? t.stopClip
+                        : t.recordClip
+                      : undefined
+                  }
                   disabled={
                     disabled ||
+                    (active && !speech.microphone) ||
                     download.stage === "checking" ||
                     download.stage === "downloading" ||
                     download.stage === "saving"
@@ -534,32 +576,32 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                       void finish(true).catch(() => setError(t.unsaved));
                     else if (download.stage !== "ready")
                       void startSpeechDownload();
+                    else if (speech.stage === "error" && controller.current?.hasPendingAudio) void finish(true);
                     else void start();
                   }}
                 >
-                  {active ? (
-                    <Pause size={17} />
+                  {active && !speech.microphone ? (
+                    <LoaderCircle className="session-clip-spinner" size={22} />
+                  ) : active ? (
+                    <Square size={20} fill="currentColor" />
                   ) : download.stage === "ready" ? (
                     <Mic size={17} />
                   ) : (
                     <Download size={17} />
                   )}{" "}
-                  {active
-                    ? t.pause
-                    : download.stage === "ready"
-                      ? t.start
-                      : download.stage === "saving"
-                        ? t.savingModel
-                        : download.stage === "downloading"
-                          ? t.downloading
-                          : download.loaded > 0
-                            ? t.resumeDownload
-                            : t.download}
+                  {download.stage !== "ready" &&
+                    (download.stage === "saving"
+                      ? t.savingModel
+                      : download.stage === "downloading"
+                        ? t.downloading
+                        : download.loaded > 0
+                          ? t.resumeDownload
+                          : t.download)}
                 </button>
                 <select
                   aria-label={t.language}
                   value={voiceLanguage}
-                  disabled={active || finishing}
+                  disabled={active || finishing || speech.stage === "error"}
                   onChange={(event) =>
                     setVoiceLanguage(event.target.value as Language)
                   }
@@ -581,6 +623,11 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                     <i />
                   </span>
                   {phase}
+                  {speech.microphone && (
+                    <time className="session-clip-time" dir="ltr">
+                      00:{String(recordedSeconds).padStart(2, "0")} / 00:24
+                    </time>
+                  )}
                 </span>
               </div>
               {(download.stage === "downloading" ||
@@ -614,13 +661,33 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                     : t.downloadError}
                 </p>
               )}
-              {speech.stage === "loading" && speech.progress && (
-                <progress
-                  aria-label={t.loading}
-                  max={speech.progress.total}
-                  value={speech.progress.loaded}
-                />
+              {(speech.stage === "error" || speech.stage === "processing") && (
+                <button
+                  type="button"
+                  className="session-quiet-button"
+                  onClick={() => {
+                    void controller.current?.stop();
+                    setError("");
+                  }}
+                >
+                  {t.discardClip}
+                </button>
               )}
+              <small className="session-clip-hint">
+                {speech.microphone
+                  ? t.clipRecording
+                  : speech.stage === "processing"
+                    ? t.processingClip
+                    : t.clipHint}
+              </small>
+              {(speech.stage === "loading" || speech.stage === "processing") &&
+                speech.progress && (
+                  <progress
+                    aria-label={t.loading}
+                    max={speech.progress.total}
+                    value={speech.progress.loaded}
+                  />
+                )}
               <small className="session-transcription-privacy">
                 {t.privacy} {download.stage !== "ready" && t.modelDownload}
               </small>
@@ -642,43 +709,29 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                   editing.current = id;
                 }}
                 onCorrect={correct}
-                approval={
-                  !historical && !active && !finishing
-                    ? {
-                        note: t.asNote,
-                        nextStep: t.asNextStep,
-                        approve: t.approve,
-                        saved: t.approved,
-                        target: t.saveAs,
-                        nextStepAvailable: !!onSaveNextStep,
-                        onApprove: async (text, target) =>
-                          target === "note"
-                            ? manual("add_note", text)
-                            : (onSaveNextStep?.(text) ?? false),
-                      }
-                    : undefined
-                }
               />
             ))}
             {unsaved.map((segment) => (
-              <p
-                className="session-transcript-unsaved"
+              <SessionClipDraft
                 key={segment.id}
-                dir="auto"
-              >
-                {segment.text}
-                <small>{t.unsaved}</small>
-                <button
-                  type="button"
-                  disabled={busy || status.conflict}
-                  onClick={() => {
-                    const original = pending.current.get(segment.id);
-                    if (original) void saveFinal(original);
-                  }}
-                >
-                  {t.retry}
-                </button>
-              </p>
+                segment={segment}
+                language={language}
+                disabled={disabled || active}
+                nextStepAvailable={!!onSaveNextStep}
+                onApprove={async (text, target) => {
+                  const original = pending.current.get(segment.id);
+                  return original
+                    ? !!(await saveFinal(original, text, target))
+                    : false;
+                }}
+                onDiscard={() => {
+                  pending.current.delete(segment.id);
+                  setUnsaved((old) =>
+                    old.filter((item) => item.id !== segment.id),
+                  );
+                  setError("");
+                }}
+              />
             ))}
             {speech.partial && (
               <p className="session-partial" dir="auto">
@@ -691,7 +744,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
               <button
                 type="button"
                 className="session-quiet-button"
-                disabled={disabled || active}
+                disabled={disabled || active || unsaved.length > 0}
                 onClick={() => void clear().catch(() => setError(t.unsaved))}
               >
                 <Trash2 size={14} />

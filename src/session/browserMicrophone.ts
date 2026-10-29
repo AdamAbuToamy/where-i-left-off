@@ -1,4 +1,5 @@
 import captureWorkletUrl from "./audio.worklet.ts?worker&url";
+import { AudioClip } from "./audioClip";
 import { AudioSegmenter } from "./audioSegments";
 import { createClientId } from "../lib/clientId";
 import type { AudioSegment, MicrophonePort } from "./speechTypes";
@@ -9,6 +10,12 @@ export class BrowserMicrophone implements MicrophonePort {
   private node: AudioWorkletNode | null = null;
   private segments: AudioSegmenter | null = null;
   private generation = 0;
+  private clip: AudioClip | null = null;
+  private clipFinal: (() => void) | null = null;
+  private readonly wholeClip: boolean;
+  constructor(wholeClip = false) {
+    this.wholeClip = wholeClip;
+  }
   async prepare() {
     if (
       !globalThis.isSecureContext ||
@@ -70,13 +77,29 @@ export class BrowserMicrophone implements MicrophonePort {
         (audio) =>
           onSegment({ id, sequence, audio, sampleRate: 16000, at: Date.now() }),
       );
+      if (this.wholeClip) {
+        const clip = new AudioClip();
+        this.clip = clip;
+        id = capture + "-1";
+        onStart(id);
+        this.clipFinal = () =>
+          onSegment({
+            id,
+            sequence: 1,
+            audio: clip.finish(),
+            sampleRate: 16000,
+            at: Date.now(),
+          });
+      }
       this.node = new AudioWorkletNode(context, "wilo-session-capture");
       this.node.port.onmessage = (event) => {
         if (
           generation === this.generation &&
           event.data instanceof Float32Array
         )
-          this.segments?.push(event.data);
+          if (this.clip) {
+            if (this.clip.push(event.data)) onError("speech-clip-limit");
+          } else this.segments?.push(event.data);
       };
       this.source = context.createMediaStreamSource(stream);
       this.source.connect(this.node);
@@ -87,7 +110,31 @@ export class BrowserMicrophone implements MicrophonePort {
     }
   }
   async stop(flush = false) {
-    if (flush) this.segments?.finish();
+    // Flush the worklet's final partial frame before ending the message.
+    if (flush && this.node && this.context?.state === "running") {
+      const node = this.node;
+      await new Promise<void>((resolve) => {
+        const done = (event: MessageEvent) => {
+          if (event.data?.type !== "flushed") return;
+          clearTimeout(timer);
+          node.port.removeEventListener("message", done);
+          resolve();
+        };
+        const timer = setTimeout(() => {
+          node.port.removeEventListener("message", done);
+          resolve();
+        }, 1000);
+        node.port.addEventListener("message", done);
+        node.port.postMessage({ type: "flush" });
+      });
+    }
+    if (flush) {
+      if (this.clipFinal) this.clipFinal();
+      else this.segments?.finish();
+    }
+    this.clip?.clear();
+    this.clip = null;
+    this.clipFinal = null;
     this.generation++;
     this.segments?.clear();
     this.segments = null;
