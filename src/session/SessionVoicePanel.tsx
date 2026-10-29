@@ -661,7 +661,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                     : t.downloadError}
                 </p>
               )}
-              {speech.stage === "error" && (
+              {(speech.stage === "error" || speech.stage === "processing") && (
                 <button
                   type="button"
                   className="session-quiet-button"
