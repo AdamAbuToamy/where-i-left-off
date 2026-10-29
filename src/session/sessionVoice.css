@@ -94,6 +94,10 @@
   background: var(--site-surface);
   color: var(--site-text);
   cursor: pointer;
+  width: auto;
+  margin: 0;
+  flex-shrink: 0;
+  box-shadow: none;
 }
 .session-tabs button {
   border: 0;
@@ -268,7 +272,8 @@
   font-size: 13px;
 }
 .session-input-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
 }
@@ -284,14 +289,16 @@
   padding: 0;
 }
 .session-checklist li {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 5px;
   padding: 10px 0;
   border-bottom: 1px solid var(--site-border);
 }
 .session-checklist label {
-  display: flex;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
   align-items: flex-start;
   gap: 9px;
   flex: 1;
@@ -306,6 +313,9 @@
   height: 17px;
   flex-shrink: 0;
   accent-color: var(--site-primary);
+  padding: 0;
+  margin: 3px 0 0;
+  box-sizing: border-box;
 }
 .session-checklist .is-done {
   text-decoration: line-through;
@@ -425,4 +435,12 @@
     min-width: 0;
     width: 100%;
   }
+}
+
+.focus-dialog .session-manual-controls form {
+  margin: 0;
+}
+.session-error-code {
+  display: block;
+  margin-block: 4px;
 }

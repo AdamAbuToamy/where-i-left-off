@@ -1,6 +1,16 @@
 import { SESSION_SPEECH_MODEL } from "./speechModel";
 import type { Language } from "../translations";
 const en = {
+  download: "Download speech model",
+  resumeDownload: "Resume download",
+  savingModel: "Saving model",
+  downloading: "Downloading",
+  downloadError: "Download did not finish. Retry; completed files are kept.",
+  backgroundDownload:
+    "You can close the Wilo tab. Your browser will continue the download.",
+  foregroundDownload:
+    "You can close this session and keep using Wilo. Keep this browser tab open while downloading.",
+  installed: "Saved on this device",
   modelDownload: `First use downloads the local speech model once (about ${SESSION_SPEECH_MODEL.downloadMegabytes} MB).`,
   gpuRequired:
     "Accurate local transcription needs a browser with WebGPU and shader-f16 support. Your notes and checklist remain available.",
@@ -49,6 +59,16 @@ const en = {
   itemText: "Item text",
 };
 const ar: typeof en = {
+  download: "تنزيل نموذج الصوت",
+  resumeDownload: "متابعة التنزيل",
+  savingModel: "جارٍ حفظ النموذج",
+  downloading: "جارٍ التنزيل",
+  downloadError: "لم يكتمل التنزيل. أعد المحاولة؛ الملفات المكتملة محفوظة.",
+  backgroundDownload:
+    "يمكنك إغلاق تبويب Wilo؛ سيكمل المتصفح التنزيل في الخلفية.",
+  foregroundDownload:
+    "يمكنك إغلاق الجلسة واستخدام الموقع؛ أبقِ هذا التبويب مفتوحًا حتى يكتمل التنزيل.",
+  installed: "محفوظ على هذا الجهاز",
   modelDownload: `أول تشغيل ينزّل نموذج التفريغ محليًا مرة واحدة (نحو ${SESSION_SPEECH_MODEL.downloadMegabytes} ميجابايت).`,
   gpuRequired:
     "التفريغ المحلي الأقوى يحتاج متصفحًا يدعم WebGPU وshader-f16. الملاحظات والمهام متاحة يدويًا.",
@@ -95,6 +115,15 @@ const ar: typeof en = {
   itemText: "نص البند",
 };
 const he: typeof en = {
+  download: "הורדת מודל הקול",
+  resumeDownload: "המשך הורדה",
+  savingModel: "שומר מודל",
+  downloading: "מוריד",
+  downloadError: "ההורדה לא הסתיימה. נסו שוב; קבצים שהושלמו נשמרים.",
+  backgroundDownload: "אפשר לסגור את לשונית Wilo. הדפדפן ימשיך להוריד ברקע.",
+  foregroundDownload:
+    "אפשר לסגור את המפגש ולהמשיך להשתמש באתר. השאירו את הלשונית פתוחה עד סיום ההורדה.",
+  installed: "שמור במכשיר הזה",
   modelDownload: `בשימוש הראשון מורידים את מודל התמלול המקומי פעם אחת (כ־${SESSION_SPEECH_MODEL.downloadMegabytes} MB).`,
   gpuRequired:
     "תמלול מקומי מדויק יותר דורש דפדפן עם WebGPU ו־shader-f16. ההערות והמשימות זמינות ידנית.",

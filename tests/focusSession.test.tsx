@@ -69,7 +69,7 @@ afterEach(() => {
 it("saves the checkpoint and a personal session only after the card save succeeds", async () => {
   act(() => vi.advanceTimersByTime(60000));
   await act(async () => {
-    container
+    document
       .querySelector('form[id^="focus-checkpoint-form-"]')!
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await Promise.resolve();
@@ -87,20 +87,20 @@ it("saves the checkpoint and a personal session only after the card save succeed
       checkpoint: "Mounted bearing",
     }),
   );
-  expect(container.querySelector("dialog")).toBeNull();
+  expect(document.querySelector("dialog")).toBeNull();
   expect(sessionStorage.length).toBe(0);
 });
 it("retains the draft and avoids crediting a failed save", async () => {
   save.mockResolvedValue(false);
   act(() => vi.advanceTimersByTime(10000));
   await act(async () => {
-    container
+    document
       .querySelector('form[id^="focus-checkpoint-form-"]')!
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await Promise.resolve();
   });
   expect(queue).not.toHaveBeenCalled();
-  expect(container.querySelector("dialog")!.open).toBe(true);
-  expect(container.querySelector("[role=alert]")).not.toBeNull();
+  expect(document.querySelector("dialog")!.open).toBe(true);
+  expect(document.querySelector("[role=alert]")).not.toBeNull();
   expect(sessionStorage.length).toBe(1);
 });

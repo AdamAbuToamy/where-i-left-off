@@ -3,6 +3,24 @@ import { acquireLocalInference } from "../lib/localInferenceLease";
 import { createClientId } from "../lib/clientId";
 import type { SpeechPort, SpeechProgress } from "./speechTypes";
 import type { Language } from "../translations";
+export async function requireSpeechGpu() {
+  if (SESSION_SPEECH_MODEL.requiresWebGPU) {
+    const gpu = (
+      navigator as Navigator & {
+        gpu?: {
+          requestAdapter: (options: { powerPreference: string }) => Promise<{
+            features: { has: (feature: string) => boolean };
+          } | null>;
+        };
+      }
+    ).gpu;
+    const adapter = await gpu?.requestAdapter({
+      powerPreference: "high-performance",
+    });
+    if (!adapter?.features.has("shader-f16"))
+      throw new Error("speech-gpu-required");
+  }
+}
 /** Model assets may be downloaded; audio/text stay in the dedicated local worker. */
 export class BrowserSpeech implements SpeechPort {
   private worker: Worker | null = null;
@@ -57,22 +75,7 @@ export class BrowserSpeech implements SpeechPort {
   ) {
     if (typeof Worker === "undefined" || !globalThis.isSecureContext)
       throw new Error("speech-unsupported");
-    if (SESSION_SPEECH_MODEL.requiresWebGPU) {
-      const gpu = (
-        navigator as Navigator & {
-          gpu?: {
-            requestAdapter: (options: { powerPreference: string }) => Promise<{
-              features: { has: (feature: string) => boolean };
-            } | null>;
-          };
-        }
-      ).gpu;
-      const adapter = await gpu?.requestAdapter({
-        powerPreference: "high-performance",
-      });
-      if (!adapter?.features.has("shader-f16"))
-        throw new Error("speech-gpu-required");
-    }
+    await requireSpeechGpu();
     this.release = await acquireLocalInference("speech");
     if (signal.aborted) {
       this.release();

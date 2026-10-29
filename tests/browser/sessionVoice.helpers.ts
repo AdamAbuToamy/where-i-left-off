@@ -1,6 +1,7 @@
+import { SESSION_SPEECH_FILES } from "../../src/session/speechModel";
 import { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-export async function setup(page: Page) {
+export async function setup(page: Page, injectedInference = false) {
   await page.addInitScript(
     () =>
       localStorage.getItem("language") ||
@@ -34,6 +35,19 @@ export async function setup(page: Page) {
   await expect(page.locator(".sync-status")).toHaveText(
     "Synced with your account",
   );
+  if (injectedInference) {
+    // Only tests which replace inference may use tiny placeholder weights.
+    await page.evaluate(async (assets) => {
+      const cache = await caches.open("transformers-cache");
+      for (const asset of assets)
+        await cache.put(
+          asset.url,
+          new Response("Injected inference fixture", {
+            headers: { "content-length": String(asset.size) },
+          }),
+        );
+    }, SESSION_SPEECH_FILES);
+  }
   await page.getByRole("button", { name: "Work session", exact: true }).click();
   await expect(page.locator("[data-session-sync=ready]")).toBeVisible();
 }
