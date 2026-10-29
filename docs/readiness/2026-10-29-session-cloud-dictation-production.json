@@ -1,0 +1,18 @@
+{
+  "mode": "browser-cloud-recognition",
+  "localSpeechWorkerReferenced": false,
+  "cloudAdapterPublished": true,
+  "date": "2026-10-29T21:56:23.633Z",
+  "ready": true,
+  "site": "https://where-i-left-off.web.app",
+  "fingerprint": "59e38d66862f6268bfcf34956e053cbc4b53afb313a8cfd1294e418b496f9e0e",
+  "panel": "SessionVoicePanel-BxbFtd8t.js",
+  "panelSha256": "4afbbf21f2c2c21c4354d8a5a3845f25430f86e14c97cbb83dbb7d4807ff0a96",
+  "readOnly": true,
+  "productionAccountWrites": false,
+  "mergedCommit": "cf6dc59310820cc675fe1d8576cdb19cc4c65443",
+  "pullRequest": "https://github.com/AdamAbuToamy/where-i-left-off/pull/48",
+  "qualityRun": "https://github.com/AdamAbuToamy/where-i-left-off/actions/runs/40961001047",
+  "audioUploadedByVerification": false,
+  "physicalMicrophoneAccuracyVerified": false
+}
