@@ -14,12 +14,12 @@ it("ignores silence and brief clicks, emits bounded utterances, and clears on st
   for (let i = 0; i < 8; i++) segmenter.push(voice);
   for (let i = 0; i < 20; i++) segmenter.push(silence);
   expect(complete).toHaveBeenCalledTimes(1);
-  expect(complete.mock.calls[0][0].length).toBeLessThanOrEqual(192000);
+  expect(complete.mock.calls[0][0].length).toBeLessThanOrEqual(96000);
   for (let i = 0; i < 310; i++) segmenter.push(voice);
-  expect(complete).toHaveBeenCalledTimes(2);
+  expect(complete).toHaveBeenCalledTimes(3);
   segmenter.clear();
   for (let i = 0; i < 20; i++) segmenter.push(silence);
-  expect(complete).toHaveBeenCalledTimes(2);
+  expect(complete).toHaveBeenCalledTimes(3);
 });
 
 it("flushes speech before trailing silence when the user explicitly finishes", () => {
@@ -31,4 +31,14 @@ it("flushes speech before trailing silence when the user explicitly finishes", (
   expect(final.mock.calls[0][0].length).toBe(5120);
   segmenter.finish();
   expect(final).toHaveBeenCalledTimes(1);
+});
+
+it("starts transcription after a short silence instead of waiting for a long recording", () => {
+  const complete = vi.fn();
+  const segmenter = new AudioSegmenter(() => {}, complete);
+  for (let i = 0; i < 8; i++) segmenter.push(new Float32Array(640).fill(0.1));
+  for (let i = 0; i < 11; i++) segmenter.push(new Float32Array(640));
+  expect(complete).not.toHaveBeenCalled();
+  segmenter.push(new Float32Array(640));
+  expect(complete).toHaveBeenCalledOnce();
 });

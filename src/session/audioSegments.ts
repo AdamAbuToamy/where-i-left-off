@@ -32,8 +32,8 @@ export class AudioSegmenter {
       this.silent = 0;
     } else this.silent += frame.length;
     if (
-      this.silent >= 12800 ||
-      this.frames.reduce((sum, f) => sum + f.length, 0) >= 192000
+      this.silent >= 7200 ||
+      this.frames.reduce((sum, f) => sum + f.length, 0) >= 96000
     )
       this.finish();
   }

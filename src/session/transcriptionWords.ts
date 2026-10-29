@@ -1,6 +1,11 @@
 import { SESSION_SPEECH_MODEL } from "./speechModel";
 import type { Language } from "../translations";
 const en = {
+  asNote: "Note",
+  asNextStep: "Next step",
+  approve: "Approve and save",
+  approved: "Saved",
+  saveAs: "Save as",
   download: "Download speech model",
   resumeDownload: "Resume download",
   savingModel: "Saving model",
@@ -59,6 +64,11 @@ const en = {
   itemText: "Item text",
 };
 const ar: typeof en = {
+  asNote: "ملاحظة",
+  asNextStep: "خطوة قادمة",
+  approve: "موافقة وحفظ",
+  approved: "تم الحفظ",
+  saveAs: "حفظ كـ",
   download: "تنزيل نموذج الصوت",
   resumeDownload: "متابعة التنزيل",
   savingModel: "جارٍ حفظ النموذج",
@@ -115,6 +125,11 @@ const ar: typeof en = {
   itemText: "نص البند",
 };
 const he: typeof en = {
+  asNote: "הערה",
+  asNextStep: "הצעד הבא",
+  approve: "אישור ושמירה",
+  approved: "נשמר",
+  saveAs: "שמירה בתור",
   download: "הורדת מודל הקול",
   resumeDownload: "המשך הורדה",
   savingModel: "שומר מודל",

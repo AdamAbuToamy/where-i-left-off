@@ -53,6 +53,7 @@ type Props = {
   identity: SessionIdentity;
   language: Language;
   historical?: boolean;
+  onSaveNextStep?: (text: string) => Promise<boolean>;
 };
 type Tab = "transcript" | "notes" | "checklist";
 const icons = {
@@ -62,7 +63,7 @@ const icons = {
 };
 const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
   function SessionVoicePanel(
-    { uid, identity, language, historical = false },
+    { uid, identity, language, historical = false, onSaveNextStep },
     ref,
   ) {
     const t = transcriptionWords[language],
@@ -100,7 +101,9 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       handled = useRef(new Set<string>()),
       pending = useRef(new Map<string, SpokenSegment>()),
       finalChain = useRef<Promise<unknown>>(Promise.resolve()),
-      saving = useRef(0);
+      saving = useRef(0),
+      firstInRecording = useRef(true),
+      paragraphStarts = useRef(new Set<string>());
     const save = useCallback(
       async (proposal: SessionProposal) => {
         saving.current++;
@@ -179,10 +182,12 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
             saving.current
               ? repository.current().transcripts.at(-1)?.id || null
               : editing.current,
+            paragraphStarts.current.has(segment.id),
           ),
         );
         if (ok) {
           pending.current.delete(segment.id);
+          paragraphStarts.current.delete(segment.id);
           setUnsaved((old) => old.filter((item) => item.id !== segment.id));
         } else await controller.current?.pause("session-save-failed");
       },
@@ -226,7 +231,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
     useEffect(() => {
       let mounted = true;
       const speechController = new SessionSpeechController({
-        batchTranscription: true,
+        batchTranscription: false,
         speech: () => new BrowserSpeech(),
         microphone: () => new BrowserMicrophone(),
         current: () => repository.current(),
@@ -243,6 +248,10 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
             segment.sessionId !== identity.id
           )
             return;
+          if (firstInRecording.current) {
+            paragraphStarts.current.add(segment.id);
+            firstInRecording.current = false;
+          }
           handled.current.add(segment.id);
           pending.current.set(segment.id, segment);
           setUnsaved((old) => [
@@ -272,21 +281,25 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         window.removeEventListener("pagehide", leave);
       };
     }, [repository, voiceLanguage, identity.id, saveFinal, t.unsaved]);
-    const finish = useCallback(async () => {
-      setFinishing(true);
-      try {
-        await controller.current?.finish();
-        await finalChain.current;
-        if (pending.current.size) throw new SessionError("session-save-failed");
-        if (repository.status().conflict)
-          throw new SessionError("session-conflict");
-        if (repository.status().ready) await repository.flush();
-        if (repository.status().conflict)
-          throw new SessionError("session-conflict");
-      } finally {
-        if (alive.current) setFinishing(false);
-      }
-    }, [repository]);
+    const finish = useCallback(
+      async (keepModel = false) => {
+        setFinishing(true);
+        try {
+          await controller.current?.finish(keepModel);
+          await finalChain.current;
+          if (pending.current.size)
+            throw new SessionError("session-save-failed");
+          if (repository.status().conflict)
+            throw new SessionError("session-conflict");
+          if (repository.status().ready) await repository.flush();
+          if (repository.status().conflict)
+            throw new SessionError("session-conflict");
+        } finally {
+          if (alive.current) setFinishing(false);
+        }
+      },
+      [repository],
+    );
     useImperativeHandle(ref, () => ({ beforeFinish: finish }), [finish]);
     async function start() {
       await refreshSpeechDownload();
@@ -309,6 +322,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         });
         if (!ok) return;
       }
+      firstInRecording.current = true;
       await controller.current?.start();
     }
     async function correct(id: string, text: string, original: string) {
@@ -499,7 +513,13 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         >
           {!historical && (
             <>
-              <div className="session-record-bar">
+              <div
+                className="session-record-bar"
+                data-recording={speech.microphone ? "true" : "false"}
+                data-working={
+                  speech.stage === "loading" || finishing ? "true" : "false"
+                }
+              >
                 <button
                   type="button"
                   className="primary-button"
@@ -510,7 +530,8 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                     download.stage === "saving"
                   }
                   onClick={() => {
-                    if (active) void finish().catch(() => setError(t.unsaved));
+                    if (active)
+                      void finish(true).catch(() => setError(t.unsaved));
                     else if (download.stage !== "ready")
                       void startSpeechDownload();
                     else void start();
@@ -552,13 +573,24 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                   role="status"
                   data-microphone={speech.microphone ? "active" : "off"}
                 >
-                  <i aria-hidden="true" />
+                  <span className="session-voice-wave" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </span>
                   {phase}
                 </span>
               </div>
               {(download.stage === "downloading" ||
                 download.stage === "saving") && (
                 <div className="session-download" role="status">
+                  <Download
+                    className="session-download-icon"
+                    size={22}
+                    aria-hidden="true"
+                  />
                   <progress
                     aria-label={t.downloading}
                     max={download.total}
@@ -610,6 +642,22 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                   editing.current = id;
                 }}
                 onCorrect={correct}
+                approval={
+                  !historical && !active && !finishing
+                    ? {
+                        note: t.asNote,
+                        nextStep: t.asNextStep,
+                        approve: t.approve,
+                        saved: t.approved,
+                        target: t.saveAs,
+                        nextStepAvailable: !!onSaveNextStep,
+                        onApprove: async (text, target) =>
+                          target === "note"
+                            ? manual("add_note", text)
+                            : (onSaveNextStep?.(text) ?? false),
+                      }
+                    : undefined
+                }
               />
             ))}
             {unsaved.map((segment) => (
