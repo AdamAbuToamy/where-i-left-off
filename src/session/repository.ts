@@ -58,8 +58,15 @@ export type SessionRepositoryOptions = {
   newId: () => string;
   now: () => number;
 };
-const code = (error: unknown) =>
-  error instanceof Error ? error.message : "session-save-failed";
+const code = (error: unknown) => {
+  const value =
+    error && typeof error === "object" && "code" in error
+      ? String(error.code)
+      : error instanceof Error
+        ? error.message
+        : "session-save-failed";
+  return /^[a-zA-Z0-9/_-]{1,80}$/.test(value) ? value : "session-save-failed";
+};
 /** One private session, one local journal, one CAS server document. UI/models never write. */
 export class SessionRepository {
   private readonly options: SessionRepositoryOptions;

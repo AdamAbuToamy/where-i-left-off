@@ -133,6 +133,18 @@ test("real local dictation goes through microphone, domain, Firestore and reload
   );
   const panel = page.locator(".session-workspace");
   await panel
+    .getByRole("button", { name: "Download speech model", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Save draft and close", exact: true })
+    .click();
+  await expect(page.locator(".focus-dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Work session", exact: true }).click();
+
+  await expect(
+    panel.getByRole("button", { name: "Start transcription", exact: true }),
+  ).toBeEnabled({ timeout: 60000 });
+  await panel
     .getByRole("button", { name: "Start transcription", exact: true })
     .click();
   await expect(panel.locator("[data-microphone=active]")).toBeVisible({

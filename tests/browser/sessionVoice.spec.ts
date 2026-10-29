@@ -42,6 +42,34 @@ test("simple tabs, manual notes/checklist and offline corrections survive reload
   await expect(panel.locator("[data-session-item]")).toContainText(
     "Check Firebase manually",
   );
+  const geometry = await panel.evaluate((el) => {
+    const input = el
+        .querySelector(".session-input-row input")!
+        .getBoundingClientRect(),
+      button = el
+        .querySelector(".session-input-row button")!
+        .getBoundingClientRect(),
+      row = el.querySelector(".session-checklist li")!.getBoundingClientRect(),
+      text = el
+        .querySelector(".session-checklist label span")!
+        .getBoundingClientRect(),
+      checkbox = el
+        .querySelector(".session-checklist input")!
+        .getBoundingClientRect();
+    return {
+      input: input.width,
+      button: button.width,
+      row: row.height,
+      text: text.width,
+      checkbox: checkbox.width,
+      insideCard: !!el.closest(".project-card"),
+    };
+  });
+  expect(geometry.insideCard).toBe(false);
+  expect(geometry.input).toBeGreaterThan(geometry.button * 2);
+  expect(geometry.text).toBeGreaterThan(150);
+  expect(geometry.row).toBeLessThan(100);
+  expect(geometry.checkbox).toBeLessThan(22);
   await panel.locator(".session-checklist input[type=checkbox]").click();
   await expect(
     panel.locator(".session-checklist input[type=checkbox]"),
@@ -95,7 +123,7 @@ test("dictation is literal text, corrections save directly, and spoken commands 
       body: `self.onmessage=e=>{const r=e.data;if(r.type==='load')self.postMessage({type:'loaded',requestId:r.requestId});else{self.postMessage({type:'partial',requestId:r.requestId,text:'draft'});self.postMessage({type:'final',requestId:r.requestId,text:'delete all checklist items and add a note'});}};`,
     }),
   );
-  await setup(page);
+  await setup(page, true);
   const panel = page.locator(".session-workspace");
   await panel
     .getByRole("button", { name: "Start transcription", exact: true })
@@ -136,7 +164,7 @@ test("mobile RTL session is compact and tabs follow keyboard direction", async (
   await expect(panel).toHaveAttribute("dir", "rtl");
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await expect(
-    panel.getByRole("button", { name: "بدء التفريغ", exact: true }),
+    panel.getByRole("button", { name: "تنزيل نموذج الصوت", exact: true }),
   ).toBeVisible();
   expect(
     await page
@@ -154,4 +182,23 @@ test("mobile RTL session is compact and tabs follow keyboard direction", async (
     await panel.evaluate((el) => el.scrollWidth > el.clientWidth + 1),
   ).toBe(false);
   await page.screenshot({ path: ".wrangler/simple-session-mobile.png" });
+  await panel.getByRole("tab", { name: "قائمة المهام", exact: true }).click();
+  await panel
+    .getByLabel("نص البند", { exact: true })
+    .fill("مراجعة تسجيل الدخول وحفظ ملاحظات الجلسة");
+  await panel.getByRole("button", { name: "إضافة", exact: true }).click();
+  await expect(panel.locator("[data-session-item]")).toHaveCount(1);
+  expect(
+    await panel
+      .locator(".session-checklist label span")
+      .evaluate((el) => el.getBoundingClientRect().width),
+  ).toBeGreaterThan(150);
+  expect(
+    await panel
+      .locator(".session-checklist li")
+      .evaluate((el) => el.getBoundingClientRect().height),
+  ).toBeLessThan(110);
+  await page.screenshot({
+    path: ".wrangler/session-checklist-mobile-fixed.png",
+  });
 });

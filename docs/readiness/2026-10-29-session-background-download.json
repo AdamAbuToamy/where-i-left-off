@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-29T15:57:00.701Z",
+  "passed": true,
+  "realPinnedModelWeights": true,
+  "modelBytes": 563479095,
+  "bytesServed": 563479095,
+  "bytesAtPageClose": 0,
+  "closedAllPagesUntilCommitted": true,
+  "crossOrigin": true,
+  "verifiedRangeParts": 35,
+  "elapsedMs": 10094,
+  "transport": "local HTTP mirror; real browser Background Fetch, SHA-256 validation and OPFS commit",
+  "files": [
+    {
+      "size": 369974078,
+      "committed": true
+    },
+    {
+      "size": 193505017,
+      "committed": true
+    }
+  ]
+}

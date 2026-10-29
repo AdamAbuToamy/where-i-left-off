@@ -289,34 +289,46 @@ export const sessionWords = { ar, en, he } satisfies Record<
 >;
 export function sessionErrorText(code: string, language: Language) {
   const t = sessionWords[language];
-  return code === "speech-cache"
+  return ["permission-denied", "unauthenticated"].includes(code)
     ? language === "ar"
-      ? "تعذر حفظ نموذج الصوت على الجهاز. وفر مساحة أو استخدم نافذة متصفح عادية ثم أعد المحاولة."
+      ? "تعذرت مزامنة الجلسة بسبب صلاحية الاتصال. تعديلاتك محفوظة على الجهاز. أعد تسجيل الدخول ثم أعد المحاولة."
       : language === "he"
-        ? "לא ניתן לשמור את מודל הקול במכשיר. פנו מקום או השתמשו בחלון דפדפן רגיל ונסו שוב."
-        : "The speech model could not be saved on this device. Free storage or use a regular browser window, then retry."
-    : code === "speech-gpu-required"
-      ? transcriptionWords[language].gpuRequired
-      : code === "speech-error"
-        ? t.error
-        : code === "speech-permission"
-          ? t.permission
-          : code === "speech-no-device" || code === "speech-device-lost"
-            ? t.noDevice
-            : code === "local-inference-busy"
-              ? t.busy
-              : code === "speech-unsupported" ||
-                  code === "speech-audio-suspended"
-                ? t.unsupported
-                : code === "speech-backlog"
-                  ? t.backlog
-                  : code === "session-capacity"
-                    ? t.capacity
-                    : code === "session-undo-conflict"
-                      ? t.undoConflict
-                      : code === "session-conflict"
-                        ? t.stale
-                        : code.startsWith("speech-")
-                          ? t.modelError
-                          : t.failed;
+        ? "סנכרון המפגש נכשל בגלל הרשאת החיבור. השינויים שמורים במכשיר. התחברו שוב ונסו מחדש."
+        : "Session sync was denied. Your edits are saved on this device. Sign in again and retry."
+    : code === "unavailable" || code === "deadline-exceeded"
+      ? language === "ar"
+        ? "تعديلاتك محفوظة على الجهاز وستتزامن عند عودة الاتصال."
+        : language === "he"
+          ? "השינויים שמורים במכשיר ויסונכרנו כשהחיבור יחזור."
+          : "Your edits are saved on this device and will sync when the connection returns."
+      : code === "speech-cache"
+        ? language === "ar"
+          ? "تعذر حفظ نموذج الصوت على الجهاز. وفر مساحة أو استخدم نافذة متصفح عادية ثم أعد المحاولة."
+          : language === "he"
+            ? "לא ניתן לשמור את מודל הקול במכשיר. פנו מקום או השתמשו בחלון דפדפן רגיל ונסו שוב."
+            : "The speech model could not be saved on this device. Free storage or use a regular browser window, then retry."
+        : code === "speech-gpu-required"
+          ? transcriptionWords[language].gpuRequired
+          : code === "speech-error"
+            ? t.error
+            : code === "speech-permission"
+              ? t.permission
+              : code === "speech-no-device" || code === "speech-device-lost"
+                ? t.noDevice
+                : code === "local-inference-busy"
+                  ? t.busy
+                  : code === "speech-unsupported" ||
+                      code === "speech-audio-suspended"
+                    ? t.unsupported
+                    : code === "speech-backlog"
+                      ? t.backlog
+                      : code === "session-capacity"
+                        ? t.capacity
+                        : code === "session-undo-conflict"
+                          ? t.undoConflict
+                          : code === "session-conflict"
+                            ? t.stale
+                            : code.startsWith("speech-")
+                              ? t.modelError
+                              : t.failed;
 }

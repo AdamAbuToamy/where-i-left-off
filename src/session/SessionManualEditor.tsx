@@ -177,9 +177,11 @@ export function SessionManualEditor({
             });
           }}
         >
-          <label htmlFor={"session-edit-" + identity.id}>{t.edit}</label>
+          <label htmlFor={"session-edit-" + identity.id + "-" + view}>
+            {t.edit}
+          </label>
           <textarea
-            id={"session-edit-" + identity.id}
+            id={"session-edit-" + identity.id + "-" + view}
             value={editing.text}
             maxLength={editing.target === "items" ? 300 : 1000}
             dir="auto"

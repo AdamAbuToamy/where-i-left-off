@@ -5,9 +5,11 @@ import {
   useImperativeHandle,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   Mic,
+  Download,
   Pause,
   FileText,
   StickyNote,
@@ -31,6 +33,12 @@ import { createSessionWorkspace, activeSessionWorkspaces } from "./composition";
 import type { SessionStatus } from "./repository";
 import { SessionSpeechController } from "./speechController";
 import type { SpeechEvent } from "./speechController";
+import {
+  speechDownloadSnapshot,
+  subscribeSpeechDownload,
+  refreshSpeechDownload,
+  startSpeechDownload,
+} from "./speechDownload";
 import { BrowserSpeech } from "./browserSpeech";
 import { BrowserMicrophone } from "./browserMicrophone";
 import type { SpokenSegment } from "./commands";
@@ -59,6 +67,13 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
   ) {
     const t = transcriptionWords[language],
       legacy = sessionWords[language];
+    const download = useSyncExternalStore(
+      subscribeSpeechDownload,
+      speechDownloadSnapshot,
+    );
+    useEffect(() => {
+      void refreshSpeechDownload();
+    }, []);
     const [repository] = useState(() => createSessionWorkspace(uid, identity));
     const [state, setState] = useState<SessionState>(() =>
       emptySession(identity),
@@ -274,6 +289,8 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
     }, [repository]);
     useImperativeHandle(ref, () => ({ beforeFinish: finish }), [finish]);
     async function start() {
+      await refreshSpeechDownload();
+      if (speechDownloadSnapshot().stage !== "ready") return;
       setError("");
       setTab("transcript");
       const current = repository.current();
@@ -447,6 +464,11 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
           <p role="alert" className="session-error">
             {error || sessionErrorText(status.error, language)}
             {status.error && (
+              <small className="session-error-code" dir="ltr">
+                {status.error}
+              </small>
+            )}
+            {status.error && (
               <button type="button" onClick={() => void repository.flush()}>
                 {t.retry}
               </button>
@@ -481,14 +503,37 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                 <button
                   type="button"
                   className="primary-button"
-                  disabled={disabled}
+                  disabled={
+                    disabled ||
+                    download.stage === "checking" ||
+                    download.stage === "downloading" ||
+                    download.stage === "saving"
+                  }
                   onClick={() => {
                     if (active) void finish().catch(() => setError(t.unsaved));
+                    else if (download.stage !== "ready")
+                      void startSpeechDownload();
                     else void start();
                   }}
                 >
-                  {active ? <Pause size={17} /> : <Mic size={17} />}{" "}
-                  {active ? t.pause : t.start}
+                  {active ? (
+                    <Pause size={17} />
+                  ) : download.stage === "ready" ? (
+                    <Mic size={17} />
+                  ) : (
+                    <Download size={17} />
+                  )}{" "}
+                  {active
+                    ? t.pause
+                    : download.stage === "ready"
+                      ? t.start
+                      : download.stage === "saving"
+                        ? t.savingModel
+                        : download.stage === "downloading"
+                          ? t.downloading
+                          : download.loaded > 0
+                            ? t.resumeDownload
+                            : t.download}
                 </button>
                 <select
                   aria-label={t.language}
@@ -511,6 +556,32 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                   {phase}
                 </span>
               </div>
+              {(download.stage === "downloading" ||
+                download.stage === "saving") && (
+                <div className="session-download" role="status">
+                  <progress
+                    aria-label={t.downloading}
+                    max={download.total}
+                    value={download.loaded}
+                  />
+                  <small>
+                    {Math.floor((download.loaded / download.total) * 100)}% ·{" "}
+                    {download.background
+                      ? t.backgroundDownload
+                      : t.foregroundDownload}
+                  </small>
+                </div>
+              )}
+              {download.stage === "error" && (
+                <p className="session-error" role="alert">
+                  {download.error &&
+                  ["speech-gpu-required", "speech-cache"].includes(
+                    download.error,
+                  )
+                    ? sessionErrorText(download.error, language)
+                    : t.downloadError}
+                </p>
+              )}
               {speech.stage === "loading" && speech.progress && (
                 <progress
                   aria-label={t.loading}
@@ -519,7 +590,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
                 />
               )}
               <small className="session-transcription-privacy">
-                {t.privacy} {!state.transcripts.length && t.modelDownload}
+                {t.privacy} {download.stage !== "ready" && t.modelDownload}
               </small>
             </>
           )}
