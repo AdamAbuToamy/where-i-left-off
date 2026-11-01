@@ -1,0 +1,9 @@
+# Admin-only design access on production — 2026-11-02
+
+Published to https://where-i-left-off.web.app/#/admin at the user's explicit request to use the real admin page, not an external preview. Design remains opt-in for verified admin on this device; ordinary users retain original UI. Enable via تجربة التصميم → تفعيل التجربة; use العودة للأصلي for immediate device-only rollback. No general design rollout authorized.
+
+Production baseline07178f2 was verified against live source fingerprint59e38d66862f6268bfcf34956e053cbc4b53afb313a8cfd1294e418b496f9e0e before branch creation. Only design commit59880fb was cherry-picked as9645ad9; engineering guidance/test-port support e038383. None of the unrelated handoff fixes eb58dbb/02151e0 were deployed. Branch codex/admin-design-live; no main push/merge.
+
+Fresh production-baseline checks:1226 application tests/108files,8 browser journeys(admin desktop/RTL phone,ordinary layouts ar/he/en),TypeScript,lint0errors(existing AssistantWidget warning),architecture22modules0violations,production-mode build and credential scan. Rules/worker unchanged, so no repeated rules/backend/provider/audio calls. Test accounts/data used local emulators only. Published read-only JSON evidence verifies exact index bytes, active admin design module, default disabled, login page and no page errors; actual production admin session not automated.
+
+Hosting-only deployment, release wilo-admin-design-live-20261102. Auth domains,provider,Firestore rules/indexes,worker and account records unchanged. Existing App Check configuration recovered/preserved before build. Previous live Hosting version3aa0768a63e1627d retained in provider history; use approved Hosting rollback if release-level issue, not data restore. No data/schema migration. Prior legal/recovery/provider readiness gaps are not declared resolved by this visual release.
