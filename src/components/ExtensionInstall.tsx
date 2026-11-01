@@ -1,3 +1,4 @@
+import PreviewDetails from './PreviewDetails'
 import { useEffect, useState } from 'react'
 import type { Language } from '../translations'
 import { desktopChromium, detectExtension, readInstallPreference, saveInstallPreference, shouldOffer, SNOOZE_MS, storeUrl, validExtensionId } from '../lib/extensionInstall'
@@ -20,7 +21,7 @@ export default function ExtensionInstall({language,settings=false,admin=false}:{
   <button className="secondary-button" onClick={()=>change({...pref,snoozedUntil:Date.now()+SNOOZE_MS})}>{t.later}</button>
   <button className="text-button" onClick={()=>change({...pref,dismissed:true})}>{t.never}</button>
  </div>
- return <section className={settings?'settings-section':'extension-prompt'} aria-label={t.settings}>
+ return <PreviewDetails language={language} label={t.title} disabled={settings}><section className={settings?'settings-section':'extension-prompt'} aria-label={t.settings}>
   <h3>{settings?t.settings:t.title}</h3><p>{t.body}</p>
   {!eligible?<p>{t.desktop}</p>:!url?<p role="status">{t.waiting}</p>:settings?<>
    <div className="extension-actions">
@@ -31,5 +32,5 @@ export default function ExtensionInstall({language,settings=false,admin=false}:{
    </div>
    {admin&&preview&&<aside className="extension-prompt"><h3>{t.title}</h3><p>{t.body}</p>{actions}</aside>}
   </>:actions}
- </section>
+ </section></PreviewDetails>
 }

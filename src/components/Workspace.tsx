@@ -1,3 +1,4 @@
+import PreviewDetails from './PreviewDetails'
 import { workspaceView } from '../lib/navigation'
 import { markCardViewed } from '../lib/pushNotifications'
 import { useEffect, useRef, useState } from 'react'
@@ -155,13 +156,13 @@ export default function Workspace({ user, language, group, members }: { user: Us
           <span className={`add-icon ${isFormOpen ? 'is-open' : ''}`} aria-hidden="true">+</span>{isFormOpen ? t.cancel : r.newCard}
         </button>}
       </div>}
-      <div className="board-utility-row">
+      <PreviewDetails language={language} label={language==='ar'?'العرض والتقارير':language==='he'?'תצוגה ודוחות':'View and reports'}><div className="board-utility-row">
       {(projects.length > 0 || view === 'week') && <nav className="view-tabs" aria-label={t.workspace}>
         <button className="secondary-button" aria-pressed={view === 'board'} onClick={() => setView('board')}>{t.boardView}</button>
         <button className="secondary-button" aria-pressed={view === 'week'} onClick={() => setView('week')}>{t.weekView}</button>
       </nav>}
         {projects.length > 0 && <section className="workspace-report"><div><h3>{featureText[language].report}</h3><p>{group?.name || pageText[language].personal} · {projects.length} {r.cards}</p></div><SummaryPdfButton entries={projects.map(project=>({project,scope:group?.name || pageText[language].personal,groupId:group?.id}))} title={group?.name || featureText[language].report} userName={user.displayName || ''} language={language} cached={cached || queued>0} scopeLabel /></section>}
-      </div>
+      </div></PreviewDetails>
       {group && projects.length > 0 && <div className="filter-group"><button className="secondary-button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>{g.all}</button><button className="secondary-button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>{g.mine}</button></div>}
       {view === 'board' && <Sections canManage={canManage} sections={sections} projects={projects} selected={sectionFilter} onSelect={setSectionFilter} language={language} disabled={pending} onSave={(name, id) => run(() => repository.current!.saveSection(name, id), 'section.save')} onDelete={id => run(() => repository.current!.deleteSection(id), 'section.delete')} />}
       <fieldset className="workspace-fields" disabled={pending} aria-busy={pending}>

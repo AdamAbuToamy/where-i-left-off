@@ -1,3 +1,4 @@
+import DesignPreviewProvider from './components/DesignPreviewProvider';
 import { StudyLocaleProvider } from "./university/StudyLocale";
 import { lazy, Suspense } from 'react';
 const AssistantSandbox = /* @__PURE__ */ lazy(()=>import('./assistant/AssistantWidget'));
@@ -68,7 +69,7 @@ export default function App() {
     if (!auth) return
     return onAuthStateChanged(auth, current => { setUser(current); setLoading(false); if (current) { void flushLogs(); if (new URLSearchParams(location.search).has('groupInvite')) navigate('groups') } }, e => { setAuthError(e); setLoading(false); logEvent('auth.subscription', e) })
   }, [])
-  return <StudyLocaleProvider value={language}><IdleSleep key={user?.uid || 'signed-out'} uid={user?.uid} user={user || undefined} language={language}><main className={`workspace language-${language}`}>
+  return <DesignPreviewProvider user={user}><StudyLocaleProvider value={language}><IdleSleep key={user?.uid || 'signed-out'} uid={user?.uid} user={user || undefined} language={language}><main className={`workspace language-${language}`}>
     <PushLifecycle user={user} />
     <header className="page-header"><div className="heading-copy"><h1>{t.appName}</h1></div><div className="header-account-actions"><LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={() => void traced('auth.signout', async () => { try { await preparePushSignOut() } catch { /* Local delivery gate is already cleared. */ } await signOut(auth!) }).catch(() => {})}>{c.logout}</button>}</div></header>
     {emulatorMode && <p className="notice">{c.demo}</p>}
@@ -82,5 +83,5 @@ export default function App() {
       <section className="account-page-outlet" data-page={page} key={`${user.uid}/${page}/${groupId}`}><ErrorBoundary embedded><AccountPage page={page} groupId={groupId} user={user} language={language} installed={installed} profileVersion={profileVersion}/></ErrorBoundary></section>
     </AccountLifecycle>{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>}</> : <>{page === 'support' && <p className="notice">{supportText[language].signin}</p>}<AuthPanel language={language} /></>}
     <LegalLinks language={language} />
-  </main></IdleSleep></StudyLocaleProvider>
+  </main></IdleSleep></StudyLocaleProvider></DesignPreviewProvider>
 }

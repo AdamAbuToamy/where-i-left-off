@@ -1,0 +1,319 @@
+/* Preview controls are admin-only. All site treatments require the authenticated opt-in attribute. */
+.design-preview-switch {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--site-border);
+  border-radius: 20px;
+  background: linear-gradient(130deg, var(--site-surface), var(--site-soft));
+  color: var(--site-text);
+}
+.design-preview-switch-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--site-primary);
+}
+.design-preview-switch h3,
+.design-preview-switch p {
+  margin: 0;
+}
+.design-preview-switch p {
+  max-width: 65ch;
+  color: var(--site-muted);
+  line-height: 1.7;
+  font-size: 14px;
+}
+.design-preview-switch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.design-preview-switch-actions :is(button, a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.preview-disclosure {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--site-border) 80%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--site-surface) 85%, transparent);
+  overflow: clip;
+}
+.preview-disclosure-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--site-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+.preview-disclosure-toggle > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.preview-disclosure-toggle > svg {
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.preview-disclosure.is-open > .preview-disclosure-toggle > svg {
+  transform: rotate(180deg);
+}
+.preview-disclosure-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.36s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0.36s;
+}
+.preview-disclosure.is-open > .preview-disclosure-body {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+.preview-disclosure-body > div {
+  min-height: 0;
+  overflow: hidden;
+}
+.preview-disclosure-body > div > :first-child {
+  margin: 0;
+}
+.preview-disclosure-body > div {
+  padding-inline: 16px;
+}
+.preview-disclosure.is-open > .preview-disclosure-body > div {
+  padding-block-end: 16px;
+}
+:root[data-design-preview="on"] {
+  --preview-glass: color-mix(in srgb, var(--site-surface) 86%, transparent);
+  --preview-line: color-mix(in srgb, var(--site-border) 75%, transparent);
+  --preview-shadow: 0 14px 40px #25332e09, 0 2px 7px #25332e05;
+  scroll-behavior: smooth;
+}
+:root[data-design-preview="on"] .workspace {
+  background: radial-gradient(
+    ellipse at 85% 0%,
+    color-mix(in srgb, var(--site-accent) 8%, transparent),
+    transparent 50%
+  );
+  isolation: isolate;
+}
+:root[data-design-preview="on"]
+  :is(
+    .project-card,
+    .study-course,
+    .study-panel,
+    .settings-group,
+    .admin-stats article,
+    .admin-account,
+    .resume-card,
+    .sections-panel,
+    .assistant-panel
+  ) {
+  background: var(--preview-glass);
+  border-color: var(--preview-line);
+  box-shadow:
+    var(--preview-shadow),
+    inset 0 1px 0 #ffffffa6;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+}
+:root[data-design-preview="on"]
+  :is(.page-header, .admin-sections, .workflow-tabs, .study-toolbar) {
+  background: color-mix(in srgb, var(--site-surface) 78%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: var(--preview-line);
+  border-radius: 18px;
+}
+:root[data-design-preview="on"] .page-header {
+  padding: 18px 22px;
+  margin-block-end: 24px;
+  border: 1px solid var(--preview-line);
+  box-shadow: 0 6px 22px #25332e05;
+}
+:root[data-design-preview="on"] :is(h1, h2, h3) {
+  text-wrap: balance;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+}
+:root[data-design-preview="on"] :is(p, .checkpoint-copy) {
+  line-height: 1.8;
+  text-wrap: pretty;
+}
+:root[data-design-preview="on"]
+  :is(.project-card, .study-course, .resume-card) {
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.28s,
+    border-color 0.28s;
+}
+:root[data-design-preview="on"]
+  :is(
+    .account-page-outlet,
+    .assistant-panel,
+    .form-reveal.is-open,
+    .design-preview-switch
+  ) {
+  animation: preview-reveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+:root[data-design-preview="on"]
+  :is(.project-grid, .resume-grid, .admin-stats)
+  > * {
+  animation: preview-reveal 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+:root[data-design-preview="on"]
+  :is(.project-grid, .resume-grid, .admin-stats)
+  > :nth-child(2) {
+  animation-delay: 35ms;
+}
+:root[data-design-preview="on"]
+  :is(.project-grid, .resume-grid, .admin-stats)
+  > :nth-child(3) {
+  animation-delay: 70ms;
+}
+:root[data-design-preview="on"]
+  :is(button, a.secondary-button, a.primary-button, summary) {
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+:root[data-design-preview="on"] button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+:root[data-design-preview="on"]
+  :is(button, a, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--site-primary);
+  outline-offset: 4px;
+}
+:root[data-design-preview="on"] .study-course-notes h4 {
+  display: none;
+}
+:root[data-design-preview="on"] .workspace-report {
+  box-shadow: none;
+  background: transparent;
+  padding: 8px 0;
+  border: 0;
+}
+:root[data-design-preview="on"] .admin-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+:root[data-design-preview="on"] .card-options[open],
+:root[data-design-preview="on"] .settings-group[open] {
+  animation: preview-reveal 0.24s ease-out;
+}
+:root[data-design-preview="on"] details {
+  interpolate-size: allow-keywords;
+}
+@supports selector(details::details-content) {
+  :root[data-design-preview="on"] details::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transition:
+      block-size 0.3s,
+      opacity 0.24s,
+      content-visibility 0.3s allow-discrete;
+  }
+  :root[data-design-preview="on"] details[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root[data-design-preview="on"]
+    :is(.project-card, .study-course, .resume-card):hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 18px 44px #25332e12,
+      inset 0 1px 0 #fffc;
+  }
+  :root[data-design-preview="on"] .preview-disclosure-toggle:hover {
+    background: var(--site-soft);
+  }
+}
+@media (max-width: 600px) {
+  :root[data-design-preview="on"] .page-header {
+    padding: 14px;
+    gap: 12px;
+  }
+  :root[data-design-preview="on"] .admin-stats {
+    grid-template-columns: 1fr;
+  }
+  .design-preview-switch {
+    padding: 16px;
+  }
+  :root[data-design-preview="on"]
+    :is(.project-card, .study-course, .resume-card) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: color-mix(in srgb, var(--site-surface) 96%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-design-preview="on"] {
+    scroll-behavior: auto;
+  }
+  :root[data-design-preview="on"]
+    :is(
+      .account-page-outlet,
+      .assistant-panel,
+      .form-reveal,
+      .design-preview-switch,
+      .project-card,
+      .study-course,
+      .resume-card,
+      .admin-stats article,
+      button,
+      a,
+      summary,
+      details,
+      details::details-content
+    ) {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .preview-disclosure-body,
+  .preview-disclosure-toggle > svg {
+    transition: none;
+  }
+}
+@keyframes preview-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:root[data-design-preview="on"] .page-header h1 {
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+}
+:root[data-design-preview="on"][dir="rtl"] :is(h1, h2, h3) {
+  letter-spacing: normal;
+}
+.preview-account-dates {
+  display: grid;
+  gap: 6px;
+}
+
+:root[data-design-preview='on'] .preview-disclosure .extension-prompt{margin:0;padding:8px 0;border:0;background:transparent}
+:root[data-design-preview='on'] .preview-disclosure .extension-prompt>h3{display:none}

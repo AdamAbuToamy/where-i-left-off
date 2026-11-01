@@ -1,3 +1,4 @@
+import PreviewDetails, {DesignPreviewSwitch} from './PreviewDetails'
 import { FeedbackList } from './Support'
 import { supportText } from '../supportText'
 import { useEffect, useState } from 'react'
@@ -52,6 +53,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
   }
   return <section className="admin-dashboard">
     <h2>{t.adminTitle}</h2>
+    <DesignPreviewSwitch language={language}/>
     <nav className="admin-sections" aria-label={t.adminTitle}><a className={section === 'accounts' ? 'is-current' : ''} aria-current={section === 'accounts' ? 'page' : undefined} href="#/admin">{p.adminAccounts}</a><a className={section === 'logs' ? 'is-current' : ''} aria-current={section === 'logs' ? 'page' : undefined} href="#/admin/logs">{p.logs}</a><a className={section === 'support' ? 'is-current' : ''} href="#/admin/support" aria-current={section === 'support' ? 'page' : undefined}>{supportText[language].admin}</a></nav>
     {section === 'support' ? <FeedbackList user={user} language={language} admin /> : section === 'logs' ? <LogViewer user={user} language={language} /> : loading ? <p role="status">…</p> : error ? <div role="alert"><p>{errorText(error,language)}</p><button className="secondary-button" onClick={() => { setError(null); setLoading(true); setAttempt(value => value + 1) }}>{c.retry}</button></div> : <>
       <div className="admin-stats">
@@ -65,8 +67,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
         {metrics.map(metric => { const protectedAccount = isProtectedAdminAccount(metric.email); return <article className={`admin-account ${protectedAccount ? 'is-protected' : ''}`} key={metric.id}>
           <div className="admin-account-info">
             <strong dir="auto">{metric.email || metric.id}</strong>
-            <span>{t.firstSeen}: {metric.firstSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span>
-            <span>{t.lastSeen}: {metric.lastSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span>
+            <PreviewDetails language={language} label={language==='ar'?'نشاط الحساب':language==='he'?'פעילות החשבון':'Account activity'}><div className="preview-account-dates"><span>{t.firstSeen}: {metric.firstSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span><span>{t.lastSeen}: {metric.lastSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span></div></PreviewDetails>
             {protectedAccount && <strong className="protected-admin-label">{p.protectedAdmin}</strong>}
             <span className={metric.suspended ? 'account-paused' : 'account-active'}>{metric.suspended ? t.suspendedAccounts : t.accountActive}</span>
           </div>
@@ -82,7 +83,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
         </article>})}
       </div>
     </>}
-    <p className="admin-limits">{t.adminLimit}</p>
+    <PreviewDetails language={language}><p className="admin-limits">{t.adminLimit}</p></PreviewDetails>
     <a className="primary-button admin-console-link" href="https://console.firebase.google.com/project/where-i-left-off-b5683/authentication/users" target="_blank" rel="noopener noreferrer">{t.firebaseUsers} ↗</a>
   </section>
 }

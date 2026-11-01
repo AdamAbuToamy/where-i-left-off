@@ -1,3 +1,5 @@
+import PreviewDetails from '../components/PreviewDetails';
+import {useStudyLanguage} from './studyLocaleContext';
 import LinkedText from '../components/LinkedText';
 import CourseContent from './CourseContent';
 import StudyLocalized from './StudyLocale';
@@ -6,10 +8,11 @@ export default function CourseDetails({course, color, pendingCount, busy, onEdit
     course: Course; color: string; pendingCount: number; busy: boolean;
     onEdit: () => void; onTemplate: () => void; onToggleTopic: (id: string) => void;
 }) {
+    const language=useStudyLanguage();
     return <StudyLocalized><article data-study-course={course.id} className="study-course" style={{borderInlineStartColor:color}}>
         <h3 dir="auto">{course.name}</h3>
         <small>{pendingCount} <span>مهام مفتوحة</span></small>
-        {course.notes && <section className="study-course-notes"><h4>ملاحظات الكورس</h4><p dir="auto"><LinkedText text={course.notes}/></p></section>}
+        {course.notes && <PreviewDetails language={language} label={language==='ar'?'ملاحظات الكورس':language==='he'?'הערות הקורס':'Course notes'}><section className="study-course-notes"><h4>ملاحظات الكورس</h4><p dir="auto"><LinkedText text={course.notes}/></p></section></PreviewDetails>}
         <div>
             <button className="study-link-button" onClick={onEdit}>تعديل الكورس</button>
             <button className="study-link-button" onClick={onTemplate}>استخدام كقالب</button>
