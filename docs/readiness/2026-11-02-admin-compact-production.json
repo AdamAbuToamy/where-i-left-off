@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-02",
+  "url": "https://where-i-left-off.web.app/#/admin",
+  "release": "wilo-admin-compact-cards-20261102",
+  "stage": "public",
+  "noGlass": true,
+  "compactCards": true,
+  "compactModulePublished": true,
+  "adminOnly": true,
+  "defaultDisabled": true,
+  "status": 200,
+  "indexMatchesBuild": true,
+  "designModulePublished": true,
+  "anonymousDesignInactive": true,
+  "loginFormVisible": true,
+  "pageErrors": [],
+  "productionAccountWrites": 0,
+  "authDomainsChanged": false,
+  "rulesOrWorkerDeployed": false
+}
