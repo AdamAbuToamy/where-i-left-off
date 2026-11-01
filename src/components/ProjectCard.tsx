@@ -1,3 +1,4 @@
+import CompactCardShell from './CompactCardShell'
 import { markCardViewed } from '../lib/pushNotifications'
 import FocusSession from './FocusSession'
 import CatalogLookup from './CatalogLookup'
@@ -166,7 +167,7 @@ export default function ProjectCard({
             </button>
           </form>
         ) : (
-          <>
+          <CompactCardShell project={project} sections={sections} language={language}>
             {project.coverUrl&&<img className="card-cover" onError={e=>{e.currentTarget.hidden=true}} src={project.coverUrl} alt="" loading="lazy" referrerPolicy="no-referrer"/>}
             <h2 dir="auto"><LinkedText text={project.name}/></h2>
 
@@ -220,7 +221,7 @@ export default function ProjectCard({
                 {t.deleteProject}
               </button>}
             </div></details>}
-          </>
+          </CompactCardShell>
         )}
       </article>
 

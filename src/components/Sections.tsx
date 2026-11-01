@@ -1,16 +1,18 @@
+import {useDesignPreview} from './designPreviewContext'
 import { ChevronDown, PanelsTopLeft } from 'lucide-react'
 import { useState } from 'react'
 import type { Language } from '../translations'
 import type { Project, Section } from '../types'
 import { recallText } from '../recallTranslations'
 export default function Sections({ sections, projects, selected, onSelect, onSave, onDelete, language, disabled, canManage = true }: { sections: Section[]; projects: Project[]; selected: string; onSelect: (id: string) => void; onSave: (name: string, id?: string) => Promise<boolean>; onDelete: (id: string) => Promise<boolean>; language: Language; disabled: boolean; canManage?: boolean }) {
+  const {enabled}=useDesignPreview()
   const t = recallText[language]
   const selectedName = selected === 'all' ? t.allSections : sections.find(section => section.id === selected)?.name || t.noSection
   const [manage, setManage] = useState(false), [name, setName] = useState(''), [editing, setEditing] = useState<string | undefined>()
   return <details className="sections-panel sections-disclosure"
-    onPointerEnter={event => { if (event.pointerType === 'mouse') event.currentTarget.open = true }}
+    onPointerEnter={event => { if (!enabled && event.pointerType === 'mouse') event.currentTarget.open = true }}
     onPointerLeave={event => {
-      if (event.pointerType !== 'mouse' || manage) return
+      if (enabled || event.pointerType !== 'mouse' || manage) return
       const panel = event.currentTarget
       if (panel.contains(document.activeElement)) panel.querySelector('summary')?.focus({preventScroll:true})
       panel.open = false
@@ -24,7 +26,7 @@ export default function Sections({ sections, projects, selected, onSelect, onSav
     <summary className="sections-disclosure-trigger" onClick={event => {
       // A mouse enters before clicking: do not let the native toggle undo hover.
       // Touch and keyboard keep the native disclosure toggle.
-      if ('pointerType' in event.nativeEvent && event.nativeEvent.pointerType === 'mouse') {
+      if (!enabled && 'pointerType' in event.nativeEvent && event.nativeEvent.pointerType === 'mouse') {
         event.preventDefault();event.currentTarget.closest('details')!.open = true
       }
     }}><PanelsTopLeft size={18} aria-hidden="true"/><span dir="auto">{selectedName}</span><ChevronDown size={16} aria-hidden="true"/></summary>

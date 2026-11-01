@@ -1,3 +1,4 @@
+import WorkspaceTools from './WorkspaceTools'
 import PreviewDetails from './PreviewDetails'
 import { workspaceView } from '../lib/navigation'
 import { markCardViewed } from '../lib/pushNotifications'
@@ -156,7 +157,7 @@ export default function Workspace({ user, language, group, members }: { user: Us
           <span className={`add-icon ${isFormOpen ? 'is-open' : ''}`} aria-hidden="true">+</span>{isFormOpen ? t.cancel : r.newCard}
         </button>}
       </div>}
-      <PreviewDetails language={language} label={language==='ar'?'العرض والتقارير':language==='he'?'תצוגה ודוחות':'View and reports'}><div className="board-utility-row">
+      <WorkspaceTools language={language}><PreviewDetails language={language} label={language==='ar'?'العرض والتقارير':language==='he'?'תצוגה ודוחות':'View and reports'}><div className="board-utility-row">
       {(projects.length > 0 || view === 'week') && <nav className="view-tabs" aria-label={t.workspace}>
         <button className="secondary-button" aria-pressed={view === 'board'} onClick={() => setView('board')}>{t.boardView}</button>
         <button className="secondary-button" aria-pressed={view === 'week'} onClick={() => setView('week')}>{t.weekView}</button>
@@ -165,6 +166,7 @@ export default function Workspace({ user, language, group, members }: { user: Us
       </div></PreviewDetails>
       {group && projects.length > 0 && <div className="filter-group"><button className="secondary-button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>{g.all}</button><button className="secondary-button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>{g.mine}</button></div>}
       {view === 'board' && <Sections canManage={canManage} sections={sections} projects={projects} selected={sectionFilter} onSelect={setSectionFilter} language={language} disabled={pending} onSave={(name, id) => run(() => repository.current!.saveSection(name, id), 'section.save')} onDelete={id => run(() => repository.current!.deleteSection(id), 'section.delete')} />}
+      </WorkspaceTools>
       <fieldset className="workspace-fields" disabled={pending} aria-busy={pending}>
         {canCreate && view === 'board' && <div id="new-project-panel" className={`form-reveal ${isFormOpen ? 'is-open' : ''}`} inert={!isFormOpen}>
           <div className="form-reveal-inner"><NewProjectForm key={capture ? 'tab-capture' : `manual-${newSection}`} language={language} sections={sections} members={group ? canManage ? members : members.filter(m => m.uid === user.uid) : undefined} defaultAssignedTo={group && !canManage ? user.uid : ''} defaultSectionId={newSection} isOpen={isFormOpen} initialValues={capture ?? undefined} onCancel={closeForm} onAdd={async (name, nextStep, details) => {

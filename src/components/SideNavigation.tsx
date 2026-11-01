@@ -1,3 +1,4 @@
+import {useDesignPreview} from './designPreviewContext'
 import {LayoutGroup,motion,useReducedMotion} from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react'
 import type { Language } from '../translations'
@@ -16,6 +17,7 @@ const paths: Record<string, string> = {
 }
 export default function SideNavigation({ language, page, admin }: { language: Language; page: PageName; admin: boolean }) {
   const [open, setOpen] = useState(false), root = useRef<HTMLDivElement>(null), toggle = useRef<HTMLButtonElement>(null), id = useId()
+  const {enabled}=useDesignPreview();
   const reduced=useReducedMotion();
   const t = pageText[language], w = workflowText[language]
   useEffect(() => {
@@ -25,8 +27,8 @@ export default function SideNavigation({ language, page, admin }: { language: La
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape) }
   }, [])
   return <LayoutGroup id={id}><div ref={root} className={`side-navigation ${open ? 'is-open' : ''}`}
-    onPointerEnter={e => { if (e.pointerType === 'mouse') setOpen(true) }}
-    onPointerLeave={() => { if (!root.current?.contains(document.activeElement)) setOpen(false) }}
+    onPointerEnter={e => { if (!enabled && e.pointerType === 'mouse') setOpen(true) }}
+    onPointerLeave={() => { if (!enabled && !root.current?.contains(document.activeElement)) setOpen(false) }}
     onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false) }}>
     <button ref={toggle} type="button" className="side-navigation-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(v => !v)}
       onKeyDown={e => { if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); requestAnimationFrame(() => root.current?.querySelector<HTMLAnchorElement>('nav a')?.focus()) } }}>

@@ -11,7 +11,7 @@ const words = {
     try: "تفعيل التجربة",
     restore: "العودة للأصلي",
     open: "تجربة الموقع",
-    hint: "شفافية خفيفة، حركة أهدأ ومساحة أكثر. لحساب الإدارة على هذا الجهاز فقط.",
+    hint: "بطاقات مضغوطة، قوائم جانبية وحركة هادئة. لحساب الإدارة على هذا الجهاز فقط.",
   },
   he: {
     details: "הצגת פרטים",
@@ -20,7 +20,7 @@ const words = {
     try: "הפעלת תצוגה",
     restore: "חזרה למקור",
     open: "צפייה באתר",
-    hint: "שקיפות עדינה ותנועה עם פחות עומס. למנהל במכשיר הזה בלבד.",
+    hint: "כרטיסים קומפקטיים וכלים צדדיים עם פחות עומס. למנהל במכשיר הזה בלבד.",
   },
   en: {
     details: "Show details",
@@ -29,7 +29,7 @@ const words = {
     try: "Enable preview",
     restore: "Restore original",
     open: "Explore site",
-    hint: "Soft glass, considered motion and more space. Admin on this device only.",
+    hint: "Compact cards, side tools and considered motion. Admin on this device only.",
   },
 };
 /** Keep hidden content mounted: collapsing never discards input state or pending work. */

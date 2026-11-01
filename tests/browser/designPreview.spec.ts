@@ -48,6 +48,7 @@ for (const mobile of [false, true])
         exact: true,
       }),
     ).toBeVisible();
+    await page.getByRole("button", {name:"View tools",exact:true}).click();
     const reports = page.getByRole("button", {
       name: "View and reports",
       exact: true,
