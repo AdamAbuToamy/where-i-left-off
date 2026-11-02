@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import type { User } from "firebase/auth";
 import { isAdmin } from "../lib/admin";
@@ -40,7 +40,7 @@ export default function DesignPreviewProvider({
   );
   const enabled =
     available && (choice?.uid === user?.uid ? choice?.value : stored) === true;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (enabled) document.documentElement.dataset.designPreview = "on";
     else delete document.documentElement.dataset.designPreview;
     return () => {

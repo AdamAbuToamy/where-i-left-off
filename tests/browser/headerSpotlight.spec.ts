@@ -37,14 +37,17 @@ test("admin header automatically cycles while hovered with no play button", asyn
     Math.abs(title.x + title.width - header.x - header.width),
   ).toBeLessThan(3);
   await expect(page.locator(".brand-motion-toggle")).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator(".brand-spotlight")).toBeVisible();
+  await expect(page.locator(".page-header")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await page.locator(".brand-spotlight").hover();
   await expect(page.locator("[data-face=app]")).toBeVisible({ timeout: 8000 });
   await expect(page.locator("[data-face=brand]")).toBeVisible({
-    timeout: 11000,
+    timeout: 19000,
   });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator("[data-face=brand]")).toHaveCount(0, {
-    timeout: 11000,
+    timeout: 19000,
   });
   await expect(page.locator(".brand-motion-toggle")).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });

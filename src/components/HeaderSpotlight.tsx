@@ -143,7 +143,7 @@ export default function HeaderSpotlight({
     if (!enabled || !visible || guide) return;
     const timer = setTimeout(
       () => setPhase((value) => value + 1),
-      phase === 0 ? 4000 : 8000,
+      phase === 0 ? 4000 : 15000,
     );
     return () => clearTimeout(timer);
   }, [enabled, visible, guide, phase]);

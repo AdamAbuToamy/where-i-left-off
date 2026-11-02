@@ -429,7 +429,7 @@
   font-size: 13px;
 }
 :root[data-design-preview="on"]
-  .workspace:has(.side-navigation)
+  .workspace
   > .page-header {
   margin-inline-start: 64px;
 }
@@ -594,7 +594,7 @@
 }
 @media (max-width: 600px) {
   :root[data-design-preview="on"]
-    .workspace:has(.side-navigation)
+    .workspace
     > .page-header {
     margin-inline-start: 0;
   }
@@ -634,7 +634,7 @@
 
 /* Screenshot polish: centered brand, natural-width toolbars and search-adjacent hover tools. */
 :root[data-design-preview="on"]
-  .workspace:has(.side-navigation)
+  .workspace
   > .page-header {
   margin-inline: 0;
   background: none;
@@ -838,7 +838,7 @@
 }
 @media (max-width: 760px) {
   :root[data-design-preview="on"]
-    .workspace:has(.side-navigation)
+    .workspace
     > .page-header {
     grid-template-columns: 1fr;
     gap: 14px;
@@ -929,7 +929,7 @@
 
 /* A right-aligned 3D sign; no slide/fade or layout jumps between messages. */
 :root[data-design-preview="on"]
-  .workspace:has(.side-navigation)
+  .workspace
   > .page-header {
   grid-template-columns: auto minmax(0, 1fr);
   direction: ltr;
@@ -1051,7 +1051,7 @@
 }
 @media (max-width: 760px) {
   :root[data-design-preview="on"]
-    .workspace:has(.side-navigation)
+    .workspace
     > .page-header {
     grid-template-columns: 1fr;
   }
