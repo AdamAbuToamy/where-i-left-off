@@ -39,7 +39,7 @@ afterEach(() => {
   mode.reduced = false;
   localStorage.clear();
 });
-it("rotates after the interval, pauses, and preserves accessible identity", async () => {
+it("automatically completes the cycle without a play control or hover dependency", async () => {
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal(
@@ -59,33 +59,23 @@ it("rotates after the interval, pauses, and preserves accessible identity", asyn
         <DesignPreviewContext
           value={{ enabled: true, available: true, setEnabled: () => {} }}
         >
-          <HeaderSpotlight
-            brand="Where I Left Off"
-            language="en"
-            installed={false}
-          />
+          <HeaderSpotlight brand="WILO" language="en" installed={false} />
         </DesignPreviewContext>,
       ),
     );
-    expect(element.querySelector("h1")?.textContent).toBe("Where I Left Off");
+    expect(element.querySelector(".brand-motion-toggle")).toBeNull();
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("brand");
-    await act(async () => vi.advanceTimersByTime(12000));
+    await act(async () => vi.advanceTimersByTime(4000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("app");
-    await act(async () =>
-      element.querySelector<HTMLButtonElement>(".brand-motion-toggle")!.click(),
-    );
-    await act(async () => vi.advanceTimersByTime(24000));
+    await act(async () => vi.advanceTimersByTime(8000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
-    ).toBe("app");
-    await act(async () =>
-      element.querySelector<HTMLButtonElement>(".brand-motion-toggle")!.click(),
-    );
-    await act(async () => vi.advanceTimersByTime(24000));
+    ).toBe("brand");
+    await act(async () => vi.advanceTimersByTime(8000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("chrome");
@@ -96,7 +86,8 @@ it("rotates after the interval, pauses, and preserves accessible identity", asyn
     await act(async () => root.unmount());
   }
 });
-it("keeps reduced-motion and ordinary users static without ordinary-user promotion requests", async () => {
+
+it("keeps ordinary users unchanged and automatically updates reduced-motion text", async () => {
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const fetch = vi.fn().mockResolvedValue(Response.json({}));
@@ -121,10 +112,41 @@ it("keeps reduced-motion and ordinary users static without ordinary-user promoti
         </DesignPreviewContext>,
       ),
     );
-    await act(async () => vi.advanceTimersByTime(36000));
+    await act(async () => vi.advanceTimersByTime(4000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
-    ).toBe("brand");
+    ).toBe("app");
+    expect(element.querySelector(".brand-motion-toggle")).toBeNull();
+  } finally {
+    await act(async () => root.unmount());
+  }
+});
+
+it("continues automatic rotation when the app is already installed and no extension offer exists", async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(Response.json({ published: false })),
+  );
+  const element = document.createElement("div"),
+    root = createRoot(element);
+  try {
+    await act(async () =>
+      root.render(
+        <DesignPreviewContext
+          value={{ enabled: true, available: true, setEnabled: () => {} }}
+        >
+          <HeaderSpotlight brand="WILO" language="en" installed={true} />
+        </DesignPreviewContext>,
+      ),
+    );
+    await act(async () => vi.advanceTimersByTime(4000));
+    expect(
+      element.querySelector("[data-face]")?.getAttribute("data-face"),
+    ).toBe("app");
+    expect(element.textContent).toContain("Installed on your device");
+    expect(element.textContent).not.toContain("Install the app");
     expect(element.querySelector(".brand-motion-toggle")).toBeNull();
   } finally {
     await act(async () => root.unmount());

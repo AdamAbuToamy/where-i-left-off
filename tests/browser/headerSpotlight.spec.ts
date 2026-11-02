@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { prepareUniversityPilot } from "./universityFixture";
 import { mkdir } from "node:fs/promises";
-test("admin header alignment, timed 3D promotion, install guide and pause", async ({
+test("admin header automatically cycles while hovered with no play button", async ({
   page,
   request,
 }) => {
@@ -36,24 +36,17 @@ test("admin header alignment, timed 3D promotion, install guide and pause", asyn
   expect(
     Math.abs(title.x + title.width - header.x - header.width),
   ).toBeLessThan(3);
-  await page.mouse.move(0, 0);
-  await expect(
-    page.getByRole("button", { name: "Install the app", exact: false }),
-  ).toBeVisible({ timeout: 16000 });
-  await page
-    .getByRole("button", { name: "Install the app", exact: false })
-    .click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.getByRole("dialog")).toContainText("Add to Home Screen");
-  await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Pause title animation", exact: true })
-    .click();
-  await page.mouse.move(0, 0);
-  await expect(
-    page.getByRole("button", { name: "Resume title animation", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("[data-face=app]")).toBeVisible();
+  await expect(page.locator(".brand-motion-toggle")).toHaveCount(0);
+  await page.locator(".brand-spotlight").hover();
+  await expect(page.locator("[data-face=app]")).toBeVisible({ timeout: 8000 });
+  await expect(page.locator("[data-face=brand]")).toBeVisible({
+    timeout: 11000,
+  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator("[data-face=brand]")).toHaveCount(0, {
+    timeout: 11000,
+  });
+  await expect(page.locator(".brand-motion-toggle")).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(
@@ -62,10 +55,7 @@ test("admin header alignment, timed 3D promotion, install guide and pause", asyn
   ).toBe(true);
   await mkdir(".wrangler", { recursive: true });
   await page.screenshot({
-    path: ".wrangler/header-spotlight-phone.png",
+    path: ".wrangler/header-auto-phone.png",
     fullPage: true,
   });
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(page.locator("[data-face=brand]")).toBeVisible();
-  await expect(page.locator(".brand-motion-toggle")).toHaveCount(0);
 });

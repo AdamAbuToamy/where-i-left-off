@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Download, Puzzle, Pause, Play, X } from "lucide-react";
+import { Download, Puzzle, X } from "lucide-react";
 import type { Language } from "../translations";
 import { useDesignPreview } from "./designPreviewContext";
 import {
@@ -19,9 +19,10 @@ const words = {
     app: "حمّل التطبيق",
     chrome: "حمّل إضافة Chrome",
     appHint: "ثبّته على جهازك",
+    installedTitle: "تطبيق WILO",
+    installedHint: "مثبّت على جهازك",
+    installedGuide: "أنت تستخدم التطبيق المثبّت بالفعل.",
     chromeHint: "احفظ صفحاتك بنقرة",
-    pause: "إيقاف حركة العنوان",
-    play: "تشغيل حركة العنوان",
     close: "إغلاق",
     guide:
       "افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية» إن كان الخيار متاحًا. لا يحتاج التطبيق متجرًا أو تنزيل ملف APK.",
@@ -30,9 +31,10 @@ const words = {
     app: "התקינו את היישום",
     chrome: "התקינו את תוסף Chrome",
     appHint: "גישה מהירה מהמכשיר",
+    installedTitle: "יישום WILO",
+    installedHint: "מותקן במכשיר",
+    installedGuide: "אתם כבר משתמשים ביישום המותקן.",
     chromeHint: "שמרו דפים בלחיצה",
-    pause: "השהיית תנועת הכותרת",
-    play: "הפעלת תנועת הכותרת",
     close: "סגירה",
     guide:
       "בתפריט הדפדפן בחרו התקנת יישום או הוספה למסך הבית, אם האפשרות זמינה. אין צורך בחנות או בקובץ APK.",
@@ -41,9 +43,10 @@ const words = {
     app: "Install the app",
     chrome: "Get the Chrome extension",
     appHint: "Keep WILO on your device",
+    installedTitle: "WILO app",
+    installedHint: "Installed on your device",
+    installedGuide: "You are already using the installed app.",
     chromeHint: "Save pages in one click",
-    pause: "Pause title animation",
-    play: "Resume title animation",
     close: "Close",
     guide:
       "Open your browser menu and choose Install app or Add to Home Screen when available. No app store or APK download is required.",
@@ -78,9 +81,6 @@ export default function HeaderSpotlight({
     );
   const t = words[language];
   const [phase, setPhase] = useState(0),
-    [paused, setPaused] = useState(false),
-    [hovered, setHovered] = useState(false),
-    [focused, setFocused] = useState(false),
     [visible, setVisible] = useState(
       () => document.visibilityState === "visible",
     );
@@ -96,15 +96,10 @@ export default function HeaderSpotlight({
     enabled && shouldOffer(config, readInstallPreference(), extensionInstalled)
       ? storeUrl(config)
       : null;
-  const faces = [
-    "brand",
-    ...(!installed ? ["app"] : []),
-    "brand",
-    ...(extension ? ["chrome"] : []),
-  ];
-  const face = reduced ? "brand" : faces[phase % faces.length];
-  const interacting = hovered || focused;
-  const promotionsAvailable = !installed || !!extension;
+  const faces = extension
+    ? ["brand", "app", "brand", "chrome"]
+    : ["brand", "app"];
+  const face = faces[phase % faces.length];
   useEffect(() => {
     if (!enabled) return;
     const abort = new AbortController();
@@ -145,31 +140,21 @@ export default function HeaderSpotlight({
     return () => document.removeEventListener("visibilitychange", changed);
   }, []);
   useEffect(() => {
-    if (
-      !enabled ||
-      reduced ||
-      paused ||
-      interacting ||
-      !visible ||
-      guide ||
-      !promotionsAvailable
-    )
-      return;
-    const timer = setInterval(() => setPhase((value) => value + 1), 12000);
-    return () => clearInterval(timer);
-  }, [
-    enabled,
-    reduced,
-    paused,
-    interacting,
-    visible,
-    guide,
-    promotionsAvailable,
-  ]);
+    if (!enabled || !visible || guide) return;
+    const timer = setTimeout(
+      () => setPhase((value) => value + 1),
+      phase === 0 ? 4000 : 8000,
+    );
+    return () => clearTimeout(timer);
+  }, [enabled, visible, guide, phase]);
   useEffect(() => {
     if (guide) dialog.current?.showModal();
   }, [guide]);
   async function installApp() {
+    if (installed) {
+      setGuide(true);
+      return;
+    }
     const prompt = install.current;
     install.current = null;
     if (prompt) {
@@ -182,25 +167,45 @@ export default function HeaderSpotlight({
     }
     setGuide(true);
   }
+  const promotionContent =
+    face === "brand" ? (
+      <span className="brand-name" dir="ltr" aria-hidden="true">
+        {brand}
+      </span>
+    ) : face === "app" ? (
+      <button
+        type="button"
+        className="brand-promotion"
+        onClick={() => void installApp()}
+      >
+        <Download size={25} aria-hidden="true" />
+        <span>
+          <strong>{installed ? t.installedTitle : t.app}</strong>
+          <small>{installed ? t.installedHint : t.appHint}</small>
+        </span>
+      </button>
+    ) : (
+      <a
+        className="brand-promotion"
+        href={extension!}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Puzzle size={25} aria-hidden="true" />
+        <span>
+          <strong>{t.chrome}</strong>
+          <small>{t.chromeHint}</small>
+        </span>
+      </a>
+    );
   if (!enabled) return <h1>{brand}</h1>;
   return (
-    <div
-      className="brand-spotlight"
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget))
-          setFocused(false);
-      }}
-    >
+    <div className="brand-spotlight">
       <h1 className="brand-accessible-title">{brand}</h1>
       <div className="brand-stage">
         {reduced ? (
-          <div className="brand-face" data-face="brand">
-            <span className="brand-name" dir="ltr" aria-hidden="true">
-              {brand}
-            </span>
+          <div className="brand-face" data-face={face}>
+            {promotionContent}
           </div>
         ) : (
           <AnimatePresence initial={false} mode="wait">
@@ -208,63 +213,16 @@ export default function HeaderSpotlight({
               key={face + "-" + phase}
               className="brand-face"
               data-face={face}
-              initial={reduced ? false : { rotateX: -85, scale: 0.97 }}
+              initial={{ rotateX: -85, scale: 0.97 }}
               animate={{ rotateX: 0, scale: 1 }}
-              exit={reduced ? {} : { rotateX: 85, scale: 0.97 }}
-              transition={{
-                duration: reduced ? 0 : 0.52,
-                ease: [0.22, 0.7, 0.2, 1],
-              }}
+              exit={{ rotateX: 85, scale: 0.97 }}
+              transition={{ duration: 0.52, ease: [0.22, 0.7, 0.2, 1] }}
             >
-              {face === "brand" ? (
-                <span className="brand-name" dir="ltr" aria-hidden="true">
-                  {brand}
-                </span>
-              ) : face === "app" ? (
-                <button
-                  type="button"
-                  className="brand-promotion"
-                  onClick={() => void installApp()}
-                >
-                  <Download size={25} aria-hidden="true" />
-                  <span>
-                    <strong>{t.app}</strong>
-                    <small>{t.appHint}</small>
-                  </span>
-                </button>
-              ) : (
-                <a
-                  className="brand-promotion"
-                  href={extension!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Puzzle size={25} aria-hidden="true" />
-                  <span>
-                    <strong>{t.chrome}</strong>
-                    <small>{t.chromeHint}</small>
-                  </span>
-                </a>
-              )}
+              {promotionContent}
             </motion.div>
           </AnimatePresence>
         )}
       </div>
-      {!reduced && promotionsAvailable && (
-        <button
-          type="button"
-          className="brand-motion-toggle"
-          aria-label={paused ? t.play : t.pause}
-          aria-pressed={paused}
-          onClick={() => setPaused(!paused)}
-        >
-          {paused ? (
-            <Play size={14} aria-hidden="true" />
-          ) : (
-            <Pause size={14} aria-hidden="true" />
-          )}
-        </button>
-      )}
       {guide &&
         createPortal(
           <dialog
@@ -274,7 +232,7 @@ export default function HeaderSpotlight({
             onClose={() => setGuide(false)}
           >
             <h2>{t.app}</h2>
-            <p>{t.guide}</p>
+            <p>{installed ? t.installedGuide : t.guide}</p>
             <button
               type="button"
               className="secondary-button"
