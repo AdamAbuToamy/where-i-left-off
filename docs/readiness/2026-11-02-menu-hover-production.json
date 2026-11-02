@@ -1,0 +1,8 @@
+{
+  "date": "2026-11-02",
+  "release": "wilo-admin-menu-hover-20261102",
+  "verification": "Windows read-only HTTP",
+  "indexMatchesBuild": true,
+  "productionAccountWrites": 0,
+  "adminOptInOnly": true
+}
