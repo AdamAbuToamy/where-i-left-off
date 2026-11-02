@@ -1,0 +1,11 @@
+{
+  "date": "2026-11-02",
+  "release": "wilo-admin-ui-refinements-20261102",
+  "indexMatchesBuild": true,
+  "sharedLoaderPublished": true,
+  "adminDesignOptInOnly": true,
+  "sessionJournalPreserved": true,
+  "verification": "Windows read-only HTTP",
+  "productionAccountWrites": 0,
+  "authDomainsChanged": false
+}
