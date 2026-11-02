@@ -7,7 +7,7 @@ import type {WorkspaceToolInput} from '../../push-worker/src/assistantTools.mjs'
 import {inferenceBudget,readInferenceResponse} from './inferenceStream';
 import type {InferenceProgress} from './inferenceStream';
 
-export type InferenceTiming={stage:'conversation'|'workspace';attempt:number;inputChars:number;tools:number;headersMs?:number;firstDeltaMs?:number;totalMs:number;httpStatus?:number;outcome:'ok'|'failed'|'retry'};
+export type InferenceTiming={stage:'conversation'|'workspace';attempt:number;inputChars:number;tools:number;headersMs?:number;firstDeltaMs?:number;totalMs:number;httpStatus?:number;totalTokens?:number;outcome:'ok'|'failed'|'retry'};
 type WorkspaceRequest={message:string;language:string;context:string;history:{role:'user'|'assistant';content:string}[];repair?:{reason:string;proposal:string};functions?:string[];outputFormat?:string;requirements?:{target:string;fields:string[]}[]};
 export class PollinationsAssistant{
  private uid:string;private history:InferenceTiming[]=[];
@@ -35,6 +35,9 @@ export class PollinationsAssistant{
       if(!received){received=true;timing.firstDeltaMs=Math.round(performance.now()-started);onProgress?.('receiving');}
      });
      budget.signal.throwIfAborted();
+     // Numeric usage only: never copy provider payloads, messages or credentials into diagnostics.
+     const totalTokens=body.usage?.total_tokens;
+     if(typeof totalTokens==='number'&&Number.isSafeInteger(totalTokens)&&totalTokens>=0)timing.totalTokens=totalTokens;
      const content=body.choices?.[0]?.message?.content;
      // A zero-token billing notice may arrive as HTTP 200; it is not a model answer.
      if(body.usage?.total_tokens===0&&typeof body.id==='string'&&body.id.startsWith('resp_')&&typeof content==='string'&&[...content.matchAll(/https:\/\/enter\.pollinations\.ai\/edit-key\?[^)\s]+/g)].some(match=>new URL(match[0]).searchParams.get('ref')==='agent_key_budget'))throw new AssistantFailure('ai-provider-limit','provider',{status:402});

@@ -1,3 +1,4 @@
+import { loadExtensionConfig } from "../lib/extensionConfig";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
@@ -102,13 +103,8 @@ export default function HeaderSpotlight({
   const face = faces[phase % faces.length];
   useEffect(() => {
     if (!enabled) return;
-    const abort = new AbortController();
     let active = true;
-    void fetch("/extension-config.json", {
-      cache: "no-store",
-      signal: abort.signal,
-    })
-      .then((r) => (r.ok ? r.json() : null))
+    void loadExtensionConfig()
       .then(async (value) => {
         if (!active || !value || !validExtensionId(value.extensionId)) return;
         const next = {
@@ -122,7 +118,6 @@ export default function HeaderSpotlight({
       .catch(() => {});
     return () => {
       active = false;
-      abort.abort();
     };
   }, [enabled]);
   useEffect(() => {

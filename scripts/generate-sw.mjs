@@ -39,8 +39,8 @@ await writeFile(
         ";",
     )
     .replace(
-      "'where-i-left-off-shell-dev'",
-      `'where-i-left-off-shell-${version}'`,
+      /(["'])where-i-left-off-shell-dev\1/,
+      `"where-i-left-off-shell-${version}"`,
     )
     .replace(
       "const PRECACHE = [];",

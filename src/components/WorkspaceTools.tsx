@@ -18,6 +18,7 @@ export default function WorkspaceTools({
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
   const [opensUp, setOpensUp] = useState(false);
   const id = useId();
+  const panel = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLElement>(null),
     trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -50,9 +51,20 @@ export default function WorkspaceTools({
   useEffect(() => {
     if (!open) return;
     const update = () => updatePlacement();
+    // Expanding sections or loading a route can move the anchor without a window resize.
+    const observer = new ResizeObserver(update);
+    for (const element of [
+      root.current,
+      panel.current,
+      root.current?.closest(".workspace"),
+    ]) {
+      if (element) observer.observe(element);
+    }
+    update();
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
     return () => {
+      observer.disconnect();
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
@@ -114,6 +126,7 @@ export default function WorkspaceTools({
           {words[language]}
         </button>
         <div
+          ref={panel}
           className="workspace-tools-panel"
           id={id}
           inert={!open}

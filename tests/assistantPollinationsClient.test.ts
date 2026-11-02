@@ -65,3 +65,10 @@ it('still enforces the overall provider deadline without starting a doomed secon
   await vi.advanceTimersByTimeAsync(26000);await assertion;expect(fetch).toHaveBeenCalledTimes(1);
  }finally{timeout.mockRestore();vi.useRealTimers();}
 });
+it('records numeric token usage without retaining provider fields or account content in diagnostics', async () => {
+ vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ usage: { total_tokens: 42, secret: 'provider-private-field' }, choices: [{ message: { content: 'Hello' } }] })));
+ const client = new PollinationsAssistant('alice');
+ await client.conversation({ message: 'private-account-message', language: 'en', history: [] });
+ expect(client.timings()[0]).toMatchObject({ totalTokens: 42, outcome: 'ok' });
+ expect(JSON.stringify(client.timings())).not.toMatch(/private-account-message|provider-private-field|synthetic-alice/);
+});

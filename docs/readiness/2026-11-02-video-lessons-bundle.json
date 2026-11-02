@@ -1,0 +1,68 @@
+{
+  "beforeEntryOnly": {
+    "entryBytes": 1347867,
+    "entryGzipBytes": 411741,
+    "entry": "index-DpuqtI7B.js"
+  },
+  "afterStaticGraph": {
+    "status": "passed",
+    "entryBytes": 553986,
+    "entryGzipBytes": 178672,
+    "startupJavaScriptBytes": 1162108,
+    "startupJavaScriptGzipBytes": 360731,
+    "files": [
+      {
+        "path": "assets/index-DJcOW8DP.js",
+        "bytes": 553986,
+        "gzipBytes": 178672
+      },
+      {
+        "path": "assets/rolldown-runtime-hePW80VL.js",
+        "bytes": 716,
+        "gzipBytes": 428
+      },
+      {
+        "path": "assets/jsx-runtime-BNakU3Ej.js",
+        "bytes": 8243,
+        "gzipBytes": 3113
+      },
+      {
+        "path": "assets/firebase-OwBaPOQG.js",
+        "bytes": 579349,
+        "gzipBytes": 170397
+      },
+      {
+        "path": "assets/appError-Cenb1nQ2.js",
+        "bytes": 202,
+        "gzipBytes": 146
+      },
+      {
+        "path": "assets/createLucideIcon-DhX7lKvy.js",
+        "bytes": 3132,
+        "gzipBytes": 1498
+      },
+      {
+        "path": "assets/domain-chtqqOjR.js",
+        "bytes": 6823,
+        "gzipBytes": 2381
+      },
+      {
+        "path": "assets/indexedDbWorkspaceStore-CvoStMja.js",
+        "bytes": 6212,
+        "gzipBytes": 2438
+      },
+      {
+        "path": "assets/projects-BR3F4Tbj.js",
+        "bytes": 2705,
+        "gzipBytes": 1201
+      },
+      {
+        "path": "assets/profile-BRVoHR29.js",
+        "bytes": 740,
+        "gzipBytes": 457
+      }
+    ],
+    "eagerRoutes": []
+  },
+  "note": "Entry-only reduction is not a claim about total transfer. The PWA deliberately precaches offline routes after load."
+}
