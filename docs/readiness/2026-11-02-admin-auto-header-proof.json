@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-02",
+  "release": "wilo-admin-auto-header-20261102",
+  "indexMatchesBuild": true,
+  "headerModulePublished": true,
+  "verification": "Windows read-only HTTP",
+  "productionAccountWrites": 0,
+  "authDomainsChanged": false,
+  "adminOptInOnly": true
+}
