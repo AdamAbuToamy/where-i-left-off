@@ -1,0 +1,11 @@
+{
+  "date": "2026-11-02",
+  "release": "wilo-final-design-only-20261102",
+  "indexMatchesBuild": true,
+  "adminBundleMatchesBuild": true,
+  "onlyFinalDesign": true,
+  "oldDesignAvailable": false,
+  "managementControls": "removed",
+  "verification": "Windows read-only HTTP; legacy-off accounts verified on emulators",
+  "productionAccountWrites": 0
+}
