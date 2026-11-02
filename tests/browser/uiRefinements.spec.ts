@@ -21,9 +21,14 @@ test("admin filters, larger week, tidy undated cards, university agenda and dele
   const skip = page.locator(".guide-skip");
   if (await skip.isVisible()) await skip.click();
   await page.goto("/#/admin");
-  await page
-    .getByRole("button", { name: "Enable preview", exact: true })
-    .click();
+  if (
+    await page
+      .getByRole("button", { name: "Use current design", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Use current design", exact: true })
+      .click();
   await page.goto("/#/personal");
   await page.getByRole("button", { name: "New card", exact: true }).click();
   await page
@@ -33,14 +38,12 @@ test("admin filters, larger week, tidy undated cards, university agenda and dele
     .getByLabel("Next step", { exact: true })
     .fill("Check the next step");
   await page.getByRole("button", { name: "Save card", exact: true }).click();
-  const card = page
-    .locator(".project-card")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "UI review fixture",
-        exact: true,
-      }),
-    });
+  const card = page.locator(".project-card").filter({
+    has: page.getByRole("heading", {
+      name: "UI review fixture",
+      exact: true,
+    }),
+  });
   await expect(card).toBeVisible();
   const choice = page.getByRole("combobox");
   await choice.click();
@@ -108,42 +111,40 @@ test("admin filters, larger week, tidy undated cards, university agenda and dele
   await page.goto("/#/university");
   await expect(page.locator(".study-university-trial")).toBeVisible();
   await page.locator(".study-trial-tools summary").click();
-  await page
-    .locator(".study-upload input")
-    .setInputFiles({
-      name: "ui-review.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(
-        JSON.stringify({
-          version: 1,
-          courses: [
-            {
-              id: "ui-course",
-              name: "كورس المراجعة",
-              notes: "",
-              url: "",
-              requires: [],
-              topics: [],
-              x: 40,
-              y: 40,
-            },
-          ],
-          tasks: [],
-          lessons: [
-            {
-              id: "ui-lesson",
-              courseId: "ui-course",
-              day: new Date().getDay(),
-              start: "09:00",
-              end: "10:00",
-              room: "قاعة المراجعة",
-              sessionType: "lecture",
-              notes: "",
-            },
-          ],
-        }),
-      ),
-    });
+  await page.locator(".study-upload input").setInputFiles({
+    name: "ui-review.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        version: 1,
+        courses: [
+          {
+            id: "ui-course",
+            name: "كورس المراجعة",
+            notes: "",
+            url: "",
+            requires: [],
+            topics: [],
+            x: 40,
+            y: 40,
+          },
+        ],
+        tasks: [],
+        lessons: [
+          {
+            id: "ui-lesson",
+            courseId: "ui-course",
+            day: new Date().getDay(),
+            start: "09:00",
+            end: "10:00",
+            room: "قاعة المراجعة",
+            sessionType: "lecture",
+            notes: "",
+          },
+        ],
+      }),
+    ),
+  });
   await page
     .getByRole("button", { name: "تأكيد الإضافة", exact: true })
     .click();

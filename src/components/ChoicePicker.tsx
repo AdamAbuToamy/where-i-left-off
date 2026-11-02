@@ -106,7 +106,7 @@ export default function ChoicePicker({
         role="combobox"
         aria-label={label}
         aria-expanded={open}
-        aria-controls={id}
+        aria-controls={open ? id : undefined}
         aria-haspopup="listbox"
         aria-activedescendant={open ? `${id}-${active}` : undefined}
         onClick={() => (open ? setOpen(false) : reveal())}

@@ -27,9 +27,14 @@ for (const mobile of [false, true])
     const skip = page.locator(".guide-skip");
     if (await skip.isVisible()) await skip.click();
     await page.goto("/#/admin");
-    await page
-      .getByRole("button", { name: "Enable preview", exact: true })
-      .click();
+    if (
+      await page
+        .getByRole("button", { name: "Use current design", exact: true })
+        .isVisible()
+    )
+      await page
+        .getByRole("button", { name: "Use current design", exact: true })
+        .click();
     await page
       .getByRole("link", { name: "Explore site", exact: false })
       .click();
@@ -51,7 +56,19 @@ for (const mobile of [false, true])
       await page.reload();
       await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     }
-    async function settled(){await page.evaluate(async()=>{window.scrollTo(0,0);await Promise.all(document.getAnimations().filter(a=>a.effect?.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));});}
+    async function settled() {
+      await page.evaluate(async () => {
+        window.scrollTo(0, 0);
+        await Promise.all(
+          document
+            .getAnimations()
+            .filter(
+              (a) => a.effect?.getComputedTiming().iterations !== Infinity,
+            )
+            .map((a) => a.finished.catch(() => {})),
+        );
+      });
+    }
     await mkdir(".wrangler", { recursive: true });
     const suffix = mobile ? "phone" : "desktop";
     const tools = page.locator(".workspace-tools-trigger");
@@ -60,7 +77,8 @@ for (const mobile of [false, true])
     await expect(
       page.locator(".workspace-tools-panel .view-tabs button"),
     ).toHaveCount(2);
-    await settled();await page.screenshot({
+    await settled();
+    await page.screenshot({
       path: `.wrangler/polish-search-${suffix}.png`,
       fullPage: true,
     });
@@ -71,7 +89,8 @@ for (const mobile of [false, true])
         .locator(".workflow-tabs")
         .evaluate((el) => getComputedStyle(el).backgroundColor),
     ).toBe("rgba(0, 0, 0, 0)");
-    await settled();await page.screenshot({
+    await settled();
+    await page.screenshot({
       path: `.wrangler/polish-library-${suffix}.png`,
       fullPage: true,
     });
@@ -83,7 +102,8 @@ for (const mobile of [false, true])
         .first()
         .evaluate((el) => getComputedStyle(el).listStyleType),
     ).toBe("none");
-    await settled();await page.screenshot({
+    await settled();
+    await page.screenshot({
       path: `.wrangler/polish-groups-${suffix}.png`,
       fullPage: true,
     });
@@ -96,13 +116,16 @@ for (const mobile of [false, true])
     ).toBe("rgba(0, 0, 0, 0)");
     await page.locator(".study-tabs button").nth(1).click();
     await expect(page.locator(".study-toolbar select")).toBeVisible();
-    expect((await page.locator('.study-toolbar select').boundingBox())!.height).toBeLessThan(80);
+    expect(
+      (await page.locator(".study-toolbar select").boundingBox())!.height,
+    ).toBeLessThan(80);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1,
       ),
     ).toBe(true);
-    await settled();await page.screenshot({
+    await settled();
+    await page.screenshot({
       path: `.wrangler/polish-university-${suffix}.png`,
       fullPage: true,
     });

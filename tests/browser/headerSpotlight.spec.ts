@@ -28,9 +28,14 @@ test("admin header automatically cycles while hovered with no play button", asyn
   const skip = page.locator(".guide-skip");
   if (await skip.isVisible()) await skip.click();
   await page.goto("/#/admin");
-  await page
-    .getByRole("button", { name: "Enable preview", exact: true })
-    .click();
+  if (
+    await page
+      .getByRole("button", { name: "Use current design", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Use current design", exact: true })
+      .click();
   await expect(page.locator("[data-face=brand]")).toBeVisible();
   const title = (await page.locator(".brand-spotlight").boundingBox())!,
     header = (await page.locator(".page-header").boundingBox())!;
@@ -40,7 +45,10 @@ test("admin header automatically cycles while hovered with no play button", asyn
   await expect(page.locator(".brand-motion-toggle")).toHaveCount(0);
   await page.reload();
   await expect(page.locator(".brand-spotlight")).toBeVisible();
-  await expect(page.locator(".page-header")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(page.locator(".page-header")).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
   await page.locator(".brand-spotlight").hover();
   await expect(page.locator("[data-face=app]")).toBeVisible({ timeout: 19000 });
   await expect(page.locator("[data-face=brand]")).toBeVisible({

@@ -17,7 +17,7 @@ afterEach(() => {
   delete document.documentElement.dataset.designPreview;
   vi.unstubAllGlobals();
 });
-it("requires verified admin even when a normal user has the opt-in key", async () => {
+it("enables the published design for normal users without granting design administration", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const element = document.createElement("div"),
     root = createRoot(element);
@@ -38,9 +38,10 @@ it("requires verified admin even when a normal user has the opt-in key", async (
         </DesignPreviewProvider>,
       ),
     );
-    expect(element.textContent).toBe("Original content");
-    expect(element.querySelector("button")).toBeNull();
-    expect(document.documentElement.dataset.designPreview).toBeUndefined();
+    expect(element.textContent).toContain("Original content");
+    expect(element.querySelector(".design-preview-switch")).toBeNull();
+    expect(element.querySelector(".preview-disclosure")).not.toBeNull();
+    expect(document.documentElement.dataset.designPreview).toBe("on");
   } finally {
     await act(async () => root.unmount());
   }
@@ -60,7 +61,6 @@ it("allows admin preview, preserves hidden fields and restores original content 
         </DesignPreviewProvider>,
       ),
     );
-    await act(async () => element.querySelector("button")!.click());
     expect(document.documentElement.dataset.designPreview).toBe("on");
     const toggle = element.querySelector<HTMLButtonElement>(
         ".preview-disclosure-toggle",
@@ -87,7 +87,7 @@ it("allows admin preview, preserves hidden fields and restores original content 
     await act(async () => root.unmount());
   }
 });
-it("removes the visual attribute when switching away from the admin account", async () => {
+it("removes the visual attribute on sign-out", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.setItem("wilo-design-preview:" + admin.uid, "on");
   const element = document.createElement("div"),

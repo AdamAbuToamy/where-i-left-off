@@ -5,7 +5,7 @@ import { isAdmin } from "../lib/admin";
 import { DesignPreviewContext } from "./designPreviewContext";
 import "./designPreview.css";
 
-/** Device-only opt-in. Authentication/Firestore permissions are never changed. */
+/** Published visual design. Only administrators can change their local fallback preference. */
 export default function DesignPreviewProvider({
   user,
   children,
@@ -28,18 +28,17 @@ export default function DesignPreviewProvider({
     },
     () => {
       try {
-        return (
-          !!user &&
-          localStorage.getItem("wilo-design-preview:" + user.uid) === "on"
-        );
+        return user
+          ? localStorage.getItem("wilo-design-preview:" + user.uid)
+          : null;
       } catch {
-        return false;
+        return null;
       }
     },
-    () => false,
+    () => null,
   );
   const enabled =
-    available && (choice?.uid === user?.uid ? choice?.value : stored) === true;
+    !!user && (choice?.uid === user.uid ? choice.value : stored !== "off");
   useLayoutEffect(() => {
     if (enabled) document.documentElement.dataset.designPreview = "on";
     else delete document.documentElement.dataset.designPreview;

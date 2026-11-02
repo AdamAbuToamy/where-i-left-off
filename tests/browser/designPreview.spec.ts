@@ -10,7 +10,10 @@ for (const mobile of [false, true])
       mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
     );
     const { email, password } = await prepareUniversityPilot(request);
-    await page.addInitScript(() => { if(!localStorage.getItem("language")) localStorage.setItem("language", "en"); });
+    await page.addInitScript(() => {
+      if (!localStorage.getItem("language"))
+        localStorage.setItem("language", "en");
+    });
     await page.goto("/");
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
@@ -24,9 +27,14 @@ for (const mobile of [false, true])
     const skip = page.locator(".welcome-guide .guide-skip");
     if (await skip.isVisible()) await skip.click();
     await page.goto("/#/admin");
-    await page
-      .getByRole("button", { name: "Enable preview", exact: true })
-      .click();
+    if (
+      await page
+        .getByRole("button", { name: "Use current design", exact: true })
+        .isVisible()
+    )
+      await page
+        .getByRole("button", { name: "Use current design", exact: true })
+        .click();
     await expect(page.locator("html")).toHaveAttribute(
       "data-design-preview",
       "on",
@@ -48,13 +56,17 @@ for (const mobile of [false, true])
         exact: true,
       }),
     ).toBeVisible();
-    await page.getByRole("button", {name:"View tools",exact:true}).click();
-    await expect(page.getByRole('button',{name:'Cards',exact:true})).toBeVisible();
-    await expect(page.getByRole('button',{name:'Week',exact:true})).toBeVisible();
-    await page.getByRole('button',{name:'Week',exact:true}).click();
-    await expect(page.locator('.week-day')).toHaveCount(7);
-    await page.getByRole('button',{name:'Cards',exact:true}).click();
-    await expect(page.locator('.workspace-report')).toBeVisible();
+    await page.getByRole("button", { name: "View tools", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Cards", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Week", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Week", exact: true }).click();
+    await expect(page.locator(".week-day")).toHaveCount(7);
+    await page.getByRole("button", { name: "Cards", exact: true }).click();
+    await expect(page.locator(".workspace-report")).toBeVisible();
     if (mobile) {
       await page.evaluate(() => {
         localStorage.setItem("language", "ar");

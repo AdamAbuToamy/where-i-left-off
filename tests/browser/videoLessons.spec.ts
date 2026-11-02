@@ -31,9 +31,14 @@ test("loads pages on demand and offers direct language choices only for the admi
   expect(scripts.some((url) => /ProfileSettings-/.test(url))).toBe(false);
   const initialScripts = [...scripts];
   await page.goto("/#/admin");
-  await page
-    .getByRole("button", { name: "Enable preview", exact: true })
-    .click();
+  if (
+    await page
+      .getByRole("button", { name: "Use current design", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Use current design", exact: true })
+      .click();
   const choices = page.locator(".language-segments");
   await expect(choices.getByRole("button")).toHaveCount(3);
   await choices.getByRole("button", { name: "العربية", exact: true }).click();

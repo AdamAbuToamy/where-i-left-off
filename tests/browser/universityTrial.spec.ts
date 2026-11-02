@@ -4,18 +4,29 @@ import AxeBuilder from "@axe-core/playwright";
 import { prepareUniversityPilot } from "./universityFixture";
 async function signIn(page: Page, request: APIRequestContext, email?: string) {
   const user = await prepareUniversityPilot(request, email);
-  await page.addInitScript(
-    () => {
-      if (!localStorage.getItem("language")) localStorage.setItem("language", "en");
-      const removed = ["من أول محاضرة إلى آخر امتحان؛ خطتك بين يديك.", "تمت المزامنة مع حسابك · متاحة على أجهزتك", "خطتك محفوظة محليًا؛ جارٍ الاتصال بالمزامنة…", "اضغط على الحصة لتعديلها. مرّر داخل الجدول لرؤية بقية الأيام والساعات."];
-      const seen: string[] = [];
-      (window as Window & {universityCopyFlashes:string[]}).universityCopyFlashes = seen;
-      new MutationObserver(() => {
-        const text = document.querySelector(".study-page")?.textContent || "";
-        for (const phrase of removed) if (text.includes(phrase) && !seen.includes(phrase)) seen.push(phrase);
-      }).observe(document.documentElement, {childList:true,subtree:true,characterData:true});
-    },
-  );
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("language"))
+      localStorage.setItem("language", "en");
+    const removed = [
+      "من أول محاضرة إلى آخر امتحان؛ خطتك بين يديك.",
+      "تمت المزامنة مع حسابك · متاحة على أجهزتك",
+      "خطتك محفوظة محليًا؛ جارٍ الاتصال بالمزامنة…",
+      "اضغط على الحصة لتعديلها. مرّر داخل الجدول لرؤية بقية الأيام والساعات.",
+    ];
+    const seen: string[] = [];
+    (
+      window as Window & { universityCopyFlashes: string[] }
+    ).universityCopyFlashes = seen;
+    new MutationObserver(() => {
+      const text = document.querySelector(".study-page")?.textContent || "";
+      for (const phrase of removed)
+        if (text.includes(phrase) && !seen.includes(phrase)) seen.push(phrase);
+    }).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  });
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
   await page.getByLabel("Password", { exact: true }).fill(user.password);
@@ -26,8 +37,15 @@ async function signIn(page: Page, request: APIRequestContext, email?: string) {
   await expect(page.locator(".side-navigation-toggle")).toBeVisible();
   const skip = page.locator(".welcome-guide .guide-skip");
   if (await skip.isVisible()) await skip.click();
-  await page.locator(".language-trigger").click();
-  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  if (await page.locator(".language-segments").isVisible())
+    await page
+      .locator(".language-segments")
+      .getByRole("button", { name: "العربية", exact: true })
+      .click();
+  else {
+    await page.locator(".language-trigger").click();
+    await page.getByRole("button", { name: "العربية", exact: true }).click();
+  }
   return user;
 }
 function plan() {
@@ -161,6 +179,9 @@ test("university default view keeps the original menu, assistant, personal cards
     }),
   });
   await expect(card).toBeVisible();
+  await card.hover();
+  if (await card.locator(".envelope-expand").isVisible())
+    await card.locator(".envelope-expand").click();
   await expect(card.locator(".card-options summary")).toBeVisible();
   await expect(page.locator(".admin-preview")).toHaveCount(0);
   await expect(page.locator(".study-university-trial")).toHaveCount(0);
@@ -183,7 +204,10 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
     .filter({ hasText: "جبر التجربة" })
     .click();
   await expect(page.locator(".study-current-course")).toHaveCount(1);
-  await expect(page.locator(".study-storage")).toHaveAttribute("data-sync-state","ready");
+  await expect(page.locator(".study-storage")).toHaveAttribute(
+    "data-sync-state",
+    "ready",
+  );
   await expect(page.locator(".study-storage")).toBeHidden();
   await expect(page.locator(".study-task-top small")).toHaveCount(0);
   await page
@@ -203,7 +227,10 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
   await expect(
     page.getByRole("checkbox", { name: "موضوع التجربة", exact: true }),
   ).toBeChecked();
-  await expect(page.locator(".study-storage")).toHaveAttribute("data-sync-state","ready");
+  await expect(page.locator(".study-storage")).toHaveAttribute(
+    "data-sync-state",
+    "ready",
+  );
   await page.reload();
   await expect(
     page.getByRole("checkbox", { name: "موضوع التجربة", exact: true }),
@@ -258,7 +285,13 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
   expect(axe.violations).toEqual([]);
-  expect(await page.evaluate(() => (window as Window & {universityCopyFlashes:string[]}).universityCopyFlashes)).toEqual([]);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { universityCopyFlashes: string[] })
+          .universityCopyFlashes,
+    ),
+  ).toEqual([]);
 });
 test("a regular verified account gets the new default view and old preview links remain compatible", async ({
   page,

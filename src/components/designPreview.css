@@ -1,4 +1,4 @@
-/* Preview controls are admin-only. All site treatments require the authenticated opt-in attribute. */
+/* Published account design; local fallback controls remain administrator-only. */
 .design-preview-switch {
   display: grid;
   gap: 12px;

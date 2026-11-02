@@ -27,9 +27,14 @@ for (const mobile of [false, true])
     const skip = page.locator(".guide-skip");
     if (await skip.isVisible()) await skip.click();
     await page.goto("/#/admin");
-    await page
-      .getByRole("button", { name: "Enable preview", exact: true })
-      .click();
+    if (
+      await page
+        .getByRole("button", { name: "Use current design", exact: true })
+        .isVisible()
+    )
+      await page
+        .getByRole("button", { name: "Use current design", exact: true })
+        .click();
     await page
       .getByRole("link", { name: "Explore site", exact: false })
       .click();
@@ -47,11 +52,9 @@ for (const mobile of [false, true])
         page.getByRole("heading", { name, exact: true }),
       ).toBeVisible();
     }
-    const card = page
-      .locator(".project-card")
-      .filter({
-        has: page.getByRole("heading", { name: prefix + " A", exact: true }),
-      });
+    const card = page.locator(".project-card").filter({
+      has: page.getByRole("heading", { name: prefix + " A", exact: true }),
+    });
     expect((await card.boundingBox())!.height).toBeLessThan(330);
     expect(
       await card.evaluate((el) => getComputedStyle(el).backdropFilter),
@@ -75,13 +78,30 @@ for (const mobile of [false, true])
     expect(
       await sections.evaluate((el) => (el as HTMLDetailsElement).open),
     ).toBe(true);
-    await expect(async()=>{const box=(await page.locator('.workspace-tools-panel').boundingBox())!;expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(page.viewportSize()!.height+1);}).toPass({timeout:3000});
-    await tools.press('Escape');
-    const toolbar=await page.locator('.workspace-search-tools').boundingBox(),dockBox=(await tools.boundingBox())!;
-    expect(dockBox.y).toBeGreaterThanOrEqual(toolbar!.y);expect(dockBox.y+dockBox.height).toBeLessThanOrEqual(toolbar!.y+toolbar!.height+1);
-    const title=(await page.locator('.brand-spotlight').boundingBox())!,header=(await page.locator('.page-header').boundingBox())!;
-    expect(Math.abs(title.x+title.width-header.x-header.width)).toBeLessThan(3);
-    expect(await page.locator('.page-header').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    await expect(async () => {
+      const box = (await page.locator(".workspace-tools-panel").boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(
+        page.viewportSize()!.height + 1,
+      );
+    }).toPass({ timeout: 3000 });
+    await tools.press("Escape");
+    const toolbar = await page.locator(".workspace-search-tools").boundingBox(),
+      dockBox = (await tools.boundingBox())!;
+    expect(dockBox.y).toBeGreaterThanOrEqual(toolbar!.y);
+    expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(
+      toolbar!.y + toolbar!.height + 1,
+    );
+    const title = (await page.locator(".brand-spotlight").boundingBox())!,
+      header = (await page.locator(".page-header").boundingBox())!;
+    expect(
+      Math.abs(title.x + title.width - header.x - header.width),
+    ).toBeLessThan(3);
+    expect(
+      await page
+        .locator(".page-header")
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+    ).toBe("rgba(0, 0, 0, 0)");
     const handle = page.getByRole("button", {
       name: "Drag to reorder: " + prefix + " A",
       exact: true,
@@ -137,11 +157,9 @@ for (const mobile of [false, true])
           ),
       ).toEqual(ordered),
     ).toPass({ timeout: 10000 });
-    const target = page
-      .locator(".project-card")
-      .filter({
-        has: page.getByRole("heading", { name: prefix + " A", exact: true }),
-      });
+    const target = page.locator(".project-card").filter({
+      has: page.getByRole("heading", { name: prefix + " A", exact: true }),
+    });
     await target.hover();
     await target
       .getByRole("button", {
@@ -170,7 +188,7 @@ for (const mobile of [false, true])
         }),
       ).toBeVisible();
     }
-    await expect(page.locator('.workspace-fields').last()).toBeEnabled();
+    await expect(page.locator(".workspace-fields").last()).toBeEnabled();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1,
