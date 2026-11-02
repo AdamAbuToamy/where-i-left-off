@@ -49,14 +49,12 @@ for (const mobile of [false, true])
       }),
     ).toBeVisible();
     await page.getByRole("button", {name:"View tools",exact:true}).click();
-    const reports = page.getByRole("button", {
-      name: "View and reports",
-      exact: true,
-    });
-    await expect(reports).toHaveAttribute("aria-expanded", "false");
-    await reports.click();
-    await expect(reports).toHaveAttribute("aria-expanded", "true");
-    await expect(page.locator(".workspace-report")).toBeVisible();
+    await expect(page.getByRole('button',{name:'Cards',exact:true})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Week',exact:true})).toBeVisible();
+    await page.getByRole('button',{name:'Week',exact:true}).click();
+    await expect(page.locator('.week-day')).toHaveCount(7);
+    await page.getByRole('button',{name:'Cards',exact:true}).click();
+    await expect(page.locator('.workspace-report')).toBeVisible();
     if (mobile) {
       await page.evaluate(() => {
         localStorage.setItem("language", "ar");

@@ -67,7 +67,7 @@ export default function AdminDashboard({ db, language, user }: Props) {
         {metrics.map(metric => { const protectedAccount = isProtectedAdminAccount(metric.email); return <article className={`admin-account ${protectedAccount ? 'is-protected' : ''}`} key={metric.id}>
           <div className="admin-account-info">
             <strong dir="auto">{metric.email || metric.id}</strong>
-            <PreviewDetails language={language} label={language==='ar'?'نشاط الحساب':language==='he'?'פעילות החשבון':'Account activity'}><div className="preview-account-dates"><span>{t.firstSeen}: {metric.firstSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span><span>{t.lastSeen}: {metric.lastSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span></div></PreviewDetails>
+            <div className="preview-account-dates"><span>{t.firstSeen}: {metric.firstSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span><span>{t.lastSeen}: {metric.lastSeen?.toDate?.().toLocaleDateString(locale) ?? '—'}</span></div>
             {protectedAccount && <strong className="protected-admin-label">{p.protectedAdmin}</strong>}
             <span className={metric.suspended ? 'account-paused' : 'account-active'}>{metric.suspended ? t.suspendedAccounts : t.accountActive}</span>
           </div>

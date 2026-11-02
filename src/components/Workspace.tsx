@@ -1,5 +1,5 @@
 import WorkspaceTools from './WorkspaceTools'
-import PreviewDetails from './PreviewDetails'
+import {useDesignPreview} from './designPreviewContext'
 import { workspaceView } from '../lib/navigation'
 import { markCardViewed } from '../lib/pushNotifications'
 import { useEffect, useRef, useState } from 'react'
@@ -33,6 +33,7 @@ import SummaryPdfButton from './SummaryPdfButton'
 import Sections from './Sections'
 
 export default function Workspace({ user, language, group, members }: { user: User; language: Language; group?: GroupInfo; members: GroupMember[] }) {
+  const {enabled:designPreview}=useDesignPreview()
   const t = translations[language], c = cloudText[language], r = recallText[language], o = offlineText[language]
   const canManage = !group || group.role === 'manager'
   const membership = members.find(m => m.uid === user.uid)
@@ -132,6 +133,10 @@ export default function Workspace({ user, language, group, members }: { user: Us
     requestAnimationFrame(() => addButtonRef.current?.focus())
   }
   const visible = projects.filter(p => (filter==='ideas'?p.resourceType==='idea':p.resourceType!=='idea') && (!onlyMine || p.assignedTo === user.uid) && (filter==='ideas' || matchesView(p, filter)) && (sectionFilter === 'all' || (sections.some(s => s.id === p.sectionId) ? p.sectionId : '') === sectionFilter) && `${p.name} ${p.nextStep} ${p.checkpoint ?? ''} ${p.checklist ?? ''} ${p.projectUrl ?? ''} ${p.attachmentUrl ?? ''} ${p.links?.join(' ') || ''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
+  const searchControls = <>
+        <input type="search" aria-label={c.search} placeholder={c.search} value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="filter-group"><select aria-label={r.all} value={filter} onChange={e => setFilter(e.target.value)}>{[['all', r.all], ['today', r.today], ['waiting', r.waiting], ['overdue', r.overdue], ['upcoming', r.upcoming], ['active', r.active], ['later', r.later], ['done', r.done], ['ideas',workflowText[language].ideas]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+      </>
   return <>
     <div className="account-strip">
       <span className="account-identity" dir="auto">{displayName(user)}</span>
@@ -157,13 +162,13 @@ export default function Workspace({ user, language, group, members }: { user: Us
           <span className={`add-icon ${isFormOpen ? 'is-open' : ''}`} aria-hidden="true">+</span>{isFormOpen ? t.cancel : r.newCard}
         </button>}
       </div>}
-      <WorkspaceTools language={language}><PreviewDetails language={language} label={language==='ar'?'العرض والتقارير':language==='he'?'תצוגה ודוחות':'View and reports'}><div className="board-utility-row">
+      <WorkspaceTools language={language} search={projects.length>0?searchControls:null}><div className="board-utility-row">
       {(projects.length > 0 || view === 'week') && <nav className="view-tabs" aria-label={t.workspace}>
         <button className="secondary-button" aria-pressed={view === 'board'} onClick={() => setView('board')}>{t.boardView}</button>
         <button className="secondary-button" aria-pressed={view === 'week'} onClick={() => setView('week')}>{t.weekView}</button>
       </nav>}
         {projects.length > 0 && <section className="workspace-report"><div><h3>{featureText[language].report}</h3><p>{group?.name || pageText[language].personal} · {projects.length} {r.cards}</p></div><SummaryPdfButton entries={projects.map(project=>({project,scope:group?.name || pageText[language].personal,groupId:group?.id}))} title={group?.name || featureText[language].report} userName={user.displayName || ''} language={language} cached={cached || queued>0} scopeLabel /></section>}
-      </div></PreviewDetails>
+      </div>
       {group && projects.length > 0 && <div className="filter-group"><button className="secondary-button" aria-pressed={!onlyMine} onClick={() => setOnlyMine(false)}>{g.all}</button><button className="secondary-button" aria-pressed={onlyMine} onClick={() => setOnlyMine(true)}>{g.mine}</button></div>}
       {view === 'board' && <Sections canManage={canManage} sections={sections} projects={projects} selected={sectionFilter} onSelect={setSectionFilter} language={language} disabled={pending} onSave={(name, id) => run(() => repository.current!.saveSection(name, id), 'section.save')} onDelete={id => run(() => repository.current!.deleteSection(id), 'section.delete')} />}
       </WorkspaceTools>
@@ -177,10 +182,7 @@ export default function Workspace({ user, language, group, members }: { user: Us
         </div>}
       </fieldset>
 
-      {projects.length > 0 && <div className="search-toolbar">
-        <input type="search" aria-label={c.search} placeholder={c.search} value={search} onChange={e => setSearch(e.target.value)} />
-        <div className="filter-group"><select aria-label={r.all} value={filter} onChange={e => setFilter(e.target.value)}>{[['all', r.all], ['today', r.today], ['waiting', r.waiting], ['overdue', r.overdue], ['upcoming', r.upcoming], ['active', r.active], ['later', r.later], ['done', r.done], ['ideas',workflowText[language].ideas]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
-      </div>}
+      {!designPreview && projects.length > 0 && <div className="search-toolbar">{searchControls}</div>}
       {!projects.length && <p className="empty-state">{c.empty}</p>}
       {!!projects.length && !visible.length && <p className="empty-state">{r.empty}</p>}
       {view === 'week' && <WeeklySchedule key={weekOf} projects={visible} language={language} weekOf={weekOf} />}

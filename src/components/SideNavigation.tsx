@@ -27,10 +27,10 @@ export default function SideNavigation({ language, page, admin }: { language: La
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape) }
   }, [])
   return <LayoutGroup id={id}><div ref={root} className={`side-navigation ${open ? 'is-open' : ''}`}
-    onPointerEnter={e => { if (!enabled && e.pointerType === 'mouse') setOpen(true) }}
-    onPointerLeave={() => { if (!enabled && !root.current?.contains(document.activeElement)) setOpen(false) }}
+    onPointerEnter={e => { if (e.pointerType === 'mouse') setOpen(true) }}
+    onPointerLeave={() => { if (!root.current?.contains(document.activeElement)) setOpen(false) }}
     onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false) }}>
-    <button ref={toggle} type="button" className="side-navigation-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(v => !v)}
+    <button ref={toggle} type="button" className="side-navigation-toggle" aria-expanded={open} aria-controls={id} onClick={event => {if(enabled&&"pointerType" in event.nativeEvent&&event.nativeEvent.pointerType==="mouse")setOpen(true);else setOpen(v=>!v)}}
       onKeyDown={e => { if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); requestAnimationFrame(() => root.current?.querySelector<HTMLAnchorElement>('nav a')?.focus()) } }}>
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={open ? 'm6 6 12 12 M18 6 6 18' : 'M4 6h16 M4 12h16 M4 18h16'} /></svg><span>{labels[language]}</span>
     </button>

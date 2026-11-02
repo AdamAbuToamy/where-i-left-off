@@ -58,13 +58,13 @@ for (const mobile of [false, true])
     ).toBe("none");
     const menu = page.locator(".side-navigation-toggle");
     await menu.hover();
-    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
     await menu.click();
     await expect(menu).toHaveAttribute("aria-expanded", "true");
     await menu.press("Escape");
     const tools = page.getByRole("button", { name: "View tools", exact: true });
     await tools.hover();
-    await expect(tools).toHaveAttribute("aria-expanded", "false");
+    await expect(tools).toHaveAttribute("aria-expanded", "true");
     await tools.click();
     const sections = page.locator(".sections-disclosure");
     await sections.locator("summary").hover();
@@ -75,9 +75,14 @@ for (const mobile of [false, true])
     expect(
       await sections.evaluate((el) => (el as HTMLDetailsElement).open),
     ).toBe(true);
-    await tools.click();
-    const dockBox=(await tools.boundingBox())!;
-    expect((page.viewportSize()!.height)-(dockBox.y+dockBox.height)).toBeLessThan(36);
+    const popup=(await page.locator('.workspace-tools-panel').boundingBox())!;
+    expect(popup.y).toBeGreaterThanOrEqual(0);expect(popup.y+popup.height).toBeLessThanOrEqual(page.viewportSize()!.height+1);
+    await tools.press('Escape');
+    const toolbar=await page.locator('.workspace-search-tools').boundingBox(),dockBox=(await tools.boundingBox())!;
+    expect(dockBox.y).toBeGreaterThanOrEqual(toolbar!.y);expect(dockBox.y+dockBox.height).toBeLessThanOrEqual(toolbar!.y+toolbar!.height+1);
+    const title=(await page.locator('.page-header h1').boundingBox())!;
+    expect(Math.abs(title.x+title.width/2-page.viewportSize()!.width/2)).toBeLessThan(3);
+    expect(await page.locator('.page-header').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
     const handle = page.getByRole("button", {
       name: "Drag to reorder: " + prefix + " A",
       exact: true,
