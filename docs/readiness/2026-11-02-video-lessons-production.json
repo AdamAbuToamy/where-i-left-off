@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-02",
+  "release": "wilo-admin-video-lessons-20261102",
+  "indexMatchesBuild": true,
+  "cacheName": "where-i-left-off-shell-6d5d5b649203ea84",
+  "assetCacheControl": "public, max-age=31536000, immutable",
+  "assetContentEncoding": "gzip",
+  "verification": "Windows read-only HTTP",
+  "adminDesignOptInOnly": true,
+  "publicPerformanceChanges": true,
+  "productionAccountWrites": 0,
+  "authDomainsChanged": false
+}

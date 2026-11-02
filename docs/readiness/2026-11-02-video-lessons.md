@@ -70,3 +70,7 @@ READY للتغييرات المحددة أدناه. هذا ليس اعتماد �
 - [React lazy](https://react.dev/reference/react/lazy) و[Suspense](https://react.dev/reference/react/Suspense).
 - [Firebase Hosting configuration](https://firebase.google.com/docs/hosting/full-config) و[cache behavior](https://firebase.google.com/docs/hosting/manage-cache).
 - [Google Play account deletion requirements](https://support.google.com/googleplay/android-developer/answer/13327111).
+
+## نتيجة النشر
+
+نُشر Hosting release `wilo-admin-video-lessons-20261102` من runtime commit `6a4f71b`. طابقت قراءة HTTP مستقلة ملف index مع البناء المختبر، وتحققت فعليًا من gzip ورأس `public, max-age=31536000, immutable` للأصول واسم كاش `where-i-left-off-shell-6d5d5b649203ea84`. بعد إضافة بيانات الإصدار أعيد اختبار PWA: 71 ملفًا في الكاش ونجاح إعادة التحميل دون اتصال. دليل النشر في `2026-11-02-video-lessons-production.json`. التصميم الجديد ما زال يتطلب اختيار الإدارة المحلي؛ التحسينات المشتركة موضحة أعلاه. لم يحدث نشر worker أو قواعد أو تغييرات نطاقات الدخول.
