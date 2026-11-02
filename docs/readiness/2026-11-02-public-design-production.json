@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-02",
+  "release": "wilo-public-design-20261102",
+  "indexMatchesBuild": true,
+  "publicDefaultEnabled": true,
+  "managementControls": "verified-admin-only",
+  "verification": "Windows read-only HTTP; ordinary-account behavior tested on emulators",
+  "productionAccountWrites": 0,
+  "authDomainsChanged": false
+}
