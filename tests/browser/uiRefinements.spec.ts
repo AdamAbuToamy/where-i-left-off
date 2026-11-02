@@ -21,14 +21,6 @@ test("admin filters, larger week, tidy undated cards, university agenda and dele
   const skip = page.locator(".guide-skip");
   if (await skip.isVisible()) await skip.click();
   await page.goto("/#/admin");
-  if (
-    await page
-      .getByRole("button", { name: "Use current design", exact: true })
-      .isVisible()
-  )
-    await page
-      .getByRole("button", { name: "Use current design", exact: true })
-      .click();
   await page.goto("/#/personal");
   await page.getByRole("button", { name: "New card", exact: true }).click();
   await page

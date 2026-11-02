@@ -31,14 +31,6 @@ test("loads pages on demand and offers direct language choices only for the admi
   expect(scripts.some((url) => /ProfileSettings-/.test(url))).toBe(false);
   const initialScripts = [...scripts];
   await page.goto("/#/admin");
-  if (
-    await page
-      .getByRole("button", { name: "Use current design", exact: true })
-      .isVisible()
-  )
-    await page
-      .getByRole("button", { name: "Use current design", exact: true })
-      .click();
   const choices = page.locator(".language-segments");
   await expect(choices.getByRole("button")).toHaveCount(3);
   await choices.getByRole("button", { name: "العربية", exact: true }).click();
@@ -65,11 +57,8 @@ test("loads pages on demand and offers direct language choices only for the admi
   await expect(page.locator(".settings-page")).toBeVisible();
   expect(scripts.some((url) => /ProfileSettings-/.test(url))).toBe(true);
   await page.goto("/#/admin");
-  await page
-    .getByRole("button", { name: "Restore original", exact: false })
-    .click();
-  await expect(page.locator(".language-segments")).toHaveCount(0);
-  await expect(page.locator(".language-trigger")).toBeVisible();
+  await expect(page.locator(".design-preview-switch")).toHaveCount(0);
+  await expect(page.locator(".language-segments")).toBeVisible();
   expect(errors).toEqual([]);
   await writeFile(
     ".wrangler/video-lessons-browser-proof.json",

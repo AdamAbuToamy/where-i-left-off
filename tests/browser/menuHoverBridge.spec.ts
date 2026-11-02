@@ -20,14 +20,6 @@ for (const language of ["en", "ar"])
     const skip = page.locator(".guide-skip");
     if (await skip.isVisible()) await skip.click();
     await page.goto("/#/admin");
-    if (
-      await page
-        .getByRole("button", { name: "Use current design", exact: true })
-        .isVisible()
-    )
-      await page
-        .getByRole("button", { name: "Use current design", exact: true })
-        .click();
     if (language === "ar")
       await page
         .locator(".language-segments")

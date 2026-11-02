@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { prepareUniversityPilot } from "./universityFixture";
 import { mkdir } from "node:fs/promises";
 for (const mobile of [false, true])
-  test(`admin design preview ${mobile ? "phone" : "desktop"} keeps cards, reports and original restore`, async ({
+  test(`admin design preview ${mobile ? "phone" : "desktop"} keeps cards and reports in the final design`, async ({
     page,
     request,
   }) => {
@@ -27,21 +27,11 @@ for (const mobile of [false, true])
     const skip = page.locator(".welcome-guide .guide-skip");
     if (await skip.isVisible()) await skip.click();
     await page.goto("/#/admin");
-    if (
-      await page
-        .getByRole("button", { name: "Use current design", exact: true })
-        .isVisible()
-    )
-      await page
-        .getByRole("button", { name: "Use current design", exact: true })
-        .click();
     await expect(page.locator("html")).toHaveAttribute(
       "data-design-preview",
       "on",
     );
-    await page
-      .getByRole("link", { name: "Explore site", exact: false })
-      .click();
+    await page.goto("/#/personal");
     await page.getByRole("button", { name: "New card", exact: true }).click();
     await page
       .getByLabel("Card title", { exact: true })
@@ -95,17 +85,15 @@ for (const mobile of [false, true])
         .evaluate((el) => getComputedStyle(el).animationName),
     ).toBe("none");
     await page.goto("/#/admin");
-    await page
-      .getByRole("button", {
-        name: mobile ? "العودة للأصلي" : "Restore original",
-        exact: true,
-      })
-      .click();
-    await expect(page.locator("html")).not.toHaveAttribute(
+    await expect(page.locator(".design-preview-switch")).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute(
       "data-design-preview",
       "on",
     );
     await page.goto("/#/personal");
     await expect(page.locator(".project-card")).not.toHaveCount(0);
-    await expect(page.locator(".preview-disclosure")).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-design-preview",
+      "on",
+    );
   });

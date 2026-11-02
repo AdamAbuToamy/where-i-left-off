@@ -1,41 +1,4 @@
-/* Published account design; local fallback controls remain administrator-only. */
-.design-preview-switch {
-  display: grid;
-  gap: 12px;
-  padding: 20px;
-  border: 1px solid var(--site-border);
-  border-radius: 20px;
-  background: linear-gradient(130deg, var(--site-surface), var(--site-soft));
-  color: var(--site-text);
-}
-.design-preview-switch-heading {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  color: var(--site-primary);
-}
-.design-preview-switch h3,
-.design-preview-switch p {
-  margin: 0;
-}
-.design-preview-switch p {
-  max-width: 65ch;
-  color: var(--site-muted);
-  line-height: 1.7;
-  font-size: 14px;
-}
-.design-preview-switch-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.design-preview-switch-actions :is(button, a) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  text-decoration: none;
-}
+/* Final account design. No alternate design preference or management switch. */
 .preview-disclosure {
   min-width: 0;
   border: 1px solid var(--site-border);

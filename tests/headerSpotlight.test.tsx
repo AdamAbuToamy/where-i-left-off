@@ -57,7 +57,7 @@ it("automatically completes the cycle without a play control or hover dependency
     await act(async () =>
       root.render(
         <DesignPreviewContext
-          value={{ enabled: true, available: true, setEnabled: () => {} }}
+          value={{ enabled: true }}
         >
           <HeaderSpotlight brand="WILO" language="en" installed={false} />
         </DesignPreviewContext>,
@@ -106,7 +106,7 @@ it("keeps ordinary users unchanged and automatically updates reduced-motion text
     await act(async () =>
       root.render(
         <DesignPreviewContext
-          value={{ enabled: true, available: true, setEnabled: () => {} }}
+          value={{ enabled: true }}
         >
           <HeaderSpotlight brand="WILO" language="ar" installed={false} />
         </DesignPreviewContext>,
@@ -135,7 +135,7 @@ it("continues automatic rotation when the app is already installed and no extens
     await act(async () =>
       root.render(
         <DesignPreviewContext
-          value={{ enabled: true, available: true, setEnabled: () => {} }}
+          value={{ enabled: true }}
         >
           <HeaderSpotlight brand="WILO" language="en" installed={true} />
         </DesignPreviewContext>,

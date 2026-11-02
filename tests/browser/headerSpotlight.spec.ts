@@ -28,14 +28,6 @@ test("admin header automatically cycles while hovered with no play button", asyn
   const skip = page.locator(".guide-skip");
   if (await skip.isVisible()) await skip.click();
   await page.goto("/#/admin");
-  if (
-    await page
-      .getByRole("button", { name: "Use current design", exact: true })
-      .isVisible()
-  )
-    await page
-      .getByRole("button", { name: "Use current design", exact: true })
-      .click();
   await expect(page.locator("[data-face=brand]")).toBeVisible();
   const title = (await page.locator(".brand-spotlight").boundingBox())!,
     header = (await page.locator(".page-header").boundingBox())!;

@@ -4,9 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { User } from "firebase/auth";
 import { it, expect, vi, afterEach } from "vitest";
 import DesignPreviewProvider from "../src/components/DesignPreviewProvider";
-import PreviewDetails, {
-  DesignPreviewSwitch,
-} from "../src/components/PreviewDetails";
+import PreviewDetails from "../src/components/PreviewDetails";
 const admin = {
   uid: "admin-preview",
   email: "adam2002hosny@gmail.com",
@@ -26,12 +24,11 @@ it("enables the published design for normal users without granting design admini
     email: "other@example.test",
     emailVerified: true,
   } as User;
-  localStorage.setItem("wilo-design-preview:ordinary", "on");
+  localStorage.setItem("wilo-design-preview:ordinary", "off");
   try {
     await act(async () =>
       root.render(
         <DesignPreviewProvider user={regular}>
-          <DesignPreviewSwitch language="en" />
           <PreviewDetails>
             <p>Original content</p>
           </PreviewDetails>
@@ -46,15 +43,15 @@ it("enables the published design for normal users without granting design admini
     await act(async () => root.unmount());
   }
 });
-it("allows admin preview, preserves hidden fields and restores original content without changing data", async () => {
+it("keeps the final design enabled for an admin with a legacy off preference and preserves hidden edits", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const element = document.createElement("div"),
     root = createRoot(element);
+  localStorage.setItem("wilo-design-preview:" + admin.uid, "off");
   try {
     await act(async () =>
       root.render(
         <DesignPreviewProvider user={admin}>
-          <DesignPreviewSwitch language="en" />
           <PreviewDetails language="en">
             <input defaultValue="Unsaved note" />
           </PreviewDetails>
@@ -76,13 +73,9 @@ it("allows admin preview, preserves hidden fields and restores original content 
     await act(async () => toggle.click());
     expect(element.querySelector("input")).toBe(field);
     expect(field.value).toBe("Keep my edit");
-    await act(async () =>
-      element
-        .querySelector<HTMLButtonElement>(".design-preview-switch button")!
-        .click(),
-    );
-    expect(document.documentElement.dataset.designPreview).toBeUndefined();
-    expect(element.querySelector(".preview-disclosure")).toBeNull();
+    expect(document.documentElement.dataset.designPreview).toBe("on");
+    expect(element.querySelector(".design-preview-switch")).toBeNull();
+    expect(localStorage.getItem("wilo-design-preview:" + admin.uid)).toBeNull();
   } finally {
     await act(async () => root.unmount());
   }
@@ -92,6 +85,7 @@ it("removes the visual attribute on sign-out", async () => {
   localStorage.setItem("wilo-design-preview:" + admin.uid, "on");
   const element = document.createElement("div"),
     root = createRoot(element);
+  localStorage.setItem("wilo-design-preview:" + admin.uid, "off");
   try {
     await act(async () =>
       root.render(

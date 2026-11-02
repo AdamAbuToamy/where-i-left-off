@@ -27,17 +27,7 @@ for (const mobile of [false, true])
     const skip = page.locator(".guide-skip");
     if (await skip.isVisible()) await skip.click();
     await page.goto("/#/admin");
-    if (
-      await page
-        .getByRole("button", { name: "Use current design", exact: true })
-        .isVisible()
-    )
-      await page
-        .getByRole("button", { name: "Use current design", exact: true })
-        .click();
-    await page
-      .getByRole("link", { name: "Explore site", exact: false })
-      .click();
+    await page.goto("/#/personal");
     const prefix = mobile ? "Envelope phone" : "Envelope desktop";
     for (const name of [prefix + " A", prefix + " B"]) {
       await page.getByRole("button", { name: "New card", exact: true }).click();

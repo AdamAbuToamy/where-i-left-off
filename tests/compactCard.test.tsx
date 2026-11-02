@@ -22,7 +22,7 @@ it("keeps full content available after collapse and expands without changing the
     await act(async () =>
       root.render(
         <DesignPreviewContext
-          value={{ enabled: true, available: true, setEnabled: () => {} }}
+          value={{ enabled: true }}
         >
           <CompactCardShell project={project} sections={[]} language="en">
             <input defaultValue="Retain edit" />
