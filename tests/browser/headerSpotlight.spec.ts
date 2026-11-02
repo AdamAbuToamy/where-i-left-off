@@ -5,6 +5,7 @@ test("admin header automatically cycles while hovered with no play button", asyn
   page,
   request,
 }) => {
+  test.setTimeout(60000);
   const { email, password } = await prepareUniversityPilot(request);
   await page.addInitScript(() => {
     localStorage.setItem("language", "en");
@@ -41,7 +42,7 @@ test("admin header automatically cycles while hovered with no play button", asyn
   await expect(page.locator(".brand-spotlight")).toBeVisible();
   await expect(page.locator(".page-header")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await page.locator(".brand-spotlight").hover();
-  await expect(page.locator("[data-face=app]")).toBeVisible({ timeout: 8000 });
+  await expect(page.locator("[data-face=app]")).toBeVisible({ timeout: 19000 });
   await expect(page.locator("[data-face=brand]")).toBeVisible({
     timeout: 19000,
   });

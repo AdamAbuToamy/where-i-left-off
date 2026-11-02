@@ -67,11 +67,11 @@ it("automatically completes the cycle without a play control or hover dependency
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("brand");
-    await act(async () => vi.advanceTimersByTime(4000));
+    await act(async () => vi.advanceTimersByTime(15000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("app");
-    await act(async () => vi.advanceTimersByTime(15000));
+    await act(async () => vi.advanceTimersByTime(5000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("brand");
@@ -112,7 +112,7 @@ it("keeps ordinary users unchanged and automatically updates reduced-motion text
         </DesignPreviewContext>,
       ),
     );
-    await act(async () => vi.advanceTimersByTime(4000));
+    await act(async () => vi.advanceTimersByTime(15000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("app");
@@ -141,7 +141,7 @@ it("continues automatic rotation when the app is already installed and no extens
         </DesignPreviewContext>,
       ),
     );
-    await act(async () => vi.advanceTimersByTime(4000));
+    await act(async () => vi.advanceTimersByTime(15000));
     expect(
       element.querySelector("[data-face]")?.getAttribute("data-face"),
     ).toBe("app");

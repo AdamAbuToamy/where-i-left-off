@@ -143,10 +143,10 @@ export default function HeaderSpotlight({
     if (!enabled || !visible || guide) return;
     const timer = setTimeout(
       () => setPhase((value) => value + 1),
-      phase === 0 ? 4000 : 15000,
+      face === "brand" ? 15000 : 5000,
     );
     return () => clearTimeout(timer);
-  }, [enabled, visible, guide, phase]);
+  }, [enabled, visible, guide, phase, face]);
   useEffect(() => {
     if (guide) dialog.current?.showModal();
   }, [guide]);
