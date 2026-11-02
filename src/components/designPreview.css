@@ -1124,3 +1124,13 @@
     transition: none;
   }
 }
+
+/* Keep pointer hit-testing continuous across the visible gap below the menu button. */
+:root[data-design-preview="on"] .side-navigation.is-open::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 100%;
+  width: min(250px, calc(100vw - 64px));
+  height: 12px;
+}
