@@ -2,7 +2,7 @@
 import {act} from 'react';import {createRoot} from 'react-dom/client';import {afterEach,beforeEach,expect,it,vi} from 'vitest';import type {User} from 'firebase/auth';
 const api=vi.hoisted(()=>({call:vi.fn(),read:vi.fn(),apply:vi.fn(),undo:vi.fn(),load:vi.fn(),dispose:vi.fn(),smoke:vi.fn(),cloud:vi.fn(),cached:vi.fn(),context:vi.fn(),exportFile:vi.fn()}));
 vi.mock('../src/assistant/pollinationsClient',()=>({PollinationsAssistant:class{conversation=(payload:unknown)=>api.cloud(payload);workspace=(payload:unknown)=>api.call(payload,60000);}}));
-vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsConnected:()=>true,connectPollinations:vi.fn(),disconnectPollinations:vi.fn()}));
+vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsConnected:()=>true,restorePollinations:async()=>true,connectPollinations:vi.fn(),disconnectPollinations:vi.fn()}));
 vi.mock('../src/assistant/localModel',()=>({isLocalModelCached:api.cached,LocalAssistantModel:class{load=api.load;smoke=api.smoke;answer=api.call;dispose=api.dispose;}}));
 vi.mock('../src/lib/firebase',()=>({auth:{currentUser:{uid:'alice'}},db:null,emulatorMode:true}));
 vi.mock('../src/assistant/assistantRepository',()=>({AssistantRepository:class{read=api.read;apply=api.apply;undo=api.undo;},assistantContext:()=>api.context()}));

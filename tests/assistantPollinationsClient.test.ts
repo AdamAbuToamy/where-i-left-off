@@ -1,5 +1,5 @@
 import {afterEach,expect,it,vi} from 'vitest';
-vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsKey:(uid:string)=>'synthetic-'+uid}));
+vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsTestMode:()=>true,pollinationsKey:(uid:string)=>'synthetic-'+uid}));
 import {PollinationsAssistant} from '../src/assistant/pollinationsClient';
 import {validateWorkspaceReply} from '../src/assistant/workspaceValidation';
 import {blankAssistantData} from '../src/assistant/actions';

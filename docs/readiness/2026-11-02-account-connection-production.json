@@ -1,0 +1,20 @@
+{
+  "workerVersion": "bf31798f-3f6f-4b0e-b9e1-40d74d7efd67",
+  "sw.js": {
+    "matches": true,
+    "sha256": "33F463C172D02A608FADBBCF8D5FD95DE71037FC3417D54F930D3C2798EEF274"
+  },
+  "release": "wilo-account-connection-20261102",
+  "unauthenticatedEndpointStatus": 401,
+  "checkedAt": "2026-11-02T21:05:42.9173084Z",
+  "wilo-release.json": {
+    "matches": true,
+    "sha256": "2E15114F12E3D8947EAF1E67C6568C6EF537DD70A9432A84C0B9820F9B8ECC94"
+  },
+  "liveProviderTested": false,
+  "index.html": {
+    "matches": true,
+    "sha256": "5F318C2EE43B5E7C19C4B5624706264F36866EA8DB3DFA285D2B06125009FE59"
+  },
+  "physicalDevicesTested": false
+}

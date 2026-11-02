@@ -1,5 +1,6 @@
 import {AssistantFailure} from './failure';
-import {pollinationsKey} from './pollinationsAuth';
+import {accountConnection} from './accountConnection';
+import {pollinationsKey,pollinationsTestMode} from './pollinationsAuth';
 import config from './pollinationsConfig.json';
 import {conversationInput,readConversationChoice} from '../../push-worker/src/assistantConversation.mjs';
 import {runNativeWorkspace} from '../../push-worker/src/assistantNativeTools.mjs';
@@ -24,9 +25,12 @@ export class PollinationsAssistant{
     let received=false;
     try{
      budget.signal.throwIfAborted();budget.activity();onProgress?.('waiting');
-     const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+pollinationsKey(this.uid),'Content-Type':'application/json'},body:JSON.stringify({model:config.model,messages:input.messages,tools:input.tools,tool_choice:'auto',parallel_tool_calls:true,reasoning_effort:'none',stream:true,stream_options:{include_usage:true},max_tokens:input.max_tokens||2048,temperature:0}),signal:budget.signal});
+     const payload={model:config.model,messages:input.messages,tools:input.tools,tool_choice:'auto',parallel_tool_calls:true,reasoning_effort:'none',stream:true,stream_options:{include_usage:true},max_tokens:input.max_tokens||2048,temperature:0};
+     // Only isolated emulator journeys use an injected direct provider. Production always uses the account vault.
+     const response=pollinationsTestMode(this.uid)?await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+pollinationsKey(this.uid),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:budget.signal}):await accountConnection(this.uid,{action:'completion',input:payload},budget.signal);
      timing.headersMs=Math.round(performance.now()-started);timing.httpStatus=response.status;
      if(!response.ok){
+      if(response.status===409)throw new AssistantFailure('assistant-connect-required','provider');
       if(!attempt&&[408,422,500,502,503,504].includes(response.status)){timing.outcome='retry';await new Promise(resolve=>setTimeout(resolve,250));continue;}
       throw new AssistantFailure(response.status===401?'ai-provider-access':response.status===429||response.status===402?'ai-provider-limit':'assistant-network','provider',{status:response.status,protocol:'wilo-assistant-pollinations-v3'});
      }

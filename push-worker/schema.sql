@@ -12,3 +12,11 @@ CREATE INDEX IF NOT EXISTS deliveries_created ON deliveries(created_at);
 
 CREATE TABLE IF NOT EXISTS ai_budget(day TEXT PRIMARY KEY,used INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS ai_usage(uid TEXT NOT NULL,day TEXT NOT NULL,used INTEGER NOT NULL DEFAULT 0,last_at INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(uid,day),FOREIGN KEY(uid) REFERENCES accounts(uid) ON DELETE CASCADE);
+
+-- Account-owned credentials; no plaintext provider keys are persisted.
+CREATE TABLE IF NOT EXISTS assistant_connections (
+ uid TEXT PRIMARY KEY,
+ ciphertext TEXT NOT NULL,
+ lease_until INTEGER NOT NULL DEFAULT 0,
+ FOREIGN KEY(uid) REFERENCES accounts(uid) ON DELETE CASCADE
+);

@@ -4,6 +4,7 @@ import {defaults,preferences,clock,validSubscription,cardKey,candidate,quietNow,
 import {nextCheck,afterQuiet} from '../schedule.mjs'
 import * as firebase from './firebase.mjs'
 import * as store from './store.mjs'
+import {accountAssistant} from './accountAssistant.mjs'
 import {sendPush} from './push.mjs'
 const DAY=86400000
 const knownReasons=new Set(['unauthenticated','account-unavailable','reader-auth-failed','wrong-project','database-unavailable','auth-lookup-failed','push-failed','push-crypto-failed','too-many-cards','invalid-subscription','test-unavailable','device-limit','invalid-card','card-unavailable','invalid-reminder','invalid-size','unknown-action'])
@@ -156,11 +157,17 @@ export function createWorker(overrides={}){
    let requestedAction=isAssistant?'assistant':'unknown'
    try{
     const text=await request.text()
-    if(text.length>65536)throw new Error('invalid-size')
+    if(text.length>(new URL(request.url).pathname==='/assistant-account'?125000:65536))throw new Error('invalid-size')
     const data=JSON.parse(text)
     if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase'].includes(data.action))requestedAction=data.action
     stage='identity';const identity=await f.verifyIdentity(request,env)
     let result
+    if(new URL(request.url).pathname==='/assistant-account'){
+     if(identity.emailVerified!==true)throw new Error('ai-email-unverified');
+     await f.accountAvailable(env,identity.uid);
+     await store.ensureAccount(env,identity.uid,defaults);
+     return await accountAssistant(request,env,identity.uid,data,headers,overrides.assistantFetch);
+    }
     if(isAssistant){stage='account';if(identity.emailVerified!==true)throw new Error('ai-email-unverified');if(env.ASSISTANT_PILOT_EMAIL&&identity.email!==env.ASSISTANT_PILOT_EMAIL.toLowerCase())throw new Error('account-unavailable');await f.accountAvailable(env,identity.uid);stage='database';await store.ensureAccount(env,identity.uid,defaults);const readiness=await assistantHealth(env);stage='provider';result=data.mode==='health'?readiness:await assistant(env,identity.uid,data)}
     else result=await action(env,identity,data)
     console.info(isAssistant?'assistant.http':'push.http',{action:requestedAction,status:200,...(isAssistant?{requestId,protocol:ASSISTANT_PROTOCOL}:{})})

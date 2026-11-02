@@ -6,7 +6,7 @@ import {initializeTestEnvironment} from '@firebase/rules-unit-testing';import ty
 const runtime=vi.hoisted(()=>({db:null as unknown,auth:{currentUser:{uid:'acceptance'}},call:vi.fn()}));
 vi.mock('../src/lib/firebase',()=>({get db(){return runtime.db;},auth:runtime.auth}));
 vi.mock('../src/assistant/pollinationsClient',()=>({PollinationsAssistant:class{conversation=async()=>({text:'',needsWorkspace:true});workspace=(payload:unknown)=>runtime.call(payload,60000);}}));
-vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsConnected:()=>true,connectPollinations:vi.fn(),disconnectPollinations:vi.fn()}));
+vi.mock('../src/assistant/pollinationsAuth',()=>({pollinationsConnected:()=>true,restorePollinations:async()=>true,connectPollinations:vi.fn(),disconnectPollinations:vi.fn()}));
 vi.mock('../src/lib/indexedDbWorkspaceStore',()=>({IndexedDbWorkspaceStore:class{read=async()=>({projects:[],sections:[],operations:[]});}}));
 import {providerReply} from './fixtures/assistantProvider';
 import AssistantWidget from '../src/assistant/AssistantWidget';import {AssistantRepository} from '../src/assistant/assistantRepository';
