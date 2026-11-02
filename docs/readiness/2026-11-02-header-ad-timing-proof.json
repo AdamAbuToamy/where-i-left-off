@@ -1,0 +1,8 @@
+{
+  "release": "wilo-admin-header-ad-20261102",
+  "adminOptInOnly": true,
+  "nameMs": 15000,
+  "verification": "Windows read-only HTTP",
+  "indexMatchesBuild": true,
+  "promotionMs": 5000
+}
