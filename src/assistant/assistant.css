@@ -309,3 +309,17 @@ html[dir=ltr] .assistant-root {left:auto;right:22px}
 }
 
 .assistant-panel form{overflow:auto}
+
+/* Phone-only launcher movement and full-page chat. Desktop docking is unchanged. */
+.assistant-root.is-phone .assistant-launcher { touch-action:none; user-select:none; -webkit-user-select:none; max-width:calc(100dvw - 24px); }
+.assistant-root.is-phone .assistant-launcher:hover,.assistant-root.is-phone .assistant-launcher:active { transform:none; }
+.assistant-root.is-phone .assistant-launcher.is-dragging { cursor:grabbing; box-shadow:0 12px 28px #25332e38; }
+.assistant-root.is-phone .assistant-panel { border-radius:0; border:0; max-height:none; box-shadow:none; box-sizing:border-box; transition:top 280ms cubic-bezier(.2,.8,.2,1),left 280ms cubic-bezier(.2,.8,.2,1),width 280ms cubic-bezier(.2,.8,.2,1),height 280ms cubic-bezier(.2,.8,.2,1),border-radius 280ms ease; }
+.assistant-root.is-phone:not(.is-peeking) .assistant-header { padding-top:calc(13px + env(safe-area-inset-top)); }
+.assistant-root.is-phone:not(.is-peeking) .assistant-panel form { padding-bottom:calc(11px + env(safe-area-inset-bottom)); }
+.assistant-root.is-phone.is-peeking .assistant-panel { border:1px solid var(--site-border); border-radius:20px; box-shadow:0 8px 28px #25332e25; }
+.assistant-root.is-phone.is-peeking .assistant-panel > :not(.assistant-header) { display:none; }
+.assistant-root.is-phone.is-peeking .assistant-header { flex:1; min-height:0; padding:12px; }
+.assistant-root.is-phone .assistant-peek-return { display:flex; align-items:center; gap:4px; padding:8px; flex:none; }
+.assistant-root.is-phone.is-peeking .assistant-heading > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; }
+@media(prefers-reduced-motion:reduce){ .assistant-root.is-phone .assistant-panel,.assistant-root.is-phone .assistant-launcher { transition:none!important; } }
