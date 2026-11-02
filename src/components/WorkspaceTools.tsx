@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import type { Language } from "../translations";
@@ -28,7 +28,7 @@ export default function WorkspaceTools({
     document.addEventListener("pointerdown", outside);
     return () => document.removeEventListener("pointerdown", outside);
   }, [open]);
-  function reveal() {
+  const updatePlacement = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect();
     if (rect) {
       const below = innerHeight - rect.bottom - 20,
@@ -46,6 +46,19 @@ export default function WorkspaceTools({
           : {}),
       });
     }
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    const update = () => updatePlacement();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, updatePlacement]);
+  function reveal() {
+    updatePlacement();
     setOpen(true);
   }
   if (!enabled) return <>{children}</>;

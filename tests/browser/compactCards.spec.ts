@@ -75,13 +75,12 @@ for (const mobile of [false, true])
     expect(
       await sections.evaluate((el) => (el as HTMLDetailsElement).open),
     ).toBe(true);
-    const popup=(await page.locator('.workspace-tools-panel').boundingBox())!;
-    expect(popup.y).toBeGreaterThanOrEqual(0);expect(popup.y+popup.height).toBeLessThanOrEqual(page.viewportSize()!.height+1);
+    await expect(async()=>{const box=(await page.locator('.workspace-tools-panel').boundingBox())!;expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(page.viewportSize()!.height+1);}).toPass({timeout:3000});
     await tools.press('Escape');
     const toolbar=await page.locator('.workspace-search-tools').boundingBox(),dockBox=(await tools.boundingBox())!;
     expect(dockBox.y).toBeGreaterThanOrEqual(toolbar!.y);expect(dockBox.y+dockBox.height).toBeLessThanOrEqual(toolbar!.y+toolbar!.height+1);
-    const title=(await page.locator('.page-header h1').boundingBox())!;
-    expect(Math.abs(title.x+title.width/2-page.viewportSize()!.width/2)).toBeLessThan(3);
+    const title=(await page.locator('.brand-spotlight').boundingBox())!,header=(await page.locator('.page-header').boundingBox())!;
+    expect(Math.abs(title.x+title.width-header.x-header.width)).toBeLessThan(3);
     expect(await page.locator('.page-header').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
     const handle = page.getByRole("button", {
       name: "Drag to reorder: " + prefix + " A",
