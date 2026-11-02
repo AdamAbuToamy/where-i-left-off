@@ -1,0 +1,11 @@
+{
+  "date": "2026-11-02",
+  "release": "wilo-mobile-assistant-20261102",
+  "indexMatchesBuild": true,
+  "assistantBundleMatchesBuild": true,
+  "touchPhoneOnly": true,
+  "desktopBehavior": "unchanged",
+  "previewMs": 2400,
+  "verification": "Windows read-only HTTP; touch and save behavior tested on emulators",
+  "productionAccountWrites": 0
+}
