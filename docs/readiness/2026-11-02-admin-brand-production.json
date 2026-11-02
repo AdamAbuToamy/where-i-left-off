@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-02",
+  "url": "https://where-i-left-off.web.app/#/admin",
+  "release": "wilo-admin-brand-rotation-20261102",
+  "headerLayout": "right-aligned-3d-rotation",
+  "headerRotationMs": 12000,
+  "adminOnly": true,
+  "defaultDisabled": true,
+  "indexMatchesBuild": true,
+  "headerModulePublished": true,
+  "verification": "Windows read-only HTTP; WSL post-deploy browser blocked by network timeout",
+  "productionAccountWrites": 0,
+  "authDomainsChanged": false
+}
