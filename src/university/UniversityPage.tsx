@@ -1,3 +1,4 @@
+import ChoicePicker from '../components/ChoicePicker';
 import {lazy,Suspense} from 'react';
 import {GitBranch,GraduationCap,CalendarDays,ChevronDown} from 'lucide-react';
 import {trialCourseColor} from './trialSelectors';
@@ -374,12 +375,7 @@ function Workspace({ user }: {
         <div className="study-toolbar">
           {(tab!=='overview')&&<label>
             الكورس
-            <select value={filter} onChange={(e) => updateUniversityRoute(tab,e.target.value)}>
-              <option value="">كل الكورسات</option>
-              {state.courses.map((c) => (<option key={c.id} value={c.id}>
-                  {c.name}
-                </option>))}
-            </select>
+            <ChoicePicker label={translateStudyText('الكورس',language)} value={filter} onChange={value=>updateUniversityRoute(tab,value)} options={[{value:'',label:translateStudyText('كل الكورسات',language)},...state.courses.map(course=>({value:course.id,label:course.name}))]}/>
           </label>}
           <div>
             {tab==='schedule'&&<button className="secondary-button" disabled={!state.courses.length} onClick={()=>setScheduleEdit(latest.current)}>بناء جدول الأسبوع</button>}

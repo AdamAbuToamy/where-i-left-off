@@ -40,135 +40,7 @@
     />
     <meta property="og:url" content="https://where-i-left-off.web.app/" />
     <meta name="twitter:card" content="summary" />
-    <style>
-      /* Critical boot UI: renders before the app stylesheet or JavaScript arrives. */
-      html {
-        background: #f1f0e6;
-      }
-      body {
-        margin: 0;
-      }
-      .wilo-boot {
-        min-height: 100svh;
-        display: grid;
-        place-content: center;
-        justify-items: center;
-        gap: 22px;
-        padding: 24px;
-        box-sizing: border-box;
-        color: #25332e;
-        background:
-          radial-gradient(#b7bba8 1px, transparent 1px) 0 0 / 24px 24px,
-          #f1f0e6;
-        font:
-          15px/1.6 system-ui,
-          sans-serif;
-        text-align: center;
-      }
-      .wilo-boot-art {
-        position: relative;
-        width: 100px;
-        height: 80px;
-        margin-bottom: 6px;
-      }
-      .wilo-boot-art::before {
-        content: "";
-        position: absolute;
-        inset: 6px 7px;
-        border: 1px solid #d1d9ce;
-        border-radius: 17px;
-        background: #e7ecdf;
-        transform: rotate(-9deg);
-      }
-      .wilo-boot-card {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        border: 1px solid #d1d9ce;
-        border-radius: 17px;
-        background: #fffefa;
-        box-shadow: 0 10px 25px #25332e0d;
-        animation: boot-breathe 2.4s ease-in-out infinite;
-      }
-      .wilo-boot-card svg {
-        width: 30px;
-        height: 38px;
-        color: #365e4e;
-      }
-      .wilo-boot-brand {
-        font-size: 27px;
-        font-weight: 750;
-        letter-spacing: 0.1em;
-        line-height: 1;
-      }
-      .wilo-boot-track {
-        width: 116px;
-        height: 4px;
-        overflow: hidden;
-        background: #dfe5d8;
-        border-radius: 10px;
-      }
-      .wilo-boot-track::after {
-        content: "";
-        display: block;
-        width: 42%;
-        height: 100%;
-        border-radius: inherit;
-        background: #365e4e;
-        animation: boot-progress 1.5s ease-in-out infinite alternate;
-      }
-      .wilo-boot-status {
-        margin: -8px 0 0;
-        color: #526655;
-        font-size: 14px;
-      }
-      .wilo-boot [data-boot-lang] {
-        display: none;
-      }
-      html[lang="en"] .wilo-boot [data-boot-lang="en"],
-      html[lang="ar"] .wilo-boot [data-boot-lang="ar"],
-      html[lang="he"] .wilo-boot [data-boot-lang="he"] {
-        display: inline;
-      }
-      .wilo-boot-retry {
-        color: #365e4e;
-        font-size: 13px;
-        visibility: hidden;
-        animation: boot-help 0s 15s forwards;
-      }
-      .wilo-no-script {
-        max-width: 560px;
-        margin: 15vh auto;
-        padding: 24px;
-        font:
-          18px/1.7 system-ui,
-          sans-serif;
-        color: #25332e;
-      }
-      @keyframes boot-breathe {
-        50% {
-          transform: scale(1.035);
-          box-shadow: 0 14px 32px #25332e17;
-        }
-      }
-      @keyframes boot-progress {
-        to {
-          transform: translateX(160%);
-        }
-      }
-      @keyframes boot-help {
-        to {
-          visibility: visible;
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .wilo-boot-card,
-        .wilo-boot-track::after {
-          animation: none;
-        }
-      }
-    </style>
+    <!-- WILO_LOADING_STYLES -->
     <script>
       try {
         const language = localStorage.getItem("language");
@@ -183,41 +55,13 @@
   </head>
   <body>
     <div id="root">
-      <main class="wilo-boot" aria-label="WILO">
-        <div class="wilo-boot-art" aria-hidden="true">
-          <div class="wilo-boot-card">
-            <svg viewBox="0 0 30 38" fill="none">
-              <path
-                d="M7 3h16a2 2 0 0 1 2 2v29l-10-7L5 34V5a2 2 0 0 1 2-2Z"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M11 11h8M11 16h8"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-            </svg>
-          </div>
-        </div>
-        <span class="wilo-boot-brand" aria-hidden="true">WILO</span>
-        <div class="wilo-boot-track" aria-hidden="true"></div>
-        <p class="wilo-boot-status" role="status">
-          <span data-boot-lang="en">Preparing your space…</span
-          ><span data-boot-lang="ar">نجهّز مساحتك…</span
-          ><span data-boot-lang="he">מכינים את המרחב שלך…</span>
-        </p>
-        <a class="wilo-boot-retry" href="/"
-          ><span data-boot-lang="en">Taking too long? Reload</span
-          ><span data-boot-lang="ar">تأخر التحميل؟ أعد المحاولة</span
-          ><span data-boot-lang="he">הטעינה מתעכבת? נסו שוב</span></a
-        >
-      </main>
+      <div id="wilo-bootstrap">
+        <!-- WILO_LOADING_VIEW -->
+        <p class="boot-retry"><a href="/">Reload / إعادة المحاولة</a></p>
+      </div>
       <noscript
         ><style>
-          .wilo-boot {
+          #wilo-bootstrap {
             display: none;
           }
         </style>

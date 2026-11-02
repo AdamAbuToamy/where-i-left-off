@@ -15,10 +15,11 @@ test("shows a localized critical loader before the entry script arrives and repl
   });
   try {
     await page.goto("/", { waitUntil: "commit" });
-    const boot = page.locator(".wilo-boot");
+    const boot = page.locator("#wilo-bootstrap");
     await expect(boot).toBeVisible();
-    await expect(boot.getByRole("status")).toHaveText(/نجهّز مساحتك/);
-    await expect(boot.locator('[data-boot-lang="en"]').first()).toBeHidden();
+    await expect(boot.getByRole("heading")).toHaveText("نجهّز مساحتك");
+    await expect(boot.getByRole("status")).toHaveText("جارٍ تحميل مشاريعك…");
+    await expect(page.locator('[data-loading-locale="en"]')).toBeHidden();
     await expect(
       page.getByText("A project organizer for your current state", {
         exact: false,
@@ -31,7 +32,7 @@ test("shows a localized critical loader before the entry script arrives and repl
       ),
     ).toBe(true);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(boot.locator(".wilo-boot-card")).toHaveCSS(
+    await expect(boot.locator(".wilo-loading-card-front:visible")).toHaveCSS(
       "animation-name",
       "none",
     );
@@ -40,7 +41,9 @@ test("shows a localized critical loader before the entry script arrives and repl
   } finally {
     release();
   }
-  await expect(page.locator(".wilo-boot")).toHaveCount(0, { timeout: 15000 });
+  await expect(page.locator("#wilo-bootstrap")).toHaveCount(0, {
+    timeout: 15000,
+  });
   await expect(
     page.getByLabel("البريد الإلكتروني", { exact: true }),
   ).toBeVisible();
@@ -54,7 +57,7 @@ test("provides a useful fallback without JavaScript instead of an endless loader
     const page = await context.newPage();
     await page.goto("/");
     await page.screenshot({ path: ".wrangler/boot-noscript.png" });
-    await expect(page.locator(".wilo-boot")).toBeHidden();
+    await expect(page.locator("#wilo-bootstrap")).toBeHidden();
     await expect(page.locator(".wilo-no-script p").first()).toBeVisible();
     await expect(page.locator(".wilo-no-script p").first()).toHaveText(
       "Enable JavaScript to open your workspace.",

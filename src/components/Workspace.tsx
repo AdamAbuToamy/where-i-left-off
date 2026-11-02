@@ -1,3 +1,4 @@
+import ChoicePicker from './ChoicePicker'
 import WorkspaceTools from './WorkspaceTools'
 import {useDesignPreview} from './designPreviewContext'
 import { workspaceView } from '../lib/navigation'
@@ -135,7 +136,7 @@ export default function Workspace({ user, language, group, members }: { user: Us
   const visible = projects.filter(p => (filter==='ideas'?p.resourceType==='idea':p.resourceType!=='idea') && (!onlyMine || p.assignedTo === user.uid) && (filter==='ideas' || matchesView(p, filter)) && (sectionFilter === 'all' || (sections.some(s => s.id === p.sectionId) ? p.sectionId : '') === sectionFilter) && `${p.name} ${p.nextStep} ${p.checkpoint ?? ''} ${p.checklist ?? ''} ${p.projectUrl ?? ''} ${p.attachmentUrl ?? ''} ${p.links?.join(' ') || ''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
   const searchControls = <>
         <input type="search" aria-label={c.search} placeholder={c.search} value={search} onChange={e => setSearch(e.target.value)} />
-        <div className="filter-group"><select aria-label={r.all} value={filter} onChange={e => setFilter(e.target.value)}>{[['all', r.all], ['today', r.today], ['waiting', r.waiting], ['overdue', r.overdue], ['upcoming', r.upcoming], ['active', r.active], ['later', r.later], ['done', r.done], ['ideas',workflowText[language].ideas]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+        <div className="filter-group"><ChoicePicker label={r.all} value={filter} onChange={setFilter} options={[["all",r.all],["today",r.today],["waiting",r.waiting],["overdue",r.overdue],["upcoming",r.upcoming],["active",r.active],["later",r.later],["done",r.done],["ideas",workflowText[language].ideas]].map(([value,label])=>({value,label}))}/></div>
       </>
   return <>
     <div className="account-strip">

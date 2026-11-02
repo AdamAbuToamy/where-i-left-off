@@ -1,3 +1,4 @@
+import ChoicePicker from "../components/ChoicePicker";
 import { useState } from "react";
 import { CalendarDays, Clock, MapPin, Pencil } from "lucide-react";
 import Timetable from "./Timetable";
@@ -63,14 +64,13 @@ export default function UniversityTrialSchedule({
           />
         ) : (
           <>
-            <label className="study-trial-day">
+            <div className="study-trial-day">
               اليوم
-              <select
-                aria-label={translateStudyText("اليوم", language)}
-                value={day}
-                onChange={(e) => setDay(Number(e.target.value))}
-              >
-                {[
+              <ChoicePicker
+                label={translateStudyText("اليوم", language)}
+                value={String(day)}
+                onChange={(value) => setDay(Number(value))}
+                options={[
                   "الأحد",
                   "الاثنين",
                   "الثلاثاء",
@@ -78,13 +78,12 @@ export default function UniversityTrialSchedule({
                   "الخميس",
                   "الجمعة",
                   "السبت",
-                ].map((label, i) => (
-                  <option key={label} value={i}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                ].map((text, index) => ({
+                  value: String(index),
+                  label: translateStudyText(text, language),
+                }))}
+              />
+            </div>
             {visible.map((lesson) => (
               <article
                 key={lesson.id}
