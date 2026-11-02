@@ -30,6 +30,7 @@ export class PollinationsAssistant{
      const response=pollinationsTestMode(this.uid)?await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+pollinationsKey(this.uid),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:budget.signal}):await accountConnection(this.uid,{action:'completion',input:payload},budget.signal);
      timing.headersMs=Math.round(performance.now()-started);timing.httpStatus=response.status;
      if(!response.ok){
+      if(response.status===429&&!pollinationsTestMode(this.uid)){const body=await response.clone().json().catch(()=>({}));if(body.error==='assistant-rate-limit'||body.error==='assistant-busy')throw new AssistantFailure('ai-rate-limit','request');}
       if(response.status===409)throw new AssistantFailure('assistant-connect-required','provider');
       if(!attempt&&[408,422,500,502,503,504].includes(response.status)){timing.outcome='retry';await new Promise(resolve=>setTimeout(resolve,250));continue;}
       throw new AssistantFailure(response.status===401?'ai-provider-access':response.status===429||response.status===402?'ai-provider-limit':'assistant-network','provider',{status:response.status,protocol:'wilo-assistant-pollinations-v3'});

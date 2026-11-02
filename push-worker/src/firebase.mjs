@@ -9,7 +9,7 @@ export async function verifyIdentity(request,env,keys={auth:authKeys,app:appKeys
   jwtVerify(bearer.slice(7),keys.auth,{issuer:`https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`,audience:env.FIREBASE_PROJECT_ID,algorithms:['RS256']}).catch(error=>{error.authStage='identity';throw error;}),
   jwtVerify(appcheck,keys.app,{issuer:`https://firebaseappcheck.googleapis.com/${env.FIREBASE_APP_ID.split(':')[1]}`,audience:`projects/${env.FIREBASE_APP_ID.split(':')[1]}`,algorithms:['RS256']}).catch(error=>{error.authStage='app-check';throw error;})
  ])
- if(app.payload.sub!==env.FIREBASE_APP_ID)throw Object.assign(new Error('unauthenticated'),{authStage:'app-check'})
+ if(typeof app.payload.exp!=='number'||typeof app.payload.iat!=='number'||app.payload.iat>Date.now()/1000||app.payload.sub!==env.FIREBASE_APP_ID)throw Object.assign(new Error('unauthenticated'),{authStage:'app-check'})
  if(typeof identity.payload.exp!=='number' || typeof identity.payload.iat!=='number' || identity.payload.iat>Date.now()/1000 || typeof identity.payload.auth_time!=='number' || !identity.payload.sub || identity.payload.sub.length>128 || identity.payload.auth_time>Date.now()/1000 || !identity.payload.auth_time)throw new Error('unauthenticated')
  return {uid:identity.payload.sub,email:typeof identity.payload.email==='string'?identity.payload.email.toLowerCase():'',emailVerified:identity.payload.email_verified===true,token:{auth:bearer.slice(7),appcheck}}
 }

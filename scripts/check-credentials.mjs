@@ -24,7 +24,7 @@ function collect(directory) {
   })
 }
 const paths = [...new Set([...names, ...collect('src'), ...collect('public'), ...(process.argv.includes('--dist') ? collect('dist') : [])])]
-const credential = /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|"type"\s*:\s*"service_account"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|(?<![A-Za-z0-9+/])AKIA[0-9A-Z]{16}(?![A-Za-z0-9+/])|sk-(?:proj-)?[A-Za-z0-9_-]{40,}/
+const credential = /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|"type"\s*:\s*"service_account"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|(?<![A-Za-z0-9+/])AKIA[0-9A-Z]{16}(?![A-Za-z0-9+/])|sk-(?:proj-)?[A-Za-z0-9_-]{40,}|(?<![A-Za-z0-9_-])(?:sk_|gsk_|sk-ant-)[A-Za-z0-9_-]{32,}(?![A-Za-z0-9_-])/
 const failures = []
 for (const name of paths) {
   const base = name.split('/').at(-1)

@@ -7,5 +7,7 @@ it('keeps origin-based Google browser-key checks compatible with hosting privacy
  expect(value('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
  expect(value('X-Frame-Options')).toBe('DENY');
  expect(value('X-Content-Type-Options')).toBe('nosniff');
+ expect(value('Strict-Transport-Security')).toContain('max-age=31536000');
+ expect(value('Permissions-Policy')).toContain('microphone=(self)');
  expect(value('Content-Security-Policy')).toContain("frame-ancestors 'none'");
 });

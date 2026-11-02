@@ -37,3 +37,16 @@ test('pilot identity uses the signed email claim, never request body or an unver
  const unverified=await verifyIdentity(await request({email:'adam2002hosny@gmail.com'}),env,keys);
  assert.equal(unverified.emailVerified,false);
 });
+
+test('rejects signed App Check assertions without expiry or issued-at claims',async()=>{
+ for(const omit of ['exp','iat']){
+  const claims={sub:env.FIREBASE_APP_ID,aud:['projects/123'],iss:'https://firebaseappcheck.googleapis.com/123',iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600};delete claims[omit];
+  const check=await new SignJWT(claims).setProtectedHeader({alg:'RS256',kid:'test-key'}).sign(pair.privateKey);
+  const good=await request(),headers=new Headers(good.headers);headers.set('x-firebase-appcheck',check);await assert.rejects(verifyIdentity(new Request(good.url,{headers}),env,keys));
+ }
+});
+
+test('cookies cannot replace the explicit Firebase bearer token, preventing ambient-cookie CSRF',async()=>{
+ const good=await request(),headers=new Headers(good.headers);headers.delete('authorization');headers.set('cookie','session=attacker-supplied');
+ await assert.rejects(verifyIdentity(new Request(good.url,{headers}),env,keys),/unauthenticated/);
+});

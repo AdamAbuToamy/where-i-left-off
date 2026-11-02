@@ -1,6 +1,6 @@
 import {afterAll,beforeAll,expect,it} from 'vitest';
 import {initializeApp,deleteApp} from 'firebase/app';
-import {getAuth,connectAuthEmulator,createUserWithEmailAndPassword,sendEmailVerification,applyActionCode,getIdTokenResult,signOut,signInWithEmailAndPassword,GoogleAuthProvider,signInWithCredential} from 'firebase/auth';
+import {getAuth,connectAuthEmulator,createUserWithEmailAndPassword,sendEmailVerification,applyActionCode,getIdTokenResult,signOut,signInWithEmailAndPassword,GoogleAuthProvider,signInWithCredential,sendPasswordResetEmail,verifyPasswordResetCode,confirmPasswordReset} from 'firebase/auth';
 import {randomUUID} from 'node:crypto';
 import {EmailVerification} from '../src/lib/emailVerification';
 const project='demo-where-i-left-off',host=process.env.FIREBASE_AUTH_EMULATOR_HOST;
@@ -27,4 +27,14 @@ it('handles a Google identity in the Auth emulator without contacting real Googl
  const now=Math.floor(Date.now()/1000),token=[Buffer.from(JSON.stringify({alg:'none',typ:'JWT'})).toString('base64url'),Buffer.from(JSON.stringify({iss:'https://accounts.google.com',aud:'demo-client',sub:randomUUID(),email:'google-'+randomUUID()+'@example.test',email_verified:true,iat:now,exp:now+3600})).toString('base64url'),''].join('.');
  const result=await signInWithCredential(auth,GoogleAuthProvider.credential(token));expect(result.user.providerData.some(p=>p.providerId==='google.com')).toBe(true);expect(result.user.emailVerified).toBe(true);
  expect((await getIdTokenResult(result.user)).claims.firebase).toMatchObject({sign_in_provider:'google.com'});
+});
+
+it('accepts a password-reset code once, rejects reuse and rejects the old password afterwards',async()=>{
+ const email='reset-'+randomUUID()+'@example.test',password='Old-'+randomUUID(),replacement='New-'+randomUUID();
+ const {user}=await createUserWithEmailAndPassword(auth,email,password);await sendPasswordResetEmail(auth,email);
+ const body=await (await fetch('http://'+host+'/emulator/v1/projects/'+project+'/oobCodes')).json();
+ const code=body.oobCodes.find((row:{email:string;requestType:string})=>row.email===email&&row.requestType==='PASSWORD_RESET')?.oobCode;
+ expect(typeof code).toBe('string');expect(await verifyPasswordResetCode(auth,code)).toBe(email);await confirmPasswordReset(auth,code,replacement);
+ await expect(verifyPasswordResetCode(auth,code)).rejects.toHaveProperty('code');await expect(confirmPasswordReset(auth,code,replacement)).rejects.toHaveProperty('code');
+ await signOut(auth);await expect(signInWithEmailAndPassword(auth,email,password)).rejects.toHaveProperty('code');expect((await signInWithEmailAndPassword(auth,email,replacement)).user.uid).toBe(user.uid);
 });

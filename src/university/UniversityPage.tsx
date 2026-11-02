@@ -1,3 +1,4 @@
+import {readPlanBackup} from './readPlanBackup';
 import ChoicePicker from '../components/ChoicePicker';
 import {lazy,Suspense} from 'react';
 import {GitBranch,GraduationCap,CalendarDays,ChevronDown} from 'lucide-react';
@@ -320,9 +321,7 @@ function Workspace({ user }: {
             const file = e.target.files?.[0];
             if (file)
                 void run(async () => {
-                    if (file.size > 4000000)
-                        throw new Error("حجم الملف أكبر من المسموح");
-                    setPreview(parsePlanBackup(JSON.parse(await file.text())));
+                    setPreview(await readPlanBackup(file));
                 });
             e.target.value = "";
         }}/>

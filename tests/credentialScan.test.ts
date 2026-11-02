@@ -24,3 +24,7 @@ it('rejects private credential material in browser assets without echoing it', (
   expect(result.status).toBe(1); expect(result.stderr).toContain('public/unexpected.txt')
   expect(result.stderr).not.toContain(credential)
 })
+
+it('rejects a private Pollinations-style key copied into public assets without echoing it',()=>{
+ const credential=['sk_','a'.repeat(40)].join('');const result=scan(credential);expect(result.status).toBe(1);expect(result.stderr).toContain('public/unexpected.txt');expect(result.stderr).not.toContain(credential);
+});

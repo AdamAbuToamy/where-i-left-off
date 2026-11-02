@@ -4,6 +4,7 @@ import {defaults,preferences,clock,validSubscription,cardKey,candidate,quietNow,
 import {nextCheck,afterQuiet} from '../schedule.mjs'
 import * as firebase from './firebase.mjs'
 import * as store from './store.mjs'
+import {readBoundedJson,securityHeaders} from './httpSecurity.mjs'
 import {accountAssistant} from './accountAssistant.mjs'
 import {sendPush} from './push.mjs'
 const DAY=86400000
@@ -145,8 +146,8 @@ export function createWorker(overrides={}){
   async fetch(request,env){
    const isAssistant=new URL(request.url).pathname==='/assistant',requestId=crypto.randomUUID();let stage='request'
    const origin=request.headers.get('origin'),allowed=(env.APP_ORIGINS || '').split(',').includes(origin)
-   const headers={'content-type':'application/json','cache-control':'no-store','vary':'Origin'}
-   if(!allowed)return new Response(JSON.stringify({error:'origin-not-allowed'}),{status:403,headers})
+   const headers={...securityHeaders,'content-type':'application/json','cache-control':'no-store','vary':'Origin'}
+   if(!allowed){console.warn('security.http.denied',{reason:'origin',status:403});return new Response(JSON.stringify({error:'origin-not-allowed'}),{status:403,headers})}
    if(isAssistant){headers['x-wilo-assistant-version']=ASSISTANT_PROTOCOL;headers['x-wilo-request-id']=requestId;headers['access-control-expose-headers']='x-wilo-assistant-version,x-wilo-request-id'}
    headers['access-control-allow-origin']=origin
    headers['access-control-allow-headers']='authorization,content-type,x-firebase-appcheck'
@@ -156,9 +157,7 @@ export function createWorker(overrides={}){
    if(request.method!=='POST')return new Response('{}',{status:405,headers})
    let requestedAction=isAssistant?'assistant':'unknown'
    try{
-    const text=await request.text()
-    if(text.length>(new URL(request.url).pathname==='/assistant-account'?125000:65536))throw new Error('invalid-size')
-    const data=JSON.parse(text)
+    const data=await readBoundedJson(request,new URL(request.url).pathname==='/assistant-account'?500000:65536)
     if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase'].includes(data.action))requestedAction=data.action
     stage='identity';const identity=await f.verifyIdentity(request,env)
     let result

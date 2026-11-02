@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+import {prepareUniversityPilot} from './universityFixture';
+test('university backup rejects unsafe file types and malformed JSON, then safely saves literal HTML text',async({page,request})=>{
+ const user=await prepareUniversityPilot(request,'secure-import@example.test');
+ await page.addInitScript(()=>{if(!localStorage.getItem('language'))localStorage.setItem('language','en');});
+ await page.route('**/push-config.json',route=>route.fulfill({status:503,body:'{}'}));
+ await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(user.email);await page.getByLabel('Password',{exact:true}).fill(user.password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
+ await expect(page.locator('.side-navigation-toggle')).toBeVisible();if(await page.locator('.guide-skip').isVisible())await page.locator('.guide-skip').click();
+ await page.evaluate(()=>localStorage.setItem('language','ar'));await page.goto('/#/university');await page.reload();
+ await expect(page.locator('.study-university-trial')).toBeVisible();await page.locator('.study-trial-tools summary').click();
+ const upload=page.locator('.study-upload input');
+ await upload.setInputFiles({name:'unsafe.html',mimeType:'text/html',buffer:Buffer.from('<script>window.__wiloXss=1</script>')});
+ await expect(page.locator('.study-error')).toContainText('اختر ملف نسخة احتياطية بصيغة JSON');await expect(page.getByRole('button',{name:'تأكيد الإضافة',exact:true})).toHaveCount(0);
+ await upload.setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{broken')});
+ await expect(page.locator('.study-error')).toContainText('ملف النسخة الاحتياطية غير صالح');await expect(page.locator('.study-error')).not.toContainText('Unexpected');
+ const name='Course <img src=x onerror=window.__wiloXss=1>';
+ const state={version:1,courses:[{id:'security-import-course',name,url:'',notes:'<script>window.__wiloXss=1</script>',requires:[],topics:[],x:40,y:40}],tasks:[],lessons:[]};
+ await upload.setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(state))});
+ const approve=page.getByRole('button',{name:'تأكيد الإضافة',exact:true});await expect(approve).toBeVisible();expect(await page.evaluate(()=>Object.hasOwn(window,'__wiloXss'))).toBe(false);
+ await approve.click();await expect(page.locator('.study-course-browser')).toContainText(name);expect(await page.evaluate(()=>Object.hasOwn(window,'__wiloXss'))).toBe(false);
+ await page.reload();await expect(page.locator('.study-course-browser')).toContainText(name);expect(await page.evaluate(()=>Object.hasOwn(window,'__wiloXss'))).toBe(false);
+});

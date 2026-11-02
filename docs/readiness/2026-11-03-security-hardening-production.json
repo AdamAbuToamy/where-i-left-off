@@ -1,0 +1,60 @@
+{
+  "workerVersion": "12d74841-d25a-4fed-a53d-d59f7cb2be8a",
+  "index.html": {
+    "sha256": "1637ABF104B120677FD7DC6F479E2BF8892C8E80AD2C236BC4C1A3E2E473457D",
+    "matches": true
+  },
+  "privatePaths": [
+    {
+      "result": "SPA index fallback; private file not returned",
+      "path": "/.env"
+    },
+    {
+      "result": "SPA index fallback; private file not returned",
+      "path": "/.git/config"
+    },
+    {
+      "result": "SPA index fallback; private file not returned",
+      "path": "/push-worker/.dev.vars"
+    },
+    {
+      "result": "SPA index fallback; private file not returned",
+      "path": "/push-worker/wrangler.local.json"
+    },
+    {
+      "result": "SPA index fallback; private file not returned",
+      "path": "/.wrangler/assistant-connection-key.private"
+    },
+    {
+      "result": "SPA index fallback; private file not returned",
+      "path": "/src/assistant/pollinationsAuth.ts"
+    }
+  ],
+  "workerChecks": [
+    {
+      "status": 401,
+      "origin": "https://where-i-left-off.web.app"
+    },
+    {
+      "status": 403,
+      "origin": "https://foreign.invalid"
+    }
+  ],
+  "securityHeaders": {
+    "permissionsPolicy": "camera=(), geolocation=(), microphone=(self), payment=()",
+    "hsts": "max-age=31556926; includeSubDomains; preload"
+  },
+  "liveProviderTested": false,
+  "release": "wilo-security-hardening-20261103",
+  "date": "2026-11-03",
+  "sw.js": {
+    "sha256": "6EAE91DF63A88095612995DFF76514EAC1642774ABD4D7544FB90A050F7FB68D",
+    "matches": true
+  },
+  "physicalDevicesTested": false,
+  "checkedAt": "2026-11-02T22:27:26.8827656Z",
+  "wilo-release.json": {
+    "sha256": "61E925240AEDA30F4A93C0A29E67C2B520C6AE285385FC3B45036E928F805457",
+    "matches": true
+  }
+}

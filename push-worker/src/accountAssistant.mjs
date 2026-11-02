@@ -1,3 +1,4 @@
+import {allowConnectionRequest} from './connectionRateLimit.mjs';
 const encoder = new TextEncoder();
 const decode = (value) =>
   Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
@@ -46,6 +47,11 @@ export async function accountAssistant(
   upstream = fetch,
 ) {
   const reply = (result) => json({ result }, headers);
+  if(!['connection-status','connection-save','connection-delete','completion'].includes(data.action))return json({error:'invalid-action'},headers,400);
+  if(!await allowConnectionRequest(env,uid,data.action)){
+   console.warn('security.http.denied',{reason:'account-rate-limit',status:429});
+   return json({error:'assistant-rate-limit'},{...headers,'retry-after':'60'},429);
+  }
   if (data.action === "connection-status") {
     const row = await env.DB.prepare(
       "SELECT uid FROM assistant_connections WHERE uid=?",

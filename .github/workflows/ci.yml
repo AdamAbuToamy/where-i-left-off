@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -26,6 +28,7 @@ jobs:
           npm test --prefix push-worker
           npm exec --prefix push-worker -- wrangler deploy --config push-worker/wrangler.jsonc --dry-run --outdir /tmp/wilo-push-check
       - run: npm run check:credentials
+      - run: npm run check:secrets:history
       - run: npm run lint
       - run: npm run check:architecture
       - run: VITE_USE_EMULATORS=false npm run build

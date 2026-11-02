@@ -11,11 +11,43 @@
     "VAPID_PUBLIC_KEY": "SET_BY_SETUP_SCRIPT",
     "VAPID_SUBJECT": "mailto:adam2002hosny@gmail.com"
   },
-  "d1_databases": [{ "binding": "DB", "database_name": "wilo-push", "database_id": "SET_BY_SETUP_SCRIPT" }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "wilo-push",
+      "database_id": "SET_BY_SETUP_SCRIPT"
+    }
+  ],
   "queues": {
-    "producers": [{"binding":"PUSH_QUEUE","queue":"wilo-push"}],
-    "consumers": [{"queue":"wilo-push","max_batch_size":1,"max_retries":2,"max_concurrency":1}]
+    "producers": [
+      {
+        "binding": "PUSH_QUEUE",
+        "queue": "wilo-push"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "wilo-push",
+        "max_batch_size": 1,
+        "max_retries": 2,
+        "max_concurrency": 1
+      }
+    ]
   },
-  "triggers": { "crons": ["* * * * *"] },
-  "observability": {"enabled":false}
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    },
+    "traces": {
+      "enabled": false
+    }
+  }
 }
