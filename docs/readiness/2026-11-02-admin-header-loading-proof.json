@@ -1,0 +1,9 @@
+{
+  "indexMatchesBuild": true,
+  "verification": "Windows read-only HTTP",
+  "rotationMs": 15000,
+  "adminOnly": true,
+  "date": "2026-11-02",
+  "productionAccountWrites": 0,
+  "release": "wilo-admin-header-loading-20261102"
+}
