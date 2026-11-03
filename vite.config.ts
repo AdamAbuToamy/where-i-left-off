@@ -1,3 +1,4 @@
+import { bootstrapCallback } from "./scripts/bootstrapCallback.ts";
 import { bootstrapLoading } from "./scripts/bootstrapLoading.ts";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
@@ -8,7 +9,7 @@ export default defineConfig(({ mode }) => {
   // Check values before Vite can inline them. Errors contain no credential values.
   readClientConfiguration(loadEnv(mode, process.cwd(), "VITE_"));
   return {
-    plugins: [react(), bootstrapLoading()],
+    plugins: [react(), bootstrapCallback(), bootstrapLoading()],
     resolve: {
       alias: [
         {

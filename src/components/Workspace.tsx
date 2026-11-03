@@ -1,3 +1,4 @@
+import KitchenSyncStatus from "./KitchenSyncStatus"
 import ChoicePicker from './ChoicePicker'
 import WorkspaceTools from './WorkspaceTools'
 import {useDesignPreview} from './designPreviewContext'
@@ -34,7 +35,7 @@ import SummaryPdfButton from './SummaryPdfButton'
 import Sections from './Sections'
 
 export default function Workspace({ user, language, group, members }: { user: User; language: Language; group?: GroupInfo; members: GroupMember[] }) {
-  const {enabled:designPreview}=useDesignPreview()
+  const {enabled:designPreview,kitchenStudy}=useDesignPreview()
   const t = translations[language], c = cloudText[language], r = recallText[language], o = offlineText[language]
   const canManage = !group || group.role === 'manager'
   const membership = members.find(m => m.uid === user.uid)
@@ -141,7 +142,7 @@ export default function Workspace({ user, language, group, members }: { user: Us
   return <>
     <div className="account-strip">
       <span className="account-identity" dir="auto">{displayName(user)}</span>
-      <span role="status" className={`sync-status ${pending ? 'is-saving' : ''}`}>{pending ? c.saving : !online ? `${c.offline} ${queued ? `(${queued} ${o.queued})` : ''}` : queued ? `${syncing ? o.syncing : o.local} (${queued} ${o.queued})` : cached ? c.cached : c.saved}</span>
+      {kitchenStudy ? <KitchenSyncStatus language={language} kind={pending || syncing ? "saving" : !online ? "offline" : queued || cached ? "cached" : "saved"} detail={pending ? c.saving : !online ? `${c.offline} ${queued ? `(${queued} ${o.queued})` : ''}` : queued ? `${syncing ? o.syncing : o.local} (${queued} ${o.queued})` : cached ? c.cached : c.saved}/> : <span role="status" className={`sync-status ${pending ? 'is-saving' : ''}`}>{pending ? c.saving : !online ? `${c.offline} ${queued ? `(${queued} ${o.queued})` : ''}` : queued ? `${syncing ? o.syncing : o.local} (${queued} ${o.queued})` : cached ? c.cached : c.saved}</span>}
     </div>
     {!accountSuspended&&loaded&&capture&&<CaptureCheckpoint capture={capture} projects={projects} language={language} busy={pending} onNew={()=>setIsFormOpen(true)} onUpdate={project=>void run(()=>repository.current!.change(project,'edit',{...project,projectUrl:capture.projectUrl,checkpoint:capture.checkpoint,resourceType:capture.resourceType || project.resourceType}),'capture.update').then(ok=>{if(ok)closeForm()})}/>}
     {!accountSuspended && (error !== null || syncError !== null) && <div className="notice error" role="alert">

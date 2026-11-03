@@ -33,7 +33,7 @@ export default function CompactCardShell({
   language: Language;
   children: ReactNode;
 }) {
-  const { enabled } = useDesignPreview();
+  const { enabled, kitchenStudy } = useDesignPreview();
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const opener = useRef<HTMLButtonElement>(null),
@@ -51,6 +51,49 @@ export default function CompactCardShell({
   return (
     <div
       className={`envelope-shell ${expanded ? "is-expanded" : ""}`}
+      onPointerMove={
+        kitchenStudy
+          ? (event) => {
+              if (
+                event.pointerType !== "mouse" ||
+                expanded ||
+                event.currentTarget.closest(".is-dragging")
+              )
+                return;
+              const rect = event.currentTarget.getBoundingClientRect();
+              const x = Math.max(
+                0,
+                Math.min(
+                  1,
+                  (event.clientX - rect.left) / Math.max(rect.width, 1),
+                ),
+              );
+              const y = Math.max(
+                0,
+                Math.min(
+                  1,
+                  (event.clientY - rect.top) / Math.max(rect.height, 1),
+                ),
+              );
+              event.currentTarget.style.setProperty(
+                "--card-turn",
+                `${(x - 0.5) * 3}deg`,
+              );
+              event.currentTarget.style.setProperty(
+                "--card-light",
+                `${x * 100}% ${y * 100}%`,
+              );
+            }
+          : undefined
+      }
+      onPointerLeave={
+        kitchenStudy
+          ? (event) => {
+              event.currentTarget.style.removeProperty("--card-turn");
+              event.currentTarget.style.removeProperty("--card-light");
+            }
+          : undefined
+      }
       onKeyDown={(event) => {
         if (
           event.key === "Escape" &&
@@ -69,7 +112,16 @@ export default function CompactCardShell({
             {sections.find((s) => s.id === project.sectionId)?.name || "WILO"}
           </span>
           <h2 dir="auto">{project.name}</h2>
-          <p className="envelope-copy" dir="auto">
+          <p
+            className="envelope-copy"
+            dir="auto"
+            hidden={
+              kitchenStudy &&
+              !project.nextStep &&
+              !project.checkpoint &&
+              !project.description
+            }
+          >
             {project.nextStep ||
               project.checkpoint ||
               project.description ||
@@ -91,7 +143,9 @@ export default function CompactCardShell({
             onClick={open}
           >
             <Maximize2 size={18} aria-hidden="true" />
-            {t.open}
+            {kitchenStudy
+              ? { ar: "فتح", en: "Open", he: "פתיחה" }[language]
+              : t.open}
           </button>
         </div>
       )}

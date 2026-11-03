@@ -33,6 +33,8 @@ export default function DesignPreviewProvider({
     };
   }, [enabled, kitchenStudy, user]);
   return (
-    <DesignPreviewContext value={{ enabled }}>{children}</DesignPreviewContext>
+    <DesignPreviewContext value={{ enabled, kitchenStudy }}>
+      {children}
+    </DesignPreviewContext>
   );
 }

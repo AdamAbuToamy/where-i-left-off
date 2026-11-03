@@ -23,6 +23,7 @@ for(const lang of ['en','ar','he'] as const)for(const mobile of [false,true])tes
   await page.getByLabel('Next step',{exact:true}).fill(languages[lang].next)
   await page.getByRole('button',{name:'Save card',exact:true}).click()
   await expect(page.getByRole('heading',{name:languages[lang].name,exact:true})).toBeVisible()
+  if (!await page.locator('.sections-disclosure-trigger').isVisible()) await page.getByRole('button',{name:'View tools',exact:true}).click()
   if (!await page.locator('.sections-disclosure').evaluate(el => (el as HTMLDetailsElement).open)) await page.locator('.sections-disclosure-trigger').click()
   await page.getByRole('button',{name:'Manage sections',exact:true}).click()
   await page.getByLabel('Section name',{exact:true}).fill('Robotics')
@@ -31,11 +32,12 @@ for(const lang of ['en','ar','he'] as const)for(const mobile of [false,true])tes
   const selected=page.locator('.section-navigation button[aria-pressed=true]')
   await expect(selected).toContainText('Robotics')
   await expect(selected).toHaveCSS('color','rgb(255, 255, 255)')
+  if (!await page.locator('.sections-disclosure-trigger').isVisible()) await page.getByRole('button',{name:'View tools',exact:true}).click()
   if (!await page.locator('.sections-disclosure').evaluate(el => (el as HTMLDetailsElement).open)) await page.locator('.sections-disclosure-trigger').click()
   await page.getByRole('button',{name:'Manage sections',exact:true}).click()
   await page.getByRole('button',{name:'All sections',exact:true}).click()
   if(lang!=='en'){
-   await page.locator('.language-trigger').click();await page.locator('.language-option').filter({hasText:lang==='ar'?'العربية':'עברית'}).click()
+   await page.locator('.language-segments').getByRole('button',{name:lang==='ar'?'العربية':'עברית',exact:true}).click()
   }
   await expect(page.locator('html')).toHaveAttribute('dir',lang==='en'?'ltr':'rtl')
   await expect(page.locator('.heading-copy > p')).toHaveCount(0)

@@ -14,7 +14,7 @@ for (const mobile of [false, true]) {
       ? "Design the next chapter — phone"
       : "Design the next chapter — desktop";
     const { email, password } = await prepareUniversityPilot(request);
-    await page.addInitScript(() => localStorage.setItem("language", "en"));
+    await page.addInitScript(() => { if (!localStorage.getItem("language")) localStorage.setItem("language", "en"); });
     await page.goto("/");
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
@@ -40,6 +40,14 @@ for (const mobile of [false, true]) {
       .locator(".project-card")
       .filter({ has: page.locator(".envelope-summary h2", { hasText: name }) });
     await expect(card.locator(".envelope-expand")).toBeVisible();
+    await expect(card.locator(".envelope-expand")).toHaveText("Open");
+    const sync = page.locator(".kitchen-sync");
+    await expect(sync).toBeVisible();
+    await sync.locator("summary").click();
+    await expect(sync.locator("details > p")).toBeVisible();
+    await expect(sync.locator("details > p")).not.toBeEmpty();
+    await sync.locator("summary").click();
+
     await mkdir(".wrangler", { recursive: true });
     await page.screenshot({
       path: `.wrangler/kitchen-${mobile ? "phone" : "desktop"}.png`,
@@ -63,6 +71,16 @@ for (const mobile of [false, true]) {
         () => document.documentElement.scrollWidth <= innerWidth + 1,
       ),
     ).toBe(true);
+
+    if (mobile) {
+      await page.evaluate(() => localStorage.setItem("language", "ar"));
+      await page.reload();
+      await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+      await expect(page.locator(".kitchen-sync")).toBeVisible({ timeout: 15000 });
+      await expect(page.locator(".envelope-expand").first()).toHaveText("فتح");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      await page.screenshot({ path: ".wrangler/kitchen-phone-ar.png", fullPage: true, animations: "disabled" });
+    }
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(page.locator(".envelope-expand").first()).toHaveCSS(
       "transition-duration",
@@ -79,7 +97,7 @@ test("regular accounts retain the current public design", async ({
     request,
     "kitchen-regular@example.test",
   );
-  await page.addInitScript(() => localStorage.setItem("language", "en"));
+  await page.addInitScript(() => { if (!localStorage.getItem("language")) localStorage.setItem("language", "en"); });
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);

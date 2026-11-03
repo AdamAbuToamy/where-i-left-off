@@ -1,0 +1,82 @@
+{
+  "date": "2026-11-04",
+  "release": "wilo-admin-motion-auth-cleanup-20261104",
+  "hosting": "deployed-and-byte-verified",
+  "unitTests": 1267,
+  "authRecovery": 4,
+  "browserJourneys": 6,
+  "adminDesign": "admin-only",
+  "callbackCleanup": "all-visitors",
+  "checks": [
+    {
+      "path": "index.html",
+      "sha256": "A6CE0EE641E1050A8D547B78663B486DCC126DCC4F25CC285FA48D3FCF05612E",
+      "matchesBuild": true
+    },
+    {
+      "path": "sw.js",
+      "sha256": "FA092212004B5330B89E6B685F9AEFD54F64086EF72109B8A935C4FADAB7E708",
+      "matchesBuild": true
+    },
+    {
+      "path": "wilo-release.json",
+      "sha256": "4A0594A16B4EDB985B814196CAF729D0288C05CCAE6AAD3B89FEDE6C40575BE3",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/index-BkBM2k5A.js",
+      "sha256": "211621C5C495B12C858068263310594DAD64FCFB3F0354EAB21193D3D4D9154A",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580AD8C58061A4DDE99BDE0A56905E382F0568516EE2F5B84DBFB52085709021",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/jsx-runtime-BNakU3Ej.js",
+      "sha256": "600D80338ACE22D4DCC97A2788698C189811A8B54DAD8CEA58DFD8E7E4F35D34",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/appError-Cenb1nQ2.js",
+      "sha256": "B8269772354A7A3C6EC026F656DA889FB3018912B07B024FF1743244A93755E9",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/firebase-OwBaPOQG.js",
+      "sha256": "33EC897D3E019C4B1629E1343F861C5904B8974BDA526556FC54FF5427136907",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/createLucideIcon-DhX7lKvy.js",
+      "sha256": "90334C96885F11100EBAAF83F38E7AF836CE730D49A6C04C625944A6D629C8F4",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/domain-DI2oSVtF.js",
+      "sha256": "83ACA8FB8661907452E77C1F6777ACEFFCCB43C4E20D0D3708C714714D1F02FD",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/projects-BR3F4Tbj.js",
+      "sha256": "5432AEB7BCE790EB23F0A72F8BCFADE6C0C2F1B0B6C45DBF6CAF92BBF2E9AA70",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/indexedDbWorkspaceStore-CvoStMja.js",
+      "sha256": "84DCF11DF5DF93E4A7B46414E8517DE38216042A535132E35075231C3C819BBF",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/profile-BRVoHR29.js",
+      "sha256": "9B4251AEB45579A7004F5AD84B3F9926E25449D5F12AFCAA5EC411F73B4EF431",
+      "matchesBuild": true
+    },
+    {
+      "path": "assets/index-Fvd5TE83.css",
+      "sha256": "5CA0AF1A25198A7035FEBCE82B2276EFFA228EE79414C955B3AF7F493E83D46E",
+      "matchesBuild": true
+    }
+  ]
+}
