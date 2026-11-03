@@ -1,3 +1,5 @@
+import RoughMark from "./pinboard/RoughMark";
+import { matchesView } from "../lib/projects";
 import { useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Maximize2, Minimize2, CalendarDays } from "lucide-react";
@@ -35,6 +37,7 @@ export default function CompactCardShell({
 }) {
   const { enabled, kitchenStudy } = useDesignPreview();
   const [expanded, setExpanded] = useState(false);
+  const [marked, setMarked] = useState(false);
   const id = useId();
   const opener = useRef<HTMLButtonElement>(null),
     closer = useRef<HTMLButtonElement>(null);
@@ -51,46 +54,14 @@ export default function CompactCardShell({
   return (
     <div
       className={`envelope-shell ${expanded ? "is-expanded" : ""}`}
-      onPointerMove={
+      onPointerLeave={kitchenStudy ? () => setMarked(false) : undefined}
+      onPointerEnter={kitchenStudy ? () => setMarked(true) : undefined}
+      onFocus={kitchenStudy ? () => setMarked(true) : undefined}
+      onBlur={
         kitchenStudy
           ? (event) => {
-              if (
-                event.pointerType !== "mouse" ||
-                expanded ||
-                event.currentTarget.closest(".is-dragging")
-              )
-                return;
-              const rect = event.currentTarget.getBoundingClientRect();
-              const x = Math.max(
-                0,
-                Math.min(
-                  1,
-                  (event.clientX - rect.left) / Math.max(rect.width, 1),
-                ),
-              );
-              const y = Math.max(
-                0,
-                Math.min(
-                  1,
-                  (event.clientY - rect.top) / Math.max(rect.height, 1),
-                ),
-              );
-              event.currentTarget.style.setProperty(
-                "--card-turn",
-                `${(x - 0.5) * 3}deg`,
-              );
-              event.currentTarget.style.setProperty(
-                "--card-light",
-                `${x * 100}% ${y * 100}%`,
-              );
-            }
-          : undefined
-      }
-      onPointerLeave={
-        kitchenStudy
-          ? (event) => {
-              event.currentTarget.style.removeProperty("--card-turn");
-              event.currentTarget.style.removeProperty("--card-light");
+              if (!event.currentTarget.contains(event.relatedTarget))
+                setMarked(false);
             }
           : undefined
       }
@@ -106,12 +77,23 @@ export default function CompactCardShell({
         }
       }}
     >
+      {kitchenStudy && !expanded && (
+        <span className="board-pin" aria-hidden="true" />
+      )}
       {!expanded && (
         <div className="envelope-summary">
           <span className="envelope-section" dir="auto">
             {sections.find((s) => s.id === project.sectionId)?.name || "WILO"}
           </span>
-          <h2 dir="auto">{project.name}</h2>
+          <h2 dir="auto">
+            {kitchenStudy ? (
+              <RoughMark active={marked} rtl={language !== "en"}>
+                {project.name}
+              </RoughMark>
+            ) : (
+              project.name
+            )}
+          </h2>
           <p
             className="envelope-copy"
             dir="auto"
@@ -130,7 +112,18 @@ export default function CompactCardShell({
           {project.dueDate && (
             <time dateTime={project.dueDate}>
               <CalendarDays size={14} aria-hidden="true" />
-              {project.dueDate}
+              {kitchenStudy ? (
+                <RoughMark
+                  type="circle"
+                  color="#a7473f"
+                  active={matchesView(project, "overdue")}
+                  rtl={language !== "en"}
+                >
+                  {project.dueDate}
+                </RoughMark>
+              ) : (
+                project.dueDate
+              )}
             </time>
           )}
           <button

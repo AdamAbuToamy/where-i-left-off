@@ -4,7 +4,7 @@ import type { User } from "firebase/auth";
 import { DesignPreviewContext } from "./designPreviewContext";
 import "./designPreview.css";
 import { isAdmin } from "../lib/admin";
-import "./kitchenStudy.css";
+import "./pinboard/pinboard.css";
 /** One final account design; legacy device choices no longer select an alternate UI. */
 export default function DesignPreviewProvider({
   user,
