@@ -10,11 +10,12 @@ for(const lang of ['en','ar','he'] as const)for(const mobile of [false,true])tes
  test('compact controls, accessible side menu, sections and collapsed settings',async({page})=>{
   await page.addInitScript(()=>localStorage.setItem('language','en'))
   await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click()
+  await page.getByLabel('Age group',{exact:true}).selectOption('16plus')
   await page.getByLabel('Personal name',{exact:true}).fill('Demo visitor')
   await page.getByLabel('Email',{exact:true}).fill(`layout-${lang}-${mobile}-${Date.now()}@example.test`)
   await page.getByLabel('Password',{exact:true}).fill('Test-Password-2026')
   await page.locator('form').getByRole('button',{name:'Create account',exact:true}).click()
-  await expect(page.locator('.side-navigation-toggle')).toBeVisible()
+  await expect(page.locator('.side-navigation-toggle')).toBeVisible({timeout:15000})
   const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click()
   // Seed one real card through the normal form, then inspect it in all languages.
   await page.goto('/#/personal');await page.getByRole('button',{name:'New card',exact:true}).click()

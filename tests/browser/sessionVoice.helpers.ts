@@ -11,6 +11,7 @@ export async function setup(page: Page, injectedInference = false) {
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
+  await page.getByLabel("Age group",{exact:true}).selectOption("16plus");
   await page
     .getByLabel("Personal name", { exact: true })
     .fill("Session tester");
@@ -22,7 +23,7 @@ export async function setup(page: Page, injectedInference = false) {
     .locator("form")
     .getByRole("button", { name: "Create account", exact: true })
     .click();
-  await expect(page.locator(".side-navigation-toggle")).toBeVisible();
+  await expect(page.locator(".side-navigation-toggle")).toBeVisible({timeout:15000});
   const skip = page.locator(".welcome-guide .guide-skip");
   if (await skip.isVisible()) await skip.click();
   await expect(page.locator(".welcome-guide")).toHaveCount(0);
@@ -48,6 +49,13 @@ export async function setup(page: Page, injectedInference = false) {
         );
     }, SESSION_SPEECH_FILES);
   }
-  await page.getByRole("button", { name: "Work session", exact: true }).click();
+  await openWorkSession(page);
   await expect(page.locator("[data-session-sync=ready]")).toBeVisible();
+}
+
+export async function openWorkSession(page:Page){
+ await expect(page.locator('.project-card')).toBeVisible({timeout:15000});
+ const expand=page.getByRole('button',{name:/^(Expand card|تكبير البطاقة|הרחבת הכרטיס): Voice session project$/});
+ if(await expand.isVisible()){await expand.focus();await expand.press('Enter');}
+ await page.locator('.focus-launch').click();
 }

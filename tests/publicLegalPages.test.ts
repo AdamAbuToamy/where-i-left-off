@@ -13,3 +13,12 @@ it('legal pages render all three languages, keep public links and do not contact
   dom.window.close()
  }
 })
+
+it('keeps privacy disclosures aligned with encrypted account linking, age policy and optional dictation',()=>{
+ for(const lang of ['ar','he','en']){
+  const dom=new JSDOM(readFileSync('public/privacy.html','utf8'),{url:'https://where-i-left-off.web.app/privacy.html?lang='+lang,runScripts:'dangerously'});
+  const body=dom.window.document.querySelector('main')!.textContent!;expect(body).toContain('16');expect(body).not.toContain('tab’s session storage');
+  expect(body).toContain({en:'stored encrypted',ar:'مشفّرًا',he:'מוצפן'}[lang as 'en'|'ar'|'he']!);
+  dom.window.close();
+ }
+});

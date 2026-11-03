@@ -1,0 +1,30 @@
+{
+  "realGoogleOAuthTested": false,
+  "privacy.html": {
+    "sha256": "80E19C3AA5589DA0F44AEFF4D4964677776E5535A2E0F61EC5C9B42FE26968C9",
+    "matches": true
+  },
+  "liveAudioProviderTested": false,
+  "savedAccountKeyDisclosureVerified": true,
+  "minimumRegistrationAge": 16,
+  "date": "2026-11-03",
+  "sw.js": {
+    "sha256": "CADE05DAC308F701D56F343DF90877FA574A070BC3C321EF8C774E7EF6D80919",
+    "matches": true
+  },
+  "checkedAt": "2026-11-03T21:01:10.8706456Z",
+  "wilo-release.json": {
+    "sha256": "20C48B6648484348144D238FEC75F169126BBA8FE125251357403F50C15329CF",
+    "matches": true
+  },
+  "terms.html": {
+    "sha256": "31AB18417B8170A9217A3542BD668B7F29E634BE51D540356B4BADC8388939DA",
+    "matches": true
+  },
+  "index.html": {
+    "sha256": "94D5FD1EDD0AE27FC43543DC92BC172E926768822C8422E87A77ED202B8462F9",
+    "matches": true
+  },
+  "release": "wilo-privacy-eligibility-20261103",
+  "physicalDevicesTested": false
+}

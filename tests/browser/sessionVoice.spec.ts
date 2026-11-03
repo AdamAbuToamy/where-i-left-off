@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { setup } from "./sessionVoice.helpers";
+import { setup, openWorkSession } from "./sessionVoice.helpers";
 test.use({
   serviceWorkers: "block",
   launchOptions: {
@@ -87,7 +87,7 @@ test("simple tabs, manual notes/checklist and offline corrections survive reload
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: "Work session", exact: true }).click();
+  await openWorkSession(page);
   await panel.getByRole("tab", { name: /Notes/ }).click();
   await expect(panel.locator("[data-session-note]")).toHaveCount(2);
   await panel.getByRole("tab", { name: /Checklist/ }).click();
@@ -203,7 +203,7 @@ test("voice message captures until stop and waits for approval before adding", a
   await expect(panel.locator(".session-transcript-paragraph")).toHaveCount(2);
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: "Work session", exact: true }).click();
+  await openWorkSession(page);
   await expect(panel.locator(".session-transcript-paragraph")).toHaveCount(2);
 });
 test("mobile RTL session is compact and tabs follow keyboard direction", async ({
@@ -213,7 +213,7 @@ test("mobile RTL session is compact and tabs follow keyboard direction", async (
   await setup(page);
   await page.evaluate(() => localStorage.setItem("language", "ar"));
   await page.reload();
-  await page.locator(".focus-launch").click();
+  await openWorkSession(page);
   const panel = page.locator(".session-workspace");
   await expect(panel).toHaveAttribute("dir", "rtl");
   await expect(panel.locator("[data-session-sync=ready]")).toBeVisible();
@@ -258,4 +258,28 @@ test("mobile RTL session is compact and tabs follow keyboard direction", async (
   await page.screenshot({
     path: ".wrangler/session-checklist-mobile-fixed.png",
   });
+});
+
+test('revoking cloud consent stops recognition, keeps manual notes and applies in another tab',async({page,context})=>{
+ await page.addInitScript(()=>{
+  const counters={starts:0,aborts:0};Object.defineProperty(window,'wiloConsentCounters',{value:counters});
+  class Recognition{
+   onstart:(()=>void)|null=null;onend:(()=>void)|null=null;onresult:((event:unknown)=>void)|null=null;onerror:((event:unknown)=>void)|null=null;
+   start(){counters.starts++;this.onstart?.();this.onresult?.({results:[Object.assign([{transcript:'Unapproved recording'}],{isFinal:true})]});}
+   stop(){this.onend?.();}abort(){counters.aborts++;}
+  }
+  Object.defineProperty(window,'SpeechRecognition',{configurable:true,value:Recognition});
+ });
+ await setup(page);const panel=page.locator('.session-workspace');
+ await panel.getByRole('tab',{name:/^Notes/}).click();await panel.getByLabel('Note text',{exact:true}).fill('Keep this manual note');await panel.getByRole('button',{name:'Add',exact:true}).click();
+ await expect(panel.locator('[data-session-note]')).toContainText('Keep this manual note');await panel.getByRole('tab',{name:'Transcript',exact:true}).click();
+ await panel.getByRole('button',{name:'Agree and enable cloud dictation',exact:true}).click();await panel.getByRole('button',{name:'Record voice message',exact:true}).click();await expect(panel.locator('[data-microphone=active]')).toBeVisible();
+ await panel.getByRole('button',{name:'Disable cloud dictation',exact:true}).click();await expect(panel.locator('[data-microphone=active]')).toHaveCount(0);await expect(panel.getByRole('button',{name:'Agree and enable cloud dictation',exact:true})).toBeVisible();await expect(panel.locator('.session-clip-draft')).toHaveCount(0);
+ expect(await page.evaluate(()=>Object.keys(localStorage).filter(key=>key.startsWith('wilo-session-cloud-consent-v1:')))).toEqual([]);
+ await panel.getByRole('button',{name:'Agree and enable cloud dictation',exact:true}).click();await panel.getByRole('button',{name:'Record voice message',exact:true}).click();await expect(panel.locator('[data-microphone=active]')).toBeVisible();
+ const other=await context.newPage();await other.goto('/about.html');await other.evaluate(()=>{for(const key of Object.keys(localStorage))if(key.startsWith('wilo-session-cloud-consent-v1:'))localStorage.removeItem(key);});await other.close();
+ await expect(panel.locator('[data-microphone=active]')).toHaveCount(0);await expect(panel.getByRole('button',{name:'Agree and enable cloud dictation',exact:true})).toBeVisible();
+ const counts=await page.evaluate(()=>(window as typeof window &{wiloConsentCounters:{starts:number;aborts:number}}).wiloConsentCounters);expect(counts.starts).toBe(2);expect(counts.aborts).toBeGreaterThanOrEqual(2);
+ await panel.getByRole('tab',{name:/^Notes/}).click();await expect(panel.locator('[data-session-note]')).toContainText('Keep this manual note');
+ await page.reload();await openWorkSession(page);await expect(panel.getByRole('button',{name:'Agree and enable cloud dictation',exact:true})).toBeVisible();await panel.getByRole('tab',{name:/^Notes/}).click();await expect(panel.locator('[data-session-note]')).toContainText('Keep this manual note');
 });

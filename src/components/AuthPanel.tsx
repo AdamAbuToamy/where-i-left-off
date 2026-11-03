@@ -1,49 +1,228 @@
-import { supportText } from '../supportText'
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
-import { auth } from '../lib/firebase'
-import { cloudText, errorText } from '../cloudTranslations'
-import { pageText } from '../pageText'
-import { traced } from '../lib/logging'
-import type { Language } from '../translations'
+import "./authPrivacy.css";
+import ChoicePicker from "./ChoicePicker";
+import { registrationText } from "./registrationText";
+import { registrationEligible } from "../lib/registrationEligibility";
+import type { RegistrationAgeBand } from "../lib/registrationEligibility";
+import { supportText } from "../supportText";
+import { useState } from "react";
+import type { FormEvent } from "react";
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from "firebase/auth";
+import { auth } from "../lib/firebase";
+import { cloudText, errorText } from "../cloudTranslations";
+import { pageText } from "../pageText";
+import { traced } from "../lib/logging";
+import type { Language } from "../translations";
 
 export default function AuthPanel({ language }: { language: Language }) {
-  const t = cloudText[language]
-  const [register, setRegister] = useState(false)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<unknown>(null)
-  const [sent, setSent] = useState(false)
+  const t = cloudText[language],
+    eligibility = registrationText[language];
+  const [ageBand, setAgeBand] = useState<RegistrationAgeBand>("");
+  const [googleAgePrompt, setGoogleAgePrompt] = useState(false);
+  const eligible = registrationEligible(ageBand);
+  const [register, setRegister] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const [sent, setSent] = useState(false);
   async function perform(action: () => Promise<unknown>) {
-    if (busy) return
-    setBusy(true); setError(null); setSent(false)
-    try { await traced('auth.action', action) } catch (e) { setError(e) } finally { setBusy(false) }
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    setSent(false);
+    try {
+      await traced("auth.action", action);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
+    }
   }
   function submit(e: FormEvent) {
-    e.preventDefault()
-    if (register && !name.trim()) return
-    void perform(async () => { if (register) { const result = await createUserWithEmailAndPassword(auth!, email.trim(), password); await updateProfile(result.user, { displayName: name.trim() }); window.dispatchEvent(new Event('profile-updated')) } else await signInWithEmailAndPassword(auth!, email.trim(), password) })
+    e.preventDefault();
+    if (register && (!name.trim() || !eligible)) return;
+    void perform(async () => {
+      if (register) {
+        const result = await createUserWithEmailAndPassword(
+          auth!,
+          email.trim(),
+          password,
+        );
+        await updateProfile(result.user, { displayName: name.trim() });
+        window.dispatchEvent(new Event("profile-updated"));
+      } else await signInWithEmailAndPassword(auth!, email.trim(), password);
+    });
   }
-  return <section className="auth-panel" aria-busy={busy}>
-    <div className="auth-intro"><span aria-hidden="true">↗</span><h2>{t.intro}</h2><a href="/about.html">{{ en: 'About Where I Left Off', ar: 'عن Where I Left Off', he: 'על Where I Left Off' }[language]}</a></div>
-    <form onSubmit={submit} className="new-project-form auth-form">
-      <h2>{register ? t.signUp : t.signIn}</h2><p className="legal-notice">{supportText[language].notice} <a href={`/terms.html?lang=${language}`} target="_blank" rel="noopener noreferrer">{supportText[language].terms}</a> · <a href={`/privacy.html?lang=${language}`} target="_blank" rel="noopener noreferrer">{supportText[language].privacy}</a></p>
-      {register && <><label htmlFor="name">{pageText[language].name}</label><input id="name" autoComplete="name" required maxLength={100}  value={name} onChange={e => setName(e.target.value)} dir="auto" /></>}
-      <label htmlFor="email">{t.email}</label>
-      <input id="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} dir="ltr" />
-      <label htmlFor="password">{t.password}</label>
-      <input id="password" type="password" autoComplete={register ? 'new-password' : 'current-password'} minLength={register ? 8 : undefined} required value={password} onChange={e => setPassword(e.target.value)} dir="ltr" />
-      {error !== null && <p className="notice error" role="alert">{errorText(error, language)}</p>}
-      {sent && <p className="notice" role="status">{t.resetSent}</p>}
-      <button className="primary-button" disabled={busy || (register && !name.trim())}>{register ? t.signUp : t.signIn}</button>
-      <button type="button" className="secondary-button" disabled={busy} onClick={() => void perform(() => signInWithPopup(auth!, new GoogleAuthProvider()))}>{t.google}</button>
-      <div className="form-actions">
-        <button className="text-button" type="button" disabled={busy} onClick={() => { setRegister(!register); setError(null); setSent(false) }}>{register ? t.signIn : t.signUp}</button>
-        {!register && email.trim() && <button className="text-button" type="button" disabled={busy} onClick={() => void perform(async () => { await sendPasswordResetEmail(auth!, email.trim()); setSent(true) })}>{t.reset}</button>}
+  function google() {
+    // Firebase's Google sign-in can create accounts, even from the login screen.
+    // Screen before opening the provider so an ineligible visitor sends no profile.
+    if (!eligible) {
+      setGoogleAgePrompt(true);
+      return;
+    }
+    void perform(() => signInWithPopup(auth!, new GoogleAuthProvider()));
+  }
+  return (
+    <section className="auth-panel" aria-busy={busy}>
+      <div className="auth-intro">
+        <span aria-hidden="true">↗</span>
+        <h2>{t.intro}</h2>
+        <a href="/about.html">
+          {
+            {
+              en: "About Where I Left Off",
+              ar: "عن Where I Left Off",
+              he: "על Where I Left Off",
+            }[language]
+          }
+        </a>
       </div>
-    </form>
-  </section>
+      <form onSubmit={submit} className="new-project-form auth-form">
+        <h2>{register ? t.signUp : t.signIn}</h2>
+        <p className="legal-notice">
+          {supportText[language].notice}{" "}
+          <a
+            href={`/terms.html?lang=${language}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {supportText[language].terms}
+          </a>{" "}
+          ·{" "}
+          <a
+            href={`/privacy.html?lang=${language}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {supportText[language].privacy}
+          </a>
+        </p>
+        {(register || googleAgePrompt) && (
+          <fieldset disabled={busy} className="auth-age-group">
+            {googleAgePrompt && !register && <p>{eligibility.googleHint}</p>}
+            <ChoicePicker
+              label={eligibility.age}
+              value={ageBand}
+              options={[
+                { value: "", label: eligibility.choose },
+                { value: "under16", label: eligibility.younger },
+                { value: "16plus", label: eligibility.eligible },
+              ]}
+              onChange={(value) => {
+                if (value === "" || value === "under16" || value === "16plus")
+                  setAgeBand(value);
+              }}
+            />
+            <small>{eligibility.hint}</small>
+            {ageBand === "under16" && (
+              <p className="notice" role="status">
+                {eligibility.blocked}
+              </p>
+            )}
+          </fieldset>
+        )}
+        {register && eligible && (
+          <>
+            <label htmlFor="name">{pageText[language].name}</label>
+            <input
+              id="name"
+              autoComplete="name"
+              required
+              maxLength={100}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              dir="auto"
+            />
+          </>
+        )}
+        {(!register || eligible) && (
+          <>
+            <label htmlFor="email">{t.email}</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              dir="ltr"
+            />
+            <label htmlFor="password">{t.password}</label>
+            <input
+              id="password"
+              type="password"
+              autoComplete={register ? "new-password" : "current-password"}
+              minLength={register ? 8 : undefined}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              dir="ltr"
+            />
+          </>
+        )}
+        {error !== null && (
+          <p className="notice error" role="alert">
+            {errorText(error, language)}
+          </p>
+        )}
+        {sent && (
+          <p className="notice" role="status">
+            {t.resetSent}
+          </p>
+        )}
+        <button
+          className="primary-button"
+          disabled={busy || (register && (!name.trim() || !eligible))}
+        >
+          {register ? t.signUp : t.signIn}
+        </button>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={busy}
+          onClick={google}
+        >
+          {t.google}
+        </button>
+        <div className="form-actions">
+          <button
+            className="text-button"
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setRegister(!register);
+              setGoogleAgePrompt(false);
+              setError(null);
+              setSent(false);
+            }}
+          >
+            {register ? t.signIn : t.signUp}
+          </button>
+          {!register && email.trim() && (
+            <button
+              className="text-button"
+              type="button"
+              disabled={busy}
+              onClick={() =>
+                void perform(async () => {
+                  await sendPasswordResetEmail(auth!, email.trim());
+                  setSent(true);
+                })
+              }
+            >
+              {t.reset}
+            </button>
+          )}
+        </div>
+      </form>
+    </section>
+  );
 }

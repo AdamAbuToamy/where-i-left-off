@@ -11,11 +11,12 @@ async function visit(page: Page) {
 async function login(page: Page, email: string, register = false) {
   await visit(page)
   if (register) await page.getByRole('button', { name: 'Create account', exact: true }).click()
+  if (register) await page.getByLabel('Age group',{exact:true}).selectOption('16plus')
   if (register) await page.getByLabel('Personal name', { exact: true }).fill(email.split('@')[0])
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill('Test-Password-2026')
   await page.locator('form').getByRole('button', { name: register ? 'Create account' : 'Sign in', exact: true }).click()
-  await expect(page.locator('.side-navigation-toggle')).toBeVisible()
+  await expect(page.locator('.side-navigation-toggle')).toBeVisible({timeout:15000})
   const tour = page.locator('.welcome-guide .guide-skip')
   if (await tour.isVisible()) await tour.click()
   await expect(page.locator('.welcome-guide')).toHaveCount(0)

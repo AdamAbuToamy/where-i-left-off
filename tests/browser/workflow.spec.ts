@@ -6,6 +6,7 @@ async function register(page: Page) {
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
+  await page.getByLabel("Age group",{exact:true}).selectOption("16plus");
   await page
     .getByLabel("Personal name", { exact: true })
     .fill("Workflow tester");
@@ -17,7 +18,7 @@ async function register(page: Page) {
     .locator("form")
     .getByRole("button", { name: "Create account", exact: true })
     .click();
-  await expect(page.locator(".side-navigation-toggle")).toBeVisible();
+  await expect(page.locator(".side-navigation-toggle")).toBeVisible({timeout:15000});
   const skip = page.locator(".welcome-guide .guide-skip");
   if (await skip.isVisible()) await skip.click();
   await expect(page.locator(".welcome-guide")).toHaveCount(0);

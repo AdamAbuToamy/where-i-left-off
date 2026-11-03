@@ -2,6 +2,7 @@ import { SESSION_SPEECH_MODEL } from "./speechModel";
 import type { Language } from "../translations";
 const en = {
   enableCloud: "Agree and enable cloud dictation",
+  revokeCloud: "Disable cloud dictation",
   cloudConsent:
     "Your browser sends microphone audio to its speech-recognition service. No model download, API key or separate service account. Availability and recognition accuracy depend on your browser and connection. Text is added only after your approval.",
   cloudPrivacy:
@@ -80,6 +81,7 @@ const en = {
 };
 const ar: typeof en = {
   enableCloud: "أوافق، تفعيل التفريغ السحابي",
+  revokeCloud: "إلغاء إذن التفريغ السحابي",
   cloudConsent:
     "يرسل المتصفح صوت الميكروفون إلى خدمة التعرف الصوتي التابعة له. دون تنزيل نموذج أو مفتاح API أو حساب خدمة منفصل. التوفر والدقة يعتمدان على المتصفح والاتصال. لا يُضاف النص إلا بعد موافقتك.",
   cloudPrivacy:
@@ -156,6 +158,7 @@ const ar: typeof en = {
 };
 const he: typeof en = {
   enableCloud: "אישור והפעלת תמלול בענן",
+  revokeCloud: "כיבוי תמלול הענן",
   cloudConsent:
     "הדפדפן שולח את שמע המיקרופון לשירות זיהוי הדיבור שלו. ללא הורדת מודל, מפתח API או חשבון נפרד. הזמינות והדיוק תלויים בדפדפן ובחיבור. טקסט נוסף רק לאחר אישורכם.",
   cloudPrivacy:

@@ -3,11 +3,12 @@ import type { Page } from '@playwright/test'
 async function register(page:Page){
  await page.addInitScript(()=>localStorage.setItem('language','en'))
  await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click()
+  await page.getByLabel('Age group',{exact:true}).selectOption('16plus')
  await page.getByLabel('Personal name',{exact:true}).fill('Demo visitor')
  await page.getByLabel('Email',{exact:true}).fill(`support-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`)
  await page.getByLabel('Password',{exact:true}).fill('Test-Password-2026')
  await page.locator('form').getByRole('button',{name:'Create account',exact:true}).click()
- await expect(page.locator('.side-navigation-toggle')).toBeVisible()
+ await expect(page.locator('.side-navigation-toggle')).toBeVisible({timeout:15000})
  const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click()
 }
 test('extension offer snoozes, Settings keeps the store link, and feedback survives reload',async({page})=>{

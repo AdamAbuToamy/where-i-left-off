@@ -114,6 +114,17 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
       pending = useRef(new Map<string, SpokenSegment>()),
       saving = useRef(0),
       nextStepSaver = useRef(onSaveNextStep);
+    useEffect(()=>{
+      const revoke=()=>{setCloudConsent(false);void controller.current?.stop();};
+      const local=(event:Event)=>{if((event as CustomEvent<unknown>).detail===uid)revoke();};
+      const storage=(event:StorageEvent)=>{if((event.key===null||event.key==='wilo-session-cloud-consent-v1:'+uid)&&event.newValue!=='yes')revoke();};
+      window.addEventListener('wilo-cloud-dictation-revoked',local);window.addEventListener('storage',storage);
+      return()=>{window.removeEventListener('wilo-cloud-dictation-revoked',local);window.removeEventListener('storage',storage);};
+    },[uid]);
+    function revokeCloud(){
+      try{localStorage.removeItem('wilo-session-cloud-consent-v1:'+uid);}catch{/* This page still revokes access when storage is unavailable. */}
+      window.dispatchEvent(new CustomEvent('wilo-cloud-dictation-revoked',{detail:uid}));
+    }
     useEffect(() => {
       nextStepSaver.current = onSaveNextStep;
     }, [onSaveNextStep]);
@@ -529,6 +540,7 @@ const SessionVoicePanel = forwardRef<SessionWorkspaceHandle, Props>(
         >
           {!historical && (
             <>
+              {cloudConsent&&<button type="button" className="text-button session-revoke-consent" onClick={revokeCloud}>{t.revokeCloud}</button>}
               {!cloudConsent && (
                 <aside className="session-cloud-consent">
                   <p>{t.cloudConsent}</p>
