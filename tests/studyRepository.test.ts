@@ -45,3 +45,16 @@ it('keeps a newer local edit made while an earlier write is still in flight',asy
  const repo=new UniversityRepository(store,port);repo.start(s=>{state=s;});repo.commit({...state,courses:[course()]});repo.commit({...state,courses:[{...course(),notes:'Newest edit'}]});release();await settle();await settle();
  expect(JSON.parse(r.docs.get('courses_a')!.payload).notes).toBe('Newest edit');repo.stop();
 });
+
+it('reports malformed university cache without discarding offline work',()=>{
+ const store=new UniversityStore('alice','project');
+ const key='wilo-university-v1/project/alice';
+ for(const value of ['{broken','null','42']){
+  values.set(key,value);
+  expect(()=>store.load()).toThrow('تعذر قراءة بيانات الجامعة');
+  expect(values.get(key)).toBe(value);
+ }
+ values.set(key+'/sync','{unfinished');
+ expect(()=>store.loadSync()).toThrow('تعذر قراءة بيانات الجامعة');
+ expect(values.get(key+'/sync')).toBe('{unfinished');
+});

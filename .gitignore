@@ -56,3 +56,6 @@ assistant-acceptance-live-report.previous-*.json
 
 # Local PDF/visual verification artifacts
 /tmp/
+
+# Local Desloppify findings and review state
+/.desloppify/

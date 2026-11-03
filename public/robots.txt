@@ -2,4 +2,3 @@ User-agent: *
 Allow: /
 
 Sitemap: https://where-i-left-off.web.app/sitemap.xml
-Sitemap: https://where-i-left-off.web.app/sitemap.txt

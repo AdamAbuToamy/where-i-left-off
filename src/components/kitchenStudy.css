@@ -1,0 +1,122 @@
+/* Admin-only Kitchen study. Original CSS inspired by dqnamo's Ticket and
+   Tactile Button studies; no third-party component source is copied. */
+:root[data-kitchen-study="on"] {
+  --kitchen-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root[data-kitchen-study="on"]
+  .project-card:has(.envelope-shell:not(.is-expanded)) {
+  border-radius: 18px;
+  border: 1px solid var(--site-border);
+  border-block-start: 5px solid var(--site-primary, #365e4c);
+  background:
+    linear-gradient(150deg, #ffffff70, transparent 55%), var(--site-surface);
+  box-shadow:
+    0 2px 0 var(--site-border),
+    0 12px 24px #25332e0b;
+  padding: 20px 22px 18px;
+  overflow: visible;
+  transition:
+    box-shadow 0.32s var(--kitchen-ease),
+    border-color 0.24s ease;
+}
+:root[data-kitchen-study="on"]
+  .project-card:has(.envelope-shell:not(.is-expanded))::after {
+  inset: auto 16px 74px;
+  width: auto;
+  height: 0;
+  border-block-start: 1px dashed var(--site-border);
+  background: none;
+}
+:root[data-kitchen-study="on"] .envelope-summary {
+  padding-block-end: 56px;
+  min-height: 170px;
+}
+:root[data-kitchen-study="on"] .envelope-section {
+  display: inline-flex;
+  max-width: calc(100% - 40px);
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--site-border);
+  color: var(--site-text);
+  background: var(--site-soft);
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+}
+:root[data-kitchen-study="on"] .envelope-summary h2 {
+  margin-block: 16px 10px;
+  font-size: clamp(1.1rem, 1.7vw, 1.35rem);
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+:root[data-kitchen-study="on"] .project-card .envelope-expand {
+  position: absolute;
+  inset: auto 14px 14px;
+  margin: 0;
+  width: calc(100% - 28px);
+  min-height: 44px;
+  pointer-events: auto;
+  opacity: 1;
+  transform: none;
+  border-radius: 9px;
+  border: 1px solid var(--site-border);
+  box-shadow: 0 3px 0 var(--site-border);
+  background: var(--site-soft);
+  color: var(--site-text);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s var(--kitchen-ease);
+}
+:root[data-kitchen-study="on"] .project-card .envelope-expand:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--site-border);
+}
+:root[data-kitchen-study="on"]
+  :is(.preview-disclosure, .study-course, .resume-card) {
+  border-radius: 18px;
+  box-shadow:
+    0 2px 0 var(--site-border),
+    0 9px 24px #25332e08;
+}
+:root[data-kitchen-study="on"] .preview-disclosure-toggle {
+  min-height: 50px;
+  color: var(--site-text);
+}
+:root[data-kitchen-study="on"] .project-card .envelope-collapse {
+  border-radius: 9px;
+  box-shadow: 0 3px 0 var(--site-border);
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :root[data-kitchen-study="on"]
+    .project-card:has(.envelope-shell:not(.is-expanded)):hover {
+    box-shadow:
+      0 3px 0 var(--site-border),
+      0 22px 34px #25332e20;
+    border-color: var(--site-muted);
+  }
+  :root[data-kitchen-study="on"] .project-card:hover .envelope-expand {
+    background: var(--site-primary, #365e4c);
+    color: #fff;
+  }
+  :root[data-kitchen-study="on"] .envelope-shell.is-expanded .envelope-content {
+    animation: kitchen-unfold 0.36s var(--kitchen-ease) both;
+    transform-origin: top;
+  }
+}
+@keyframes kitchen-unfold {
+  from {
+    opacity: 0.35;
+    transform: perspective(1000px) rotateX(-4deg) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(0) translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-kitchen-study="on"] .project-card,
+  :root[data-kitchen-study="on"] .project-card .envelope-expand {
+    transition: none;
+  }
+}

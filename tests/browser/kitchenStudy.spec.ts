@@ -1,0 +1,101 @@
+import { test, expect } from "@playwright/test";
+import { prepareUniversityPilot } from "./universityFixture";
+import { mkdir } from "node:fs/promises";
+
+for (const mobile of [false, true]) {
+  test(`Kitchen admin ${mobile ? "phone" : "desktop"}: expand and collapse keep original actions`, async ({
+    page,
+    request,
+  }) => {
+    await page.setViewportSize(
+      mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
+    );
+    const name = mobile
+      ? "Design the next chapter — phone"
+      : "Design the next chapter — desktop";
+    const { email, password } = await prepareUniversityPilot(request);
+    await page.addInitScript(() => localStorage.setItem("language", "en"));
+    await page.goto("/");
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page
+      .locator("form")
+      .getByRole("button", { name: "Sign in", exact: true })
+      .click();
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-kitchen-study",
+      "on",
+      { timeout: 15000 },
+    );
+    const skip = page.locator(".welcome-guide .guide-skip");
+    if (await skip.isVisible()) await skip.click();
+    await page.goto("/#/personal");
+    await page.getByRole("button", { name: "New card", exact: true }).click();
+    await page.getByLabel("Card title", { exact: true }).fill(name);
+    await page
+      .getByLabel("Next step", { exact: true })
+      .fill("Review the tactile card and continue working");
+    await page.getByRole("button", { name: "Save card", exact: true }).click();
+    const card = page
+      .locator(".project-card")
+      .filter({ has: page.locator(".envelope-summary h2", { hasText: name }) });
+    await expect(card.locator(".envelope-expand")).toBeVisible();
+    await mkdir(".wrangler", { recursive: true });
+    await page.screenshot({
+      path: `.wrangler/kitchen-${mobile ? "phone" : "desktop"}.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+    await expect(card.locator(".envelope-expand")).toHaveCSS(
+      "pointer-events",
+      "auto",
+    );
+    await card.locator(".envelope-expand").click();
+    await expect(page.locator(".envelope-content:visible")).toContainText(
+      "Review the tactile card",
+    );
+    await page.locator(".envelope-collapse:visible").press("Enter");
+    await expect(
+      page.locator(".envelope-summary h2", { hasText: name }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(page.locator(".envelope-expand").first()).toHaveCSS(
+      "transition-duration",
+      "0s",
+    );
+  });
+}
+
+test("regular accounts retain the current public design", async ({
+  page,
+  request,
+}) => {
+  const { email, password } = await prepareUniversityPilot(
+    request,
+    "kitchen-regular@example.test",
+  );
+  await page.addInitScript(() => localStorage.setItem("language", "en"));
+  await page.goto("/");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page
+    .locator("form")
+    .getByRole("button", { name: "Sign in", exact: true })
+    .click();
+  await expect(page.locator(".side-navigation-toggle")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-design-preview",
+    "on",
+  );
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-kitchen-study",
+    "on",
+  );
+});
