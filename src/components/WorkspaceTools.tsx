@@ -34,6 +34,21 @@ export default function WorkspaceTools({
     document.addEventListener("pointerdown", outside);
     return () => document.removeEventListener("pointerdown", outside);
   }, [open]);
+  useEffect(() => {
+    const other = (event: Event) => {
+      const source = (event as CustomEvent).detail?.trigger;
+      if (source instanceof Node && !root.current?.contains(source))
+        setOpen(false);
+    };
+    window.addEventListener("wilo-choice-open", other);
+    return () => window.removeEventListener("wilo-choice-open", other);
+  }, []);
+  useEffect(() => {
+    if (!open)
+      panel.current?.querySelectorAll("details").forEach((details) => {
+        details.open = false;
+      });
+  }, [open]);
   const updatePlacement = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect();
     if (rect) {
@@ -75,6 +90,11 @@ export default function WorkspaceTools({
     };
   }, [open, updatePlacement]);
   function reveal() {
+    window.dispatchEvent(
+      new CustomEvent("wilo-choice-open", {
+        detail: { id: "more-" + id, trigger: trigger.current },
+      }),
+    );
     updatePlacement();
     setOpen(true);
   }
@@ -113,7 +133,7 @@ export default function WorkspaceTools({
           type="button"
           className="workspace-tools-trigger"
           aria-label={triggerLabel}
-          title={triggerLabel}
+          title={open ? undefined : triggerLabel}
           aria-expanded={open}
           aria-controls={id}
           onClick={(event) => {
@@ -126,10 +146,10 @@ export default function WorkspaceTools({
             else reveal();
           }}
         >
-          {open ? (
-            <X size={19} aria-hidden="true" />
-          ) : kitchenStudy ? (
+          {kitchenStudy ? (
             <MoreHorizontal size={19} aria-hidden="true" />
+          ) : open ? (
+            <X size={19} aria-hidden="true" />
           ) : (
             <SlidersHorizontal size={19} aria-hidden="true" />
           )}

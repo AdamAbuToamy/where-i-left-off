@@ -8,11 +8,13 @@ export default function ChoicePicker({
   value,
   options,
   onChange,
+  hoverOpen = false,
 }: {
   label: string;
   value: string;
   options: Option[];
   onChange: (value: string) => void;
+  hoverOpen?: boolean;
 }) {
   const { enabled } = useDesignPreview();
   const id = useId();
@@ -30,11 +32,35 @@ export default function ChoicePicker({
       maxHeight: 320,
       position: "fixed" as "fixed" | "absolute",
     });
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const cancelClose = () => clearTimeout(closeTimer.current);
+  const leave = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpen(false), 220);
+  };
+  useEffect(() => {
+    const other = (event: Event) => {
+      if ((event as CustomEvent).detail?.id !== id) setOpen(false);
+    };
+    window.addEventListener("wilo-choice-open", other);
+    return () => {
+      clearTimeout(closeTimer.current);
+      window.removeEventListener("wilo-choice-open", other);
+    };
+  }, [id]);
   const selected = Math.max(
     0,
     options.findIndex((option) => option.value === value),
   );
   function reveal() {
+    cancelClose();
+    window.dispatchEvent(
+      new CustomEvent("wilo-choice-open", {
+        detail: { id, trigger: button.current },
+      }),
+    );
     setPortalRoot(button.current?.closest("dialog[open]") || document.body);
     setActive(selected);
     setOpen(true);
@@ -121,7 +147,30 @@ export default function ChoicePicker({
         aria-controls={open ? id : undefined}
         aria-haspopup="listbox"
         aria-activedescendant={open ? `${id}-${active}` : undefined}
-        onClick={() => (open ? setOpen(false) : reveal())}
+        onPointerEnter={(event) => {
+          if (hoverOpen && event.pointerType === "mouse" && innerWidth > 600)
+            reveal();
+        }}
+        onPointerLeave={(event) => {
+          if (
+            hoverOpen &&
+            event.pointerType === "mouse" &&
+            innerWidth > 600 &&
+            !panel.current?.contains(event.relatedTarget as Node)
+          )
+            leave();
+        }}
+        onClick={(event) => {
+          if (
+            hoverOpen &&
+            innerWidth > 600 &&
+            "pointerType" in event.nativeEvent &&
+            event.nativeEvent.pointerType === "mouse"
+          )
+            reveal();
+          else if (open) setOpen(false);
+          else reveal();
+        }}
         onBlur={() => setOpen(false)}
         onKeyDown={(event) => {
           if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -178,6 +227,15 @@ export default function ChoicePicker({
               role="listbox"
               aria-label={label}
               style={placement}
+              onPointerEnter={cancelClose}
+              onPointerLeave={(event) => {
+                if (
+                  hoverOpen &&
+                  event.pointerType === "mouse" &&
+                  !button.current?.contains(event.relatedTarget as Node)
+                )
+                  leave();
+              }}
             >
               {options.map((option, index) => (
                 <div

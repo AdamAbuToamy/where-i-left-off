@@ -268,7 +268,10 @@ test("many collapsed cards defer details and the Arabic notification drawer fits
     .getByRole("navigation", { name: "Bottom navigation", exact: true })
     .getByRole("button", { name: "More", exact: true })
     .click();
-  await page.locator(".mobile-menu-account").getByRole("button", { name: "العربية", exact: true }).click();
+  await page
+    .locator(".mobile-menu-account")
+    .getByRole("button", { name: "العربية", exact: true })
+    .click();
   await page.getByRole("button", { name: "الإشعارات", exact: true }).click();
   const panel = page.getByRole("dialog", { name: "الإشعارات", exact: true });
   await expect(panel).toContainText("لا توجد إشعارات بعد");
@@ -397,7 +400,67 @@ test("phone cards are compact with a reachable open button and original drag han
     fullPage: false,
   });
   await open.click();
-  await expect(page.locator(".phone-card-fullscreen .envelope-content h2")).toBeVisible();
-  await page.locator(".phone-card-fullscreen").getByRole("button", { name: "Back", exact: true }).click();
+  await expect(
+    page.locator(".phone-card-fullscreen .envelope-content h2"),
+  ).toBeVisible();
+  await page
+    .locator(".phone-card-fullscreen")
+    .getByRole("button", { name: "Back", exact: true })
+    .click();
   expect((await card.boundingBox())!.height).toBeLessThanOrEqual(180);
+});
+
+test("desktop hover selectors stay open across the gap and toolbar buttons do not overlap in RTL", async ({
+  page,
+  request,
+}) => {
+  const c = await prepareUniversityPilot(request);
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await login(page, c);
+  const direct = page.locator(".workspace-direct-options");
+  await direct.getByRole("combobox", { name: "Section", exact: true }).hover();
+  const choices = page.locator(".choice-picker-panel");
+  await expect(choices).toBeVisible();
+  const option = choices.getByRole("option").first();
+  await option.hover();
+  await expect(choices).toBeVisible();
+  await option.click();
+  await expect(choices).toHaveCount(0);
+  await direct
+    .getByRole("combobox", { name: "All cards", exact: true })
+    .hover();
+  await expect(page.locator(".choice-picker-panel")).toBeVisible();
+  await page.getByRole("button", { name: "More", exact: true }).hover();
+  await expect(page.locator(".workspace-tools-panel")).toBeVisible();
+  await expect(page.locator(".choice-picker-panel")).toHaveCount(0);
+  await expect(page.locator(".workspace-tools-panel h3")).toHaveCount(0);
+  await expect(
+    page.locator(".workspace-tools-panel .sections-disclosure-trigger"),
+  ).toContainText("Manage");
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  const boxes = await page
+    .locator(
+      ".workspace-command-bar .workspace-direct-options button,.workspace-command-bar .workspace-tools-trigger",
+    )
+    .evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const r = node.getBoundingClientRect();
+        return { x: r.x, y: r.y, right: r.right, bottom: r.bottom };
+      }),
+    );
+  for (let i = 0; i < boxes.length; i++)
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i],
+        b = boxes[j];
+      expect(
+        Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 &&
+          Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1,
+      ).toBe(false);
+    }
+  await page.getByRole("button", { name: "المزيد", exact: true }).hover();
+  await page.screenshot({
+    path: ".wrangler/hover-controls-rtl.png",
+    fullPage: false,
+    animations: "disabled",
+  });
 });

@@ -333,6 +333,7 @@ export default function Workspace({
     <div className="filter-group">
       <ChoicePicker
         label={r.all}
+        hoverOpen={!!kitchenStudy}
         value={filter}
         onChange={setFilter}
         options={[
@@ -599,6 +600,7 @@ export default function Workspace({
                     {projects.length > 0 && filterControl}
                     <div className="workspace-section-picker">
                       <ChoicePicker
+                        hoverOpen
                         label={
                           language === "ar"
                             ? "القسم"
@@ -646,15 +648,24 @@ export default function Workspace({
               <div className="board-utility-row">
                 {!kitchenStudy && viewControls}
                 {projects.length > 0 && (
-                  <section className="workspace-report">
-                    <div>
-                      <h3>{featureText[language].report}</h3>
-                      <p>
-                        {group?.name || pageText[language].personal} ·{" "}
-                        {projects.length} {r.cards}
-                      </p>
-                    </div>
+                  <section
+                    className={
+                      kitchenStudy
+                        ? "workspace-report workspace-report-compact"
+                        : "workspace-report"
+                    }
+                  >
+                    {!kitchenStudy && (
+                      <div>
+                        <h3>{featureText[language].report}</h3>
+                        <p>
+                          {group?.name || pageText[language].personal} ·{" "}
+                          {projects.length} {r.cards}
+                        </p>
+                      </div>
+                    )}
                     <SummaryPdfButton
+                      compact={!!kitchenStudy}
                       entries={projects.map((project) => ({
                         project,
                         scope: group?.name || pageText[language].personal,
@@ -689,6 +700,7 @@ export default function Workspace({
               )}
               {view === "board" && (
                 <Sections
+                  managementOnly={!!kitchenStudy}
                   canManage={canManage}
                   sections={sections}
                   projects={projects}

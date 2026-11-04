@@ -634,3 +634,90 @@
     display: none;
   }
 }
+
+/* Desktop toolbar controls keep independent hit areas instead of overlapping. */
+@media (min-width: 601px) {
+  :root[data-kitchen-study="on"] .workspace-direct-options {
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+  :root[data-kitchen-study="on"] .workspace-direct-options > * {
+    flex-shrink: 0;
+  }
+  :root[data-kitchen-study="on"]
+    .workspace-direct-options
+    :is(.filter-group, .workspace-section-picker) {
+    width: 152px;
+  }
+  :root[data-kitchen-study="on"]
+    .workspace-direct-options
+    .choice-picker-trigger {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  :root[data-kitchen-study="on"] .workspace-command-bar .workspace-tools-dock {
+    flex: 0 0 44px;
+  }
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .workspace-tools-panel {
+  width: min(300px, calc(100vw - 32px));
+  padding: 8px;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+:root[data-kitchen-study="on"]
+  .workspace-tools-panel
+  .workspace-report-compact {
+  display: block;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+:root[data-kitchen-study="on"] .workspace-report-compact .pdf-export button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--site-primary);
+  font-size: 13px;
+  box-shadow: none;
+}
+:root[data-kitchen-study="on"] .workspace-tools-panel .sections-panel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+:root[data-kitchen-study="on"]
+  .workspace-tools-panel
+  .sections-disclosure-trigger {
+  padding: 10px 12px;
+  min-height: 44px;
+  margin: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 13px;
+  box-shadow: none;
+}
+:root[data-kitchen-study="on"]
+  .workspace-tools-panel
+  :is(.pdf-export button, .sections-disclosure-trigger):hover {
+  background: var(--site-soft);
+}
+:root[data-kitchen-study="on"] .workspace-tools-panel .section-editor {
+  margin-top: 6px;
+  padding: 10px;
+  max-height: 45dvh;
+  overflow: auto;
+}
