@@ -37,4 +37,10 @@ The removed features are their recent preview additions, not original University
 Publish only the verified administrator's bell/board adjustments. Use an additive D1 migration before worker code, preserve deployed vars/bindings, and publish hosting after production build. Retired metadata remains private and recoverable. No destructive database migration or production account test writes are needed.
 
 ## Current delivery status
-Implementation and verification are READY; deployment is NOT COMPLETE. Automatic approval review rejected the shared production worker update because administrator-preview authorization was not considered sufficiently explicit for a shared backend. A specific approval question is pending. No workaround deployment was attempted. Hosting remains on the previous release. The additive notification-table schema was applied successfully before the rejection; it creates empty tables/indexes and changes no existing account content.
+READY and deployed: `wilo-admin-simplified-notifications-20261104` at https://where-i-left-off.web.app.
+
+The user explicitly approved updating the shared production worker and publishing the simplified administrator-only UI after the automatic review rejection. Worker version `4b4503ea-1384-49c6-9f4c-25d86d3bfcad` is deployed. Its bindings (including secret binding names) and runtime metadata match the prior worker exactly; secrets were preserved with --keep-vars. Hosting deployment completed successfully. New UI remains verified-administrator-only and Work hub is disabled.
+
+Read-only production verification matched all 17 checked files byte-for-byte: index, service worker, release/configuration, main/Firebase/Workspace/University/Assistant and planning chunks. Evidence: `docs/readiness/2026-11-04-simplified-production.json`. No live production-account test data was written. System-push delivery on a physical phone remains a user/device acceptance check.
+
+The additive notification-table schema was applied successfully; existing account content was not changed. Previous release metadata is retained locally in `.wrangler/simplify-release-before.json`; previous worker version was `a9ca43da-3867-4dc4-a6f5-ef423a3e0ab7` for recovery. Reverting frontend/worker code does not require dropping the additive tables or deleting user data.
