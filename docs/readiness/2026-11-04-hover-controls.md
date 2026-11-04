@@ -18,3 +18,6 @@
 
 ## Scope and delivery
 Verified administrator preview only. PROJECT_ENGINEERING_GUIDELINES.md applied; no new dependency. Existing phone full-screen surfaces, account/model settings and worker are retained. Publication and byte-verification evidence are recorded after deployment.
+
+## Published verification
+READY and published: `wilo-admin-hover-controls-20261104`. All 12 checked production files matched the local build byte-for-byte; proof: `docs/readiness/2026-11-04-hover-controls-production.json`. Administrator-only preview; worker, account settings and rules unchanged.

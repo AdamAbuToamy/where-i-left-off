@@ -1,0 +1,80 @@
+{
+  "verifiedAt": "2026-11-04T10:57:23.6700348Z",
+  "release": "wilo-admin-hover-controls-20261104",
+  "verifiedAdminOnly": true,
+  "backendUnchanged": true,
+  "checks": [
+    {
+      "path": "index.html",
+      "bytes": 18609,
+      "sha256": "0f1f2f954a46059b6f99a99b358c8aaffdafd1d67c6a2dcacb82b117e8fefb70",
+      "match": true
+    },
+    {
+      "path": "sw.js",
+      "bytes": 24129,
+      "sha256": "bea8413e47a24382df8536e00f3b9b97f9ff289a5c1b3904949ac784d14f3bd2",
+      "match": true
+    },
+    {
+      "path": "wilo-release.json",
+      "bytes": 7865,
+      "sha256": "9653000acbad3a1f72804538ee694f713f64a2ab78cc63837c5cb4452dbd9782",
+      "match": true
+    },
+    {
+      "path": "assistant-config.json",
+      "bytes": 74,
+      "sha256": "10a7bb2868f73cda1cc54bc9c14065c517beb1a34790f73eca13a076f09d6135",
+      "match": true
+    },
+    {
+      "path": "push-config.json",
+      "bytes": 65,
+      "sha256": "cab6fb1bef86e4a93f0a1f22e08883a9c251585e053ca23b9ce3336aed4b53b6",
+      "match": true
+    },
+    {
+      "path": "assets/AssistantWidget-CE-PPOdy.js",
+      "bytes": 360970,
+      "sha256": "da6ce3b2c1a0a60d83dd273fc17c71f6687e674329f46267ca0b074027f3f6ed",
+      "match": true
+    },
+    {
+      "path": "assets/AssistantWidget-CIVKz6DW.css",
+      "bytes": 33186,
+      "sha256": "69f0353f133305f76c938ac953eb16ced905d9629dcce91e611c88b5e6dcd11a",
+      "match": true
+    },
+    {
+      "path": "assets/index-BLzkKrx7.js",
+      "bytes": 569188,
+      "sha256": "6a0c3bc68174a1b2336b9cae3af0786f8f05c52fcb527853829312e4fd886100",
+      "match": true
+    },
+    {
+      "path": "assets/index-BuJPMg6N.css",
+      "bytes": 110938,
+      "sha256": "5d329acbf755897143a1d35b706fe3ccba757b883e1d4d5d53a2cf58c9a2b453",
+      "match": true
+    },
+    {
+      "path": "assets/SummaryPdfButton-BHtTyj0L.js",
+      "bytes": 1880,
+      "sha256": "73555c3d115ec07b7d6bb5f9e82ac61773f28c57070459ef5e44bad80723a1de",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-D1usXRJx.js",
+      "bytes": 119602,
+      "sha256": "09b324d49dcaa8d08e432e1632cbb25a5e7365f4844e43a7fb65dcce73ae13c0",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-VFXH3Zy1.css",
+      "bytes": 6428,
+      "sha256": "8c0b07e1d15613adeea0f723204aa1e64006ae5b8c386cac9dddd4e1efc019dc",
+      "match": true
+    }
+  ]
+}
