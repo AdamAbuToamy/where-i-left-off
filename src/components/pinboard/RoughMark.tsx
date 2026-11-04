@@ -8,12 +8,14 @@ export default function RoughMark({
   type = "underline",
   color = "var(--site-primary)",
   rtl = false,
+  scale = 1,
 }: {
   children: string;
   active: boolean;
   type?: "underline" | "circle";
   color?: string;
   rtl?: boolean;
+  scale?: number;
 }) {
   const target = useRef<HTMLSpanElement>(null),
     reduced = useReducedMotion();
@@ -37,6 +39,9 @@ export default function RoughMark({
     ) || []) {
       svg.setAttribute("aria-hidden", "true");
       svg.setAttribute("focusable", "false");
+      (svg as SVGElement).style.transform =
+        `scale(${1 / Math.max(0.1, scale)})`;
+      (svg as SVGElement).style.transformOrigin = "0 0";
     }
     const resize = () => {
       mark.hide();
@@ -47,7 +52,7 @@ export default function RoughMark({
       window.removeEventListener("resize", resize);
       mark.remove();
     };
-  }, [active, type, color, children, rtl, reduced]);
+  }, [active, type, color, children, rtl, reduced, scale]);
   return (
     <span className="board-mark">
       <span ref={target}>{children}</span>

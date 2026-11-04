@@ -1,0 +1,119 @@
+{
+  "verifiedAt": "2026-11-04T01:09:12.8992459Z",
+  "url": "https://where-i-left-off.web.app",
+  "release": "wilo-admin-planning-board-20261104",
+  "verifiedAdminOnly": true,
+  "firestoreRulesDeployment": "Firebase CLI reported compiled and released",
+  "checks": [
+    {
+      "path": "index.html",
+      "bytes": 18527,
+      "sha256": "b2cb11608a00fd3ab900447f5d09ee560c6119e9d6817bec0489c8e8fc3e2825",
+      "match": true
+    },
+    {
+      "path": "sw.js",
+      "bytes": 23943,
+      "sha256": "ce75665b34f2a6bad5715b2a7b3f320327efab1880675dc8a494650295dde8f5",
+      "match": true
+    },
+    {
+      "path": "wilo-release.json",
+      "bytes": 6272,
+      "sha256": "1d4b3d8f456a23d57c2c92b20ca5f4236a052a5516e663875e0785bd903fd9dc",
+      "match": true
+    },
+    {
+      "path": "licenses/react-flow-MIT.txt",
+      "bytes": 1073,
+      "sha256": "023119ac20fb1c8c9930abe0bcd196989a1960388529a96fc43cebf96f07c9ff",
+      "match": true
+    },
+    {
+      "path": "licenses/roughjs-MIT.txt",
+      "bytes": 1068,
+      "sha256": "dca9a392272606ac748ac0976a2a1133f14eef841c27beaa51a844d53c56a09d",
+      "match": true
+    },
+    {
+      "path": "assets/index-Ddfce0yA.js",
+      "bytes": 556247,
+      "sha256": "62d38ac302c53cf2394f1769e67c605a6c4ca2d65e170348dea9f5eff1c1e611",
+      "match": true
+    },
+    {
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "bytes": 716,
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+      "match": true
+    },
+    {
+      "path": "assets/jsx-runtime-BNakU3Ej.js",
+      "bytes": 8243,
+      "sha256": "600d80338ace22d4dcc97a2788698c189811a8b54dad8cea58dfd8e7e4f35d34",
+      "match": true
+    },
+    {
+      "path": "assets/appError-Cenb1nQ2.js",
+      "bytes": 202,
+      "sha256": "b8269772354a7a3c6ec026f656da889fb3018912b07b024ff1743244a93755e9",
+      "match": true
+    },
+    {
+      "path": "assets/firebase-OwBaPOQG.js",
+      "bytes": 579349,
+      "sha256": "33ec897d3e019c4b1629e1343f861c5904b8974bda526556fc54ff5427136907",
+      "match": true
+    },
+    {
+      "path": "assets/createLucideIcon-DhX7lKvy.js",
+      "bytes": 3132,
+      "sha256": "90334c96885f11100ebaaf83f38e7af836ce730d49a6c04c625944a6d629c8f4",
+      "match": true
+    },
+    {
+      "path": "assets/domain-DI2oSVtF.js",
+      "bytes": 6671,
+      "sha256": "83aca8fb8661907452e77c1f6777aceffccb43c4e20d0d3708c714714d1f02fd",
+      "match": true
+    },
+    {
+      "path": "assets/projects-BR3F4Tbj.js",
+      "bytes": 2705,
+      "sha256": "5432aeb7bce790eb23f0a72f8bcfade6c0c2f1b0b6c45dbf6caf92bbf2e9aa70",
+      "match": true
+    },
+    {
+      "path": "assets/indexedDbWorkspaceStore-CvoStMja.js",
+      "bytes": 6212,
+      "sha256": "84dcf11df5df93e4a7b46414e8517de38216042a535132e35075231c3c819bbf",
+      "match": true
+    },
+    {
+      "path": "assets/profile-BRVoHR29.js",
+      "bytes": 740,
+      "sha256": "9b4251aeb45579a7004f5ad84b3f9926e25449d5f12afcaa5ec411f73b4ef431",
+      "match": true
+    },
+    {
+      "path": "assets/index-Ba0XVEny.css",
+      "bytes": 93383,
+      "sha256": "f01763d0375cb88ad9d5c3e2880df9cd81652f44acf0d5b6f57a2d875a3419af",
+      "match": true
+    },
+    {
+      "path": "assets/PlanningBoardDialog-r-2wjJfa.css",
+      "bytes": 24920,
+      "sha256": "2921b442ab5ec5b1766ab6a9ed3fbaaffa3fa5c5a8317c90f26938d659eea307",
+      "match": true
+    },
+    {
+      "path": "assets/PlanningBoardDialog-R7JrKg0R.js",
+      "bytes": 252442,
+      "sha256": "6b2d33e5f09cdfc2145919d533cbe9e5d7bbfa76dd98d55e61975e682411cb06",
+      "match": true
+    }
+  ],
+  "productionAccountWrites": false,
+  "physicalDeviceCheck": false
+}

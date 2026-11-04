@@ -31,7 +31,21 @@ it("versions the offline shell with the actual asset content and retains its off
       });
       return readFileSync(join(directory, "dist", "sw.js"), "utf8");
     };
+    for (const name of [
+      "PlanningBoardDialog-lazy.js",
+      "PlanningBoardDialog-lazy.css",
+    ]) {
+      writeFileSync(join(directory, "dist", "assets", name), "optional canvas");
+    }
     const first = run();
+    const precache = /const PRECACHE = (\[.*?\]);/.exec(first)?.[1] || "[]";
+    expect(
+      JSON.parse(precache).some((path: string) =>
+        path.includes("PlanningBoardDialog"),
+      ),
+    ).toBe(false);
+    expect(first).toContain('"-planning-runtime"');
+
     const version =
       /const CACHE_NAME = "(where-i-left-off-shell-[a-f0-9]{16})"/.exec(
         first,

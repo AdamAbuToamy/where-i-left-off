@@ -1,0 +1,543 @@
+/* React Flow canvas and RoughJS marks are confined to this desktop dialog. */
+.planning-board-dialog {
+  width: calc(100vw - 32px);
+  max-width: none;
+  height: calc(100dvh - 32px);
+  max-height: none;
+  margin: 16px;
+  padding: 0;
+  border: 1.5px dashed color-mix(in srgb, var(--site-primary) 46%, transparent);
+  border-radius: 22px;
+  color: var(--site-text);
+  background: color-mix(in srgb, var(--site-bg) 76%, transparent);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 22px 70px #25332e35;
+  overflow: hidden;
+  font-family: inherit;
+}
+.planning-board-dialog::backdrop {
+  background: #25332e12;
+  backdrop-filter: blur(1px);
+}
+.planning-board-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.planning-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  border-bottom: 1px dashed var(--site-border);
+  background: color-mix(in srgb, var(--site-surface) 88%, transparent);
+}
+.planning-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.planning-title h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.planning-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--site-muted);
+  padding: 4px 7px;
+  border: 1px solid var(--site-border);
+  border-radius: 20px;
+  background: var(--site-surface);
+}
+.planning-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.planning-board-dialog button,
+.planning-board-dialog summary {
+  font: inherit;
+}
+.planning-actions button,
+.planning-help summary,
+.planning-zoom button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--site-text);
+  cursor: pointer;
+}
+.planning-board-dialog button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.planning-actions button:hover:not(:disabled),
+.planning-help summary:hover,
+.planning-zoom button:hover {
+  background: var(--site-soft);
+}
+.planning-actions .planning-add {
+  font-size: 12px;
+  background: var(--site-primary);
+  color: #fff;
+  border-color: var(--site-primary-border);
+  padding-inline: 12px;
+}
+.planning-actions .planning-add:hover:not(:disabled) {
+  background: var(--site-primary-border);
+}
+.planning-mode {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+  background: var(--site-surface);
+}
+.planning-mode button[aria-pressed="true"] {
+  background: var(--site-soft);
+  color: var(--site-primary);
+  border-color: var(--site-border);
+}
+.planning-help {
+  position: relative;
+}
+.planning-help summary {
+  list-style: none;
+}
+.planning-help summary::-webkit-details-marker {
+  display: none;
+}
+.planning-help > div {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + 12px);
+  inset-inline-end: 0;
+  width: 300px;
+  padding: 16px;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 35px #25332e22;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.planning-help p {
+  margin: 0 0 10px;
+}
+.planning-help button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--site-border);
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--site-soft);
+  color: var(--site-text);
+}
+.planning-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 9px 16px;
+  background: var(--site-surface);
+  border-bottom: 1px solid var(--site-border);
+  font-size: 13px;
+}
+.planning-notice button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
+  background: var(--site-soft);
+  color: var(--site-text);
+}
+.planning-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+}
+.planning-canvas .react-flow {
+  background: transparent;
+  --xy-edge-stroke: #a94b42;
+  --xy-edge-stroke-selected: #a94b42;
+  --xy-selection-background-color: #385c4b0f;
+  --xy-selection-border: 1px dashed #385c4b80;
+}
+.planning-canvas .react-flow__node {
+  border: 0;
+  background: none;
+}
+.planning-canvas .react-flow__node:focus-visible {
+  outline: 2px dashed var(--site-primary);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+.planning-canvas .react-flow__node.selected > article {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--site-primary) 50%, transparent),
+    4px 15px 24px #25332e20;
+}
+.plan-card,
+.plan-note {
+  position: relative;
+  width: 254px;
+  border: 1px solid color-mix(in srgb, var(--site-border) 85%, #9a8d72);
+  border-radius: 5px 4px 13px 4px;
+  background: var(--site-surface);
+  box-shadow: 2px 9px 15px #51432a1a;
+  color: var(--site-text);
+}
+.plan-card {
+  padding: 24px 18px 14px;
+}
+.plan-node-grip {
+  cursor: grab;
+  touch-action: none;
+}
+.plan-node-grip:active {
+  cursor: grabbing;
+}
+.plan-node-grip small {
+  font-size: 10px;
+  color: var(--site-primary);
+  background: var(--site-soft);
+  padding: 4px 7px;
+  border-radius: 5px;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.plan-node-grip h2 {
+  font-size: 16px;
+  margin: 13px 0 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.plan-card-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--site-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 0 0 16px;
+  white-space: pre-wrap;
+}
+.plan-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px dashed var(--site-border);
+  padding-top: 10px;
+}
+.plan-card footer time {
+  font-size: 10px;
+  color: var(--site-muted);
+}
+.plan-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 7px;
+  color: var(--site-primary);
+  background: var(--site-soft);
+  font-size: 10px;
+  cursor: pointer;
+}
+.plan-remove {
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 5px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border: 0;
+  border-radius: 50%;
+  padding: 4px;
+  color: var(--site-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.plan-remove:hover {
+  background: var(--site-soft);
+  color: #a3433c;
+}
+.planning-canvas .react-flow__handle.plan-pin {
+  width: 17px;
+  height: 17px;
+  min-width: 17px;
+  min-height: 17px;
+  top: -1px;
+  left: 50%;
+  border: 1px solid #883e36;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #eaa89b, #b95b4c 48%, #873e36);
+  box-shadow: 2px 4px 3px #422b2540;
+  cursor: crosshair;
+  z-index: 5;
+}
+.planning-canvas .react-flow__handle.plan-pin:hover {
+  outline: 4px solid #ac4d4230;
+}
+.plan-note {
+  width: 232px;
+  background: #fff5cf;
+}
+.plan-note .plan-node-grip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 24px 16px 10px;
+  font-size: 11px;
+  color: #6e6037;
+  border-bottom: 1px dashed #cbbd8b;
+}
+.plan-note textarea {
+  user-select: text;
+  -webkit-user-select: text;
+  display: block;
+  resize: vertical;
+  width: 100%;
+  min-height: 120px;
+  max-height: 400px;
+  margin: 0;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 0 0 12px 4px;
+  background: transparent;
+  color: #554b30;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.plan-note textarea:focus {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px #b5a57540;
+}
+.plan-rope-base {
+  fill: none;
+  stroke: #9f473e;
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 1px #62352b38);
+}
+.plan-rope-strand {
+  fill: none;
+  stroke: #dc9b80;
+  stroke-width: 1.2;
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+}
+.plan-edge-delete {
+  position: absolute;
+  pointer-events: all;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #b76a5b;
+  border-radius: 50%;
+  color: #9f473e;
+  background: var(--site-surface);
+  box-shadow: 0 3px 10px #25332e20;
+  cursor: pointer;
+}
+.plan-circle-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.plan-circle-layer.is-drawing {
+  pointer-events: all;
+  cursor: crosshair;
+  touch-action: none;
+}
+.plan-circle-layer .is-selected {
+  filter: drop-shadow(0 0 3px #b6504580);
+}
+.planning-empty {
+  position: absolute;
+  z-index: 2;
+  top: 45%;
+  left: 50%;
+  translate: -50% -50%;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  color: var(--site-muted);
+  pointer-events: none;
+  font-size: 14px;
+  text-align: center;
+}
+.planning-empty p {
+  margin: 0;
+}
+.planning-zoom {
+  position: absolute;
+  z-index: 10;
+  bottom: 18px;
+  left: 18px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+  background: var(--site-surface);
+  box-shadow: 0 5px 18px #25332e12;
+}
+.planning-card-picker {
+  position: absolute;
+  z-index: 15;
+  top: 12px;
+  inset-inline-start: 14px;
+  width: 300px;
+  max-height: calc(100% - 80px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--site-border);
+  border-radius: 14px;
+  background: var(--site-surface);
+  box-shadow: 0 12px 35px #25332e20;
+}
+.planning-card-picker label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--site-border);
+  border-radius: 9px;
+  padding: 8px 10px;
+}
+.planning-card-picker input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: var(--site-text);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+.planning-card-picker > div {
+  overflow: auto;
+  min-height: 0;
+}
+.planning-card-picker button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--site-text);
+  padding: 10px;
+  text-align: start;
+  font-size: 12px;
+  cursor: pointer;
+}
+.planning-card-picker button span {
+  overflow-wrap: anywhere;
+}
+.planning-card-picker button:hover:not(:disabled) {
+  background: var(--site-soft);
+}
+.planning-board-dialog :is(button, summary, input, textarea):focus-visible {
+  outline: 2px solid var(--site-primary);
+  outline-offset: 3px;
+}
+.planning-board-dialog .rough-annotation {
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .planning-board-dialog[open] {
+    animation: planning-board-open 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .planning-save.is-pending svg {
+    animation: planning-save-spin 1.2s linear infinite;
+  }
+  .planning-board-dialog button {
+    transition:
+      background 0.18s,
+      color 0.18s,
+      scale 0.18s;
+  }
+  .planning-board-dialog button:active:not(:disabled) {
+    scale: 0.97;
+  }
+  @keyframes planning-board-open {
+    from {
+      opacity: 0.3;
+      scale: 0.985;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes planning-save-spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+}
+@media (max-width: 1150px) {
+  .planning-title h2 {
+    font-size: 14px;
+  }
+  .planning-toolbar {
+    gap: 6px;
+    padding: 10px;
+  }
+  .planning-title {
+    gap: 6px;
+  }
+  .planning-actions {
+    gap: 2px;
+  }
+  .planning-save span {
+    display: none;
+  }
+}
+
+.planning-board-dialog .board-mark {
+  position: relative;
+}
+.planning-board-dialog .rough-annotation {
+  pointer-events: none;
+}

@@ -1,0 +1,226 @@
+/* Compact command strip; existing WILO cards, fonts and palette remain intact. */
+:root[data-kitchen-study="on"] .workspace-command-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 1120px;
+  margin: 14px auto 22px;
+  padding: 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 17px;
+  background: var(--site-surface);
+  box-shadow: 0 4px 18px #25332e07;
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .workspace-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  justify-content: flex-start;
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .project-count {
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--site-muted);
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .primary-button {
+  width: auto;
+  min-height: 42px;
+  padding: 9px 13px;
+  font-size: 13px;
+  margin: 0;
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .workspace-search-tools {
+  display: contents;
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .workspace-tools-dock {
+  position: relative;
+  inset: auto;
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .workspace-tools-trigger {
+  min-height: 42px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+:root[data-kitchen-study="on"] .workspace-command-bar .workspace-tools-panel {
+  width: min(370px, calc(100vw - 40px));
+  border-radius: 16px;
+  box-shadow: 0 16px 40px #25332e18;
+}
+:root[data-kitchen-study="on"] .compact-workspace-search {
+  position: relative;
+}
+:root[data-kitchen-study="on"] .compact-workspace-search summary,
+:root[data-kitchen-study="on"] .workspace-connection-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 11px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--site-primary);
+}
+:root[data-kitchen-study="on"]
+  .compact-workspace-search
+  summary::-webkit-details-marker,
+:root[data-kitchen-study="on"]
+  .workspace-connection-menu
+  > summary::-webkit-details-marker {
+  display: none;
+}
+:root[data-kitchen-study="on"] .compact-workspace-search summary:hover,
+:root[data-kitchen-study="on"] .workspace-connection-menu > summary:hover {
+  background: var(--site-soft);
+}
+:root[data-kitchen-study="on"] .workspace-search-query {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+:root[data-kitchen-study="on"] .compact-search-panel,
+:root[data-kitchen-study="on"] .workspace-connection-panel {
+  position: absolute;
+  z-index: 25;
+  top: calc(100% + 10px);
+  inset-inline-end: 0;
+  width: min(330px, calc(100vw - 42px));
+  padding: 12px;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px #25332e18;
+}
+:root[data-kitchen-study="on"] .compact-search-panel input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--site-border);
+  border-radius: 9px;
+  background: var(--site-input);
+  color: var(--site-text);
+}
+:root[data-kitchen-study="on"] .workspace-connection-menu {
+  position: relative;
+}
+:root[data-kitchen-study="on"] .workspace-connection-panel .account-strip {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+:root[data-kitchen-study="on"] .admin-workspace-filters {
+  margin-bottom: 12px;
+}
+:root[data-kitchen-study="on"] .planning-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 9px 13px;
+  border-radius: 10px;
+  white-space: nowrap;
+  font-size: 13px;
+  border: 1px dashed var(--site-primary);
+  background: var(--site-soft);
+  color: var(--site-primary);
+}
+:root[data-kitchen-study="on"] .project-board {
+  max-width: 1120px;
+  margin-inline: auto;
+}
+:root[data-kitchen-study="on"] .account-strip {
+  gap: 12px;
+  padding-block: 8px;
+  font-size: 12px;
+}
+:root[data-kitchen-study="on"] .account-identity {
+  max-width: min(45vw, 26ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  :root[data-kitchen-study="on"] .workspace-command-bar {
+    gap: 5px;
+    padding: 6px;
+  }
+  :root[data-kitchen-study="on"] .workspace-command-bar .workspace-toolbar {
+    gap: 6px;
+  }
+  :root[data-kitchen-study="on"]
+    .workspace-command-bar
+    .workspace-tools-trigger {
+    font-size: 0;
+    gap: 0;
+    padding: 10px;
+    min-width: 42px;
+  }
+  :root[data-kitchen-study="on"] .workspace-command-bar .project-count {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-kitchen-study="on"]
+    .compact-workspace-search[open]
+    .compact-search-panel,
+  :root[data-kitchen-study="on"]
+    .workspace-connection-menu[open]
+    .workspace-connection-panel {
+    animation: planning-command-open 0.2s ease-out;
+  }
+  @keyframes planning-command-open {
+    from {
+      opacity: 0;
+      translate: 0 -5px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-status-loading {
+    animation: workspace-status-spin 1.2s linear infinite;
+  }
+  @keyframes workspace-status-spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+}
+
+:root[data-kitchen-study="on"] .workspace-command-bar {
+  position: relative;
+}
+:root[data-kitchen-study="on"] .compact-workspace-search {
+  position: static;
+}
+:root[data-kitchen-study="on"] .compact-search-panel {
+  inset-inline-end: 8px;
+  inset-inline-start: auto;
+  width: min(420px, calc(100vw - 60px));
+  top: calc(100% + 8px);
+}
+@media (max-width: 600px) {
+  :root[data-kitchen-study="on"] .workspace-search-query {
+    display: none;
+  }
+  :root[data-kitchen-study="on"]
+    .compact-workspace-search:has(.workspace-search-query)
+    summary::after {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--site-primary);
+  }
+}

@@ -1,5 +1,3 @@
-import RoughMark from "./pinboard/RoughMark";
-import { matchesView } from "../lib/projects";
 import { useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Maximize2, Minimize2, CalendarDays } from "lucide-react";
@@ -35,9 +33,8 @@ export default function CompactCardShell({
   language: Language;
   children: ReactNode;
 }) {
-  const { enabled, kitchenStudy } = useDesignPreview();
+  const { enabled } = useDesignPreview();
   const [expanded, setExpanded] = useState(false);
-  const [marked, setMarked] = useState(false);
   const id = useId();
   const opener = useRef<HTMLButtonElement>(null),
     closer = useRef<HTMLButtonElement>(null);
@@ -54,17 +51,6 @@ export default function CompactCardShell({
   return (
     <div
       className={`envelope-shell ${expanded ? "is-expanded" : ""}`}
-      onPointerLeave={kitchenStudy ? () => setMarked(false) : undefined}
-      onPointerEnter={kitchenStudy ? () => setMarked(true) : undefined}
-      onFocus={kitchenStudy ? () => setMarked(true) : undefined}
-      onBlur={
-        kitchenStudy
-          ? (event) => {
-              if (!event.currentTarget.contains(event.relatedTarget))
-                setMarked(false);
-            }
-          : undefined
-      }
       onKeyDown={(event) => {
         if (
           event.key === "Escape" &&
@@ -77,33 +63,13 @@ export default function CompactCardShell({
         }
       }}
     >
-      {kitchenStudy && !expanded && (
-        <span className="board-pin" aria-hidden="true" />
-      )}
       {!expanded && (
         <div className="envelope-summary">
           <span className="envelope-section" dir="auto">
             {sections.find((s) => s.id === project.sectionId)?.name || "WILO"}
           </span>
-          <h2 dir="auto">
-            {kitchenStudy ? (
-              <RoughMark active={marked} rtl={language !== "en"}>
-                {project.name}
-              </RoughMark>
-            ) : (
-              project.name
-            )}
-          </h2>
-          <p
-            className="envelope-copy"
-            dir="auto"
-            hidden={
-              kitchenStudy &&
-              !project.nextStep &&
-              !project.checkpoint &&
-              !project.description
-            }
-          >
+          <h2 dir="auto">{project.name}</h2>
+          <p className="envelope-copy" dir="auto">
             {project.nextStep ||
               project.checkpoint ||
               project.description ||
@@ -112,18 +78,7 @@ export default function CompactCardShell({
           {project.dueDate && (
             <time dateTime={project.dueDate}>
               <CalendarDays size={14} aria-hidden="true" />
-              {kitchenStudy ? (
-                <RoughMark
-                  type="circle"
-                  color="#a7473f"
-                  active={matchesView(project, "overdue")}
-                  rtl={language !== "en"}
-                >
-                  {project.dueDate}
-                </RoughMark>
-              ) : (
-                project.dueDate
-              )}
+              {project.dueDate}
             </time>
           )}
           <button
@@ -136,9 +91,7 @@ export default function CompactCardShell({
             onClick={open}
           >
             <Maximize2 size={18} aria-hidden="true" />
-            {kitchenStudy
-              ? { ar: "فتح", en: "Open", he: "פתיחה" }[language]
-              : t.open}
+            {t.open}
           </button>
         </div>
       )}

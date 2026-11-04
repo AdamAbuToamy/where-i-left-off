@@ -3,7 +3,7 @@ import { prepareUniversityPilot } from "./universityFixture";
 import { mkdir } from "node:fs/promises";
 
 for (const mobile of [false, true]) {
-  test(`Kitchen admin ${mobile ? "phone" : "desktop"}: expand and collapse keep original actions`, async ({
+  test(`Admin main cards ${mobile ? "phone" : "desktop"}: expand and collapse keep original actions`, async ({
     page,
     request,
   }) => {
@@ -40,12 +40,12 @@ for (const mobile of [false, true]) {
       .locator(".project-card")
       .filter({ has: page.locator(".envelope-summary h2", { hasText: name }) });
     await expect(card.locator(".envelope-expand")).toBeVisible();
-    await expect(card.locator(".envelope-expand")).toHaveText("Open");
-    const sync = page.locator(".kitchen-sync");
+    await expect(card.locator(".envelope-expand")).toHaveText("Expand card");
+    const sync = page.locator(".workspace-connection-menu");
     await expect(sync).toBeVisible();
     await sync.locator("summary").click();
-    await expect(sync.locator("details > p")).toBeVisible();
-    await expect(sync.locator("details > p")).not.toBeEmpty();
+    await expect(sync.locator(".sync-status")).toBeVisible();
+    await expect(sync.locator(".sync-status")).not.toBeEmpty();
     await sync.locator("summary").click();
 
     await mkdir(".wrangler", { recursive: true });
@@ -54,6 +54,7 @@ for (const mobile of [false, true]) {
       fullPage: true,
       animations: "disabled",
     });
+    await card.locator(".envelope-expand").focus();
     await expect(card.locator(".envelope-expand")).toHaveCSS(
       "pointer-events",
       "auto",
@@ -76,8 +77,8 @@ for (const mobile of [false, true]) {
       await page.evaluate(() => localStorage.setItem("language", "ar"));
       await page.reload();
       await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-      await expect(page.locator(".kitchen-sync")).toBeVisible({ timeout: 15000 });
-      await expect(page.locator(".envelope-expand").first()).toHaveText("فتح");
+      await expect(page.locator(".workspace-connection-menu")).toBeVisible({ timeout: 15000 });
+      await expect(page.locator(".envelope-expand").first()).toHaveText("تكبير البطاقة");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       await page.screenshot({ path: ".wrangler/kitchen-phone-ar.png", fullPage: true, animations: "disabled" });
     }

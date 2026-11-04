@@ -1,7 +1,3 @@
-import { useRef, useState } from "react";
-import { Cable, Info } from "lucide-react";
-import { useDesignPreview } from "./designPreviewContext";
-import SectionThreads from "./pinboard/SectionThreads";
 import {
   DndContext,
   KeyboardSensor,
@@ -96,7 +92,6 @@ function SortableCard({
   onUpdate,
   onDelete,
 }: SortableCardProps) {
-  const { kitchenStudy } = useDesignPreview();
   const {
     attributes,
     listeners,
@@ -118,13 +113,7 @@ function SortableCard({
       ref={setNodeRef}
       style={style}
       className={`sortable-project ${isDragging ? "is-dragging" : ""}`}
-      data-board-id={kitchenStudy ? project.id : undefined}
-      data-board-section={
-        kitchenStudy &&
-        sections.some((section) => section.id === project.sectionId)
-          ? project.sectionId
-          : undefined
-      }
+      data-project-id={project.id}
     >
       {canReorder && (
         <button
@@ -183,34 +172,6 @@ export default function ProjectBoard({
   onDelete,
 }: ProjectBoardProps) {
   const t = messages[language];
-  const { kitchenStudy } = useDesignPreview();
-  const board = useRef<HTMLDivElement>(null);
-  const [showThreads, setShowThreads] = useState(false),
-    [dragging, setDragging] = useState(false);
-  const sectionCounts = new Map<string, number>();
-  for (const project of projects)
-    if (project.sectionId)
-      sectionCounts.set(
-        project.sectionId,
-        (sectionCounts.get(project.sectionId) || 0) + 1,
-      );
-  const canThread = sections.some(
-    (section) => (sectionCounts.get(section.id) || 0) > 1,
-  );
-  const threadWords = {
-    ar: {
-      toggle: "خيوط الأقسام",
-      hint: "تحتاج بطاقتين أو أكثر في القسم نفسه؛ الخيوط تجمعها ولا تعني اعتماد مهمة على أخرى.",
-    },
-    en: {
-      toggle: "Section threads",
-      hint: "Requires two or more cards in the same section. These strings show grouping, not task dependencies.",
-    },
-    he: {
-      toggle: "קשרי מדורים",
-      hint: "מחבר כרטיסים מאותו מדור, לא תלויות בין משימות.",
-    },
-  }[language];
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -233,36 +194,7 @@ export default function ProjectBoard({
   }
 
   return (
-    <div className="project-board" ref={board}>
-      {kitchenStudy && (
-        <div className="pinboard-toolbar">
-          <button
-            type="button"
-            className="secondary-button"
-            aria-pressed={showThreads && canThread}
-            disabled={!canThread}
-            title={threadWords.hint}
-            onClick={() => setShowThreads((value) => !value)}
-          >
-            <Cable size={16} aria-hidden="true" />
-            {threadWords.toggle}
-          </button>
-          <details className="pinboard-key">
-            <summary aria-label={threadWords.hint}>
-              <Info size={16} aria-hidden="true" />
-            </summary>
-            <p>{threadWords.hint}</p>
-          </details>
-        </div>
-      )}
-      {kitchenStudy && canThread && showThreads && !dragging && (
-        <SectionThreads
-          root={board}
-          revision={projects
-            .map((project) => project.id + ":" + project.sectionId)
-            .join("|")}
-        />
-      )}
+    <div className="project-board">
       {canManage && projects.length > 1 && (
         <p className="board-hint">{t.hint}</p>
       )}
@@ -291,10 +223,7 @@ export default function ProjectBoard({
             },
           },
         }}
-        onDragStart={() => setDragging(true)}
-        onDragCancel={() => setDragging(false)}
         onDragEnd={({ active, over }) => {
-          setDragging(false);
           if (canManage && over && active.id !== over.id) {
             onReorder(String(active.id), String(over.id));
           }

@@ -352,6 +352,34 @@ service cloud.firestore {
     }
 
 
+    // Private planning canvases never update project ranks or content.
+    match /users/{uid}/planningBoards/{boardId} {
+      function boardOwner() {
+        return signedActive() && request.auth.uid == uid
+          && (boardId == 'personal' || boardId.matches('^group_[A-Za-z0-9]{20}$'));
+      }
+      function validBoard() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['version','scope','payload','revision','mutationId','updatedAt'])
+          && d.keys().hasOnly(['version','scope','payload','revision','mutationId','updatedAt'])
+          && d.version == 1
+          && d.scope is string
+          && ((boardId == 'personal' && d.scope == '')
+            || (d.scope.matches('^[A-Za-z0-9]{20}$') && boardId == 'group_' + d.scope && groupMember(d.scope)))
+          && d.payload is string && d.payload.size() > 0 && d.payload.size() <= 150000
+          && d.revision is int && d.revision >= 1 && d.revision <= 10000000
+          && d.mutationId is string && d.mutationId.matches('^[A-Za-z0-9_-]{1,100}$')
+          && d.updatedAt == request.time;
+      }
+      allow get: if boardOwner();
+      allow list: if signedActive() && request.auth.uid == uid;
+      allow delete: if false;
+      allow create: if boardOwner() && request.auth.token.email_verified == true && validBoard() && request.resource.data.revision == 1;
+      allow update: if boardOwner() && request.auth.token.email_verified == true && validBoard()
+        && request.resource.data.scope == resource.data.scope
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+
     match /users/{uid}/preferences/{preference} {
       function ownerPreference() { return signedActive() && request.auth.uid==uid && preference=='workflow'; }
       allow get: if ownerPreference();

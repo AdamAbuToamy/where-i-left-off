@@ -71,6 +71,19 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   const pathname = new URL(event.request.url).pathname;
+  // The desktop planning canvas is loaded and cached only when explicitly opened.
+  if (/^\/assets\/PlanningBoardDialog[^/]+\.(?:js|css)$/.test(pathname)) {
+    event.respondWith(
+      caches.open(CACHE_NAME + "-planning-runtime").then(async (cache) => {
+        const saved = await cache.match(event.request);
+        if (saved) return saved;
+        const response = await fetch(event.request);
+        if (response.ok) await cache.put(event.request, response.clone());
+        return response;
+      }),
+    );
+    return;
+  }
   // Optional speech assets are cached only after explicit use, never on install.
   if (
     /^\/assets\/(?:speech\.worker|ort-|onnxruntime|transformers)[^/]+\.(?:m?js|wasm)$/.test(
