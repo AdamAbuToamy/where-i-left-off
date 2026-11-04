@@ -57,6 +57,7 @@ export default function MobileNavigation({
       </a>
       <button
         type="button"
+        className="mobile-menu-toggle"
         onClick={() => window.dispatchEvent(new Event("wilo-open-menu"))}
       >
         <Menu size={21} />

@@ -24,6 +24,9 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
           fields: {
             name: { stringValue: "Phone journey " + i },
             nextStep: { stringValue: "Keep working" },
+            description: { stringValue: "Useful phone notes" },
+            checkpoint: { stringValue: "Resume here" },
+            checklist: { stringValue: "[ ] First task" },
             status: { stringValue: "later" },
             rank: { integerValue: String(-10000 + i) },
             revision: { integerValue: "0" },
@@ -54,12 +57,35 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
     .getByRole("button", { name: "Open assistant", exact: true })
     .click();
   await expect(page.locator("#wilo-assistant")).toBeVisible();
+  await expect(page.locator("#wilo-assistant textarea")).not.toBeFocused();
+  await page.evaluate(() => {
+    const view = window.visualViewport!;
+    Object.defineProperty(view, "height", { configurable: true, value: 480 });
+    view.dispatchEvent(new Event("resize"));
+  });
+  await expect
+    .poll(async () =>
+      Math.round((await page.locator("#wilo-assistant").boundingBox())!.height),
+    )
+    .toBe(480);
+  await page.evaluate(() => {
+    const view = window.visualViewport!;
+    Object.defineProperty(view, "height", { configurable: true, value: 844 });
+    view.dispatchEvent(new Event("resize"));
+  });
   await page
     .getByRole("button", { name: "Close assistant", exact: true })
     .click();
   await page.getByRole("button", { name: "One card", exact: true }).click();
   const deck = page.locator(".mobile-card-deck");
   await expect(deck.locator(".project-card")).toHaveCount(1);
+  await expect(deck.locator(".card-preview-details")).toContainText(
+    "Useful phone notes",
+  );
+  await page.screenshot({
+    path: ".wrangler/mobile-deck-repaired.png",
+    animations: "disabled",
+  });
   const first = await deck.locator(".envelope-summary h2").innerText(),
     swipe = deck.locator(".mobile-deck-swipe"),
     box = (await swipe.boundingBox())!;
@@ -96,6 +122,21 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
   await page.getByRole("button", { name: "New card", exact: true }).click();
   const form = page.getByRole("dialog", { name: "New card", exact: true });
   await fills(form);
+  await expect(form.locator("input").first()).not.toBeFocused();
+  await expect(form.locator(".card-form-disclosure[open]")).toHaveCount(0);
+  await page.screenshot({
+    path: ".wrangler/mobile-add-repaired.png",
+    animations: "disabled",
+  });
+  await form.getByText("Notes and links", { exact: true }).click();
+  await expect(form.locator("#new-description")).toBeVisible();
+  await form
+    .locator("#new-description")
+    .fill("Notes retained in a closed group");
+  await form.getByText("Notes and links", { exact: true }).click();
+  await expect(form.locator("#new-description")).toHaveValue(
+    "Notes retained in a closed group",
+  );
   await form.getByRole("button", { name: "Back", exact: true }).click();
   await expect(form).toHaveCount(0);
   await page
@@ -112,6 +153,6 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
   await page
     .locator(".page-navigation")
     .getByRole("link", { name: "University", exact: true })
-    .click();
+    .tap();
   await expect(page).toHaveURL(/university/);
 });

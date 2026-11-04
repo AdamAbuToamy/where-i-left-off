@@ -21,12 +21,21 @@ export function usePhoneSurface(
   useEffect(() => {
     const node = ref.current;
     if (!active || !node) return;
-    const overflow = document.body.style.overflow,
-      scrollY = window.scrollY,
-      hidden: Array<[HTMLElement, boolean]> = [];
-    document.body.style.overflow = "hidden";
+    const body = document.body,
+      scrollY = window.scrollY;
+    const previous = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+    const hidden: Array<[HTMLElement, boolean]> = [];
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = -scrollY + "px";
+    body.style.width = "100%";
     let branch: HTMLElement = node;
-    while (branch.parentElement && branch !== document.body) {
+    while (branch.parentElement && branch !== body) {
       for (const sibling of branch.parentElement.children)
         if (sibling !== branch && sibling instanceof HTMLElement) {
           hidden.push([sibling, sibling.inert]);
@@ -34,13 +43,39 @@ export function usePhoneSurface(
         }
       branch = branch.parentElement;
     }
+    let frame = 0;
+    const paint = () => {
+      frame = 0;
+      const view = window.visualViewport;
+      node.style.setProperty(
+        "--phone-height",
+        (view?.height || innerHeight) + "px",
+      );
+      node.style.setProperty("--phone-top", (view?.offsetTop || 0) + "px");
+    };
+    const update = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    paint();
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
     return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+      if (
+        node.contains(document.activeElement) &&
+        document.activeElement instanceof HTMLElement
+      )
+        document.activeElement.blur();
       for (const [element, inert] of hidden)
         element.toggleAttribute("inert", inert);
-      document.body.style.overflow = overflow;
-      requestAnimationFrame(() =>
-        window.scrollTo({ top: scrollY, behavior: "instant" }),
-      );
+      Object.assign(body.style, previous);
+      node.style.removeProperty("--phone-height");
+      node.style.removeProperty("--phone-top");
+      window.scrollTo({ top: scrollY, behavior: "instant" });
     };
   }, [ref, active]);
 }

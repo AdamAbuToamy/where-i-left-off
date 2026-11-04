@@ -1,3 +1,4 @@
+import { usePhoneSurface } from "../components/usePhoneSurface";
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 type Reveal = (onVisible?: () => void) => void;
@@ -33,15 +34,7 @@ export function useMobileChangePreview(
     },
     [],
   );
-  useEffect(() => {
-    if (!mobile || !open || peeking) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      if (document.body.style.overflow === "hidden")
-        document.body.style.overflow = previous;
-    };
-  }, [mobile, open, peeking]);
+  usePhoneSurface(panel, mobile && open && !peeking);
   function show(reveal: Reveal) {
     if (!open) {
       reveal();

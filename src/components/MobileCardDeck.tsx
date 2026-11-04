@@ -1,3 +1,4 @@
+import CardPreviewDetails from "./CardPreviewDetails";
 import { useRef, useState, useLayoutEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProjectCard from "./ProjectCard";
@@ -17,7 +18,7 @@ export default function MobileCardDeck({
 }: ProjectBoardProps) {
   const root = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
-    root.current?.scrollIntoView({ block: "center", behavior: "instant" });
+    root.current?.scrollIntoView({ block: "nearest", behavior: "instant" });
   }, []);
   const [activeId, setActiveId] = useState(""),
     surface = useRef<HTMLDivElement>(null),
@@ -47,9 +48,9 @@ export default function MobileCardDeck({
           aria-label={language === "ar" ? "البطاقة السابقة" : "Previous card"}
           onClick={() => step(-1)}
         >
-          <ChevronLeft size={22} />
+          {rtl ? <ChevronRight size={22} /> : <ChevronLeft size={22} />}
         </button>
-        <span role="status">
+        <span role="status" dir="ltr">
           {index + 1} / {projects.length}
         </span>
         <button
@@ -58,7 +59,7 @@ export default function MobileCardDeck({
           aria-label={language === "ar" ? "البطاقة التالية" : "Next card"}
           onClick={() => step(1)}
         >
-          <ChevronRight size={22} />
+          {rtl ? <ChevronLeft size={22} /> : <ChevronRight size={22} />}
         </button>
       </div>
       <div
@@ -105,6 +106,9 @@ export default function MobileCardDeck({
       >
         <div key={project.id} className="mobile-deck-card">
           <ProjectCard
+            summaryExtras={
+              <CardPreviewDetails project={project} language={language} />
+            }
             disabled={disabled}
             project={project}
             sections={sections}

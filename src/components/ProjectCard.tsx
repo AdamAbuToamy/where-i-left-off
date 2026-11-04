@@ -12,7 +12,7 @@ import { cardAction } from "../lib/cardAction";
 import ExtraLinks from "./ExtraLinks";
 import LinkedText from "./LinkedText";
 import { useRef, useState } from "react";
-import type { FormEvent } from "react";
+import type { ReactNode, FormEvent } from "react";
 import type { Project, Section, GroupMember } from "../types";
 import type { Language } from "../translations";
 import { translations } from "../translations";
@@ -28,6 +28,7 @@ import RecallFields from "./RecallFields";
 import type { RecallDetails } from "./RecallFields";
 
 type ProjectCardProps = {
+  summaryExtras?: ReactNode;
   disabled?: boolean;
   project: Project;
   sections: Section[];
@@ -48,6 +49,7 @@ type ProjectCardProps = {
 };
 
 export default function ProjectCard({
+  summaryExtras,
   disabled,
   project,
   sections,
@@ -237,7 +239,7 @@ export default function ProjectCard({
             <input
               disabled={!canManage}
               id={`name-${project.id}`}
-              autoFocus
+              autoFocus={!phone}
               dir="auto"
               required
               maxLength={100}
@@ -332,6 +334,7 @@ export default function ProjectCard({
           </form>
         ) : (
           <CompactCardShell
+            summaryExtras={summaryExtras}
             expanded={detailsOpen}
             onExpandedChange={setDetailsOpen}
             project={project}

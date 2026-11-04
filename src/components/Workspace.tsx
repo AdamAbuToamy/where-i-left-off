@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { usePhoneLayout } from "./usePhoneSurface";
 import DesktopPlanningButton from "../planning/DesktopPlanningButton";
 import {
@@ -55,6 +56,14 @@ export default function Workspace({
   members: GroupMember[];
 }) {
   const { enabled: designPreview, kitchenStudy } = useDesignPreview();
+  const sectionDialog = useRef<HTMLDialogElement>(null),
+    [manageSections, setManageSections] = useState(false);
+  useEffect(() => {
+    if (!manageSections) return;
+    const dialog = sectionDialog.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, [manageSections]);
   const phone = usePhoneLayout(),
     [singleCard, setSingleCard] = useState(false);
   const t = translations[language],
@@ -519,6 +528,59 @@ export default function Workspace({
             </section>
           );
         })}
+      {kitchenStudy &&
+        canManage &&
+        manageSections &&
+        createPortal(
+          <dialog
+            ref={sectionDialog}
+            className="section-management-dialog"
+            aria-label={r.manage}
+            onCancel={(e) => {
+              e.preventDefault();
+              setManageSections(false);
+            }}
+          >
+            <header>
+              <h2>{r.manage}</h2>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setManageSections(false)}
+              >
+                {language === "ar"
+                  ? "رجوع"
+                  : language === "he"
+                    ? "חזרה"
+                    : "Back"}
+              </button>
+            </header>{" "}
+            <Sections
+              expanded
+              managementOnly
+              canManage={canManage}
+              sections={sections}
+              projects={projects}
+              selected={sectionFilter}
+              onSelect={setSectionFilter}
+              language={language}
+              disabled={pending}
+              onSave={(name, id) =>
+                run(
+                  () => repository.current!.saveSection(name, id),
+                  "section.save",
+                )
+              }
+              onDelete={(id) =>
+                run(
+                  () => repository.current!.deleteSection(id),
+                  "section.delete",
+                )
+              }
+            />
+          </dialog>,
+          document.body,
+        )}
       {accountSuspended ? (
         <section className="empty-state account-suspended" role="alert">
           <h2>{t.accountStatus}</h2>
@@ -609,7 +671,11 @@ export default function Workspace({
                               : "Section"
                         }
                         value={sectionFilter}
-                        onChange={setSectionFilter}
+                        onChange={(value) => {
+                          if (value === "__manage_sections")
+                            setManageSections(true);
+                          else setSectionFilter(value);
+                        }}
                         options={[
                           { value: "all", label: r.allSections },
                           { value: "", label: r.noSection },
@@ -617,6 +683,9 @@ export default function Workspace({
                             value: section.id,
                             label: section.name,
                           })),
+                          ...(canManage
+                            ? [{ value: "__manage_sections", label: r.manage }]
+                            : []),
                         ]}
                       />
                     </div>
@@ -698,7 +767,7 @@ export default function Workspace({
                   </button>
                 </div>
               )}
-              {view === "board" && (
+              {!kitchenStudy && view === "board" && (
                 <Sections
                   managementOnly={!!kitchenStudy}
                   canManage={canManage}

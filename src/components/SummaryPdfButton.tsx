@@ -30,6 +30,15 @@ export default function SummaryPdfButton({
     <div className="pdf-export">
       <button
         className="secondary-button"
+        title={
+          compact
+            ? language === "ar"
+              ? "تصدير البطاقات PDF"
+              : language === "he"
+                ? "ייצוא כרטיסים ל-PDF"
+                : "Export cards to PDF"
+            : undefined
+        }
         disabled={busy || disabled || !entries.length}
         onClick={() => {
           setBusy(true);

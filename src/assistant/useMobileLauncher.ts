@@ -65,6 +65,10 @@ export function useMobileLauncher(
   button: RefObject<HTMLButtonElement | null>,
   open: boolean,
 ) {
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
   const mobile = useSyncExternalStore(subscribe, phoneSnapshot, () => false);
   const [view, setView] = useState(viewport),
     [point, setPoint] = useState<Point | null>(null),
@@ -113,18 +117,27 @@ export function useMobileLauncher(
     } catch {
       dock.current = { edge: "left", ratio: 1 };
     }
-    const update = () => {
-      safeArea.current = readSafeArea();
+    let frame = 0;
+    let safeWidth = -1;
+    const paint = () => {
+      frame = 0;
       const v = viewport();
+      if (v.width !== safeWidth) {
+        safeArea.current = readSafeArea();
+        safeWidth = v.width;
+      }
       setView((previous) =>
-        Object.keys(v).every(
-          (name) =>
-            v[name as keyof typeof v] === previous[name as keyof typeof v],
-        )
+        openRef.current && v.width === previous.width
           ? previous
-          : v,
+          : Object.keys(v).every(
+                (name) =>
+                  v[name as keyof typeof v] ===
+                  previous[name as keyof typeof v],
+              )
+            ? previous
+            : v,
       );
-      if (!gesture.current) {
+      if (!openRef.current && !gesture.current) {
         const rect = button.current?.getBoundingClientRect();
         const next = positionForDock(dock.current, {
           width: v.width,
@@ -137,7 +150,10 @@ export function useMobileLauncher(
         setPoint(next);
       }
     };
-    update();
+    const update = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    paint();
     const observer =
       typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
     if (button.current) observer?.observe(button.current);
@@ -145,6 +161,7 @@ export function useMobileLauncher(
     window.visualViewport?.addEventListener("resize", update);
     window.visualViewport?.addEventListener("scroll", update);
     return () => {
+      cancelAnimationFrame(frame);
       observer?.disconnect();
       gesture.current = null;
       window.removeEventListener("resize", update);

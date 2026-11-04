@@ -70,11 +70,16 @@ export default function NewProjectForm({
   const [dueDate, setDueDate] = useState("");
   const [links, setLinks] = useState<string[]>([]);
 
+  const phone = usePhoneLayout(),
+    { kitchenStudy } = useDesignPreview(),
+    surface = useRef<HTMLFormElement>(null);
+  const fullscreen = phone && !!kitchenStudy && !!isOpen;
+  usePhoneSurface(surface, fullscreen);
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !(phone && kitchenStudy)) {
       inputRef.current?.focus({ preventScroll: true });
     }
-  }, [isOpen]);
+  }, [isOpen, phone, kitchenStudy]);
 
   useEffect(() => {
     if (isOpen)
@@ -119,11 +124,6 @@ export default function NewProjectForm({
     });
   }
 
-  const phone = usePhoneLayout(),
-    { kitchenStudy } = useDesignPreview(),
-    surface = useRef<HTMLFormElement>(null);
-  const fullscreen = phone && !!kitchenStudy && !!isOpen;
-  usePhoneSurface(surface, fullscreen);
   const content = (
     <form
       ref={surface}
@@ -131,7 +131,9 @@ export default function NewProjectForm({
       aria-modal={fullscreen || undefined}
       aria-label={fullscreen ? r.newCard : undefined}
       className={
-        "new-project-form" + (fullscreen ? " phone-form-fullscreen" : "")
+        "new-project-form" +
+        (kitchenStudy ? " card-form-simplified" : "") +
+        (fullscreen ? " phone-form-fullscreen" : "")
       }
       onSubmit={handleSubmit}
     >
@@ -191,51 +193,161 @@ export default function NewProjectForm({
         onChange={(event) => setNextStep(event.target.value)}
       />
 
-      <div className="project-extra-fields">
-        <RecallFields
-          members={members}
-          value={metadata}
-          onChange={setMetadata}
-          sections={sections}
-          language={language}
-          prefix="new"
-        />
-        <label htmlFor="project-url">{t.projectUrl}</label>
-        <input
-          id="project-url"
-          type="url"
-          inputMode="url"
-          maxLength={500}
-          placeholder={t.projectUrlPlaceholder}
-          value={projectUrl}
-          onChange={(event) => setProjectUrl(event.target.value)}
-        />
+      {kitchenStudy ? (
+        <div className="card-form-layout">
+          <div className="card-form-primary-row">
+            <div>
+              <label htmlFor="new-section">{r.section}</label>
+              <select
+                id="new-section"
+                value={metadata.sectionId || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, sectionId: e.target.value })
+                }
+              >
+                <option value="">{r.noSection}</option>
+                {sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="project-due-date">{t.dueDate}</label>
+              <input
+                id="project-due-date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <details className="card-form-disclosure">
+            <summary>
+              {language === "ar"
+                ? "ملاحظات وروابط"
+                : language === "he"
+                  ? "הערות וקישורים"
+                  : "Notes and links"}
+            </summary>
+            <div className="card-form-group">
+              <label htmlFor="new-description">
+                {language === "ar"
+                  ? "ملاحظة"
+                  : language === "he"
+                    ? "הערה"
+                    : "Note"}
+              </label>
+              <textarea
+                id="new-description"
+                rows={3}
+                maxLength={1000}
+                dir="auto"
+                value={metadata.description || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, description: e.target.value })
+                }
+              />
+              <label htmlFor="project-url">{t.projectUrl}</label>
+              <input
+                id="project-url"
+                type="url"
+                inputMode="url"
+                maxLength={500}
+                value={projectUrl}
+                placeholder={t.projectUrlPlaceholder}
+                onChange={(e) => setProjectUrl(e.target.value)}
+              />
+              <label htmlFor="project-attachment">{t.attachmentUrl}</label>
+              <input
+                id="project-attachment"
+                type="url"
+                inputMode="url"
+                maxLength={500}
+                value={attachmentUrl}
+                onChange={(e) => setAttachmentUrl(e.target.value)}
+              />
+              <ExtraLinks
+                value={links}
+                onChange={setLinks}
+                language={language}
+                prefix="new"
+              />
+            </div>
+          </details>
+          <details className="card-form-disclosure">
+            <summary>
+              {language === "ar"
+                ? "خيارات إضافية"
+                : language === "he"
+                  ? "אפשרויות נוספות"
+                  : "More options"}
+            </summary>
+            <div className="card-form-group">
+              <RecallFields
+                members={members}
+                value={metadata}
+                onChange={setMetadata}
+                sections={sections}
+                language={language}
+                prefix="new"
+                hideSection
+                hideDescription
+              />
+            </div>
+          </details>
+        </div>
+      ) : (
+        <>
+          {" "}
+          <div className="project-extra-fields">
+            <RecallFields
+              members={members}
+              value={metadata}
+              onChange={setMetadata}
+              sections={sections}
+              language={language}
+              prefix="new"
+            />
+            <label htmlFor="project-url">{t.projectUrl}</label>
+            <input
+              id="project-url"
+              type="url"
+              inputMode="url"
+              maxLength={500}
+              placeholder={t.projectUrlPlaceholder}
+              value={projectUrl}
+              onChange={(event) => setProjectUrl(event.target.value)}
+            />
 
-        <label htmlFor="project-attachment">{t.attachmentUrl}</label>
-        <input
-          id="project-attachment"
-          type="url"
-          inputMode="url"
-          maxLength={500}
-          placeholder={t.attachmentUrlPlaceholder}
-          value={attachmentUrl}
-          onChange={(event) => setAttachmentUrl(event.target.value)}
-        />
+            <label htmlFor="project-attachment">{t.attachmentUrl}</label>
+            <input
+              id="project-attachment"
+              type="url"
+              inputMode="url"
+              maxLength={500}
+              placeholder={t.attachmentUrlPlaceholder}
+              value={attachmentUrl}
+              onChange={(event) => setAttachmentUrl(event.target.value)}
+            />
 
-        <ExtraLinks
-          value={links}
-          onChange={setLinks}
-          language={language}
-          prefix="new"
-        />
-        <label htmlFor="project-due-date">{t.dueDate}</label>
-        <input
-          id="project-due-date"
-          type="date"
-          value={dueDate}
-          onChange={(event) => setDueDate(event.target.value)}
-        />
-      </div>
+            <ExtraLinks
+              value={links}
+              onChange={setLinks}
+              language={language}
+              prefix="new"
+            />
+            <label htmlFor="project-due-date">{t.dueDate}</label>
+            <input
+              id="project-due-date"
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+            />
+          </div>
+        </>
+      )}
       <div className="form-actions">
         <button
           type="submit"

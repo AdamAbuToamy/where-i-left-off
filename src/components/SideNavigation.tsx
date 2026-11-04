@@ -37,13 +37,17 @@ export default function SideNavigation({
     root = useRef<HTMLDivElement>(null),
     toggle = useRef<HTMLButtonElement>(null),
     id = useId();
-  const { enabled } = useDesignPreview();
+  const { enabled, kitchenStudy } = useDesignPreview();
   const reduced = useReducedMotion();
   const t = pageText[language],
     w = workflowText[language];
   useEffect(() => {
     const outside = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      if (
+        !(e.target as HTMLElement).closest(".mobile-menu-toggle") &&
+        !root.current?.contains(e.target as Node)
+      )
+        setOpen(false);
     };
     const escape = (e: KeyboardEvent) => {
       if (
@@ -79,11 +83,19 @@ export default function SideNavigation({
         onPointerEnter={(e) => {
           if (e.pointerType === "mouse") setOpen(true);
         }}
-        onPointerLeave={() => {
-          if (!root.current?.contains(document.activeElement)) setOpen(false);
+        onPointerLeave={(event) => {
+          if (
+            event.pointerType === "mouse" &&
+            innerWidth > 600 &&
+            !root.current?.contains(document.activeElement)
+          )
+            setOpen(false);
         }}
         onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node))
+          if (
+            e.relatedTarget instanceof Node &&
+            !e.currentTarget.contains(e.relatedTarget)
+          )
             setOpen(false);
         }}
       >
@@ -137,6 +149,28 @@ export default function SideNavigation({
           inert={!open}
           onFocus={() => setOpen(true)}
         >
+          {kitchenStudy && (
+            <header className="mobile-menu-heading">
+              <strong>
+                {language === "ar"
+                  ? "القائمة"
+                  : language === "he"
+                    ? "תפריט"
+                    : "Menu"}
+              </strong>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setOpen(false)}
+              >
+                {language === "ar"
+                  ? "رجوع"
+                  : language === "he"
+                    ? "חזרה"
+                    : "Back"}
+              </button>
+            </header>
+          )}
           {(
             [
               "resume",
@@ -202,7 +236,10 @@ export default function SideNavigation({
               {onLanguageChange && (
                 <LanguagePicker
                   language={language}
-                  onChange={onLanguageChange}
+                  onChange={(value) => {
+                    onLanguageChange(value);
+                    setOpen(false);
+                  }}
                 />
               )}
               <button

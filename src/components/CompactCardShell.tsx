@@ -27,6 +27,7 @@ export default function CompactCardShell({
   sections,
   language,
   children,
+  summaryExtras,
   expanded: controlledExpanded,
   onExpandedChange,
 }: {
@@ -34,6 +35,7 @@ export default function CompactCardShell({
   sections: Section[];
   language: Language;
   children: ReactNode;
+  summaryExtras?: ReactNode;
   expanded?: boolean;
   onExpandedChange?: (open: boolean) => void;
 }) {
@@ -89,6 +91,7 @@ export default function CompactCardShell({
               {project.dueDate}
             </time>
           )}
+          {summaryExtras}
           <button
             ref={opener}
             type="button"

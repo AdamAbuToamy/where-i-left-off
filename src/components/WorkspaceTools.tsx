@@ -99,6 +99,14 @@ export default function WorkspaceTools({
     setOpen(true);
   }
   if (!enabled) return <>{children}</>;
+  if (kitchenStudy)
+    return (
+      <div className="search-toolbar workspace-search-tools">
+        {search}
+        {primary}
+        <div className="workspace-export-control">{children}</div>
+      </div>
+    );
   return (
     <div className="search-toolbar workspace-search-tools">
       {search}
@@ -117,7 +125,10 @@ export default function WorkspaceTools({
             setOpen(false);
         }}
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget))
+          if (
+            event.relatedTarget instanceof Node &&
+            !event.currentTarget.contains(event.relatedTarget)
+          )
             setOpen(false);
         }}
         onKeyDown={(event) => {

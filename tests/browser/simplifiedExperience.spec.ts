@@ -430,13 +430,18 @@ test("desktop hover selectors stay open across the gap and toolbar buttons do no
     .getByRole("combobox", { name: "All cards", exact: true })
     .hover();
   await expect(page.locator(".choice-picker-panel")).toBeVisible();
-  await page.getByRole("button", { name: "More", exact: true }).hover();
-  await expect(page.locator(".workspace-tools-panel")).toBeVisible();
-  await expect(page.locator(".choice-picker-panel")).toHaveCount(0);
-  await expect(page.locator(".workspace-tools-panel h3")).toHaveCount(0);
-  await expect(
-    page.locator(".workspace-tools-panel .sections-disclosure-trigger"),
-  ).toContainText("Manage");
+  await direct.getByRole("combobox", { name: "Section", exact: true }).hover();
+  await page
+    .locator(".choice-picker-panel")
+    .getByRole("option")
+    .filter({ hasText: "Manage" })
+    .click();
+  await expect(page.locator(".section-management-dialog")).toBeVisible();
+  await page
+    .locator(".section-management-dialog")
+    .getByRole("button", { name: "Back", exact: true })
+    .click();
+  await expect(page.locator(".workspace-tools-panel")).toHaveCount(0);
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   const boxes = await page
     .locator(
@@ -457,7 +462,7 @@ test("desktop hover selectors stay open across the gap and toolbar buttons do no
           Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1,
       ).toBe(false);
     }
-  await page.getByRole("button", { name: "المزيد", exact: true }).hover();
+  await direct.getByRole("combobox").last().hover();
   await page.screenshot({
     path: ".wrangler/hover-controls-rtl.png",
     fullPage: false,

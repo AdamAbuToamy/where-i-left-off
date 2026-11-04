@@ -15,6 +15,7 @@ export default function Sections({
   disabled,
   canManage = true,
   managementOnly = false,
+  expanded,
 }: {
   sections: Section[];
   projects: Project[];
@@ -25,6 +26,7 @@ export default function Sections({
   language: Language;
   disabled: boolean;
   managementOnly?: boolean;
+  expanded?: boolean;
   canManage?: boolean;
 }) {
   const { enabled } = useDesignPreview();
@@ -40,6 +42,7 @@ export default function Sections({
   return (
     <details
       className="sections-panel sections-disclosure"
+      open={expanded}
       onPointerEnter={(event) => {
         if ((!enabled || managementOnly) && event.pointerType === "mouse")
           event.currentTarget.open = true;

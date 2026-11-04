@@ -721,3 +721,231 @@
   max-height: 45dvh;
   overflow: auto;
 }
+
+/* Stable phone surfaces and progressively disclosed card creation. */
+.mobile-menu-heading {
+  display: none;
+}
+:root[data-kitchen-study="on"] .workspace-export-control .workspace-report {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+:root[data-kitchen-study="on"] .workspace-export-control .pdf-export button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 10px;
+  font-size: 0;
+  gap: 0;
+}
+.section-management-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: 85dvh;
+  overflow: auto;
+  border: 1px solid var(--site-border);
+  border-radius: 20px;
+  padding: 20px;
+  background: var(--site-surface, #fffefa);
+  color: var(--site-ink);
+}
+.section-management-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.section-management-dialog .sections-disclosure-trigger {
+  display: none;
+}
+.card-form-simplified {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card-form-simplified :is(input, select) {
+  min-height: 46px;
+  height: 46px;
+  padding: 10px 12px;
+  font-size: 16px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.card-form-simplified textarea {
+  min-height: 88px;
+  height: auto;
+  padding: 12px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.card-form-simplified label {
+  display: block;
+  margin: 0 0 6px;
+}
+.card-form-layout {
+  display: grid;
+  gap: 12px;
+}
+.card-form-primary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.card-form-primary-row > div {
+  min-width: 0;
+}
+.card-form-disclosure {
+  border: 1px solid var(--site-border, #d7dfd5);
+  border-radius: 12px;
+  padding: 0;
+}
+.card-form-disclosure > summary {
+  padding: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.card-form-group {
+  padding: 0 14px 14px;
+  display: grid;
+  gap: 10px;
+}
+.card-form-group .recall-fields {
+  margin: 0;
+}
+.card-preview-details {
+  display: grid;
+  gap: 14px;
+  margin: 12px 0;
+  text-align: start;
+}
+.card-preview-details section {
+  border-top: 1px solid var(--site-border, #d7dfd5);
+  padding-top: 12px;
+}
+.card-preview-details h3 {
+  font-size: 13px;
+  color: var(--site-muted, #607167);
+  margin: 0 0 6px;
+}
+.card-preview-details p {
+  margin: 0;
+  font-size: 15px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.card-preview-details ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.card-preview-details li {
+  display: flex;
+  gap: 8px;
+  font-size: 15px;
+}
+@media (max-width: 600px) {
+  :root[data-kitchen-study="on"]
+    :is(.phone-card-fullscreen, .phone-form-fullscreen) {
+    top: var(--phone-top, 0px) !important;
+    height: var(--phone-height, 100dvh) !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    animation: none !important;
+    transition: none !important;
+    overscroll-behavior: contain;
+  }
+  :root[data-kitchen-study="on"]
+    :is(.phone-card-fullscreen, .phone-form-fullscreen)
+    :is(input, textarea, select),
+  :root[data-kitchen-study="on"] #wilo-assistant textarea {
+    font-size: 16px;
+  }
+  :root[data-kitchen-study="on"]
+    .assistant-root:not(.is-peeking)
+    #wilo-assistant {
+    top: var(--phone-top, 0px) !important;
+    height: var(--phone-height, 100dvh) !important;
+    max-height: none !important;
+    transition: none !important;
+  }
+  :root[data-kitchen-study="on"] .side-navigation .page-navigation {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    transform: none !important;
+    border-radius: 0;
+    overflow: auto;
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    padding: 16px 16px calc(100px + env(safe-area-inset-bottom));
+    z-index: 1000;
+  }
+  :root[data-kitchen-study="on"] .mobile-menu-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+  }
+  :root[data-kitchen-study="on"] .mobile-card-deck {
+    min-height: 0;
+    padding-top: 12px;
+    justify-content: flex-start;
+  }
+  :root[data-kitchen-study="on"] .mobile-deck-swipe {
+    min-height: 0;
+    display: block;
+  }
+  :root[data-kitchen-study="on"] .mobile-card-deck .project-card {
+    min-height: 0;
+  }
+  :root[data-kitchen-study="on"] .mobile-card-deck .envelope-summary {
+    min-height: 0;
+    display: block;
+    padding: 18px;
+  }
+  :root[data-kitchen-study="on"] .mobile-card-deck .envelope-copy {
+    min-height: 0;
+  }
+  :root[data-kitchen-study="on"] .phone-form-fullscreen .form-actions {
+    position: sticky;
+    bottom: 0;
+    background: var(--site-surface, #fffefa);
+    padding: 12px 0;
+    margin-top: 12px;
+  }
+}
+
+:root[data-kitchen-study="on"] .card-form-simplified {
+  justify-content: flex-start;
+  align-content: start;
+  gap: 10px;
+}
+:root[data-kitchen-study="on"]
+  .card-form-simplified
+  > :is(input, textarea, label) {
+  flex: 0 0 auto;
+  margin: 0;
+}
+:root[data-kitchen-study="on"] .card-form-simplified textarea {
+  height: 88px;
+  min-height: 88px;
+}
+:root[data-kitchen-study="on"] .card-form-simplified select {
+  border: 1px solid var(--site-border, #c6d0c6);
+  border-radius: 10px;
+  background: var(--site-input, #fffefa);
+  color: var(--site-text, #25332e);
+}
+:root[data-kitchen-study="on"] .phone-form-fullscreen .form-actions {
+  background: var(--site-bg);
+}
