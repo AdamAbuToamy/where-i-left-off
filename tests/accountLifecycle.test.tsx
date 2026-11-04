@@ -19,9 +19,9 @@ vi.mock('firebase/firestore', async importOriginal => ({
 import { AccountLifecycle } from '../src/components/AccountDeletion'
 let root:Root, container:HTMLDivElement, online=true
 const user = (uid='alice') => ({uid,email:`${uid}@example.test`,providerData:[{providerId:'password'}]} as User)
-function mount(uid='alice') {
+function mount(uid='alice',mainLandmark=false) {
  container=document.createElement('div');document.body.append(container);root=createRoot(container)
- act(() => root.render(<AccountLifecycle user={user(uid)} language="en"><div>Offline outline completed</div></AccountLifecycle>))
+ act(() => root.render(<AccountLifecycle user={user(uid)} language="en" mainLandmark={mainLandmark}>{mainLandmark?<main id="wilo-main">Offline outline completed</main>:<div>Offline outline completed</div>}</AccountLifecycle>))
 }
 function emit(uid='alice', request:unknown=null, cached=false) {
  act(() => listeners.get(`accountDeletions/${uid}`)?.({exists:()=>request!==null,data:()=>request,metadata:{fromCache:cached}}))
@@ -34,6 +34,11 @@ beforeEach(() => {
 })
 afterEach(() => { unmount();vi.restoreAllMocks();vi.unstubAllGlobals() })
 describe('account gate across offline reloads', () => {
+ it('keeps exactly one main during verification, normal content and pending account deletion',()=>{
+  mount('alice',true);expect(container.querySelectorAll('main')).toHaveLength(1);
+  emit();expect(container.querySelectorAll('main')).toHaveLength(1);expect(container.textContent).toContain('Offline outline completed');
+  emit('alice',{status:'pending',requestedAt:Timestamp.fromMillis(Date.now())});expect(container.querySelectorAll('main')).toHaveLength(1);expect(container.textContent).toContain('Your account is awaiting deletion');
+ });
  it('shows the branded pending state until account verification finishes', () => {
   mount()
   expect(container.querySelector('.wilo-loading [role="status"]')?.textContent).toBe('Checking account status…')

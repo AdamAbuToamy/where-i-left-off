@@ -98,7 +98,7 @@
 .assistant-waiting progress {display:block;width:100%;height:5px;margin-block-start:9px;border:0;border-radius:10px;overflow:hidden;accent-color:var(--site-primary,#385c4b)}
 .assistant-waiting progress::-webkit-progress-bar {border-radius:10px;background:var(--site-soft,#e9ecdf)}
 .assistant-waiting progress::-webkit-progress-value {border-radius:10px;background:var(--site-primary,#385c4b);transition:width .3s ease}
-main.workspace {padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+.workspace {padding-bottom:calc(86px + env(safe-area-inset-bottom))}
 @keyframes assistant-open {from {opacity:0;transform:translateY(12px) scale(.97)} to {opacity:1;transform:translateY(0) scale(1)}}
 @keyframes assistant-message-in {from {opacity:0;transform:translateY(5px)} to {opacity:1;transform:translateY(0)}}
 @keyframes assistant-dot {0%,60%,100% {opacity:.35;transform:translateY(0)} 30% {opacity:1;transform:translateY(-3px)}}
@@ -138,7 +138,7 @@ body {--assistant-dock-width:clamp(400px,36vw,560px)}
 @media(min-width:1100px) {
  #root {box-sizing:border-box;transition:padding-left .28s cubic-bezier(.2,.8,.2,1)}
  body.assistant-docked #root {padding-left:var(--assistant-dock-width)}
- body.assistant-docked main.workspace {padding-inline:clamp(36px,4vw,72px);min-width:0}
+ body.assistant-docked .workspace {padding-inline:clamp(36px,4vw,72px);min-width:0}
  body.assistant-docked .side-navigation {transition:left .28s ease}
  html[dir=ltr] body.assistant-docked .side-navigation {left:var(--assistant-dock-width)}
  .assistant-panel {top:16px;bottom:16px;left:16px;right:auto;width:calc(var(--assistant-dock-width) - 32px)}

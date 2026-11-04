@@ -237,7 +237,7 @@ export default function ProjectBoard({
           items={projects.map((project) => project.id)}
           strategy={rectSortingStrategy}
         >
-          <section className="projects-grid">
+          <div className="projects-grid">
             {projects.map((project) => (
               <SortableCard
                 disabled={disabled}
@@ -255,7 +255,7 @@ export default function ProjectBoard({
                 onDelete={onDelete}
               />
             ))}
-          </section>
+          </div>
         </SortableContext>
       </DndContext>
     </div>

@@ -14,10 +14,12 @@ import { logEvent } from '../lib/logging'
 import { settingsText } from '../settingsText'
 import type { Language } from '../translations'
 
-export function AccountLifecycle({ user, language, children }: { user: User; language: Language; children: ReactNode }) {
+export function AccountLifecycle({ user, language, children, mainLandmark = false }: { user: User; language: Language; children: ReactNode; mainLandmark?: boolean }) {
  const { request, loaded, cached } = useAccountDeletion(user.uid)
- if (!loaded) return <LoadingScreen language={language} status={settingsText[language].checking} />
- if (request) return <AccountDeletion user={user} language={language} request={request} cached={cached} />
+ if (!loaded || request) {
+  const content=!loaded?<LoadingScreen language={language} status={settingsText[language].checking}/>:<AccountDeletion user={user} language={language} request={request} cached={cached}/>;
+  return mainLandmark?<main id="wilo-main" tabIndex={-1}>{content}</main>:content;
+ }
  return children
 }
 export default function AccountDeletion({ user, language, request = null, cached = false }: { user: User; language: Language; request?: DeletionRequest | null; cached?: boolean }) {

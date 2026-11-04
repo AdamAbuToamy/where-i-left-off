@@ -11,7 +11,7 @@ vi.mock('../src/components/CloudPushSync',()=>({default:()=> <aside data-common=
 vi.mock('../src/components/WelcomeTour',()=>({default:()=> <aside data-common="tour"/>}));
 vi.mock('../src/components/WorkflowAgent',()=>({default:()=>null}));vi.mock('../src/components/AnnouncementInbox',()=>({default:()=>null}));vi.mock('../src/components/ExtensionInstall',()=>({default:()=>null}));vi.mock('../src/components/PushLifecycle',()=>({default:()=>null}));
 vi.mock('../src/components/SideNavigation',()=>({default:()=>null}));vi.mock('../src/assistant/AssistantWidget',()=>{fake.assistantImports++;return {default:()=> <aside data-assistant="pilot"/>};});vi.mock('../src/components/AuthPanel',()=>({default:()=>null}));
-vi.mock('../src/components/Support',()=>({default:()=>null,LegalLinks:()=> <footer data-footer="legal"/>}));
+vi.mock('../src/components/Support',()=>({default:()=>null,LegalLinks:()=> <nav data-footer="legal"/>}));
 vi.mock('../src/components/AccountDeletion',()=>({AccountLifecycle:({children}:{children:unknown})=>children}));
 vi.mock('../src/components/IdleSleep',()=>({default:({children}:{children:unknown})=>children}));
 vi.mock('../src/components/AccountPage',()=>({default:({page}:{page:string})=>{if(fake.crash===page)throw new Error('simulated-page-error');return <section data-screen={page}/>;} }));
@@ -24,7 +24,7 @@ it('the complete app shell works without randomUUID and keeps unique keys and on
   await act(async()=>root.render(<CloudApp/>));
   for(const page of ['personal','resume','university','settings','analytics','groups','admin','resume','personal']){
    await act(async()=>{window.location.hash='/'+page;window.dispatchEvent(new HashChangeEvent('hashchange'));});
-   expect(node.querySelectorAll('[data-screen]')).toHaveLength(1);expect(node.querySelector('[data-screen]')?.getAttribute('data-screen')).toBe(page);expect(node.querySelectorAll('[data-common]')).toHaveLength(2);expect(node.querySelectorAll('[data-footer]')).toHaveLength(1);
+   expect(node.querySelectorAll('[data-screen]')).toHaveLength(1);expect(node.querySelectorAll('main')).toHaveLength(1);expect(node.querySelector('.page-header')?.closest('main')).toBeNull();expect(node.querySelector('.site-footer')?.closest('main')).toBeNull();expect(node.querySelector('[data-screen]')?.getAttribute('data-screen')).toBe(page);expect(node.querySelectorAll('[data-common]')).toHaveLength(2);expect(node.querySelectorAll('[data-footer]')).toHaveLength(1);
   }
   expect(errors.mock.calls.filter(call=>String(call[0]).includes('same key'))).toEqual([]);
  }finally{act(()=>root.unmount());node.remove();errors.mockRestore();vi.unstubAllGlobals();}

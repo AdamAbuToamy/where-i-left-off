@@ -729,7 +729,7 @@ export default function Workspace({
               <div className="board-utility-row">
                 {!kitchenStudy && viewControls}
                 {projects.length > 0 && (
-                  <section
+                  <div
                     className={
                       kitchenStudy
                         ? "workspace-report workspace-report-compact"
@@ -758,7 +758,7 @@ export default function Workspace({
                       cached={cached || queued > 0}
                       scopeLabel
                     />
-                  </section>
+                  </div>
                 )}
               </div>
               {!kitchenStudy && group && projects.length > 0 && (
