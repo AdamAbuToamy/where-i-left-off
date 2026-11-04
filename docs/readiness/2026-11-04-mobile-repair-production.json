@@ -1,0 +1,74 @@
+{
+  "verifiedAt": "2026-11-04T11:20:21.4577344Z",
+  "release": "wilo-admin-mobile-repair-20261104",
+  "verifiedAdminOnly": true,
+  "backendUnchanged": true,
+  "checks": [
+    {
+      "path": "index.html",
+      "bytes": 18609,
+      "sha256": "8b976bf8779ca8ddec8110f2c63a6e74ab9a61623e6dd5925fa4d9e8318c9d48",
+      "match": true
+    },
+    {
+      "path": "sw.js",
+      "bytes": 24129,
+      "sha256": "f4f43f1339dc3014d8cc1afe4732b2de5c7fba91226549209f089b482057c8b6",
+      "match": true
+    },
+    {
+      "path": "wilo-release.json",
+      "bytes": 8359,
+      "sha256": "8a8647f2dbc9714c58f5e6c01c4dcb2f31e1a30482112de1c65ed8e89a9ac6d5",
+      "match": true
+    },
+    {
+      "path": "assistant-config.json",
+      "bytes": 74,
+      "sha256": "10a7bb2868f73cda1cc54bc9c14065c517beb1a34790f73eca13a076f09d6135",
+      "match": true
+    },
+    {
+      "path": "push-config.json",
+      "bytes": 65,
+      "sha256": "cab6fb1bef86e4a93f0a1f22e08883a9c251585e053ca23b9ce3336aed4b53b6",
+      "match": true
+    },
+    {
+      "path": "assets/AssistantWidget-CIVKz6DW.css",
+      "bytes": 33186,
+      "sha256": "69f0353f133305f76c938ac953eb16ced905d9629dcce91e611c88b5e6dcd11a",
+      "match": true
+    },
+    {
+      "path": "assets/AssistantWidget-D3Ym7j8g.js",
+      "bytes": 361009,
+      "sha256": "45ecd5cc15f6cabb212e6ad1423248f2b39f4c648281acfe98476f46aff134c6",
+      "match": true
+    },
+    {
+      "path": "assets/index-DOmGEpww.css",
+      "bytes": 115294,
+      "sha256": "0093e6f89b8c892a2a26b18544989da821db4a96c045923f910f0160478b0afa",
+      "match": true
+    },
+    {
+      "path": "assets/index-FZ5fDkWx.js",
+      "bytes": 569660,
+      "sha256": "c5bccce29788a68faf131ddc77058ccc8071d9c0d29938c4e665f79074e343f3",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-DePw5Z9F.js",
+      "bytes": 124289,
+      "sha256": "4db10c0ceca509fea44a36e2d38fecb7a44275b3f0fcf97a73fa081d9141dc7f",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-VFXH3Zy1.css",
+      "bytes": 6428,
+      "sha256": "8c0b07e1d15613adeea0f723204aa1e64006ae5b8c386cac9dddd4e1efc019dc",
+      "match": true
+    }
+  ]
+}

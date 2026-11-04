@@ -21,3 +21,8 @@ Decision: READY for verified administrator preview; physical Android keyboard ac
 
 ## Delivery
 Hosting-only, administrator preview. Existing public feature gates, worker, provider config, account data and revisioned mutation boundaries preserved. Rollback: previous hosting release; original public UI retained by existing account gate.
+
+## Published evidence
+READY and published for administrator preview: `wilo-admin-mobile-repair-20261104`. Hosting deployment succeeded. Eleven checked production files match local build bytes (index, service worker, release/provider configs, main/Workspace/Assistant chunks). Evidence: `2026-11-04-mobile-repair-production.json`. TypeScript passed; lint has zero errors and one existing AssistantWidget cleanup-ref warning. Production build and credential pattern checks passed; existing chunk-size warning remains.
+
+A proposed formatting-only reduction of AssistantWidget was rejected by automatic review because replacing the file with a HEAD-derived version could discard work. That reduction was not performed; the readable formatted implementation and the tested focus fix were retained. This does not block the requested repair.
