@@ -1,4 +1,3 @@
-import MobileCardDeck from "./MobileCardDeck";
 import {
   DndContext,
   KeyboardSensor,
@@ -57,7 +56,6 @@ const messages = {
 
 export type ProjectBoardProps = {
   disabled?: boolean;
-  singleCard?: boolean;
   projects: Project[];
   sections: Section[];
   language: Language;
@@ -165,7 +163,6 @@ function SortableCard({
 
 export default function ProjectBoard({
   disabled,
-  singleCard,
   projects,
   sections,
   language,
@@ -200,23 +197,6 @@ export default function ProjectBoard({
     return projects.findIndex((project) => project.id === String(id)) + 1;
   }
 
-  if (singleCard)
-    return (
-      <MobileCardDeck
-        disabled={disabled}
-        projects={projects}
-        sections={sections}
-        language={language}
-        groupId={groupId}
-        members={members}
-        currentUid={currentUid}
-        canManage={canManage}
-        onReorder={onReorder}
-        onToggle={onToggle}
-        onUpdate={onUpdate}
-        onDelete={onDelete}
-      />
-    );
   return (
     <div className="project-board">
       {canManage && projects.length > 1 && (

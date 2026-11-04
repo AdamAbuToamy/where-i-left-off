@@ -1,4 +1,9 @@
 export const studyTranslations:Record<string,[string,string]> = {
+  "الجدول": ["Schedule", "מערכת"],
+  "الخريطة": ["Map", "מפה"],
+  "نظرة عامة": ["Overview", "סקירה"],
+  "العودة للكورسات": ["Back to courses", "חזרה לקורסים"],
+  "تم الحفظ — التفاصيل": ["Saved — details", "נשמר — פרטים"],
   "ملخص الكورس": ["Course overview", "סקירת הקורס"],
   "المهام والمواعيد": ["Tasks and deadlines", "משימות ומועדים"],
   "الملاحظات والمواد": ["Notes and materials", "הערות וחומרים"],

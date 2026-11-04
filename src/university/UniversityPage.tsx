@@ -1,3 +1,5 @@
+import {usePhoneLayout} from "../components/usePhoneSurface";
+import {useDesignPreview} from "../components/designPreviewContext";
 import {readPlanBackup} from './readPlanBackup';
 import ChoicePicker from '../components/ChoicePicker';
 import {lazy,Suspense} from 'react';
@@ -82,6 +84,8 @@ function Workspace({ user }: {
     user: User;
 }) {
     const language=useStudyLanguage();
+    const phone=usePhoneLayout(), {kitchenStudy}=useDesignPreview(), mobileStudy=phone&&kitchenStudy;
+    const planTools=useRef<HTMLDetailsElement>(null);
     const [capture, setCapture] = useState(() => parseStudyCapture(location.hash));
     useEffect(() => {
         if (capture) history.replaceState(history.state, "", location.pathname + location.search + "#/university");
@@ -172,7 +176,7 @@ function Workspace({ user }: {
             setBusy(false);
         }
     }
-    const selectedCourse = state.courses.find(c => c.id === filter) || (state.courses.length === 1 ? state.courses[0] : undefined);
+    const selectedCourse = state.courses.find(c => c.id === filter) || (!mobileStudy && state.courses.length === 1 ? state.courses[0] : undefined);
     const courseName = (id: string) => state.courses.find((c) => c.id === id)?.name || "بدون كورس";
     const courseColor = trialCourseColor;
     const pending = state.tasks.filter((t) => !t.done && (!filter || t.courseId === filter));
@@ -253,6 +257,7 @@ function Workspace({ user }: {
         await run(() => {
             commit(mergePlan(latest.current, preview));
             setPreview(null);
+            if(planTools.current)planTools.current.open=false;
             setBatchOpen(false);
             setMessage("تمت إضافة الخطة مع الاحتفاظ ببياناتك السابقة. اختر تذكير الهاتف لكل مهمة تريدها.");
         });
@@ -306,14 +311,15 @@ function Workspace({ user }: {
                     </button>
                   </footer>
                 </article>))}</>}
-    return <StudyLocalized>{(<section className="study-page study-university-trial" dir="rtl" aria-label="صفحة الجامعة">
+    return <StudyLocalized>{(<section className={"study-page study-university-trial"+(mobileStudy?" study-phone-pages":"")} dir="rtl" aria-label="صفحة الجامعة">
       <fieldset className="study-controls" disabled={busy}>
         <header className="study-hero">
           <div>
             <span className="study-eyebrow">مساحتي الدراسية</span>
             <h2>خطة الفصل</h2>
           </div>
-          <div className="study-hero-actions"><details className="study-trial-tools"><summary><ChevronDown size={16}/>أدوات الخطة</summary><div>
+          <div className="study-hero-actions"><details className="study-trial-tools" ref={planTools}><summary><ChevronDown size={16}/>أدوات الخطة</summary><div>
+            {mobileStudy&&<button className="secondary-button" onClick={newCourse}>إضافة كورس</button>}
             <button className="primary-button" onClick={() => setBatchOpen(true)}>إضافة دفعة</button>
             <label className="study-upload secondary-button">
               استعادة نسخة احتياطية
@@ -333,7 +339,7 @@ function Workspace({ user }: {
           {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
         </div>
         {cloud.status.conflicts.map(key=><section className="study-sync-conflict" key={key}><p>عُدّل السجل نفسه على جهاز آخر. اختر النسخة التي تريد الاحتفاظ بها؛ لم نستبدل تعديلك تلقائيًا.</p><strong dir="auto">{key.startsWith('courses_')?state.courses.find(c=>c.id===key.slice(8))?.name:key.startsWith('tasks_')?state.tasks.find(t=>t.id===key.slice(6))?.title:state.lessons.find(l=>l.id===key.slice(8))?.room}</strong><button onClick={()=>cloud.resolve(key,'local')}>الاحتفاظ بتعديلي</button><button onClick={()=>cloud.resolve(key,'cloud')}>استخدام نسخة الحساب</button></section>)}
-        <div className="study-stats">
+        <details className="study-overview-disclosure" open={!mobileStudy}><summary>نظرة عامة</summary><div className="study-stats">
           <article>
             <span>كورسات الفصل</span>
             <strong>{state.courses.length.toString().padStart(2, "0")}</strong>
@@ -354,12 +360,12 @@ function Workspace({ user }: {
             : "أضف موعد تسليم أو امتحان"}
             </small>
           </article>
-        </div>
+        </div></details>
         {error && (<p className="study-error" role="alert">
             {error}
           </p>)}
         {message && (<div className="study-success study-notice">
-            <span role="status">{message}</span>
+            {mobileStudy?<details className="study-phone-notice"><summary>تم الحفظ — التفاصيل</summary><span role="status">{message}</span></details>:<span role="status">{message}</span>}
             <button type="button" aria-label="إغلاق الرسالة" onClick={() => setMessage("")}>×</button>
           </div>)}
         <nav className="study-tabs" aria-label="عرض مساحة الجامعة">
@@ -367,11 +373,11 @@ function Workspace({ user }: {
             ["overview", "الكورسات والمهام"],
             ["schedule", "الجدول الأسبوعي"],
             ["map", "خريطة الكورسات"],
-        ] as const).map(([id, title]) => (<button key={id} aria-pressed={tab === id} onClick={() => updateUniversityRoute(id,filter)}>
-              {id==='map'?<GitBranch size={17}/>:id==='schedule'?<CalendarDays size={17}/>:<GraduationCap size={17}/>}{title}{id==='map'&&<small>UML</small>}
+        ] as const).map(([id, title]) => (<button key={id} aria-label={title} aria-pressed={tab === id} onClick={() => updateUniversityRoute(id,filter)}>
+              {id==='map'?<GitBranch size={17}/>:id==='schedule'?<CalendarDays size={17}/>:<GraduationCap size={17}/>}{mobileStudy?(id==='overview'?'كورساتي':id==='schedule'?'الجدول':'الخريطة'):title}{id==='map'&&<small>UML</small>}
             </button>))}
         </nav>
-        <div className="study-toolbar">
+        <div className={"study-toolbar"+(mobileStudy&&tab==='overview'?" study-phone-overview-actions":"")}>
           {(tab!=='overview')&&<label>
             الكورس
             <ChoicePicker label={translateStudyText('الكورس',language)} value={filter} onChange={value=>updateUniversityRoute(tab,value)} options={[{value:'',label:translateStudyText('كل الكورسات',language)},...state.courses.map(course=>({value:course.id,label:course.name}))]}/>

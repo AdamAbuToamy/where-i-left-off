@@ -1,5 +1,4 @@
 import { createPortal } from "react-dom";
-import { usePhoneLayout } from "./usePhoneSurface";
 import DesktopPlanningButton from "../planning/DesktopPlanningButton";
 import {
   Search,
@@ -14,7 +13,7 @@ import WorkspaceTools from "./WorkspaceTools";
 import { useDesignPreview } from "./designPreviewContext";
 import { workspaceView } from "../lib/navigation";
 import { markCardViewed } from "../lib/pushNotifications";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { User } from "firebase/auth";
 import type { Language } from "../translations";
 import type { Project, Section, GroupInfo, GroupMember } from "../types";
@@ -28,7 +27,7 @@ import { featureText } from "../featureText";
 import { workflowText } from "../workflowText";
 import { auth, db } from "../lib/firebase";
 import { touchUserMetric, watchUserMetric } from "../lib/repository";
-import { rankForMove, matchesView } from "../lib/projects";
+import { rankForMove, matchesView, localDateKey } from "../lib/projects";
 import { canonicalCaptureUrl, currentCard } from "../lib/workflow";
 import { displayName } from "../lib/profile";
 import { logEvent, traced } from "../lib/logging";
@@ -39,7 +38,7 @@ import { createWorkspace } from "../lib/createWorkspace";
 import type { LocalEntity, Mutation } from "../lib/offlineStore";
 import CaptureCheckpoint from "./CaptureCheckpoint";
 import NewProjectForm from "./NewProjectForm";
-import ProjectBoard from "./ProjectBoard";
+import ProjectBoard from "./WorkspaceBoard";
 import WeeklySchedule from "./WeeklySchedule";
 import SummaryPdfButton from "./SummaryPdfButton";
 import Sections from "./Sections";
@@ -64,8 +63,6 @@ export default function Workspace({
     dialog?.showModal();
     return () => dialog?.close();
   }, [manageSections]);
-  const phone = usePhoneLayout(),
-    [singleCard, setSingleCard] = useState(false);
   const t = translations[language],
     c = cloudText[language],
     r = recallText[language],
@@ -315,19 +312,33 @@ export default function Workspace({
     }
     requestAnimationFrame(() => addButtonRef.current?.focus());
   }
-  const visible = projects.filter(
-    (p) =>
-      (filter === "ideas"
-        ? p.resourceType === "idea"
-        : p.resourceType !== "idea") &&
-      (!onlyMine || p.assignedTo === user.uid) &&
-      (filter === "ideas" || matchesView(p, filter)) &&
-      (sectionFilter === "all" ||
-        (sections.some((s) => s.id === p.sectionId) ? p.sectionId : "") ===
-          sectionFilter) &&
-      `${p.name} ${p.nextStep} ${p.checkpoint ?? ""} ${p.checklist ?? ""} ${p.projectUrl ?? ""} ${p.attachmentUrl ?? ""} ${p.links?.join(" ") || ""}`
-        .toLocaleLowerCase()
-        .includes(search.toLocaleLowerCase()),
+  const today = localDateKey();
+  const visible = useMemo(
+    () =>
+      projects.filter(
+        (p) =>
+          (filter === "ideas"
+            ? p.resourceType === "idea"
+            : p.resourceType !== "idea") &&
+          (!onlyMine || p.assignedTo === user.uid) &&
+          (filter === "ideas" || matchesView(p, filter, today)) &&
+          (sectionFilter === "all" ||
+            (sections.some((s) => s.id === p.sectionId) ? p.sectionId : "") ===
+              sectionFilter) &&
+          `${p.name} ${p.nextStep} ${p.checkpoint ?? ""} ${p.checklist ?? ""} ${p.projectUrl ?? ""} ${p.attachmentUrl ?? ""} ${p.links?.join(" ") || ""}`
+            .toLocaleLowerCase()
+            .includes(search.toLocaleLowerCase()),
+      ),
+    [
+      projects,
+      filter,
+      onlyMine,
+      user.uid,
+      sectionFilter,
+      sections,
+      search,
+      today,
+    ],
   );
   const searchInput = (
     <input
@@ -654,6 +665,7 @@ export default function Workspace({
               </details>
             )}
             <WorkspaceTools
+              status={accountLine}
               language={language}
               primary={
                 kitchenStudy ? (
@@ -883,37 +895,6 @@ export default function Workspace({
               weekOf={weekOf}
             />
           )}
-          {phone && kitchenStudy && view === "board" && visible.length > 0 && (
-            <nav
-              className="mobile-card-layout"
-              aria-label={
-                language === "ar" ? "طريقة عرض البطاقات" : "Card layout"
-              }
-            >
-              <button
-                type="button"
-                aria-pressed={!singleCard}
-                onClick={() => setSingleCard(false)}
-              >
-                {language === "ar"
-                  ? "بطاقات صغيرة"
-                  : language === "he"
-                    ? "כרטיסים קטנים"
-                    : "Compact cards"}
-              </button>
-              <button
-                type="button"
-                aria-pressed={singleCard}
-                onClick={() => setSingleCard(true)}
-              >
-                {language === "ar"
-                  ? "بطاقة واحدة"
-                  : language === "he"
-                    ? "כרטיס אחד"
-                    : "One card"}
-              </button>
-            </nav>
-          )}
           <fieldset
             className="workspace-fields"
             disabled={pending}
@@ -922,7 +903,6 @@ export default function Workspace({
             {view === "board" && (
               <ProjectBoard
                 disabled={pending}
-                singleCard={phone && kitchenStudy && singleCard}
                 groupId={group?.id}
                 members={group ? members : undefined}
                 currentUid={user.uid}

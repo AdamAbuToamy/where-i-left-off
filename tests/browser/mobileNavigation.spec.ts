@@ -5,7 +5,7 @@ test.use({
   isMobile: true,
   hasTouch: true,
 });
-test("phone bottom bar, swipe deck and add/edit/details use the full screen", async ({
+test("phone bottom bar, compact cards and add/edit/details use the full screen", async ({
   page,
   request,
 }) => {
@@ -76,25 +76,11 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
   await page
     .getByRole("button", { name: "Close assistant", exact: true })
     .click();
-  await page.getByRole("button", { name: "One card", exact: true }).click();
-  const deck = page.locator(".mobile-card-deck");
-  await expect(deck.locator(".project-card")).toHaveCount(1);
-  await expect(deck.locator(".card-preview-details")).toContainText(
-    "Useful phone notes",
-  );
-  await page.screenshot({
-    path: ".wrangler/mobile-deck-repaired.png",
-    animations: "disabled",
-  });
-  const first = await deck.locator(".envelope-summary h2").innerText(),
-    swipe = deck.locator(".mobile-deck-swipe"),
-    box = (await swipe.boundingBox())!;
-  await page.mouse.move(box.x + box.width * 0.8, box.y + 90);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.2, box.y + 90, { steps: 12 });
-  await page.mouse.up();
-  await expect(deck.locator(".envelope-summary h2")).not.toHaveText(first);
-  await deck.locator(".envelope-expand").click();
+  await expect(
+    page.locator(".mobile-card-deck,.mobile-card-layout"),
+  ).toHaveCount(0);
+  const card = page.locator('[data-project-id="mobile00000000000000"]');
+  await card.locator(".envelope-expand").click();
   const full = page.locator(".phone-card-fullscreen");
   await expect(full).toBeVisible();
   async function fills(el: import("@playwright/test").Locator) {
@@ -116,7 +102,7 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
     "Changed on phone",
   );
   await full.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(deck.locator(".envelope-summary h2")).toHaveText(
+  await expect(card.locator(".envelope-summary h2")).toHaveText(
     "Changed on phone",
   );
   await page.getByRole("button", { name: "New card", exact: true }).click();
@@ -139,10 +125,6 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
   );
   await form.getByRole("button", { name: "Back", exact: true }).click();
   await expect(form).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Compact cards", exact: true })
-    .click();
-  await expect(page.locator(".mobile-card-deck")).toHaveCount(0);
   await page.screenshot({
     path: ".wrangler/mobile-final.png",
     animations: "disabled",
@@ -152,7 +134,7 @@ test("phone bottom bar, swipe deck and add/edit/details use the full screen", as
   await expect(page.locator(".page-navigation")).toBeVisible();
   await page
     .locator(".page-navigation")
-    .getByRole("link", { name: "University", exact: true })
+    .getByRole("link", { name: "Groups", exact: true })
     .tap();
-  await expect(page).toHaveURL(/university/);
+  await expect(page).toHaveURL(/groups/);
 });

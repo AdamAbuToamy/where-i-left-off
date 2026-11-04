@@ -1,3 +1,4 @@
+import { usePhoneLayout } from "./usePhoneSurface";
 import LanguagePicker from "./LanguagePicker";
 import { cloudText } from "../cloudTranslations";
 import { useDesignPreview } from "./designPreviewContext";
@@ -39,6 +40,7 @@ export default function SideNavigation({
     id = useId();
   const { enabled, kitchenStudy } = useDesignPreview();
   const reduced = useReducedMotion();
+  const phone = usePhoneLayout();
   const t = pageText[language],
     w = workflowText[language];
   useEffect(() => {
@@ -182,55 +184,64 @@ export default function SideNavigation({
               "settings",
               ...(admin ? ["admin"] : []),
             ] as PageName[]
-          ).map((item) => (
-            <a
-              key={item}
-              href={`#/${item}`}
-              aria-current={page === item ? "page" : undefined}
-              onClick={() => {
-                setOpen(false);
-                toggle.current?.focus();
-              }}
-            >
-              {page === item && (
-                <motion.span
-                  className="site-navigation-marker"
-                  layoutId="active-page"
-                  transition={{
-                    type: "spring",
-                    stiffness: 380,
-                    damping: 34,
-                    duration: reduced ? 0 : undefined,
-                  }}
-                  aria-hidden="true"
-                />
-              )}
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+          )
+            .filter(
+              (item) =>
+                !(
+                  kitchenStudy &&
+                  phone &&
+                  ["personal", "university"].includes(item)
+                ),
+            )
+            .map((item) => (
+              <a
+                key={item}
+                href={`#/${item}`}
+                aria-current={page === item ? "page" : undefined}
+                onClick={() => {
+                  setOpen(false);
+                  toggle.current?.focus();
+                }}
               >
-                <path d={paths[item]} />
-              </svg>
-              <span>
-                {item === "university"
-                  ? { ar: "الجامعة", en: "University", he: "אוניברסיטה" }[
-                      language
-                    ]
-                  : item === "library"
-                    ? w.library
-                    : item === "analytics"
-                      ? w.analytics
-                      : t[item as keyof typeof t]}
-              </span>
-            </a>
-          ))}
+                {page === item && (
+                  <motion.span
+                    className="site-navigation-marker"
+                    layoutId="active-page"
+                    transition={{
+                      type: "spring",
+                      stiffness: 380,
+                      damping: 34,
+                      duration: reduced ? 0 : undefined,
+                    }}
+                    aria-hidden="true"
+                  />
+                )}
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d={paths[item]} />
+                </svg>
+                <span>
+                  {item === "university"
+                    ? { ar: "الجامعة", en: "University", he: "אוניברסיטה" }[
+                        language
+                      ]
+                    : item === "library"
+                      ? w.library
+                      : item === "analytics"
+                        ? w.analytics
+                        : t[item as keyof typeof t]}
+                </span>
+              </a>
+            ))}
           {admin && (
             <div className="mobile-menu-account">
               {onLanguageChange && (

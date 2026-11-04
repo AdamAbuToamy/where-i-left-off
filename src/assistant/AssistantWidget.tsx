@@ -791,16 +791,16 @@ export default function AssistantWidget({
             }
             initial={{
               opacity: 0,
-              y: reduced ? 0 : 18,
-              scale: reduced ? 1 : 0.98,
+              y: mobile || reduced ? 0 : 18,
+              scale: mobile || reduced ? 1 : 0.98,
             }}
             animate={{
               opacity: open ? 1 : 0,
-              y: open ? 0 : reduced ? 0 : 12,
-              scale: open ? 1 : reduced ? 1 : 0.985,
+              y: open || mobile || reduced ? 0 : 12,
+              scale: open || mobile || reduced ? 1 : 0.985,
             }}
             transition={{
-              duration: reduced ? 0 : 0.22,
+              duration: mobile || reduced ? 0 : 0.22,
               ease: [0.16, 1, 0.3, 1],
             }}
             id="wilo-assistant"

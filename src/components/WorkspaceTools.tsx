@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+import { usePhoneLayout } from "./usePhoneSurface";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { SlidersHorizontal, MoreHorizontal, X } from "lucide-react";
@@ -9,13 +11,24 @@ export default function WorkspaceTools({
   language,
   search,
   primary,
+  status,
 }: {
   children: ReactNode;
   language: Language;
   search?: ReactNode;
   primary?: ReactNode;
+  status?: ReactNode;
 }) {
   const { enabled, kitchenStudy } = useDesignPreview();
+  const phone = usePhoneLayout(),
+    phoneDialog = useRef<HTMLDialogElement>(null),
+    [phoneTools, setPhoneTools] = useState(false);
+  useEffect(() => {
+    if (!phoneTools) return;
+    const node = phoneDialog.current;
+    node?.showModal();
+    return () => node?.close();
+  }, [phoneTools]);
   const triggerLabel = kitchenStudy
     ? { ar: "المزيد", en: "More", he: "עוד" }[language]
     : words[language];
@@ -98,6 +111,65 @@ export default function WorkspaceTools({
     updatePlacement();
     setOpen(true);
   }
+  if (kitchenStudy && phone)
+    return (
+      <div className="phone-workspace-actions">
+        <button
+          type="button"
+          className="secondary-button phone-tools-button"
+          aria-label={words[language]}
+          onClick={() => setPhoneTools(true)}
+        >
+          <SlidersHorizontal size={20} />
+        </button>
+        {phoneTools &&
+          createPortal(
+            <dialog
+              ref={phoneDialog}
+              className="phone-workspace-tools"
+              aria-label={words[language]}
+              onCancel={(event) => {
+                event.preventDefault();
+                setPhoneTools(false);
+              }}
+            >
+              <header>
+                <h2>{words[language]}</h2>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setPhoneTools(false)}
+                >
+                  {language === "ar"
+                    ? "رجوع"
+                    : language === "he"
+                      ? "חזרה"
+                      : "Back"}
+                </button>
+              </header>
+              <div className="phone-tools-content">
+                {primary}
+                {status && (
+                  <section className="phone-tools-status">{status}</section>
+                )}
+                <section className="phone-tools-export">{children}</section>
+              </div>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => setPhoneTools(false)}
+              >
+                {language === "ar"
+                  ? "عرض النتائج"
+                  : language === "he"
+                    ? "הצגת תוצאות"
+                    : "Show results"}
+              </button>
+            </dialog>,
+            document.body,
+          )}
+      </div>
+    );
   if (!enabled) return <>{children}</>;
   if (kitchenStudy)
     return (

@@ -37,9 +37,9 @@ async function signIn(page: Page, request: APIRequestContext, email?: string) {
   await expect(page.locator(".side-navigation-toggle")).toBeVisible();
   const skip = page.locator(".welcome-guide .guide-skip");
   if (await skip.isVisible()) await skip.click();
-  if (await page.locator(".language-segments").isVisible())
+  if (await page.locator(".language-segments").first().isVisible())
     await page
-      .locator(".language-segments")
+      .locator(".language-segments").first()
       .getByRole("button", { name: "العربية", exact: true })
       .click();
   else {
