@@ -7,7 +7,7 @@ body {
   background-color: var(--site-bg,#f1eee5);
 }
 
-main {
+.workspace {
   width: min(100%, 1120px);
   margin-inline: auto;
   padding: 56px 28px 80px;
@@ -585,7 +585,7 @@ main {
 }
 
 @media (max-width: 600px) {
-  main {
+  .workspace {
     padding: 28px 18px 48px;
   }
 

@@ -335,6 +335,7 @@
   color: var(--site-text);
 }
 .study-university-trial .study-task {
+  border: 2px solid #111;
   padding: 14px;
   margin: 11px 0;
   border-radius: 11px;
@@ -489,7 +490,7 @@
     background: var(--site-soft);
   }
   .study-university-trial .study-task:hover {
-    border-color: var(--site-accent);
+    border-color: #111;
   }
 }
 @media (max-width: 760px) {

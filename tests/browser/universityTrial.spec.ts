@@ -205,6 +205,12 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
     .filter({ hasText: "جبر التجربة" })
     .click();
   await expect(page.locator(".study-current-course")).toHaveCount(1);
+  const taskBorder=page.locator('.study-task').first();
+  await expect(taskBorder).toHaveCSS('border-top-width','2px');
+  await expect(taskBorder).toHaveCSS('border-top-color','rgb(17, 17, 17)');
+  await taskBorder.hover();
+  await expect(taskBorder).toHaveCSS('border-top-color','rgb(17, 17, 17)');
+
   await expect(page.locator(".study-storage")).toHaveAttribute(
     "data-sync-state",
     "ready",
