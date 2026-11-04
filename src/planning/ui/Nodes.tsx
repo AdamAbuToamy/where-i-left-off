@@ -1,3 +1,4 @@
+import type { Relation } from "../../productivity/state";
 import { usePlanningActions } from "./actions";
 import { useState } from "react";
 import {
@@ -25,7 +26,12 @@ export type PlanningNode = Node<
   "card" | "note"
 >;
 export type PlanningEdge = Edge<
-  { remove: (id: string) => void; language: Language },
+  {
+    remove: (id: string) => void;
+    language: Language;
+    meaning?: Relation["kind"];
+    setMeaning?: (kind: Relation["kind"]) => void;
+  },
   "rope"
 >;
 export function PlanningCardNode({ data }: NodeProps<PlanningNode>) {
@@ -107,6 +113,21 @@ export function PlanningNoteNode({ data }: NodeProps<PlanningNode>) {
       <header className="plan-node-grip">
         <FileText size={15} aria-hidden="true" />
         <span>{t.note}</span>
+        {actions.convertNote && (
+          <button
+            type="button"
+            className="plan-note-convert nodrag nopan"
+            title={
+              data.language === "ar" ? "تحويل إلى بطاقة" : "Convert to card"
+            }
+            aria-label={
+              data.language === "ar" ? "تحويل إلى بطاقة" : "Convert to card"
+            }
+            onClick={() => actions.convertNote?.(note.id)}
+          >
+            <ArrowUpRight size={15} />
+          </button>
+        )}
         <button
           type="button"
           className="plan-remove nodrag nopan"
@@ -157,16 +178,41 @@ export function RopeEdge({
       <path d={path} className="plan-rope-strand" pointerEvents="none" />
       {selected && data && (
         <EdgeLabelRenderer>
-          <button
-            className="plan-edge-delete nodrag nopan"
+          <div
+            className="plan-edge-tools nodrag nopan"
             style={{
               transform: `translate(-50%,-50%) translate(${x}px,${y}px)`,
             }}
-            onClick={() => data.remove(id)}
-            aria-label={planningWords[data.language].removeThread}
           >
-            <X size={15} />
-          </button>
+            {data.setMeaning &&
+              (["related", "part", "depends"] as const).map((kind) => (
+                <button
+                  type="button"
+                  key={kind}
+                  aria-pressed={data.meaning === kind}
+                  onClick={() => data.setMeaning?.(kind)}
+                >
+                  {data.language === "ar"
+                    ? {
+                        related: "مرتبط",
+                        part: "جزء من",
+                        depends: "يتوقف على",
+                      }[kind]
+                    : {
+                        related: "Related",
+                        part: "Part of",
+                        depends: "Depends on",
+                      }[kind]}
+                </button>
+              ))}
+            <button
+              type="button"
+              onClick={() => data.remove(id)}
+              aria-label={planningWords[data.language].removeThread}
+            >
+              <X size={15} />
+            </button>
+          </div>
         </EdgeLabelRenderer>
       )}
     </>

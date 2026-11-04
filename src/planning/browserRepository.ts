@@ -32,14 +32,26 @@ function decode(value: Record<string, unknown>): BoardRecord {
   }
 }
 /** Concrete browser/Firestore composition. No board adapter receives a project write path. */
-export function createPlanningRepository(uid: string, scope: string) {
+export function createPlanningRepository(
+  uid: string,
+  scope: string,
+  namedId = "",
+) {
   if (scope && !/^[A-Za-z0-9]{20}$/.test(scope))
+    throw new PlanningError("planning-invalid");
+  if (namedId && !/^[-\w]{1,80}$/.test(namedId))
     throw new PlanningError("planning-invalid");
   const isCurrent = () => auth?.currentUser?.uid === uid;
   const check = () => {
     if (!isCurrent()) throw new PlanningError("planning-account");
   };
-  const boardId = scope ? "group_" + scope : "personal",
+  const boardId = namedId
+      ? scope
+        ? "group_" + scope + "_" + namedId
+        : "personal_" + namedId
+      : scope
+        ? "group_" + scope
+        : "personal",
     key = `planning-board:v1/${db!.app.options.projectId}/${uid}/${boardId}`;
   const reference = doc(db!, "users", uid, "planningBoards", boardId);
   return new PlanningRepository({

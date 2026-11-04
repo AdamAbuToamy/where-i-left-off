@@ -1,4 +1,10 @@
-import { lazy, Suspense, useState, useSyncExternalStore } from "react";
+import {
+  lazy,
+  Suspense,
+  useState,
+  useSyncExternalStore,
+  useEffect,
+} from "react";
 import { Network } from "lucide-react";
 import type { Project, Section } from "../types";
 import type { Language } from "../translations";
@@ -19,7 +25,53 @@ export default function DesktopPlanningButton(props: {
   onOpenCard: (id: string) => void;
 }) {
   const desktop = useSyncExternalStore(subscribe, snapshot, () => false),
-    [open, setOpen] = useState(false);
+    [open, setOpen] = useState(() => {
+      const value = new URLSearchParams(location.hash.split("?")[1]).get(
+        "board",
+      );
+      return value === "default" || (!!value && /^[-\w]{1,80}$/.test(value));
+    }),
+    [boardId, setBoardId] = useState(() => {
+      const value =
+        new URLSearchParams(location.hash.split("?")[1]).get("board") || "";
+      return value === "default"
+        ? ""
+        : /^[-\w]{1,80}$/.test(value)
+          ? value
+          : "";
+    });
+  useEffect(() => {
+    let active = true;
+    const read = () => {
+      const raw = new URLSearchParams(location.hash.split("?")[1]).get("board");
+      if (raw === "default" || (raw && /^[-\w]{1,80}$/.test(raw)))
+        queueMicrotask(() => {
+          if (active) {
+            setBoardId(raw === "default" ? "" : raw!);
+            setOpen(true);
+          }
+        });
+    };
+    window.addEventListener("hashchange", read);
+    return () => {
+      active = false;
+      window.removeEventListener("hashchange", read);
+    };
+  }, []);
+  function selectBoard(id: string) {
+    setBoardId(id);
+    const params = new URLSearchParams(location.hash.split("?")[1]);
+    params.set("board", id || "default");
+    history.replaceState(
+      history.state,
+      "",
+      location.pathname +
+        location.search +
+        location.hash.split("?")[0] +
+        "?" +
+        params.toString(),
+    );
+  }
   const label = { ar: "لوح الخطة", en: "Planning board", he: "לוח תכנון" }[
     props.language
   ];
@@ -39,7 +91,28 @@ export default function DesktopPlanningButton(props: {
       </button>
       {open && (
         <Suspense fallback={<span role="status">…</span>}>
-          <BoardDialog {...props} onClose={() => setOpen(false)} />
+          <BoardDialog
+            key={props.scope + "/" + boardId}
+            {...props}
+            boardId={boardId}
+            onSelectBoard={selectBoard}
+            onClose={() => {
+              setOpen(false);
+              const params = new URLSearchParams(location.hash.split("?")[1]);
+              if (params.has("board")) {
+                params.delete("board");
+                history.replaceState(
+                  history.state,
+                  "",
+                  location.pathname +
+                    location.search +
+                    "#" +
+                    location.hash.split("?")[0].replace(/^#/, "") +
+                    (params.size ? "?" + params.toString() : ""),
+                );
+              }
+            }}
+          />
         </Suspense>
       )}
     </>

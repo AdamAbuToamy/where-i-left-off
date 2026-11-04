@@ -541,3 +541,55 @@
 .planning-board-dialog .rough-annotation {
   pointer-events: none;
 }
+
+.plan-edge-tools {
+  position: absolute;
+  pointer-events: all;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: 11px;
+  box-shadow: 0 5px 18px #25332e25;
+  white-space: nowrap;
+}
+.plan-edge-tools button {
+  border: 0;
+  border-radius: 7px;
+  padding: 7px;
+  background: var(--site-soft);
+  color: var(--site-primary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.plan-edge-tools button[aria-pressed="true"] {
+  background: var(--site-primary);
+  color: white;
+}
+
+.planning-title > .choice-picker {
+  min-width: 150px;
+  max-width: 210px;
+}
+.planning-toolbar {
+  flex-wrap: wrap;
+}
+.planning-named-create input {
+  font: inherit;
+  padding: 8px;
+  width: 180px;
+}
+.plan-note-convert {
+  margin-inline-start: auto;
+  border: 1px solid #cbbd8b;
+  border-radius: 6px;
+  background: #fff9e8;
+  color: #6e6037;
+  padding: 4px;
+  cursor: pointer;
+}
+.planning-board-dialog .plan-note .plan-remove {
+  position: static;
+}

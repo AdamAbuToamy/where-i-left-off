@@ -1,3 +1,13 @@
+import ChoicePicker from "../../components/ChoicePicker";
+import {
+  addNamedBoard,
+  noteCardDraft,
+  convertedBoardNote,
+} from "../../productivity/boards";
+import { useExperience } from "../../productivity/context";
+import { cardKey } from "../../productivity/state";
+import { relate } from "../../productivity/relations";
+import type { Relation } from "../../productivity/state";
 import { createPortal } from "react-dom";
 import { PlanningActions } from "./actions";
 import {
@@ -71,6 +81,8 @@ import "./planning.css";
 type Props = {
   uid: string;
   scope: string;
+  boardId?: string;
+  onSelectBoard?: (id: string) => void;
   projects: Project[];
   sections: Section[];
   language: Language;
@@ -83,7 +95,7 @@ export default function PlanningBoardDialog(props: Props) {
   const dialog = useRef<HTMLDialogElement>(null),
     title = useId();
   const [repository] = useState(() =>
-    createPlanningRepository(props.uid, props.scope),
+    createPlanningRepository(props.uid, props.scope, props.boardId || ""),
   );
   const [view, setView] = useState<BoardView>(() => repository.view);
   useLayoutEffect(() => {
@@ -134,6 +146,7 @@ function PlanningCanvas({
   view: BoardView;
   titleId: string;
 }) {
+  const experience = useExperience();
   const t = planningWords[props.language],
     container = useRef<HTMLDivElement>(null),
     dragging = useRef<string | null>(null),
@@ -146,7 +159,9 @@ function PlanningCanvas({
     [picker, setPicker] = useState(false),
     [query, setQuery] = useState(""),
     [selectedCircle, setSelectedCircle] = useState(""),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [newBoardName, setNewBoardName] = useState(""),
+    [exporting, setExporting] = useState(false);
   const change = useCallback(
     (update: (state: PlanningState) => PlanningState, historyGroup = "") => {
       try {
@@ -159,7 +174,7 @@ function PlanningCanvas({
             ? t.invalidCircle
             : code === "planning-full"
               ? t.full
-              : code === "planning-local"
+              : ["planning-local", "journal-local"].includes(code || "")
                 ? t.localError
                 : t.invalid,
         );
@@ -173,12 +188,40 @@ function PlanningCanvas({
       editNote: (id: string, text: string) =>
         change((state) => editBoardNote(state, id, text), "note:" + id),
       remove: (id: string) => change((state) => removeBoardItem(state, id)),
+      convertNote: props.scope ? undefined : (id: string) => {
+        void (async () => {
+          if (!experience?.workspace) throw new Error("experience-unavailable");
+          const card = noteCardDraft(repository.state, id);
+          await experience.workspace.addOnce(
+            card.id,
+            card.name,
+            "",
+            (experience.cards?.projects[0]?.rank || 1024) - 1024,
+            { description: card.description, status: "later" },
+          );
+          change((state) => convertedBoardNote(state, id, card.id));
+        })().catch(() =>
+          setMessage(
+            props.language === "ar"
+              ? "تعذّر تحويل النوتة. يجب أن تحتوي نصًا لا يتجاوز 1000 حرف."
+              : "Could not convert the note. Its text must be 1–1000 characters.",
+          ),
+        );
+      },
       open: (id: string) => {
         onClose();
         onOpenCard(id);
       },
     }),
-    [change, onClose, onOpenCard],
+    [
+      change,
+      onClose,
+      onOpenCard,
+      props.scope,
+      repository,
+      experience,
+      props.language,
+    ],
   );
   const removeEdge = useCallback(
     (id: string) => change((state) => removeBoardThread(state, id)),
@@ -241,6 +284,44 @@ function PlanningCanvas({
     if (node.data.item === item && node.data.project === project) return [node];
     return [{ ...node, data: { ...node.data, item, project } }];
   });
+  const linkedProjectId = useCallback((id: string) => {
+    const item = repository.state.items.find((i) => i.id === id);
+    return item?.kind === "card" ? item.projectId : id;
+  },[repository]);
+  const relationRows = experience?.view.state.relations;
+  const setMeaning = useCallback(
+    (source: string, target: string, kind: Relation["kind"]) => {
+      if (!experience) return;
+      try {
+        const from = cardKey(source, props.scope || undefined),
+          to = cardKey(target, props.scope || undefined);
+        experience.change((state) =>
+          relate(
+            {
+              ...state,
+              relations: state.relations.filter(
+                (r) => !(r.source === from && r.target === to),
+              ),
+            },
+            { id: createClientId(), source: from, target: to, kind },
+            new Set(
+              props.projects.map((p) =>
+                cardKey(p.id, props.scope || undefined),
+              ),
+            ),
+          ),
+        );
+        setMessage("");
+      } catch {
+        setMessage(
+          props.language === "ar"
+            ? "تعذّر ربط العلاقة. تحقق من عدم وجود اعتماد دائري."
+            : "Could not connect the relationship. Check for dependency cycles.",
+        );
+      }
+    },
+    [experience, props.projects, props.scope, props.language],
+  );
   const visibleIds = useMemo(
     () => new Set(nodes.map((node) => node.id)),
     [nodes],
@@ -259,10 +340,53 @@ function PlanningCanvas({
           sourceHandle: "pin",
           targetHandle: "pin",
           selected: previous.find((value) => value.id === edge.id)?.selected,
-          data: { remove: removeEdge, language: props.language },
+          data: {
+            remove: removeEdge,
+            language: props.language,
+            meaning: relationRows?.find(
+              (r) =>
+                r.source ===
+                  cardKey(
+                    linkedProjectId(edge.source),
+                    props.scope || undefined,
+                  ) &&
+                r.target ===
+                  cardKey(
+                    linkedProjectId(edge.target),
+                    props.scope || undefined,
+                  ),
+            )?.kind,
+            setMeaning:
+              repository.state.items.find((i) => i.id === edge.source)?.kind ===
+                "card" &&
+              repository.state.items.find((i) => i.id === edge.target)?.kind ===
+                "card"
+                ? (kind: Relation["kind"]) => {
+                    const source = repository.state.items.find(
+                        (i) => i.id === edge.source,
+                      ),
+                      target = repository.state.items.find(
+                        (i) => i.id === edge.target,
+                      );
+                    if (source?.kind === "card" && target?.kind === "card")
+                      setMeaning(source.projectId, target.projectId, kind);
+                  }
+                : undefined,
+          },
         })),
     );
-  }, [view.state.threads, visibleIds, props.language, removeEdge, setEdges]);
+  }, [
+    view.state.threads,
+    visibleIds,
+    props.language,
+    props.scope,
+    removeEdge,
+    setEdges,
+    relationRows,
+    setMeaning,
+    repository,
+    linkedProjectId,
+  ]);
   useEffect(() => {
     if (initialized && nodes.length && !fitted.current) {
       fitted.current = true;
@@ -294,6 +418,56 @@ function PlanningCanvas({
         ),
       );
   };
+  async function exportCanvas(format: "png" | "pdf") {
+    if (exporting || !container.current) return;
+    setExporting(true);
+    const previous = flow.getViewport();
+    try {
+      const rects = [
+        ...flow
+          .getNodes()
+          .map((node) => ({
+            x: node.position.x,
+            y: node.position.y,
+            width: node.measured?.width || 254,
+            height: node.measured?.height || 210,
+          })),
+        ...view.state.circles,
+      ];
+      if (rects.length) {
+        const x = Math.min(...rects.map((r) => r.x)),
+          y = Math.min(...rects.map((r) => r.y));
+        await flow.fitBounds(
+          {
+            x,
+            y,
+            width: Math.max(...rects.map((r) => r.x + r.width)) - x,
+            height: Math.max(...rects.map((r) => r.y + r.height)) - y,
+          },
+          { padding: 0.2, duration: 0 },
+        );
+      }
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      const { exportPlanningBoard } = await import("./PlanningBoardExport");
+      await exportPlanningBoard(
+        container.current,
+        format,
+        experience?.view.state.boards.find((b) => b.id === props.boardId)
+          ?.name || "wilo-planning-board",
+      );
+    } catch {
+      setMessage(
+        props.language === "ar"
+          ? "تعذّر تصدير اللوح. أعد المحاولة."
+          : "Board export failed. Try again.",
+      );
+    } finally {
+      await flow.setViewport(previous);
+      setExporting(false);
+    }
+  }
   const disabled = view.error === "invalid-local";
   const saveWord = view.pending
     ? view.ready && !view.error
@@ -347,6 +521,67 @@ function PlanningCanvas({
           <div className="planning-title">
             <Network size={20} />
             <h2 id={titleId}>{t.title}</h2>
+            {experience && props.onSelectBoard && (
+              <ChoicePicker
+                label={props.language === "ar" ? "اللوح" : "Board"}
+                value={props.boardId || ""}
+                onChange={props.onSelectBoard}
+                options={[
+                  {
+                    value: "",
+                    label:
+                      props.language === "ar"
+                        ? "لوح الخطة الأصلي"
+                        : "Original planning board",
+                  },
+                  ...experience.view.state.boards
+                    .filter((b) => b.scope === props.scope && !b.archived)
+                    .map((b) => ({ value: b.id, label: b.name })),
+                ]}
+              />
+            )}
+            {experience && props.onSelectBoard && (
+              <details className="planning-help planning-named-create">
+                <summary
+                  aria-label={
+                    props.language === "ar" ? "لوح جديد" : "New board"
+                  }
+                >
+                  <Plus size={16} />
+                </summary>
+                <div>
+                  <input
+                    aria-label={
+                      props.language === "ar" ? "اسم اللوح" : "Board name"
+                    }
+                    maxLength={80}
+                    value={newBoardName}
+                    onChange={(e) => setNewBoardName(e.target.value)}
+                  />
+                  <button
+                    disabled={!newBoardName.trim()}
+                    onClick={() => {
+                      try {
+                        const id = createClientId();
+                        experience.change((state) =>
+                          addNamedBoard(state, id, newBoardName, props.scope),
+                        );
+                        props.onSelectBoard?.(id);
+                      } catch {
+                        setMessage(
+                          props.language === "ar"
+                            ? "أضف اسمًا مختلفًا للوح."
+                            : "Choose a different board name.",
+                        );
+                      }
+                    }}
+                  >
+                    {props.language === "ar" ? "إنشاء" : "Create"}
+                  </button>
+                </div>
+              </details>
+            )}
+
             <span
               className={`planning-save ${view.pending ? "is-pending" : ""}`}
               role="status"
@@ -441,6 +676,26 @@ function PlanningCanvas({
               </summary>
               <div>
                 <p>{t.helpText}</p>
+                <p>
+                  {props.language === "ar"
+                    ? "التراجع يعيد تغييرات اللوح فقط؛ البطاقة التي أُنشئت من نوتة تبقى محفوظة."
+                    : "Undo restores board edits only; a card created from a note remains saved."}
+                </p>
+                <button
+                  type="button"
+                  disabled={exporting}
+                  onClick={() => void exportCanvas("png")}
+                >
+                  {exporting ? "…" : "PNG"}
+                </button>
+                <button
+                  type="button"
+                  disabled={exporting}
+                  onClick={() => void exportCanvas("pdf")}
+                >
+                  {exporting ? "…" : "PDF"}
+                </button>
+
                 <button
                   type="button"
                   disabled={disabled}
