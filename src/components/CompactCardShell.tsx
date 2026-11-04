@@ -21,7 +21,7 @@ const labels = {
     empty: "Open card to see details",
   },
 };
-/** Presentation only: original actions remain mounted; sorting stays with ProjectBoard's handle. */
+/** Presentation only: details mount on first open and remain mounted thereafter; sorting stays with ProjectBoard's handle. */
 export default function CompactCardShell({
   project,
   sections,
@@ -34,6 +34,7 @@ export default function CompactCardShell({
   children: ReactNode;
 }) {
   const { enabled } = useDesignPreview();
+  const [visited, setVisited] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const opener = useRef<HTMLButtonElement>(null),
@@ -41,6 +42,7 @@ export default function CompactCardShell({
   const t = labels[language];
   if (!enabled) return <>{children}</>;
   function open() {
+    setVisited(true);
     setExpanded(true);
     requestAnimationFrame(() => closer.current?.focus({ preventScroll: true }));
   }
@@ -114,7 +116,7 @@ export default function CompactCardShell({
             {t.close}
           </button>
         </div>
-        {children}
+        {visited && children}
       </div>
     </div>
   );

@@ -1,0 +1,20 @@
+{
+  "environment": "Chromium local emulator",
+  "physicalDevice": false,
+  "beforeAfterComparison": false,
+  "samples": {
+    "simplified-frame-sample.json": {
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.700000000000045,
+      "samples": 90,
+      "domNodes": 491
+    },
+    "simplified-many-cards.json": {
+      "cards": 52,
+      "domNodes": 1841,
+      "unopenedDetails": 0,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.700000000000273
+    }
+  }
+}

@@ -1,5 +1,3 @@
-import {useExperience} from "../productivity/context";
-import {openWorkHub} from "../productivity/openHub";
 import { Layers, ChevronDown } from "lucide-react";
 import { useDesignPreview } from "./designPreviewContext";
 import { useState } from "react";
@@ -25,7 +23,6 @@ const weekdays: Record<Language, string[]> = {
 };
 
 export default function WeeklySchedule({ projects, language, weekOf }: Props) {
-  const experience=useExperience();
   const { enabled } = useDesignPreview();
   const t = translations[language];
   const [offset, setOffset] = useState(0);
@@ -55,7 +52,6 @@ export default function WeeklySchedule({ projects, language, weekOf }: Props) {
   const unscheduled = projects.filter((project) => !project.dueDate);
   return (
     <section className="weekly-schedule" aria-label={t.schedule}>
-      {experience&&<button className="secondary-button" onClick={()=>openWorkHub(experience.uid,"time")}>{language==="ar"?"تخطيط وقت العمل":"Plan work time"}</button>}
       <div className="week-navigation">
         <button
           className="secondary-button"

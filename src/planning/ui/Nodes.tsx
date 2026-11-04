@@ -113,21 +113,6 @@ export function PlanningNoteNode({ data }: NodeProps<PlanningNode>) {
       <header className="plan-node-grip">
         <FileText size={15} aria-hidden="true" />
         <span>{t.note}</span>
-        {actions.convertNote && (
-          <button
-            type="button"
-            className="plan-note-convert nodrag nopan"
-            title={
-              data.language === "ar" ? "تحويل إلى بطاقة" : "Convert to card"
-            }
-            aria-label={
-              data.language === "ar" ? "تحويل إلى بطاقة" : "Convert to card"
-            }
-            onClick={() => actions.convertNote?.(note.id)}
-          >
-            <ArrowUpRight size={15} />
-          </button>
-        )}
         <button
           type="button"
           className="plan-remove nodrag nopan"

@@ -18,7 +18,7 @@ async function files(directory, prefix = "") {
 const paths = (await files("dist")).filter(
   (path) =>
     path !== "/assistant-config.json" &&
-    !/^\/assets\/(?:PlanningBoardDialog|PlanningBoardExport|Hub|InboxPanel|ResumePanel|RelationsPanel|SchedulePanel|ReviewPanel|StudyPanel|AssistantPanel|HistoryPanel|TemplatesPanel|BoardsPanel|CourseWorkspace|AssistantWidget|assistant|localModel|web-llm|index-worker|lib-|speech.worker|ort-|onnxruntime|transformers)/.test(
+    !/^\/assets\/(?:PlanningBoardDialog|AssistantWidget|assistant|localModel|web-llm|index-worker|lib-|speech.worker|ort-|onnxruntime|transformers)/.test(
       path,
     ),
 );

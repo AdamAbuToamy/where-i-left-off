@@ -323,5 +323,3 @@ html[dir=ltr] .assistant-root {left:auto;right:22px}
 .assistant-root.is-phone .assistant-peek-return { display:flex; align-items:center; gap:4px; padding:8px; flex:none; }
 .assistant-root.is-phone.is-peeking .assistant-heading > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; }
 @media(prefers-reduced-motion:reduce){ .assistant-root.is-phone .assistant-panel,.assistant-root.is-phone .assistant-launcher { transition:none!important; } }
-
-.assistant-screen-context{display:block;margin-bottom:9px;color:var(--site-muted);font-size:11px;border-inline-start:2px solid var(--site-primary);padding-inline-start:8px}

@@ -131,6 +131,7 @@ self.addEventListener("push", (event) => {
         dir: ["ar", "he"].includes(payload.language) ? "rtl" : "auto",
         data: { url: payload.url, uid: payload.uid },
       });
+      for(const client of await self.clients.matchAll({type:"window"}))client.postMessage({type:"wilo-notification",uid:payload.uid});
     })(),
   );
 });

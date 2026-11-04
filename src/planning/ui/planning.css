@@ -593,3 +593,5 @@
 .planning-board-dialog .plan-note .plan-remove {
   position: static;
 }
+
+.planning-relation-status{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px;font-size:12px;color:var(--site-muted);background:var(--site-soft);}

@@ -1,0 +1,50 @@
+/* Admin preview: short compositor-friendly feedback, no perpetual card motion. */
+:root[data-kitchen-study="on"] .project-card {
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+:root[data-kitchen-study="on"] .project-card .envelope-expand {
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+:root[data-kitchen-study="on"]
+  :is(
+    .side-navigation-toggle,
+    .workspace-tools-trigger,
+    .primary-button,
+    .secondary-button,
+    .envelope-expand,
+    .envelope-collapse
+  ) {
+  min-height: 44px;
+}
+:root[data-kitchen-study="on"] .envelope-expand:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+:root[data-kitchen-study="on"]
+  :is(.side-navigation-toggle, .workspace-tools-trigger):focus-visible {
+  outline: 2px solid var(--site-primary);
+  outline-offset: 3px;
+}
+:root[data-kitchen-study="on"] .planning-board-dialog::backdrop {
+  backdrop-filter: none;
+}
+:root[data-kitchen-study="on"] .planning-canvas {
+  backdrop-filter: none;
+}
+@media (hover: none) {
+  :root[data-kitchen-study="on"] .envelope-expand {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-kitchen-study="on"] :is(.project-card, .envelope-expand) {
+    transition: none;
+  }
+}

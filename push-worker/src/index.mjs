@@ -1,3 +1,4 @@
+import {readNotifications,readThrough,recordNotification} from './notificationCenter.mjs'
 import {ASSISTANT_PROTOCOL,assistantFailure,assistantHealth} from './assistantEndpoint.mjs'
 import {assistant} from './assistant.mjs'
 import {defaults,preferences,clock,validSubscription,cardKey,candidate,quietNow,localParts} from '../policy.mjs'
@@ -39,6 +40,8 @@ export function createWorker(overrides={}){
   await f.accountAvailable(env,uid)
   await store.ensureAccount(env,uid,defaults)
   let row=await store.account(env,uid)
+  if(data.action==='notifications')return readNotifications(env,identity)
+  if(data.action==='notifications-read')return readThrough(env,identity,data.through)
   if(data.action==='get'){
    const cards=await env.DB.prepare('SELECT id,settings FROM cards WHERE uid=?').bind(uid).all()
    return {preferences:preferences(JSON.parse(row.prefs)),publicKey:env.VAPID_PUBLIC_KEY,cards:Object.fromEntries(cards.results.map(c=>[c.id,JSON.parse(c.settings)]))}
@@ -125,7 +128,7 @@ export function createWorker(overrides={}){
   const p=preferences(JSON.parse(row.prefs))
   if(message.type==='test'){
    const text={ar:['الإشعارات مفعّلة','ستصلك التذكيرات التي اخترتها على هذا الهاتف.'],en:['Notifications are ready','Your selected reminders will arrive on this phone.'],he:['ההתראות פעילות','התזכורות שבחרתם יגיעו לטלפון הזה.']}[p.language] || ['Notifications are ready','Your selected reminders will arrive on this phone.']
-   await send(env,JSON.parse(device.subscription),{uid:message.uid,title:text[0],body:text[1],language:p.language,url:'#/settings',tag:'wilo-push-test'});return
+   const payload={uid:message.uid,title:text[0],body:text[1],language:p.language,url:'#/settings',tag:'wilo-push-test'};await send(env,JSON.parse(device.subscription),payload);try{await recordNotification(env,message.uid,'test_'+message.createdAt,payload)}catch{console.warn('push.history.failed',{reason:'storage'})}return
   }
   const project=await f.cardDocument(env,message.uid,message.projectId,message.scope)
   const key=cardKey(message.projectId,message.scope),card=await store.card(env,message.uid,key)
@@ -139,7 +142,8 @@ export function createWorker(overrides={}){
   const deliveryId=await hash(`${message.deviceId}/${key}/${message.event.key}`)
   if(!await store.claimDelivery(env,deliveryId,message.uid))return
   const t=messages[p.language]
-  try{await send(env,JSON.parse(device.subscription),{uid:message.uid,title:t[message.event.type],body:p.hideContent?t.private:project.name,url:message.scope?`#/groups/${message.scope}/${message.projectId}`:`#/personal/${message.projectId}`,tag:`wilo-${key}-${message.event.type}`})}
+  const payload={uid:message.uid,title:t[message.event.type],body:p.hideContent?t.private:project.name,url:message.scope?`#/groups/${message.scope}/${message.projectId}`:`#/personal/${message.projectId}`,tag:`wilo-${key}-${message.event.type}`}
+  try{await send(env,JSON.parse(device.subscription),payload);try{await recordNotification(env,message.uid,await hash(`${key}/${message.event.type}/${message.event.key}`),payload)}catch{console.warn('push.history.failed',{reason:'storage'})}}
   catch(error){if([404,410].includes(error.status))await env.DB.prepare('DELETE FROM devices WHERE id=? AND uid=?').bind(message.deviceId,message.uid).run();throw error}
  }
  return {
@@ -158,7 +162,7 @@ export function createWorker(overrides={}){
    let requestedAction=isAssistant?'assistant':'unknown'
    try{
     const data=await readBoundedJson(request,new URL(request.url).pathname==='/assistant-account'?500000:65536)
-    if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase'].includes(data.action))requestedAction=data.action
+    if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase','notifications','notifications-read'].includes(data.action))requestedAction=data.action
     stage='identity';const identity=await f.verifyIdentity(request,env)
     let result
     if(new URL(request.url).pathname==='/assistant-account'){
