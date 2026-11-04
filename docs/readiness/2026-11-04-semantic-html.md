@@ -19,3 +19,5 @@ Reviewed the supplied 79.2-second WhatsApp video (17.04.33): meaningful HTML ele
 
 ## Delivery
 Public Hosting-only rollout; worker 83abe814-b1d2-44e3-b749-90ac83bdb978 and all prior release metadata preserved. Previous manifest .wrangler/semantics-release-before.json. Roll back to the prior Firebase Hosting version if needed. Production byte proof recorded after deployment.
+
+Published for all signed-in accounts: wilo-semantic-html-20261104. All 14 checked production files match local build bytes; release version and audience confirmed. Proof: 2026-11-04-semantic-html-production.json. Hosting only; backend/provider unchanged.
