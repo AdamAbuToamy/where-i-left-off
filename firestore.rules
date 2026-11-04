@@ -49,7 +49,7 @@ service cloud.firestore {
         let d = request.resource.data;
         let keys = d.keys();
         return keys.hasAll(['name', 'nextStep', 'status', 'rank', 'revision', 'updatedAt'])
-          && keys.hasOnly(['name', 'nextStep', 'projectUrl', 'attachmentUrl', 'links', 'dueDate', 'assignedTo', 'sectionId', 'kind', 'checkpoint', 'checklist', 'mutationId', 'archivedAt', 'trashedAt', 'activityAt', 'completedAt', 'resourceType', 'progressUnits', 'totalUnits', 'followUpDate', 'coverUrl', 'description', 'catalogSource', 'catalogId', 'status', 'rank', 'revision', 'updatedAt'])
+          && keys.hasOnly(['name', 'nextStep', 'projectUrl', 'attachmentUrl', 'links', 'dueDate', 'assignedTo', 'sectionId', 'kind', 'checkpoint', 'checklist', 'mutationId', 'archivedAt', 'trashedAt', 'activityAt', 'completedAt', 'resourceType', 'progressUnits', 'totalUnits', 'followUpDate', 'coverUrl', 'description', 'catalogSource', 'catalogId', 'status', 'rank', 'revision', 'updatedAt', 'versionHistory'])
           && d.name is string && d.name.size() <= 100
           && d.name.matches('.*[^\\s].*')
           && validExtraLinks(d.get('links', []))
@@ -104,9 +104,33 @@ service cloud.firestore {
         return (!exists(path) || get(path).data.get('suspended', false) != true)
           && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
       }
+      function validHistoryMetadata() {
+        let h=request.resource.data.versionHistory;
+        return h is map && h.keys().hasAll(['entries','revision','mutationId','actorId','actorName','source'])
+          && h.keys().hasOnly(['entries','revision','mutationId','actorId','actorName','source'])
+          && h.entries is list && h.entries.size()<=20
+          && h.revision==request.resource.data.revision
+          && h.mutationId==request.resource.data.mutationId
+          && h.actorId==uid && validText(h.actorName,100) && h.source in ['workspace','assistant'];
+      }
+      function validHistoryAppend() {
+        let entries=request.resource.data.versionHistory.entries;
+        let last=entries[entries.size()-1];
+        let previous=resource.data.get('versionHistory',{}).get('entries',[]);
+        return entries.size()>=1 && last is map
+          && last.keys().hasAll(['mutationId','revision','at','actorId','actorName','source','payload'])
+          && last.keys().hasOnly(['mutationId','revision','at','actorId','actorName','source','payload'])
+          && last.revision==resource.data.revision && last.mutationId==resource.data.get('mutationId','legacy')
+          && last.actorId==uid && validText(last.actorName,100) && last.source in ['workspace','assistant','legacy']
+          && last.at is number && last.at>=0 && validText(last.payload,40000)
+          && entries.removeAll([last]).hasOnly(previous);
+      }
       allow read, delete: if owner() && activeAccount();
-      allow create: if owner() && activeAccount() && validProject() && request.resource.data.revision == 0;
-      allow update: if owner() && activeAccount() && validProject() && request.resource.data.revision == resource.data.revision + 1;
+      allow create: if owner() && activeAccount() && validProject() && request.resource.data.revision == 0
+        && (!request.resource.data.keys().hasAny(['versionHistory']) || (logAdmin() && validHistoryMetadata() && request.resource.data.versionHistory.entries.size()==0));
+      allow update: if owner() && activeAccount() && validProject() && request.resource.data.revision == resource.data.revision + 1
+        && (request.resource.data.get('versionHistory',null)==resource.data.get('versionHistory',null)
+          || (logAdmin() && validHistoryMetadata() && validHistoryAppend()));
     }
 
     match /users/{uid}/sections/{sectionId} {
@@ -192,9 +216,9 @@ service cloud.firestore {
           && (get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.role == 'manager'
             || (get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.get('canCreate', true) == true
               && request.resource.data.get('assignedTo', '') == request.auth.uid))
-          && validProject() && assignmentValid() && request.resource.data.revision == 0;
+          && validProject() && !request.resource.data.keys().hasAny(['versionHistory']) && assignmentValid() && request.resource.data.revision == 0;
         allow delete: if groupManager(gid) || cleaningOwner(gid);
-        allow update: if groupMember(gid) && validProject() && request.resource.data.revision == resource.data.revision + 1
+        allow update: if groupMember(gid) && validProject() && !request.resource.data.keys().hasAny(['versionHistory']) && request.resource.data.revision == resource.data.revision + 1
           && ((get(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)).data.role == 'manager' && assignmentValid())
             || (resource.data.get('assignedTo', '') == request.auth.uid
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nextStep', 'status', 'checkpoint', 'checklist', 'progressUnits', 'followUpDate', 'activityAt', 'completedAt', 'revision', 'updatedAt', 'mutationId'])));
@@ -352,11 +376,6 @@ service cloud.firestore {
     }
 
 
-    match /users/{uid}/cardHistory/{event} {
-      allow read: if signedActive() && request.auth.uid == uid;
-      allow write: if false;
-    }
-
     // Administrator-preview metadata is private account data, never a role grant.
     match /users/{uid}/experience/{document} {
       allow read: if signedActive() && request.auth.uid == uid;
@@ -365,7 +384,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['version','payload','revision','mutationId','updatedAt'])
         && request.resource.data.keys().hasOnly(['version','payload','revision','mutationId','updatedAt'])
         && request.resource.data.version == 1
-        && request.resource.data.payload is string && request.resource.data.payload.size() <= 450000
+        && request.resource.data.payload is string && request.resource.data.payload.size() <= 250000
         && request.resource.data.mutationId is string && request.resource.data.mutationId.matches('^[A-Za-z0-9_-]{1,100}$')
         && request.resource.data.updatedAt == request.time
         && request.resource.data.revision is int && request.resource.data.revision <= 10000000
@@ -378,7 +397,8 @@ service cloud.firestore {
     match /users/{uid}/planningBoards/{boardId} {
       function boardOwner() {
         return signedActive() && request.auth.uid == uid
-          && (boardId == 'personal' || boardId.matches('^group_[A-Za-z0-9]{20}$'));
+          && (boardId == 'personal' || boardId.matches('^group_[A-Za-z0-9]{20}$')
+            || (logAdmin() && (boardId.matches('^personal_[A-Za-z0-9_-]{1,80}$') || boardId.matches('^group_[A-Za-z0-9]{20}_[A-Za-z0-9_-]{1,80}$'))));
       }
       function validBoard() {
         let d = request.resource.data;
@@ -386,8 +406,8 @@ service cloud.firestore {
           && d.keys().hasOnly(['version','scope','payload','revision','mutationId','updatedAt'])
           && d.version == 1
           && d.scope is string
-          && ((boardId == 'personal' && d.scope == '')
-            || (d.scope.matches('^[A-Za-z0-9]{20}$') && boardId == 'group_' + d.scope && groupMember(d.scope)))
+          && (((boardId == 'personal' || (logAdmin() && boardId.matches('^personal_[A-Za-z0-9_-]{1,80}$'))) && d.scope == '')
+            || (d.scope.matches('^[A-Za-z0-9]{20}$') && (boardId == 'group_' + d.scope || (logAdmin() && boardId.matches('^group_' + d.scope + '_[A-Za-z0-9_-]{1,80}$'))) && groupMember(d.scope)))
           && d.payload is string && d.payload.size() > 0 && d.payload.size() <= 150000
           && d.revision is int && d.revision >= 1 && d.revision <= 10000000
           && d.mutationId is string && d.mutationId.matches('^[A-Za-z0-9_-]{1,100}$')

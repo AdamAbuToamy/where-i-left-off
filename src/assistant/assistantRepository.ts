@@ -1,3 +1,5 @@
+import {cardHistoryFields} from "../productivity/cardHistory";
+import type {Project} from "../types";
 import { localDateKey } from '../lib/projects';
 import { createClientId } from '../lib/clientId'
 import { collection, doc, getDocsFromServer, getDocFromServer, runTransaction, serverTimestamp } from 'firebase/firestore';
@@ -88,6 +90,7 @@ export class AssistantRepository {
      const baseline=c.before as Record<string,unknown>|null;
      if(old&&baseline)for(const key of Object.keys(body))if(!(key in old)&&canonical((body as Record<string,unknown>)[key])===canonical(baseline[key]))delete (body as Record<string,unknown>)[key];
     }
+    if(c.target==='projects'&&c.scope==='personal')Object.assign(body,cardHistoryFields(old,c.before as Project|null,mutations.get(refs[i].path)!,revision,'assistant',this.uid));
     tx.set(refs[i],{...body,mutationId:mutations.get(refs[i].path),updatedAt:serverTimestamp()});
    }
   });

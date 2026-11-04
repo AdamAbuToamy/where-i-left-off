@@ -1,3 +1,4 @@
+import {cardHistoryFields} from "../productivity/cardHistory";
 import { collection, doc, getDocFromServer, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore'
 import type { Firestore } from 'firebase/firestore'
 import type { Project, Section } from '../types'
@@ -61,6 +62,7 @@ export class FirestoreWorkspaceRemote implements WorkspaceRemote {
       if (!op.after) tx.delete(ref)
       else {
         const body: Record<string, unknown> = { ...op.after, updatedAt: serverTimestamp(), mutationId: op.id }
+        if(op.entity==='project'&&!this.groupId)Object.assign(body,cardHistoryFields(data,remote as Project|null,op.id,(op.after as Project).revision,'workspace',this.uid));
         delete body.id
         // Preserve absent legacy fields when their semantic value did not change.
         // Adding normalized defaults can violate a member's allowed changed keys.
