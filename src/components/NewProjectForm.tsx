@@ -1,77 +1,159 @@
-import CatalogLookup from './CatalogLookup'
-import ExtraLinks from './ExtraLinks'
-import { useEffect, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
-import type { Language } from '../translations'
-import { translations } from '../translations'
-import { recallText } from '../recallTranslations'
-import type { Section, GroupMember } from '../types'
-import type { ProjectDetails } from '../lib/projects'
-import RecallFields from './RecallFields'
-import type { RecallDetails } from './RecallFields'
+import { createPortal } from "react-dom";
+import { usePhoneLayout, usePhoneSurface } from "./usePhoneSurface";
+import { useDesignPreview } from "./designPreviewContext";
+import CatalogLookup from "./CatalogLookup";
+import ExtraLinks from "./ExtraLinks";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
+import type { Language } from "../translations";
+import { translations } from "../translations";
+import { recallText } from "../recallTranslations";
+import type { Section, GroupMember } from "../types";
+import type { ProjectDetails } from "../lib/projects";
+import RecallFields from "./RecallFields";
+import type { RecallDetails } from "./RecallFields";
 
 type NewProjectFormProps = {
-  language: Language
-  isOpen: boolean
-  sections?: Section[]
-  members?: GroupMember[]
-  defaultSectionId?: string
-  defaultAssignedTo?: string
-  initialValues?: { name: string; projectUrl: string;checkpoint?:string;resourceType?:'video'|'course' }
-  onAdd: (name: string, nextStep: string, details: ProjectDetails) => Promise<boolean>
-  onCancel: () => void
-}
+  disabled?: boolean;
+  language: Language;
+  isOpen: boolean;
+  sections?: Section[];
+  members?: GroupMember[];
+  defaultSectionId?: string;
+  defaultAssignedTo?: string;
+  initialValues?: {
+    name: string;
+    projectUrl: string;
+    checkpoint?: string;
+    resourceType?: "video" | "course";
+  };
+  onAdd: (
+    name: string,
+    nextStep: string,
+    details: ProjectDetails,
+  ) => Promise<boolean>;
+  onCancel: () => void;
+};
 
 export default function NewProjectForm({
+  disabled,
   language,
   isOpen,
   initialValues,
   sections = [],
   members,
-  defaultSectionId = '',
-  defaultAssignedTo = '',
+  defaultSectionId = "",
+  defaultAssignedTo = "",
   onAdd,
   onCancel,
 }: NewProjectFormProps) {
-  const t = translations[language], r = recallText[language]
-  const [metadata, setMetadata] = useState<RecallDetails>({ assignedTo: defaultAssignedTo, status: 'later', kind: 'resume', sectionId: defaultSectionId, checkpoint: initialValues?.checkpoint || '', checklist: '',resourceType:initialValues?.resourceType || 'project' })
-  const inputRef = useRef<HTMLInputElement>(null)
+  const t = translations[language],
+    r = recallText[language];
+  const [metadata, setMetadata] = useState<RecallDetails>({
+    assignedTo: defaultAssignedTo,
+    status: "later",
+    kind: "resume",
+    sectionId: defaultSectionId,
+    checkpoint: initialValues?.checkpoint || "",
+    checklist: "",
+    resourceType: initialValues?.resourceType || "project",
+  });
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const [name, setName] = useState(() => initialValues?.name ?? '')
-  const [nextStep, setNextStep] = useState('')
-  const [projectUrl, setProjectUrl] = useState(() => initialValues?.projectUrl ?? '')
-  const [attachmentUrl, setAttachmentUrl] = useState('')
-  const [dueDate, setDueDate] = useState('')
-  const [links,setLinks]=useState<string[]>([])
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [name, setName] = useState(() => initialValues?.name ?? "");
+  const [nextStep, setNextStep] = useState("");
+  const [projectUrl, setProjectUrl] = useState(
+    () => initialValues?.projectUrl ?? "",
+  );
+  const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [links, setLinks] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      inputRef.current?.focus({ preventScroll: true })
+      inputRef.current?.focus({ preventScroll: true });
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen) window.dispatchEvent(new CustomEvent('tour-fields-ready', { detail: !!name.trim() && !!nextStep.trim() }))
-  }, [isOpen, name, nextStep])
+    if (isOpen)
+      window.dispatchEvent(
+        new CustomEvent("tour-fields-ready", {
+          detail: !!name.trim() && !!nextStep.trim(),
+        }),
+      );
+  }, [isOpen, name, nextStep]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
+    setSaveFailed(false);
 
-    if (!name.trim()) return
+    if (!name.trim()) return;
 
-    if (!await onAdd(name.trim(), nextStep.trim(), { ...metadata, projectUrl: projectUrl.trim(), attachmentUrl: attachmentUrl.trim(), dueDate, links:links.map(url=>url.trim()).filter(Boolean) })) return
-    setName('')
-    setNextStep('')
-    setProjectUrl('')
-    setAttachmentUrl('')
-    setDueDate('')
-    setLinks([])
-    setMetadata({ assignedTo: defaultAssignedTo, status: 'later', kind: 'resume', sectionId: defaultSectionId, checkpoint: '', checklist: '' })
+    if (
+      !(await onAdd(name.trim(), nextStep.trim(), {
+        ...metadata,
+        projectUrl: projectUrl.trim(),
+        attachmentUrl: attachmentUrl.trim(),
+        dueDate,
+        links: links.map((url) => url.trim()).filter(Boolean),
+      }))
+    ) {
+      setSaveFailed(true);
+      return;
+    }
+    setName("");
+    setNextStep("");
+    setProjectUrl("");
+    setAttachmentUrl("");
+    setDueDate("");
+    setLinks([]);
+    setMetadata({
+      assignedTo: defaultAssignedTo,
+      status: "later",
+      kind: "resume",
+      sectionId: defaultSectionId,
+      checkpoint: "",
+      checklist: "",
+    });
   }
 
-  return (
-    <form className="new-project-form" onSubmit={handleSubmit}>
-      <h2>{r.newCard}</h2>
+  const phone = usePhoneLayout(),
+    { kitchenStudy } = useDesignPreview(),
+    surface = useRef<HTMLFormElement>(null);
+  const fullscreen = phone && !!kitchenStudy && !!isOpen;
+  usePhoneSurface(surface, fullscreen);
+  const content = (
+    <form
+      ref={surface}
+      role={fullscreen ? "dialog" : undefined}
+      aria-modal={fullscreen || undefined}
+      aria-label={fullscreen ? r.newCard : undefined}
+      className={
+        "new-project-form" + (fullscreen ? " phone-form-fullscreen" : "")
+      }
+      onSubmit={handleSubmit}
+    >
+      {fullscreen ? (
+        <div className="phone-surface-heading">
+          <h2>{r.newCard}</h2>
+          <button type="button" className="secondary-button" onClick={onCancel}>
+            {language === "ar" ? "رجوع" : language === "he" ? "חזרה" : "Back"}
+          </button>
+        </div>
+      ) : (
+        <h2>{r.newCard}</h2>
+      )}
+      {fullscreen && saveFailed && (
+        <p className="notice error" role="alert">
+          {language === "ar"
+            ? "تعذّر الحفظ. بقيت بياناتك هنا؛ راجع الحقول أو الاتصال وأعد المحاولة."
+            : language === "he"
+              ? "לא ניתן לשמור. הפרטים נשמרו כאן; בדקו את השדות או החיבור ונסו שוב."
+              : "Could not save. Your entries are kept here; check the fields or connection and retry."}
+        </p>
+      )}
       {initialValues && <p className="notice">{r.captured}</p>}
 
       <label htmlFor="project-name">{r.cardName}</label>
@@ -87,7 +169,16 @@ export default function NewProjectForm({
         onChange={(event) => setName(event.target.value)}
       />
 
-      <CatalogLookup name={name} type={metadata.resourceType} language={language} onChoose={(title,values)=>{setName(title);setMetadata({...metadata,...values});if(values.projectUrl)setProjectUrl(values.projectUrl)}}/>
+      <CatalogLookup
+        name={name}
+        type={metadata.resourceType}
+        language={language}
+        onChoose={(title, values) => {
+          setName(title);
+          setMetadata({ ...metadata, ...values });
+          if (values.projectUrl) setProjectUrl(values.projectUrl);
+        }}
+      />
       <label htmlFor="project-next-step">{t.nextStep}</label>
 
       <textarea
@@ -100,17 +191,50 @@ export default function NewProjectForm({
         onChange={(event) => setNextStep(event.target.value)}
       />
 
-      <div className="project-extra-fields"><RecallFields members={members} value={metadata} onChange={setMetadata} sections={sections} language={language} prefix="new" />
-      <label htmlFor="project-url">{t.projectUrl}</label>
-      <input id="project-url" type="url" inputMode="url" maxLength={500} placeholder={t.projectUrlPlaceholder} value={projectUrl} onChange={event => setProjectUrl(event.target.value)} />
+      <div className="project-extra-fields">
+        <RecallFields
+          members={members}
+          value={metadata}
+          onChange={setMetadata}
+          sections={sections}
+          language={language}
+          prefix="new"
+        />
+        <label htmlFor="project-url">{t.projectUrl}</label>
+        <input
+          id="project-url"
+          type="url"
+          inputMode="url"
+          maxLength={500}
+          placeholder={t.projectUrlPlaceholder}
+          value={projectUrl}
+          onChange={(event) => setProjectUrl(event.target.value)}
+        />
 
-      <label htmlFor="project-attachment">{t.attachmentUrl}</label>
-      <input id="project-attachment" type="url" inputMode="url" maxLength={500} placeholder={t.attachmentUrlPlaceholder} value={attachmentUrl} onChange={event => setAttachmentUrl(event.target.value)} />
+        <label htmlFor="project-attachment">{t.attachmentUrl}</label>
+        <input
+          id="project-attachment"
+          type="url"
+          inputMode="url"
+          maxLength={500}
+          placeholder={t.attachmentUrlPlaceholder}
+          value={attachmentUrl}
+          onChange={(event) => setAttachmentUrl(event.target.value)}
+        />
 
-      <ExtraLinks value={links} onChange={setLinks} language={language} prefix="new"/>
-      <label htmlFor="project-due-date">{t.dueDate}</label>
-      <input id="project-due-date" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} />
-
+        <ExtraLinks
+          value={links}
+          onChange={setLinks}
+          language={language}
+          prefix="new"
+        />
+        <label htmlFor="project-due-date">{t.dueDate}</label>
+        <input
+          id="project-due-date"
+          type="date"
+          value={dueDate}
+          onChange={(event) => setDueDate(event.target.value)}
+        />
       </div>
       <div className="form-actions">
         <button
@@ -122,14 +246,18 @@ export default function NewProjectForm({
           {r.saveCard}
         </button>
 
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={onCancel}
-        >
+        <button type="button" className="secondary-button" onClick={onCancel}>
           {t.cancel}
         </button>
       </div>
     </form>
-  )
+  );
+  return fullscreen
+    ? createPortal(
+        <fieldset className="phone-form-boundary" disabled={disabled}>
+          {content}
+        </fieldset>,
+        document.body,
+      )
+    : content;
 }

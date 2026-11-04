@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, MoreHorizontal, X } from "lucide-react";
 import type { Language } from "../translations";
 import { useDesignPreview } from "./designPreviewContext";
 const words = { ar: "أدوات العرض", he: "כלי תצוגה", en: "View tools" };
@@ -8,12 +8,17 @@ export default function WorkspaceTools({
   children,
   language,
   search,
+  primary,
 }: {
   children: ReactNode;
   language: Language;
   search?: ReactNode;
+  primary?: ReactNode;
 }) {
-  const { enabled } = useDesignPreview();
+  const { enabled, kitchenStudy } = useDesignPreview();
+  const triggerLabel = kitchenStudy
+    ? { ar: "المزيد", en: "More", he: "עוד" }[language]
+    : words[language];
   const [open, setOpen] = useState(false);
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
   const [opensUp, setOpensUp] = useState(false);
@@ -77,6 +82,7 @@ export default function WorkspaceTools({
   return (
     <div className="search-toolbar workspace-search-tools">
       {search}
+      {primary}
       <aside
         ref={root}
         className={`workspace-tools-dock ${open ? "is-open" : ""} ${opensUp ? "opens-up" : ""}`}
@@ -106,6 +112,8 @@ export default function WorkspaceTools({
           ref={trigger}
           type="button"
           className="workspace-tools-trigger"
+          aria-label={triggerLabel}
+          title={triggerLabel}
           aria-expanded={open}
           aria-controls={id}
           onClick={(event) => {
@@ -120,10 +128,12 @@ export default function WorkspaceTools({
         >
           {open ? (
             <X size={19} aria-hidden="true" />
+          ) : kitchenStudy ? (
+            <MoreHorizontal size={19} aria-hidden="true" />
           ) : (
             <SlidersHorizontal size={19} aria-hidden="true" />
           )}
-          {words[language]}
+          {triggerLabel}
         </button>
         <div
           ref={panel}

@@ -1,3 +1,4 @@
+import MobileCardDeck from "./MobileCardDeck";
 import {
   DndContext,
   KeyboardSensor,
@@ -54,7 +55,9 @@ const messages = {
   },
 };
 
-type ProjectBoardProps = {
+export type ProjectBoardProps = {
+  disabled?: boolean;
+  singleCard?: boolean;
   projects: Project[];
   sections: Section[];
   language: Language;
@@ -80,6 +83,7 @@ type SortableCardProps = Omit<ProjectBoardProps, "projects" | "onReorder"> & {
 };
 
 function SortableCard({
+  disabled,
   project,
   sections,
   language,
@@ -143,6 +147,7 @@ function SortableCard({
       )}
 
       <ProjectCard
+        disabled={disabled}
         groupId={groupId}
         project={project}
         members={members}
@@ -159,6 +164,8 @@ function SortableCard({
 }
 
 export default function ProjectBoard({
+  disabled,
+  singleCard,
   projects,
   sections,
   language,
@@ -193,6 +200,23 @@ export default function ProjectBoard({
     return projects.findIndex((project) => project.id === String(id)) + 1;
   }
 
+  if (singleCard)
+    return (
+      <MobileCardDeck
+        disabled={disabled}
+        projects={projects}
+        sections={sections}
+        language={language}
+        groupId={groupId}
+        members={members}
+        currentUid={currentUid}
+        canManage={canManage}
+        onReorder={onReorder}
+        onToggle={onToggle}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+      />
+    );
   return (
     <div className="project-board">
       {canManage && projects.length > 1 && (
@@ -236,6 +260,7 @@ export default function ProjectBoard({
           <section className="projects-grid">
             {projects.map((project) => (
               <SortableCard
+                disabled={disabled}
                 groupId={groupId}
                 key={project.id}
                 project={project}

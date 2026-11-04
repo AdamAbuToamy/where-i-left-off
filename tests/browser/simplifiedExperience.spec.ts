@@ -16,7 +16,7 @@ async function login(
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })
     .click();
-  await expect(page.locator(".side-navigation")).toBeVisible({
+  await expect(page.locator(".workspace-toolbar")).toBeVisible({
     timeout: 15000,
   });
 }
@@ -264,7 +264,11 @@ test("many collapsed cards defer details and the Arabic notification drawer fits
   );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => scrollTo(0, 0));
-  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Bottom navigation", exact: true })
+    .getByRole("button", { name: "More", exact: true })
+    .click();
+  await page.locator(".mobile-menu-account").getByRole("button", { name: "العربية", exact: true }).click();
   await page.getByRole("button", { name: "الإشعارات", exact: true }).click();
   const panel = page.getByRole("dialog", { name: "الإشعارات", exact: true });
   await expect(panel).toContainText("لا توجد إشعارات بعد");
@@ -278,4 +282,122 @@ test("many collapsed cards defer details and the Arabic notification drawer fits
   await panel
     .getByRole("button", { name: "إغلاق الإشعارات", exact: true })
     .click();
+});
+
+test("admin view, filter and section controls are direct and desktop bell has no phone prompt", async ({
+  page,
+  request,
+}) => {
+  const c = await prepareUniversityPilot(request);
+  const root =
+    "http://127.0.0.1:8080/v1/projects/demo-where-i-left-off/databases/(default)/documents/users/" +
+    c.uid;
+  const section = "s".repeat(20),
+    card = "v".repeat(20);
+  await request.patch(root + "/sections/" + section, {
+    headers: { Authorization: "Bearer owner" },
+    data: {
+      fields: {
+        name: { stringValue: "Direct section" },
+        revision: { integerValue: "0" },
+        mutationId: { stringValue: "fixture" },
+      },
+    },
+  });
+  await request.patch(root + "/projects/" + card, {
+    headers: { Authorization: "Bearer owner" },
+    data: {
+      fields: {
+        name: { stringValue: "Direct card" },
+        nextStep: { stringValue: "One step" },
+        status: { stringValue: "later" },
+        sectionId: { stringValue: section },
+        rank: { integerValue: "0" },
+        revision: { integerValue: "0" },
+        mutationId: { stringValue: "fixture" },
+      },
+    },
+  });
+  await page.route("**/push-config.json", (r) =>
+    r.fulfill({
+      json: { endpoint: "https://notification-pilot.workers.dev/" },
+    }),
+  );
+  await page.route("https://notification-pilot.workers.dev/", (r) =>
+    r.fulfill({
+      json: {
+        result:
+          r.request().postDataJSON().action === "notifications"
+            ? { items: [], unread: 0, lastRead: 0, checkedAt: Date.now() }
+            : { preferences: { enabled: false }, cards: {}, publicKey: "" },
+      },
+    }),
+  );
+  await login(page, c);
+  const direct = page.locator(".workspace-direct-options");
+  await expect(
+    direct.getByRole("button", { name: "Week", exact: true }),
+  ).toBeVisible();
+  await direct.getByRole("button", { name: "Week", exact: true }).click();
+  await expect(page.locator(".weekly-schedule")).toBeVisible();
+  await direct.getByRole("button", { name: "Cards", exact: true }).click();
+  await direct.getByRole("combobox", { name: "Section", exact: true }).click();
+  await page
+    .locator(".choice-picker-panel")
+    .getByRole("option", { name: "Direct section", exact: true })
+    .click();
+  await expect(page.locator(".envelope-summary h2")).toHaveText("Direct card");
+  await expect(
+    direct.getByRole("combobox", { name: "All cards", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: ".wrangler/direct-controls-desktop.png",
+    fullPage: false,
+  });
+  await page
+    .getByRole("button", { name: "Notifications", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Notifications",
+    exact: true,
+  });
+  await expect(
+    dialog.getByRole("link", {
+      name: "Enable phone notifications",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    dialog.getByRole("link", { name: "Notification settings", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: ".wrangler/direct-notifications-desktop.png",
+    fullPage: false,
+  });
+});
+
+test("phone cards are compact with a reachable open button and original drag handle", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const c = await prepareUniversityPilot(request);
+  await login(page, c);
+  const card = page.locator("[data-project-id]").first();
+  await expect(card.locator(".envelope-summary")).toBeVisible();
+  const before = (await card.boundingBox())!;
+  expect(before.height).toBeLessThanOrEqual(180);
+  const open = card.locator(".envelope-expand"),
+    size = (await open.boundingBox())!;
+  expect(size.height).toBeGreaterThanOrEqual(44);
+  await expect(open).toBeVisible();
+  await expect(card.locator(".drag-handle")).toBeVisible();
+  await page.screenshot({
+    path: ".wrangler/direct-compact-phone.png",
+    fullPage: false,
+  });
+  await open.click();
+  await expect(page.locator(".phone-card-fullscreen .envelope-content h2")).toBeVisible();
+  await page.locator(".phone-card-fullscreen").getByRole("button", { name: "Back", exact: true }).click();
+  expect((await card.boundingBox())!.height).toBeLessThanOrEqual(180);
 });

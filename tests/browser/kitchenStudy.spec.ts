@@ -40,7 +40,7 @@ for (const mobile of [false, true]) {
       .locator(".project-card")
       .filter({ has: page.locator(".envelope-summary h2", { hasText: name }) });
     await expect(card.locator(".envelope-expand")).toBeVisible();
-    await expect(card.locator(".envelope-expand")).toHaveText("Expand card");
+    await expect(card.locator(".envelope-expand")).toHaveAccessibleName(new RegExp("Expand card"));
     const sync = page.locator(".workspace-connection-menu");
     await expect(sync).toBeVisible();
     await sync.locator("summary").click();
@@ -63,7 +63,7 @@ for (const mobile of [false, true]) {
     await expect(page.locator(".envelope-content:visible")).toContainText(
       "Review the tactile card",
     );
-    await page.locator(".envelope-collapse:visible").press("Enter");
+    if(mobile)await page.locator(".phone-surface-heading").getByRole("button",{name:"Back",exact:true}).click();else await page.locator(".envelope-collapse:visible").press("Enter");
     await expect(
       page.locator(".envelope-summary h2", { hasText: name }),
     ).toBeVisible();
@@ -78,7 +78,7 @@ for (const mobile of [false, true]) {
       await page.reload();
       await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
       await expect(page.locator(".workspace-connection-menu")).toBeVisible({ timeout: 15000 });
-      await expect(page.locator(".envelope-expand").first()).toHaveText("تكبير البطاقة");
+      await expect(page.locator(".envelope-expand").first()).toHaveAccessibleName(new RegExp("تكبير البطاقة"));
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       await page.screenshot({ path: ".wrangler/kitchen-phone-ar.png", fullPage: true, animations: "disabled" });
     }

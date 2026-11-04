@@ -27,15 +27,21 @@ export default function CompactCardShell({
   sections,
   language,
   children,
+  expanded: controlledExpanded,
+  onExpandedChange,
 }: {
   project: Project;
   sections: Section[];
   language: Language;
   children: ReactNode;
+  expanded?: boolean;
+  onExpandedChange?: (open: boolean) => void;
 }) {
   const { enabled } = useDesignPreview();
   const [visited, setVisited] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [localExpanded, setLocalExpanded] = useState(false);
+  const expanded = controlledExpanded ?? localExpanded;
+  const setExpanded = onExpandedChange || setLocalExpanded;
   const id = useId();
   const opener = useRef<HTMLButtonElement>(null),
     closer = useRef<HTMLButtonElement>(null);
@@ -93,7 +99,10 @@ export default function CompactCardShell({
             onClick={open}
           >
             <Maximize2 size={18} aria-hidden="true" />
-            {t.open}
+            <span className="envelope-expand-label">{t.open}</span>
+            <span className="envelope-expand-short" aria-hidden="true">
+              {language === "ar" ? "فتح" : language === "he" ? "פתח" : "Open"}
+            </span>
           </button>
         </div>
       )}
@@ -116,7 +125,7 @@ export default function CompactCardShell({
             {t.close}
           </button>
         </div>
-        {visited && children}
+        {(visited || expanded) && children}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { usePhoneLayout } from "./usePhoneSurface";
 import DesktopPlanningButton from "../planning/DesktopPlanningButton";
 import {
   Search,
@@ -54,6 +55,8 @@ export default function Workspace({
   members: GroupMember[];
 }) {
   const { enabled: designPreview, kitchenStudy } = useDesignPreview();
+  const phone = usePhoneLayout(),
+    [singleCard, setSingleCard] = useState(false);
   const t = translations[language],
     c = cloudText[language],
     r = recallText[language],
@@ -346,6 +349,28 @@ export default function Workspace({
       />
     </div>
   );
+  const viewControls = (
+    <>
+      {(projects.length > 0 || view === "week") && (
+        <nav className="view-tabs" aria-label={t.workspace}>
+          <button
+            className="secondary-button"
+            aria-pressed={view === "board"}
+            onClick={() => setView("board")}
+          >
+            {t.boardView}
+          </button>
+          <button
+            className="secondary-button"
+            aria-pressed={view === "week"}
+            onClick={() => setView("week")}
+          >
+            {t.weekView}
+          </button>
+        </nav>
+      )}
+    </>
+  );
   const searchControls = (
     <>
       {searchInput}
@@ -567,32 +592,59 @@ export default function Workspace({
             )}
             <WorkspaceTools
               language={language}
+              primary={
+                kitchenStudy ? (
+                  <div className="workspace-direct-options">
+                    {viewControls}
+                    {projects.length > 0 && filterControl}
+                    <div className="workspace-section-picker">
+                      <ChoicePicker
+                        label={
+                          language === "ar"
+                            ? "القسم"
+                            : language === "he"
+                              ? "מדור"
+                              : "Section"
+                        }
+                        value={sectionFilter}
+                        onChange={setSectionFilter}
+                        options={[
+                          { value: "all", label: r.allSections },
+                          { value: "", label: r.noSection },
+                          ...sections.map((section) => ({
+                            value: section.id,
+                            label: section.name,
+                          })),
+                        ]}
+                      />
+                    </div>
+                    {group && (
+                      <div className="filter-group">
+                        <button
+                          className="secondary-button"
+                          aria-pressed={!onlyMine}
+                          onClick={() => setOnlyMine(false)}
+                        >
+                          {g.all}
+                        </button>
+                        <button
+                          className="secondary-button"
+                          aria-pressed={onlyMine}
+                          onClick={() => setOnlyMine(true)}
+                        >
+                          {g.mine}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : null
+              }
               search={
                 !kitchenStudy && projects.length > 0 ? searchControls : null
               }
             >
-              {kitchenStudy && projects.length > 0 && (
-                <div className="admin-workspace-filters">{filterControl}</div>
-              )}
               <div className="board-utility-row">
-                {(projects.length > 0 || view === "week") && (
-                  <nav className="view-tabs" aria-label={t.workspace}>
-                    <button
-                      className="secondary-button"
-                      aria-pressed={view === "board"}
-                      onClick={() => setView("board")}
-                    >
-                      {t.boardView}
-                    </button>
-                    <button
-                      className="secondary-button"
-                      aria-pressed={view === "week"}
-                      onClick={() => setView("week")}
-                    >
-                      {t.weekView}
-                    </button>
-                  </nav>
-                )}
+                {!kitchenStudy && viewControls}
                 {projects.length > 0 && (
                   <section className="workspace-report">
                     <div>
@@ -617,7 +669,7 @@ export default function Workspace({
                   </section>
                 )}
               </div>
-              {group && projects.length > 0 && (
+              {!kitchenStudy && group && projects.length > 0 && (
                 <div className="filter-group">
                   <button
                     className="secondary-button"
@@ -689,6 +741,7 @@ export default function Workspace({
               >
                 <div className="form-reveal-inner">
                   <NewProjectForm
+                    disabled={pending}
                     key={capture ? "tab-capture" : `manual-${newSection}`}
                     language={language}
                     sections={sections}
@@ -749,6 +802,37 @@ export default function Workspace({
               weekOf={weekOf}
             />
           )}
+          {phone && kitchenStudy && view === "board" && visible.length > 0 && (
+            <nav
+              className="mobile-card-layout"
+              aria-label={
+                language === "ar" ? "طريقة عرض البطاقات" : "Card layout"
+              }
+            >
+              <button
+                type="button"
+                aria-pressed={!singleCard}
+                onClick={() => setSingleCard(false)}
+              >
+                {language === "ar"
+                  ? "بطاقات صغيرة"
+                  : language === "he"
+                    ? "כרטיסים קטנים"
+                    : "Compact cards"}
+              </button>
+              <button
+                type="button"
+                aria-pressed={singleCard}
+                onClick={() => setSingleCard(true)}
+              >
+                {language === "ar"
+                  ? "بطاقة واحدة"
+                  : language === "he"
+                    ? "כרטיס אחד"
+                    : "One card"}
+              </button>
+            </nav>
+          )}
           <fieldset
             className="workspace-fields"
             disabled={pending}
@@ -756,6 +840,8 @@ export default function Workspace({
           >
             {view === "board" && (
               <ProjectBoard
+                disabled={pending}
+                singleCard={phone && kitchenStudy && singleCard}
                 groupId={group?.id}
                 members={group ? members : undefined}
                 currentUid={user.uid}

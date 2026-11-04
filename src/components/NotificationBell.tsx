@@ -277,7 +277,11 @@ export default function NotificationBell({
                 </button>
               </header>
               <div className="notification-toolbar">
-                <a href="#/notifications" onClick={close}>
+                <a
+                  className="notification-mobile-enable"
+                  href="#/notifications"
+                  onClick={close}
+                >
                   {t.enable}
                 </a>
                 <button

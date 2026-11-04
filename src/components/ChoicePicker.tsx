@@ -154,33 +154,51 @@ export default function ChoicePicker({
       </button>
       {open &&
         createPortal(
-          <div
-            ref={panel}
-            id={id}
-            className="choice-picker-panel"
-            role="listbox"
-            aria-label={label}
-            style={placement}
-          >
-            {options.map((option, index) => (
-              <div
-                key={option.value}
-                id={`${id}-${index}`}
-                role="option"
-                aria-selected={value === option.value}
-                data-active={active === index}
-                className="choice-picker-option"
-                onPointerEnter={() => setActive(index)}
+          <>
+            <header className="choice-phone-heading">
+              <strong>{label}</strong>
+              <button
+                type="button"
+                aria-label={
+                  document.documentElement.lang === "ar" ? "رجوع" : "Back"
+                }
                 onPointerDown={(event) => event.preventDefault()}
-                onClick={() => choose(index)}
+                onClick={() => {
+                  setOpen(false);
+                  button.current?.focus();
+                }}
               >
-                <span>{option.label}</span>
-                {value === option.value && (
-                  <Check size={16} aria-hidden="true" />
-                )}
-              </div>
-            ))}
-          </div>,
+                ×
+              </button>
+            </header>
+            <div
+              ref={panel}
+              id={id}
+              className="choice-picker-panel"
+              role="listbox"
+              aria-label={label}
+              style={placement}
+            >
+              {options.map((option, index) => (
+                <div
+                  key={option.value}
+                  id={`${id}-${index}`}
+                  role="option"
+                  aria-selected={value === option.value}
+                  data-active={active === index}
+                  className="choice-picker-option"
+                  onPointerEnter={() => setActive(index)}
+                  onPointerDown={(event) => event.preventDefault()}
+                  onClick={() => choose(index)}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value && (
+                    <Check size={16} aria-hidden="true" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </>,
           portalRoot,
         )}
     </>
