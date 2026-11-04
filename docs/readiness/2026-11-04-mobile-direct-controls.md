@@ -28,4 +28,6 @@ Administrator-only UI preview. No worker deployment, model/provider, Firebase ru
 Publish the verified administrator preview only. Keep production assistant connection/provider metadata and worker version unchanged. Read-only deployment byte comparison is recorded separately. No production-account fixture writes.
 
 ## Release status
-READY for administrator-only hosting rollout. Production byte verification is recorded after deployment. Existing worker and Firestore rules remain unchanged.
+READY and published to the verified administrator only: `wilo-admin-mobile-ui-20261104` at https://where-i-left-off.web.app. Hosting deployment completed. Read-only verification matched all 16 checked production files byte-for-byte and confirmed real production push configuration (no emulator endpoint). Evidence: `docs/readiness/2026-11-04-mobile-production.json`.
+
+Existing worker version `4b4503ea-1384-49c6-9f4c-25d86d3bfcad`, provider connection settings and Firestore rules were unchanged. No production-account test content was written. Previous release metadata remains in `.wrangler/mobile-release-before.json` for recovery.
