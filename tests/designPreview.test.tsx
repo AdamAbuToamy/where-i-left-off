@@ -39,6 +39,7 @@ it("enables the published design for normal users without granting design admini
     expect(element.querySelector(".design-preview-switch")).toBeNull();
     expect(element.querySelector(".preview-disclosure")).not.toBeNull();
     expect(document.documentElement.dataset.designPreview).toBe("on");
+    expect(document.documentElement.dataset.kitchenStudy).toBe("on");
   } finally {
     await act(async () => root.unmount());
   }
@@ -103,6 +104,7 @@ it("removes the visual attribute on sign-out", async () => {
       ),
     );
     expect(document.documentElement.dataset.designPreview).toBeUndefined();
+    expect(document.documentElement.dataset.kitchenStudy).toBeUndefined();
   } finally {
     await act(async () => root.unmount());
   }

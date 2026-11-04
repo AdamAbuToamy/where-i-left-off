@@ -170,7 +170,7 @@ test("admin has a bell instead of Work hub; read state reloads and unopened card
     fullPage: false,
   });
 });
-test("ordinary accounts keep public navigation without the admin bell", async ({
+test("ordinary accounts get the final design and bell without administration access", async ({
   page,
   request,
 }) => {
@@ -181,7 +181,9 @@ test("ordinary accounts keep public navigation without the admin bell", async ({
   await login(page, c);
   await expect(
     page.getByRole("button", { name: "Notifications", exact: true }),
-  ).toHaveCount(0);
+  ).toBeVisible();
+  await page.locator('.side-navigation-toggle').click();
+  await expect(page.locator('.page-navigation a[href="#/admin"]')).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Work hub", exact: true }),
   ).toHaveCount(0);

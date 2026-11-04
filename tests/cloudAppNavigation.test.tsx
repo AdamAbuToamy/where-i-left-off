@@ -6,6 +6,7 @@ vi.mock('firebase/auth',()=>({onAuthStateChanged:(_auth:unknown,next:(user:unkno
 vi.mock('../src/lib/pushNotifications',()=>({useInstalledApp:()=>false,preparePushSignOut:async()=>{}}));
 vi.mock('../src/lib/logging',()=>({logEvent:vi.fn(),flushLogs:async()=>{},traced:async(_name:string,fn:()=>unknown)=>fn(),safeCode:()=>''}));
 vi.mock('../src/lib/theme',()=>({applyTheme:()=>{}}));
+vi.mock('../src/components/NotificationBell',()=>({default:()=> <button data-notification-bell="true">Notifications</button>}));
 vi.mock('../src/components/CloudPushSync',()=>({default:()=> <aside data-common="push"/>}));
 vi.mock('../src/components/WelcomeTour',()=>({default:()=> <aside data-common="tour"/>}));
 vi.mock('../src/components/WorkflowAgent',()=>({default:()=>null}));vi.mock('../src/components/AnnouncementInbox',()=>({default:()=>null}));vi.mock('../src/components/ExtensionInstall',()=>({default:()=>null}));vi.mock('../src/components/PushLifecycle',()=>({default:()=>null}));

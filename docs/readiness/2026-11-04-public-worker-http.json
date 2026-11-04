@@ -1,0 +1,6 @@
+{
+  "unauthenticatedStatus": 401,
+  "corsStatus": 204,
+  "allowedOrigin": "https://where-i-left-off.web.app",
+  "productionWrites": 0
+}

@@ -215,7 +215,7 @@ test("Arabic phone card form fits the viewport and university prioritizes its co
   page,
   request,
 }) => {
-  const c = await prepareUniversityPilot(request);
+  const c = await prepareUniversityPilot(request,"public-phone-rollout@example.test");
   await page.addInitScript((uid) => {
     localStorage.setItem("language", "en");
     localStorage.setItem("welcome-tour:v2:" + uid, "done");

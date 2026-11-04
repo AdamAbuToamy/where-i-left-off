@@ -1,10 +1,10 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {database} from './test-db.mjs';import {defaults,localParts} from './policy.mjs';import {ensureAccount,erase} from './src/store.mjs';
 import {readNotifications,readThrough,recordNotification} from './src/notificationCenter.mjs';import {createWorker} from './src/index.mjs';
-const identity=uid=>({uid,email:'adam2002hosny@gmail.com',emailVerified:true});
-test('notification center requires verified admin, isolates accounts, bounds read and retains account read state',async()=>{
+const identity=uid=>({uid,email:uid+'@example.test',emailVerified:true});
+test('notification center requires a verified account, isolates accounts, bounds read and retains account read state',async()=>{
  const env={DB:database()};await ensureAccount(env,'a',defaults);await ensureAccount(env,'b',defaults);
- await assert.rejects(readNotifications(env,{uid:'a',email:'ordinary@example.test',emailVerified:true}),/account-unavailable/);
+ await assert.rejects(readNotifications(env,{email:'ordinary@example.test',emailVerified:true}),/account-unavailable/);
  await assert.rejects(readNotifications(env,{...identity('a'),emailVerified:false}),/account-unavailable/);
  await recordNotification(env,'a','old',{title:'Old',body:'Not opted in',url:'#/settings'},1);assert.equal((await readNotifications(env,identity('a'))).items.length,0);
  const payload={title:'Reminder',body:'A card is due',url:'#/personal/'+ 'p'.repeat(20)};

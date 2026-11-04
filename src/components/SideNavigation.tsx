@@ -242,7 +242,7 @@ export default function SideNavigation({
                 </span>
               </a>
             ))}
-          {admin && (
+          {kitchenStudy && (
             <div className="mobile-menu-account">
               {onLanguageChange && (
                 <LanguagePicker

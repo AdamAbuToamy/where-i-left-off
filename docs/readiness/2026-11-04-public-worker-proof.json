@@ -1,0 +1,9 @@
+{
+  "previousVersion": "4b4503ea-1384-49c6-9f4c-25d86d3bfcad",
+  "version": "83abe814-b1d2-44e3-b749-90ac83bdb978",
+  "bindingsPreserved": true,
+  "providerVariablesPreserved": true,
+  "secretBindingNamesPreserved": true,
+  "notificationEligibility": "verified-account",
+  "accountIsolation": "authenticated-uid-only"
+}

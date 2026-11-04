@@ -1,7 +1,6 @@
-const adminEmail='adam2002hosny@gmail.com';
-export function notificationAdmin(identity){return identity.emailVerified===true&&identity.email===adminEmail;}
+function notificationAccount(identity){return identity.emailVerified===true&&typeof identity.uid==='string'&&identity.uid.length>0;}
 export async function readNotifications(env,identity){
- if(!notificationAdmin(identity))throw new Error('account-unavailable');
+ if(!notificationAccount(identity))throw new Error('account-unavailable');
  await env.DB.prepare('INSERT INTO notification_centers(uid) VALUES(?) ON CONFLICT(uid) DO NOTHING').bind(identity.uid).run();
  const state=await env.DB.prepare('SELECT last_read FROM notification_centers WHERE uid=?').bind(identity.uid).first();
  const rows=await env.DB.prepare('SELECT id,title,body,url,created_at FROM notification_items WHERE uid=? ORDER BY created_at DESC,id LIMIT 50').bind(identity.uid).all();
@@ -9,7 +8,7 @@ export async function readNotifications(env,identity){
  return {items:rows.results,lastRead:state.last_read,unread:unread.count,checkedAt:Date.now()};
 }
 export async function readThrough(env,identity,at){
- if(!notificationAdmin(identity))throw new Error('account-unavailable');
+ if(!notificationAccount(identity))throw new Error('account-unavailable');
  if(!Number.isSafeInteger(at)||at<0||at>Date.now())throw new Error('invalid-size');
  await env.DB.prepare('UPDATE notification_centers SET last_read=MAX(last_read,?) WHERE uid=?').bind(at,identity.uid).run();
  return {ok:true};

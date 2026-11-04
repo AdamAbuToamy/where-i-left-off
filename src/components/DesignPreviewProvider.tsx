@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import type { User } from "firebase/auth";
 import { DesignPreviewContext } from "./designPreviewContext";
 import "./designPreview.css";
-import { isAdmin } from "../lib/admin";
 import "../planning/workspace.css";
 import "./interactionPerformance.css";
 /** One final account design; legacy device choices no longer select an alternate UI. */
@@ -15,7 +14,7 @@ export default function DesignPreviewProvider({
   children: ReactNode;
 }) {
   const enabled = !!user;
-  const kitchenStudy = isAdmin(user?.email, user?.emailVerified);
+  const kitchenStudy = enabled;
   useLayoutEffect(() => {
     if (kitchenStudy) document.documentElement.dataset.kitchenStudy = "on";
     else delete document.documentElement.dataset.kitchenStudy;
