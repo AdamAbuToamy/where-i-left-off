@@ -40,3 +40,5 @@ Decision: READY for administrator layout/function acceptance. NOT READY for a cl
 Administrator-only hosting update, preserving public feature gates. Previous release saved at .wrangler/mobile-pages-release-before.json. Rollback uses the previous Firebase Hosting version. Physical Samsung keyboard opening remains an acceptance item; do not claim it passed from emulation.
 
 Final verification: all 1281 unit tests across 124 files passed. Lint zero errors, one existing warning; TypeScript production build, source/dist credential checks and architecture checks passed. No unperformed physical check is marked passed.
+
+Published for administrator preview: wilo-admin-phone-pages-20261104. All 14 checked production files match the local build byte-for-byte; evidence: 2026-11-04-phone-pages-production.json. Hosting-only release completed. Physical handset performance remains unverified.
