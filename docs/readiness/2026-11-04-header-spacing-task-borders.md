@@ -13,3 +13,5 @@ Evidence:
 - Presentation-only fix: no unit tests mirroring CSS; no backend/rules/auth/provider/physical-device checks repeated. Account isolation, existing permissions, model/key configuration and storage paths unchanged. AGENTS.md and PROJECT_ENGINEERING_GUIDELINES.md applied; referenced knowledge file remains absent.
 
 Hosting only for all users. Previous manifest .wrangler/header-spacing-release-before.json; rollback via prior Firebase Hosting version. Publication byte evidence appended after deploy.
+
+Published for all users: wilo-header-spacing-task-borders-20261104. All 14 checked production files match local build bytes; release/audience confirmed. Proof: 2026-11-04-header-spacing-production.json. Backend/provider unchanged.
