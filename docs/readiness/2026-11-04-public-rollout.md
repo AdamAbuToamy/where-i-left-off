@@ -13,3 +13,5 @@ Decision: READY for public rollout of the approved version. Existing physical-de
 - Live provider semantic checks and physical keyboard behavior remain unverified; this rollout does not claim those limitations resolved. AGENTS.md and PROJECT_ENGINEERING_GUIDELINES.md applied; the referenced university knowledge file is absent.
 
 Previous hosting manifest: .wrangler/public-rollout-release-before.json. Previous worker 4b4503ea-1384-49c6-9f4c-25d86d3bfcad. Rollback uses previous Hosting and worker versions. Publication byte evidence appended after hosting deploy.
+
+Published: wilo-public-final-20261104 for all signed-in accounts. Hosting deployment succeeded; all 14 checked production files match local build bytes. Evidence: 2026-11-04-public-rollout-production.json. Worker rollout and binding-preservation proof recorded above.
