@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Language } from "../translations";
 export const label = (
   language: Language,
@@ -7,11 +7,13 @@ export const label = (
   he?: string,
 ) => (language === "ar" ? ar : language === "he" && he ? he : en);
 export function useFeatureAction(language: Language) {
+  const running = useRef(false);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
   async function run(action: () => void | Promise<void>, success = "") {
-    if (busy) return;
+    if (running.current) return;
+    running.current = true;
     setBusy(true);
     setError("");
     setMessage("");
@@ -42,10 +44,18 @@ export function useFeatureAction(language: Language) {
         ),
       );
     } finally {
+      running.current = false;
       setBusy(false);
     }
   }
   return { busy, error, message, run };
 }
 
-export function useFeatureNow(){const [now,setNow]=useState(Date.now);useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30000);return()=>clearInterval(timer);},[]);return now;}
+export function useFeatureNow() {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
+}

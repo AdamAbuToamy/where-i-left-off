@@ -115,7 +115,7 @@ export class OfflineWorkspace {
     const after = ProjectEntity.create(id, name, nextStep, rank, details, this.now()).snapshot();
     return this.update(state => {
       if (projectedState(state).projects.some(project => project.id === id)) return state;
-      return { ...state, operations: [...state.operations, {id:this.id(),entity:'project',entityId:id,before:null,after}] };
+      return { ...state, operations: [...state.operations, {id,entity:'project',entityId:id,before:null,after}] };
     });
   }
   change(project: Project, operation: ProjectOperation, values: ProjectChanges = {}) {

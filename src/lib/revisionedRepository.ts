@@ -1,5 +1,15 @@
-export type JournalCodec<State> = {parse:(value:unknown)=>State;empty:()=>State;errorPrefix?:string};
-export class JournalError extends Error {readonly code:string;constructor(code:string){super(code);this.code=code;}}
+export type JournalCodec<State> = {
+  parse: (value: unknown) => State;
+  empty: () => State;
+  errorPrefix?: string;
+};
+export class JournalError extends Error {
+  readonly code: string;
+  constructor(code: string) {
+    super(code);
+    this.code = code;
+  }
+}
 export type JournalRecord<State> = {
   state: State;
   revision: number;
@@ -54,7 +64,10 @@ export type JournalDependencies<State> = {
   newId: () => string;
   schedule: (work: () => void) => () => void;
 };
-function record<State>(value: unknown, codec: JournalCodec<State>): JournalRecord<State> | null {
+function record<State>(
+  value: unknown,
+  codec: JournalCodec<State>,
+): JournalRecord<State> | null {
   if (value === null) return null;
   const r = value as JournalRecord<State>;
   if (
@@ -73,7 +86,10 @@ function record<State>(value: unknown, codec: JournalCodec<State>): JournalRecor
     mutationId: r.mutationId,
   };
 }
-function journal<State>(value: unknown, codec: JournalCodec<State>): DocumentJournal<State> {
+function journal<State>(
+  value: unknown,
+  codec: JournalCodec<State>,
+): DocumentJournal<State> {
   if (value == null) return { version: 1, base: null, pending: null };
   const raw = value as DocumentJournal<State>;
   if (!raw || typeof raw !== "object" || raw.version !== 1)
@@ -144,7 +160,10 @@ export class RevisionedRepository<State> {
     };
   }
   start(notify: (view: JournalView<State>) => void) {
-    if (this.active) throw new JournalError(`${this.ports.codec.errorPrefix || "journal"}-account`);
+    if (this.active)
+      throw new JournalError(
+        `${this.ports.codec.errorPrefix || "journal"}-account`,
+      );
     this.active = true;
     this.notify = notify;
     this.publish();
@@ -219,8 +238,13 @@ export class RevisionedRepository<State> {
   }
   apply(next: State, historyGroup = "", trackHistory = true) {
     if (!this.active || !this.ports.isCurrent())
-      throw new JournalError(`${this.ports.codec.errorPrefix || "journal"}-account`);
-    if (this.invalid) throw new JournalError(`${this.ports.codec.errorPrefix || "journal"}-local`);
+      throw new JournalError(
+        `${this.ports.codec.errorPrefix || "journal"}-account`,
+      );
+    if (this.invalid)
+      throw new JournalError(
+        `${this.ports.codec.errorPrefix || "journal"}-local`,
+      );
     const parsed = this.ports.codec.parse(next),
       previous = this.state;
     if (JSON.stringify(parsed) === JSON.stringify(previous)) return;
@@ -237,7 +261,9 @@ export class RevisionedRepository<State> {
     } catch {
       this.error = "local";
       this.publish();
-      throw new JournalError(`${this.ports.codec.errorPrefix || "journal"}-local`);
+      throw new JournalError(
+        `${this.ports.codec.errorPrefix || "journal"}-local`,
+      );
     }
     if (trackHistory) {
       if (!historyGroup || historyGroup !== this.historyGroup)
@@ -288,7 +314,9 @@ export class RevisionedRepository<State> {
     } catch {
       this.error = "local";
       this.publish();
-      throw new JournalError(`${this.ports.codec.errorPrefix || "journal"}-local`);
+      throw new JournalError(
+        `${this.ports.codec.errorPrefix || "journal"}-local`,
+      );
     }
     this.base = nextBase;
     this.pending = nextPending;

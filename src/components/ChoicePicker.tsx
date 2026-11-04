@@ -18,6 +18,9 @@ export default function ChoicePicker({
   const id = useId();
   const button = useRef<HTMLButtonElement>(null),
     panel = useRef<HTMLDivElement>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement>(
+    () => document.body,
+  );
   const [open, setOpen] = useState(false),
     [active, setActive] = useState(0),
     [placement, setPlacement] = useState({
@@ -25,12 +28,14 @@ export default function ChoicePicker({
       top: 0,
       width: 220,
       maxHeight: 320,
+      position: "fixed" as "fixed" | "absolute",
     });
   const selected = Math.max(
     0,
     options.findIndex((option) => option.value === value),
   );
   function reveal() {
+    setPortalRoot(button.current?.closest("dialog[open]") || document.body);
     setActive(selected);
     setOpen(true);
   }
@@ -50,16 +55,23 @@ export default function ChoicePicker({
       const below = innerHeight - rect.bottom - 16;
       const up = below < 200 && rect.top > below;
       const maxHeight = Math.max(80, Math.min(320, up ? rect.top - 16 : below));
-      setPlacement({
-        left: Math.max(12, Math.min(rect.left, innerWidth - width - 12)),
-        top: up
+      const left = Math.max(12, Math.min(rect.left, innerWidth - width - 12)),
+        top = up
           ? Math.max(
               12,
               rect.top - Math.min(options.length * 44 + 12, maxHeight) - 8,
             )
           : rect.bottom + 8,
+        root =
+          portalRoot.tagName === "DIALOG"
+            ? portalRoot.getBoundingClientRect()
+            : null;
+      setPlacement({
+        left: left - (root?.left || 0) + (root ? portalRoot.scrollLeft : 0),
+        top: top - (root?.top || 0) + (root ? portalRoot.scrollTop : 0),
         width,
         maxHeight,
+        position: root ? "absolute" : "fixed",
       });
     };
     place();
@@ -76,7 +88,7 @@ export default function ChoicePicker({
       window.removeEventListener("scroll", place, true);
       document.removeEventListener("pointerdown", outside);
     };
-  }, [open, options.length]);
+  }, [open, options.length, portalRoot]);
   useEffect(() => {
     if (open)
       panel.current
@@ -169,7 +181,7 @@ export default function ChoicePicker({
               </div>
             ))}
           </div>,
-          document.body,
+          portalRoot,
         )}
     </>
   );
