@@ -1,3 +1,4 @@
+import CourseWorkspace from "../productivity/CourseWorkspace";
 import {readPlanBackup} from './readPlanBackup';
 import ChoicePicker from '../components/ChoicePicker';
 import {lazy,Suspense} from 'react';
@@ -386,6 +387,7 @@ function Workspace({ user }: {
             </button>
           </div>
         </div>
+        {tab==='overview'&&selectedCourse&&<CourseWorkspace key={selectedCourse.id} course={selectedCourse} tasks={state.tasks} language={language} onReview={tasks=>{const fresh=tasks.filter(task=>!latest.current.tasks.some(t=>t.id===task.id));commit(mergePlan(latest.current,parsePlanBackup({...latest.current,tasks:fresh})));}}/>}
         {tab==='overview'&&<Suspense fallback={<p role="status">…</p>}><UniversityTrial state={state} selected={selectedCourse} filter={filter} now={now} busy={busy} language={language} courseColor={courseColor} select={id=>updateUniversityRoute('overview',id)} addCourse={()=>setBatchOpen(true)} addTask={newTask} editCourse={course=>setEditing({kind:'course',value:course})} template={course=>setEditing({kind:'course',value:courseTemplate(course,state.courses.length,translateStudyText('— فصل جديد',language))})} toggleTopic={(course,id)=>void run(()=>commit({...latest.current,courses:latest.current.courses.map(item=>item.id===course.id?{...item,topics:(item.topics||[]).map(topic=>topic.id===id?{...topic,done:!topic.done}:topic)}:item)}))} renderTasks={renderTasks}/></Suspense>}
         {tab === "schedule" && conflicts.size > 0 && <p className="study-overdue" role="status">يوجد تداخل في مواعيد {conflicts.size} محاضرات. افتح المحاضرة لتعديل وقتها.</p>}
         {tab === "schedule" && (<>
