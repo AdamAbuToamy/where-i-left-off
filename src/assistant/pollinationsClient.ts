@@ -66,7 +66,7 @@ export class PollinationsAssistant{
   try{return readConversationChoice(await this.complete(input,signal,onProgress),data.language).conversation;}
   catch(error){
    if((error as Error).message!=='ai-incomplete-proposal')throw error;
-   return readConversationChoice(await this.complete({...input,messages:[...input.messages,{role:'user',content:'No operation has been executed. Do not imitate app history metadata or output a JSON operation plan. For a site action call request_workspace using its declared arguments; otherwise answer normally as text.'}]},signal,onProgress),data.language).conversation;
+   return readConversationChoice(await this.complete({...input,messages:[...input.messages,{role:'user',content:'No operation has been executed. Do not imitate app history metadata or output a JSON operation plan. For a site action call request_workspace using its declared arguments; for an unrelated request call decline_out_of_scope; otherwise answer only greetings or WILO usage questions as text.'}]},signal,onProgress),data.language).conversation;
   }
  }
  async workspace(request:WorkspaceRequest,signal?:AbortSignal,onProgress?:(progress:InferenceProgress)=>void){

@@ -127,6 +127,7 @@ export default function NewProjectForm({
   const content = (
     <form
       ref={surface}
+      dir={language === "en" ? "ltr" : "rtl"}
       role={fullscreen ? "dialog" : undefined}
       aria-modal={fullscreen || undefined}
       aria-label={fullscreen ? r.newCard : undefined}

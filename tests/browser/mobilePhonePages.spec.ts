@@ -99,6 +99,10 @@ test("phone separates secondary tools, course index and course details; records 
   const formFrames = await measureOpening('[data-tour="add-project"]');
   const form = page.getByRole("dialog", { name: "New card", exact: true });
   await expect(form).toBeVisible();
+  await expect(form).toHaveAttribute("dir", "ltr");
+  expect(await form.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+    true,
+  );
   await expect(form.locator("input").first()).not.toBeFocused();
   await expect(page.locator("body")).not.toHaveCSS("position", "fixed");
   await form.locator("#project-name").fill("Phone simplified save");
@@ -138,10 +142,14 @@ test("phone separates secondary tools, course index and course details; records 
     .tap();
   await page.goto("/#/university");
   await expect(page.locator(".study-phone-pages")).toBeVisible();
+  await expect(page.locator(".study-tabs > button")).toHaveCount(2);
+  await expect(page.locator(".study-schedule-options")).not.toHaveAttribute(
+    "open",
+  );
   await expect(page.locator(".study-overview-disclosure")).not.toHaveAttribute(
     "open",
   );
-  await page.locator(".study-trial-tools summary").click();
+  await page.locator(".study-trial-tools > summary").click();
   await page.locator(".study-upload input").setInputFiles({
     name: "phone-plan.json",
     mimeType: "application/json",
@@ -201,4 +209,58 @@ test("phone separates secondary tools, course index and course details; records 
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("Arabic phone card form fits the viewport and university prioritizes its content", async ({
+  page,
+  request,
+}) => {
+  const c = await prepareUniversityPilot(request);
+  await page.addInitScript((uid) => {
+    localStorage.setItem("language", "en");
+    localStorage.setItem("welcome-tour:v2:" + uid, "done");
+  }, c.uid);
+  await page.goto("/");
+  await page.getByLabel("Email", { exact: true }).fill(c.email);
+  await page.getByLabel("Password", { exact: true }).fill(c.password);
+  await page
+    .locator("form")
+    .getByRole("button", { name: "Sign in", exact: true })
+    .click();
+  await page
+    .locator(".mobile-bottom-navigation")
+    .getByRole("button", { name: "More", exact: true })
+    .click();
+  await page
+    .locator(".mobile-menu-account")
+    .getByRole("button", { name: "العربية", exact: true })
+    .click();
+  await page.getByRole("button", { name: "بطاقة جديدة", exact: true }).click();
+  const form = page.getByRole("dialog", { name: "بطاقة جديدة", exact: true });
+  await expect(form).toHaveAttribute("dir", "rtl");
+  const box = (await form.boundingBox())!;
+  expect(box.x).toBeCloseTo(0, 0);
+  expect(box.width).toBe(390);
+  expect(
+    (await form.locator("#project-name").boundingBox())!.width,
+  ).toBeGreaterThan(340);
+  expect(await form.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+    true,
+  );
+  await page.screenshot({
+    path: ".wrangler/rtl-card-refined.png",
+    animations: "disabled",
+  });
+  await form.getByRole("button", { name: "رجوع", exact: true }).click();
+  await page
+    .locator(".mobile-bottom-navigation")
+    .getByRole("link", { name: "الجامعة", exact: true })
+    .click();
+  await expect(page.locator(".study-course-browser")).toBeVisible();
+  await expect(page.locator(".study-tabs > button")).toHaveCount(2);
+  await expect(page.locator(".study-trial-tools")).not.toHaveAttribute("open");
+  await page.screenshot({
+    path: ".wrangler/rtl-university-refined.png",
+    animations: "disabled",
+  });
 });

@@ -137,7 +137,7 @@ export default function UniversityTrial(props: Props) {
                   العودة للكورسات
                 </button>
               ) : (
-                <>
+                <details className="study-phone-course-menu"><summary>إدارة الكورسات</summary><div>
                   <button
                     type="button"
                     className="primary-button"
@@ -156,7 +156,7 @@ export default function UniversityTrial(props: Props) {
                   >
                     كل المهام
                   </button>
-                </>
+                </div></details>
               )}
             </div>
           )}

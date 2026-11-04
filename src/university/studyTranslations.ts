@@ -1,4 +1,7 @@
 export const studyTranslations:Record<string,[string,string]> = {
+  "التصدير والتنبيهات": ["Export and notifications", "ייצוא והתראות"],
+  "خيارات الجامعة": ["University options", "אפשרויות האוניברסיטה"],
+  "إدارة الكورسات": ["Manage courses", "ניהול קורסים"],
   "الجدول": ["Schedule", "מערכת"],
   "الخريطة": ["Map", "מפה"],
   "نظرة عامة": ["Overview", "סקירה"],

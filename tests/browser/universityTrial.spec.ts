@@ -113,7 +113,7 @@ function plan() {
 async function seed(page: Page) {
   await page.goto("/#/university");
   await expect(page.locator(".study-university-trial")).toBeVisible();
-  await page.locator(".study-trial-tools summary").click();
+  await page.locator(".study-trial-tools > summary").click();
   await page.locator(".study-upload input").setInputFiles({
     name: "trial-plan.json",
     mimeType: "application/json",
@@ -142,6 +142,7 @@ test("university default view keeps the original menu, assistant, personal cards
   await expect(page.locator(".assistant-preferences>summary")).toBeVisible();
   await expect(page.locator(".assistant-model-options")).toHaveCount(1);
   await page.locator(".assistant-close").click();
+  if((page.viewportSize()?.width||0)<=600)await page.locator(".study-trial-tools > summary").click();
   await page.getByRole("button", { name: /خريطة الكورسات/ }).click();
   await expect(page.locator(".study-map")).toBeVisible();
   await expect(
@@ -261,6 +262,7 @@ test("course tabs, filtering, linked notes, study progress and mobile day agenda
     .getByRole("button", { name: "الجدول الأسبوعي", exact: true })
     .click();
   await expect(page.locator(".study-timetable-scroll")).toBeVisible();
+  if((page.viewportSize()?.width||0)<=600)await page.locator(".study-trial-tools > summary").click();
   await page.getByRole("button", { name: /خريطة الكورسات/ }).click();
   await expect(page.locator(".study-map")).toBeVisible();
   expect(

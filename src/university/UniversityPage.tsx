@@ -332,14 +332,8 @@ function Workspace({ user }: {
             e.target.value = "";
         }}/>
             </label>
-          </div></details></div>
-        </header>
-        <div className="study-storage" role="status" hidden={!cloud.status.error&&!cloud.status.pending} data-sync-state={cloud.status.error?'error':!cloud.status.ready?'connecting':cloud.status.pending?'pending':'ready'}>
-          {cloud.status.error || (cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : null)}
-          {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
-        </div>
-        {cloud.status.conflicts.map(key=><section className="study-sync-conflict" key={key}><p>عُدّل السجل نفسه على جهاز آخر. اختر النسخة التي تريد الاحتفاظ بها؛ لم نستبدل تعديلك تلقائيًا.</p><strong dir="auto">{key.startsWith('courses_')?state.courses.find(c=>c.id===key.slice(8))?.name:key.startsWith('tasks_')?state.tasks.find(t=>t.id===key.slice(6))?.title:state.lessons.find(l=>l.id===key.slice(8))?.room}</strong><button onClick={()=>cloud.resolve(key,'local')}>الاحتفاظ بتعديلي</button><button onClick={()=>cloud.resolve(key,'cloud')}>استخدام نسخة الحساب</button></section>)}
-        <details className="study-overview-disclosure" open={!mobileStudy}><summary>نظرة عامة</summary><div className="study-stats">
+            {mobileStudy&&<button className="secondary-button" onClick={()=>updateUniversityRoute('map',filter)}><GitBranch size={16}/>خريطة الكورسات</button>}
+            {mobileStudy&&<>        <details className="study-overview-disclosure" open={!mobileStudy}><summary>نظرة عامة</summary><div className="study-stats">
           <article>
             <span>كورسات الفصل</span>
             <strong>{state.courses.length.toString().padStart(2, "0")}</strong>
@@ -361,6 +355,36 @@ function Workspace({ user }: {
             </small>
           </article>
         </div></details>
+</>}          </div></details></div>
+        </header>
+        {!mobileStudy&&<>        <details className="study-overview-disclosure" open={!mobileStudy}><summary>نظرة عامة</summary><div className="study-stats">
+          <article>
+            <span>كورسات الفصل</span>
+            <strong>{state.courses.length.toString().padStart(2, "0")}</strong>
+          </article>
+          <article>
+            <span>مهام مفتوحة</span>
+            <strong>{pending.length.toString().padStart(2, "0")}</strong>
+          </article>
+          <article>
+            <span>الموعد القادم</span>
+            <strong className="study-next" dir="auto">
+              {next?next.title:<span data-study-ui="true">لا توجد مواعيد قادمة</span>}
+            </strong>
+            {next && <small className="study-next-course" dir="auto">{courseName(next.courseId)}</small>}
+            <small>
+              {next
+            ? summaryDate(next.due)
+            : "أضف موعد تسليم أو امتحان"}
+            </small>
+          </article>
+        </div></details>
+</>}
+        <div className="study-storage" role="status" hidden={!cloud.status.error&&!cloud.status.pending} data-sync-state={cloud.status.error?'error':!cloud.status.ready?'connecting':cloud.status.pending?'pending':'ready'}>
+          {cloud.status.error || (cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : null)}
+          {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
+        </div>
+        {cloud.status.conflicts.map(key=><section className="study-sync-conflict" key={key}><p>عُدّل السجل نفسه على جهاز آخر. اختر النسخة التي تريد الاحتفاظ بها؛ لم نستبدل تعديلك تلقائيًا.</p><strong dir="auto">{key.startsWith('courses_')?state.courses.find(c=>c.id===key.slice(8))?.name:key.startsWith('tasks_')?state.tasks.find(t=>t.id===key.slice(6))?.title:state.lessons.find(l=>l.id===key.slice(8))?.room}</strong><button onClick={()=>cloud.resolve(key,'local')}>الاحتفاظ بتعديلي</button><button onClick={()=>cloud.resolve(key,'cloud')}>استخدام نسخة الحساب</button></section>)}
         {error && (<p className="study-error" role="alert">
             {error}
           </p>)}
@@ -373,11 +397,11 @@ function Workspace({ user }: {
             ["overview", "الكورسات والمهام"],
             ["schedule", "الجدول الأسبوعي"],
             ["map", "خريطة الكورسات"],
-        ] as const).map(([id, title]) => (<button key={id} aria-label={title} aria-pressed={tab === id} onClick={() => updateUniversityRoute(id,filter)}>
+        ] as const).filter(([id])=>!mobileStudy||id!=="map").map(([id, title]) => (<button key={id} aria-label={title} aria-pressed={tab === id} onClick={() => updateUniversityRoute(id,filter)}>
               {id==='map'?<GitBranch size={17}/>:id==='schedule'?<CalendarDays size={17}/>:<GraduationCap size={17}/>}{mobileStudy?(id==='overview'?'كورساتي':id==='schedule'?'الجدول':'الخريطة'):title}{id==='map'&&<small>UML</small>}
             </button>))}
         </nav>
-        <div className={"study-toolbar"+(mobileStudy&&tab==='overview'?" study-phone-overview-actions":"")}>
+        <details className="study-schedule-options" open={!mobileStudy}><summary>خيارات الجامعة</summary>        <div className={"study-toolbar"+(mobileStudy&&tab==='overview'?" study-phone-overview-actions":"")}>
           {(tab!=='overview')&&<label>
             الكورس
             <ChoicePicker label={translateStudyText('الكورس',language)} value={filter} onChange={value=>updateUniversityRoute(tab,value)} options={[{value:'',label:translateStudyText('كل الكورسات',language)},...state.courses.map(course=>({value:course.id,label:course.name}))]}/>
@@ -392,6 +416,7 @@ function Workspace({ user }: {
             </button>
           </div>
         </div>
+        </details>
         {tab==='overview'&&<Suspense fallback={<p role="status">…</p>}><UniversityTrial state={state} selected={selectedCourse} filter={filter} now={now} busy={busy} language={language} courseColor={courseColor} select={id=>updateUniversityRoute('overview',id)} addCourse={()=>setBatchOpen(true)} addTask={newTask} editCourse={course=>setEditing({kind:'course',value:course})} template={course=>setEditing({kind:'course',value:courseTemplate(course,state.courses.length,translateStudyText('— فصل جديد',language))})} toggleTopic={(course,id)=>void run(()=>commit({...latest.current,courses:latest.current.courses.map(item=>item.id===course.id?{...item,topics:(item.topics||[]).map(topic=>topic.id===id?{...topic,done:!topic.done}:topic)}:item)}))} renderTasks={renderTasks}/></Suspense>}
         {tab === "schedule" && conflicts.size > 0 && <p className="study-overdue" role="status">يوجد تداخل في مواعيد {conflicts.size} محاضرات. افتح المحاضرة لتعديل وقتها.</p>}
         {tab === "schedule" && (<>
@@ -474,7 +499,7 @@ function Workspace({ user }: {
           if(undo.kind==='tasks'){const task=next.tasks.find(t=>t.id===undo.id)!;if(task.reminderProjectId)await syncReminder(user.uid,task);}
           commit(next);setUndo(null);setMessage('تمت استعادة العنصر.');
         })}>تراجع عن الحذف</button><button aria-label="إغلاق التراجع" onClick={()=>setUndo(null)}>×</button></section>}
-        <footer className="study-bottom">
+        <details className="study-extra-settings" open={!mobileStudy}><summary>التصدير والتنبيهات</summary><footer className="study-bottom">
           <p>
             لتلقي التذكيرات، فعّل إشعارات
             المواعيد على هاتفك ثم اختر «تذكير على الهاتف» للمهمة المطلوبة.
@@ -483,7 +508,7 @@ function Workspace({ user }: {
             تصدير بياناتي
           </button>
           <a href="#/notifications">إعدادات الإشعارات</a>
-        </footer>
+        </footer></details>
         {capture && !editing && <Modal title="حفظ في خطة الفصل" close={() => setCapture(null)}>
           <StudyCaptureReview capture={capture} state={state} busy={busy} cancel={() => setCapture(null)} confirm={input => void run(async () => {
             const matched = captureMatches(latest.current, capture);
