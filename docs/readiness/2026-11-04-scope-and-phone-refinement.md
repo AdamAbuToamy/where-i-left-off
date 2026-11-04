@@ -19,3 +19,5 @@ Decision: READY for administrator UI acceptance. Live-provider semantic acceptan
 
 ## Delivery
 Hosting only. UI administrator preview; assistant product-scope instructions shared on desktop/phone. Preserve provider, account keys, model and worker metadata. Previous release: .wrangler/mobile-refine-release-before.json. Physical keyboard behavior and live model compliance remain unverified. Rollback via previous Firebase Hosting release.
+
+Published: wilo-scope-phone-refinement-20261104. Hosting deployment succeeded; all 14 checked production files matched local bytes. Proof: 2026-11-04-scope-phone-production.json. Live provider remains blocked on the local test key, not marked passed.

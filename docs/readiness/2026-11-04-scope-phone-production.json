@@ -1,0 +1,94 @@
+{
+  "verifiedAt": "2026-11-04T12:13:58.7546876Z",
+  "release": "wilo-scope-phone-refinement-20261104",
+  "uiAdminOnly": true,
+  "assistantScopeShared": true,
+  "backendUnchanged": true,
+  "liveProviderVerified": false,
+  "checks": [
+    {
+      "path": "index.html",
+      "bytes": 18609,
+      "sha256": "fad34928deaf3ab2ff81e835a1940652c6b002d428e76b3c99ee108a29532aeb",
+      "match": true
+    },
+    {
+      "path": "sw.js",
+      "bytes": 24129,
+      "sha256": "67ce2a5afadc8432a6c8447180e6cab8988231a5c565805be1a862260b849eb7",
+      "match": true
+    },
+    {
+      "path": "wilo-release.json",
+      "bytes": 9548,
+      "sha256": "68f455a6b2191af4a246d7dbe685cd69c8837faad05a2d62c1cd13e73b709a0e",
+      "match": true
+    },
+    {
+      "path": "assistant-config.json",
+      "bytes": 74,
+      "sha256": "10a7bb2868f73cda1cc54bc9c14065c517beb1a34790f73eca13a076f09d6135",
+      "match": true
+    },
+    {
+      "path": "push-config.json",
+      "bytes": 65,
+      "sha256": "cab6fb1bef86e4a93f0a1f22e08883a9c251585e053ca23b9ce3336aed4b53b6",
+      "match": true
+    },
+    {
+      "path": "assets/AssistantWidget-CfV3xRp1.js",
+      "bytes": 362752,
+      "sha256": "ba5351c537c9d3a6c8643cc6238365485fca95bcd869280f11396c15e7555263",
+      "match": true
+    },
+    {
+      "path": "assets/AssistantWidget-CIVKz6DW.css",
+      "bytes": 33186,
+      "sha256": "69f0353f133305f76c938ac953eb16ced905d9629dcce91e611c88b5e6dcd11a",
+      "match": true
+    },
+    {
+      "path": "assets/index-BajzS3Lx.css",
+      "bytes": 123465,
+      "sha256": "db7f5e1ae4572b4d2ef0955fbe6e2dd1c8ad654710246f2a170c907198055e42",
+      "match": true
+    },
+    {
+      "path": "assets/index-BE7zWC7M.js",
+      "bytes": 572077,
+      "sha256": "8a92b4d02e2e864a271e6a6766bd120f6d7c2a6d21fef4d698acb5875993dab8",
+      "match": true
+    },
+    {
+      "path": "assets/UniversityPage-BQ8T8FU3.css",
+      "bytes": 11547,
+      "sha256": "4ddcc189c86f77980e93ccc8036584f4bd000770d14f45823f61043b931c5eb1",
+      "match": true
+    },
+    {
+      "path": "assets/UniversityPage-CtryWq6t.js",
+      "bytes": 49412,
+      "sha256": "26e58bc91865da01fab50b3fcdd665d9c1c6790fb5c6d54e9fc4ab31d06ca67b",
+      "match": true
+    },
+    {
+      "path": "assets/UniversityTrial-BgBzNwS5.js",
+      "bytes": 14335,
+      "sha256": "8f289245c70c0508a5aab9beff0232fa95209c2776ca2009083f420ad9876422",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-EPpjp0xs.js",
+      "bytes": 120651,
+      "sha256": "5532417828a8be2fd365aa3d3a2379b296a637ace690c379da5a4b2a94537620",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-VFXH3Zy1.css",
+      "bytes": 6428,
+      "sha256": "8c0b07e1d15613adeea0f723204aa1e64006ae5b8c386cac9dddd4e1efc019dc",
+      "match": true
+    }
+  ]
+}
