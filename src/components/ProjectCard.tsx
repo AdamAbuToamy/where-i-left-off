@@ -1,3 +1,4 @@
+import CardTools from "../productivity/CardTools";
 import CompactCardShell from './CompactCardShell'
 import { markCardViewed } from '../lib/pushNotifications'
 import FocusSession from './FocusSession'
@@ -201,6 +202,7 @@ export default function ProjectCard({
             </button>}
 
             {canEdit&&project.status!=='waiting'&&project.resourceType!=='shopping'&&project.resourceType!=='idea'&&auth?.currentUser&&<FocusSession project={project} user={auth.currentUser as User} language={language} groupId={groupId} onSave={(details,revision)=>onUpdate(project.id,project.name,details.nextStep ?? project.nextStep,{...project,...details},revision)}/>}
+            <CardTools project={project} language={language} groupId={groupId}/>
             {(canEdit || canManage) && <details className="card-options"><summary>{pageText[language].more}</summary><div className="card-actions">
               {canEdit && <button
                 ref={editButtonRef}
