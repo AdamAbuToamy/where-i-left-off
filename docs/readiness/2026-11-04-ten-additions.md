@@ -1,7 +1,7 @@
 # Administrator productivity additions — 2026-11-04
 
 ## Scope and decision
-READY for administrator-only release; verification is complete. Published-byte evidence will be recorded with the release. All ten additions are enabled only for the verified administrator. Existing ordinary-user flows remain available. No live account content was edited for testing.
+READY for administrator-only use. Published release: `wilo-admin-ten-additions-20261104` at https://where-i-left-off.web.app. All ten additions are enabled only for the verified administrator. Existing ordinary-user flows remain available. No live account content was edited for testing.
 
 ## Ten independently implemented capabilities
 1. Inbox: text/link capture and deliberate, retry-safe creation of a real personal card. Extension/share capture is intercepted for the administrator only.
@@ -33,7 +33,7 @@ READY for administrator-only release; verification is complete. Published-byte e
 - Backend full suite: 885 passed; 1 additional native admin-guidance contract passed (`.wrangler/ten-worker-preview.log`), proving ordinary request tools remain identical.
 - Lint: zero errors, one pre-existing AssistantWidget cleanup-ref warning. Architecture: 37 checked modules, zero violations. TypeScript and production build passed. Source/dist credential patterns and Git-history secret patterns passed (pattern scanners are not exhaustive). Production dependency audit found zero vulnerabilities.
 - Existing Vite chunk-size warnings remain for Firebase/main; optional hub panels and board export are loaded lazily. No unsupported performance guarantee is claimed.
-- Deployment: pending published-byte verification, which is a separate read-only check.
+- Deployment succeeded for Hosting and Firestore rules. Read-only production verification matched all 29 checked files byte-for-byte (index, service worker, release/config files, feature chunks and export license). Evidence: `docs/readiness/2026-11-04-ten-additions-production.json`. No production-account content writes were made. Previous published release metadata is saved locally in `.wrangler/ten-release-before.json` for recovery.
 
 ## Limits and recovery
 - New workflows primarily target personal cards. Existing group collaboration remains intact; named boards can be group-scoped but remain private administrator planning metadata. Sticky-note conversion is available on personal boards only. Group audit history is not promised.
