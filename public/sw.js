@@ -72,7 +72,7 @@ self.addEventListener("fetch", (event) => {
   }
   const pathname = new URL(event.request.url).pathname;
   // The desktop planning canvas is loaded and cached only when explicitly opened.
-  if (/^\/assets\/PlanningBoardDialog[^/]+\.(?:js|css)$/.test(pathname)) {
+  if (/^\/assets\/PlanningBoard(?:Dialog|Export)[^/]+\.(?:js|css)$/.test(pathname)) {
     event.respondWith(
       caches.open(CACHE_NAME + "-planning-runtime").then(async (cache) => {
         const saved = await cache.match(event.request);

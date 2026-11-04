@@ -44,7 +44,7 @@ test('compound Arabic requests use the cloud, repair malformed proposals, save r
  await page.getByRole('button',{name:'إغلاق المساعد',exact:true}).click();await expect(page.locator('.week-item').filter({hasText:'عمار'})).toHaveCount(1);
  await page.reload();await expect(page.locator('.week-item').filter({hasText:'عمار'})).toHaveCount(1);
  await expect(page.locator('.week-day').filter({has:page.locator(`time[datetime="${date}"]`)})).toContainText('عمار');expect(calls).toBe(4);
- await page.goto('/#/personal');await expect(page.getByRole('heading',{name:'عمار',exact:true})).toHaveCount(1);const card=page.locator('.project-card').filter({has:page.getByRole('heading',{name:'عمار',exact:true})});await card.getByText('الملاحظات والوصف',{exact:true}).click();await expect(card).toContainText('مرحبا');
+ await page.goto('/#/personal');await expect(page.getByRole('heading',{name:'عمار',exact:true})).toHaveCount(1);const card=page.locator('.project-card').filter({has:page.getByRole('heading',{name:'عمار',exact:true})});const expand=card.locator('.envelope-expand');if(await expand.isVisible()){await card.hover();await expand.click();}await card.getByText('الملاحظات والوصف',{exact:true}).click();await expect(card).toContainText('مرحبا');
  await page.screenshot({path:'test-results/layout-review/assistant-compound-card-week.png',fullPage:true});
  await page.setViewportSize({width:1440,height:900});await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('language-changed',{detail:'en'})));await expect(page.locator('html')).toHaveAttribute('dir','ltr');

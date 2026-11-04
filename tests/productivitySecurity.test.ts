@@ -224,3 +224,13 @@ it("preserves a 50-card atomic edit with embedded history within rule access lim
     });
   await assertSucceeds(batch.commit());
 });
+
+it('restricts named board writes to verified administrators without granting foreign or arbitrary paths',async()=>{
+ const db=client('admin',true),body={version:1,scope:'',payload:JSON.stringify({version:1,items:[],threads:[],circles:[]}),revision:1,mutationId:'named',updatedAt:serverTimestamp()};
+ await assertSucceeds(setDoc(doc(db,'users/admin/planningBoards/personal_board-one'),body));
+ await assertFails(setDoc(doc(client('ordinary'),'users/ordinary/planningBoards/personal_board-one'),body));
+ await assertFails(setDoc(doc(client('notverified',true,false),'users/notverified/planningBoards/personal_board-one'),body));
+ await assertFails(getDoc(doc(client('other'),'users/admin/planningBoards/personal_board-one')));
+ await assertFails(setDoc(doc(db,'users/admin/planningBoards/arbitrary'),body));
+ await assertFails(setDoc(doc(db,'users/admin/planningBoards/group_aaaaaaaaaaaaaaaaaaaa_board-one'),{...body,scope:'aaaaaaaaaaaaaaaaaaaa'}));
+});
