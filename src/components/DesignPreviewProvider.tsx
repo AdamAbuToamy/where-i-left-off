@@ -1,3 +1,4 @@
+import ExperienceProvider from "../productivity/Provider";
 import { useLayoutEffect } from "react";
 import type { ReactNode } from "react";
 import type { User } from "firebase/auth";
@@ -34,7 +35,7 @@ export default function DesignPreviewProvider({
   }, [enabled, kitchenStudy, user]);
   return (
     <DesignPreviewContext value={{ enabled, kitchenStudy }}>
-      {children}
+      <ExperienceProvider user={user}>{children}</ExperienceProvider>
     </DesignPreviewContext>
   );
 }

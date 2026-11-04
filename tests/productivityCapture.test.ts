@@ -1,0 +1,5 @@
+import {it,expect} from 'vitest';
+import {emptyExperience,parseExperience} from '../src/productivity/state';
+import {capture,captureCard,captured} from '../src/productivity/capture';
+it('captures a raw idea/link without requiring project details and preserves it through conversion',()=>{const state=capture(emptyExperience(),'capture1','  Read this later  ','https://example.com/path',123);expect(state.inbox[0].text).toBe('Read this later');const card=captureCard(state.inbox[0]);expect(card).toMatchObject({id:'capture1',name:'Read this later',details:{projectUrl:'https://example.com/path'}});expect(captured(state,'capture1').inbox[0].cardId).toBe('capture1');expect(state.inbox[0].cardId).toBe('');expect(parseExperience(JSON.parse(JSON.stringify(state)))).toEqual(state);});
+it('rejects empty captures, script URLs, malformed persisted data and oversize content',()=>{expect(()=>capture(emptyExperience(),'x','','',1)).toThrow();expect(()=>capture(emptyExperience(),'x','idea','javascript:alert(1)',1)).toThrow();expect(()=>capture(emptyExperience(),'x','a'.repeat(1001),'',1)).toThrow();expect(()=>parseExperience({...emptyExperience(),unexpected:true})).toThrow();});

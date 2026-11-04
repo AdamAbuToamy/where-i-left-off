@@ -109,6 +109,15 @@ export class OfflineWorkspace {
     const after = ProjectEntity.create(this.id(), name, nextStep, rank, details, this.now()).snapshot()
     return this.queue(() => ({ id: this.id(), entity: 'project', entityId: after.id, before: null, after }))
   }
+  /** Deterministic capture/recurrence identity makes an explicit retry idempotent. */
+  addOnce(id: string, name: string, nextStep: string, rank: number, details: ProjectDetails) {
+    if (!/^[-\w]{1,100}$/.test(id)) throw new DomainError('invalid-project');
+    const after = ProjectEntity.create(id, name, nextStep, rank, details, this.now()).snapshot();
+    return this.update(state => {
+      if (projectedState(state).projects.some(project => project.id === id)) return state;
+      return { ...state, operations: [...state.operations, {id:this.id(),entity:'project',entityId:id,before:null,after}] };
+    });
+  }
   change(project: Project, operation: ProjectOperation, values: ProjectChanges = {}) {
     return this.queue(state => {
       const current = projectedState(state).projects.find(item => item.id === project.id)

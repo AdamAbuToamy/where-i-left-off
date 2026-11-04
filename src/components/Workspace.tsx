@@ -1,3 +1,6 @@
+import {useExperience} from "../productivity/context";
+import {capture as captureInbox} from "../productivity/capture";
+import {createClientId} from "../lib/clientId";
 import DesktopPlanningButton from "../planning/DesktopPlanningButton";
 import {
   Search,
@@ -53,6 +56,7 @@ export default function Workspace({
   group?: GroupInfo;
   members: GroupMember[];
 }) {
+  const experience=useExperience();
   const { enabled: designPreview, kitchenStudy } = useDesignPreview();
   const t = translations[language],
     c = cloudText[language],
@@ -148,10 +152,18 @@ export default function Workspace({
       !capture ||
       (cached && navigator.onLine) ||
       autoCaptured.current ||
-      new URLSearchParams(location.search).get("auto") !== "1" ||
+      (!experience && new URLSearchParams(location.search).get("auto") !== "1") ||
       lock.current
     )
       return;
+    if(experience){
+      autoCaptured.current=true;
+      void Promise.resolve().then(()=>{
+        if(!workspaceMounted.current)return;
+        try{experience.change(state=>captureInbox(state,createClientId(),[capture.name,capture.checkpoint].filter(Boolean).join("\n"),capture.projectUrl,Date.now()));setCapture(null);setIsFormOpen(false);history.replaceState({},"",location.pathname+location.hash);}
+        catch(error){setError(error);}
+      });return;
+    }
     autoCaptured.current = true;
     void Promise.resolve().then(async () => {
       if (!workspaceMounted.current || !repository.current) return;
@@ -201,7 +213,7 @@ export default function Workspace({
         if (workspaceMounted.current) setPending(false);
       }
     });
-  }, [group, loaded, capture, cached, projects]);
+  }, [group, loaded, capture, cached, projects, experience]);
   useEffect(() => {
     void touchUserMetric(db!, user.uid, user.email ?? "").catch(() => {
       /* Aggregate stats must never block project use. */

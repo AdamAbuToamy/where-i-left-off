@@ -352,6 +352,28 @@ service cloud.firestore {
     }
 
 
+    match /users/{uid}/cardHistory/{event} {
+      allow read: if signedActive() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Administrator-preview metadata is private account data, never a role grant.
+    match /users/{uid}/experience/{document} {
+      allow read: if signedActive() && request.auth.uid == uid;
+      allow create, update: if signedActive() && request.auth.uid == uid && logAdmin()
+        && document == 'workspace'
+        && request.resource.data.keys().hasAll(['version','payload','revision','mutationId','updatedAt'])
+        && request.resource.data.keys().hasOnly(['version','payload','revision','mutationId','updatedAt'])
+        && request.resource.data.version == 1
+        && request.resource.data.payload is string && request.resource.data.payload.size() <= 450000
+        && request.resource.data.mutationId is string && request.resource.data.mutationId.matches('^[A-Za-z0-9_-]{1,100}$')
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.revision is int && request.resource.data.revision <= 10000000
+        && ((!exists(/databases/$(database)/documents/users/$(uid)/experience/$(document)) && request.resource.data.revision == 1)
+          || (exists(/databases/$(database)/documents/users/$(uid)/experience/$(document)) && request.resource.data.revision == resource.data.revision + 1));
+      allow delete: if false;
+    }
+
     // Private planning canvases never update project ranks or content.
     match /users/{uid}/planningBoards/{boardId} {
       function boardOwner() {

@@ -1,3 +1,4 @@
+import ExperienceDock from "./productivity/Dock";
 import HeaderSpotlight from './components/HeaderSpotlight';
 import DesignPreviewProvider from './components/DesignPreviewProvider';
 import { StudyLocaleProvider } from "./university/StudyLocale";
@@ -81,6 +82,7 @@ export default function App() {
       <WelcomeTour user={user} language={language} />
       <SideNavigation language={language} page={page} admin={isAdmin(user.email, user.emailVerified)} />
       {!user.displayName?.trim() && page !== 'settings' && <section className="profile-prompt" aria-label={p.needsName}><span className="profile-prompt-icon" aria-hidden="true">✦</span><div className="profile-prompt-copy"><strong>{p.needsName}</strong><span>{p.profilePrompt}</span></div><a className="primary-button profile-prompt-action" href="#/settings">{p.editProfile} <span aria-hidden="true">↗</span></a></section>}
+      <ExperienceDock user={user} language={language}/>
       <section className="account-page-outlet" data-page={page} key={`${user.uid}/${page}/${groupId}`}><ErrorBoundary embedded><AccountPage page={page} groupId={groupId} user={user} language={language} installed={installed} profileVersion={profileVersion}/></ErrorBoundary></section>
     </AccountLifecycle>{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>}</> : <>{page === 'support' && <p className="notice">{supportText[language].signin}</p>}<AuthPanel language={language} /></>}
     <LegalLinks language={language} />
