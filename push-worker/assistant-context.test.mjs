@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {workspaceToolInput,workspaceToolStep,runWorkspaceTools} from './src/assistantTools.mjs';
-import {readWorkspaceContext} from './src/assistantContext.mjs';
+import {workspaceOverview,readWorkspaceContext} from './src/assistantContext.mjs';
 const state={localDate:'2026-10-24',timezone:'Asia/Jerusalem',controls:{language:'ar'},study:{courses:[{id:'c',name:'2026 מודלים חישוביים',notes:'private course body '.repeat(1000)}],tasks:[],lessons:[]},scopes:[{id:'personal',name:'Personal',projects:[{id:'p',name:'محمد',description:'old note',dueDate:''}],sections:[]}]};
 const context=JSON.stringify(state),data={language:'ar',message:'عدّل بطاقة محمد وأضف new note إلى ملاحظتها',context};
 const plan={text:'Review',actions:[{target:'projects',action:'update',id:'p',scope:'personal',values:{description:'old note\nnew note'}}],controls:[],files:[],tasks:[{title:'Append note',outcome:'proposed',actionIndexes:[0],controlIndexes:[],detail:''}]};
@@ -98,4 +98,26 @@ test('details pagination never skips records when the shared character budget fi
  const courses=Array.from({length:35},(_,i)=>({id:'course-'+i,name:'Course '+i,notes:'n'.repeat(1500)})),text=JSON.stringify({study:{courses}});
  let offset=0,ids=[];for(let i=0;i<35;i++){const page=readWorkspaceContext(text,{requests:[{target:'courses',view:'details',offset}]}).results[0];ids.push(...page.items.map(item=>item.id));if(!page.hasMore)break;assert.ok(page.nextOffset>offset);offset=page.nextOffset;}
  assert.deepEqual(ids,courses.map(item=>item.id));
+});
+
+test('bounded overview supplies timetable and deadline facts without another model-driven read or importing notes', async () => {
+ const {runNativeWorkspace}=await import('./src/assistantNativeTools.mjs');
+ const account=structuredClone(state);
+ account.study.lessons=[{id:'lecture',courseId:'c',day:4,start:'08:00',end:'10:00',room:'204',sessionType:'lecture',notes:'PRIVATE LESSON NOTES'}];
+ account.study.tasks=[{id:'task',courseId:'c',title:'Assignment',due:'2026-10-24T09:00:00Z',kind:'assignment',notes:'PRIVATE TASK NOTES'}];
+ const wire=JSON.stringify(account),overview=JSON.parse(workspaceOverview(wire));
+ assert.deepEqual(overview.studyCatalog.lessons.items[0],{id:'lecture',courseId:'c',day:4,start:'08:00',end:'10:00',room:'204',sessionType:'lecture'});
+ assert.equal(overview.studyCatalog.tasks.items[0].due,'2026-10-24T09:00:00Z');
+ assert.equal(JSON.stringify(overview).includes('PRIVATE'),false);
+ let calls=0;
+ await runNativeWorkspace({message:'What classes and deadlines do I have?',language:'en',context:wire,functions:[]},[],async input=>{
+  calls++;
+  assert.ok(JSON.stringify(input.messages).includes('08:00'));
+  assert.equal(JSON.stringify(input.messages).includes('PRIVATE'),false);
+  return {message:{content:'Your class starts at 08:00, room 204.'}};
+ });
+ assert.equal(calls,1);
+ account.study.lessons=Array.from({length:60},(_,i)=>({...account.study.lessons[0],id:'l'+i}));
+ const paged=JSON.parse(workspaceOverview(JSON.stringify(account))).studyCatalog.lessons;
+ assert.equal(paged.hasMore,true);assert.ok(paged.items.length<=25);
 });
