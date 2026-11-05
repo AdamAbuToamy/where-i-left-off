@@ -84,7 +84,12 @@ export async function readInferenceResponse(
     }
     if (!isRecord(packet)) throw invalid();
     if (packet.error)
-      throw new AssistantFailure("assistant-network", "provider");
+      throw new AssistantFailure(
+        isRecord(packet.error) && packet.error.code === "assistant-timeout"
+          ? "assistant-timeout"
+          : "assistant-network",
+        "provider",
+      );
     if (typeof packet.id === "string") result.id = packet.id;
     if (packet.usage != null) {
       if (

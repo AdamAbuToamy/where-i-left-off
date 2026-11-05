@@ -41,3 +41,11 @@ it('bounds non-streaming provider bodies too, before parsing or accepting their 
  const response=Response.json({choices:[{message:{content:'x'.repeat(2100000)}}]});
  await expect(readInferenceResponse(response,new AbortController().signal,()=>{})).rejects.toMatchObject({code:'ai-response-too-large'});
 });
+
+it("reports a server stream deadline as a timeout instead of an incomplete operation plan", async () => {
+  const response = new Response('data: {"error":{"code":"assistant-timeout"}}\n\n', {
+    headers: { "content-type": "text/event-stream" },
+  });
+  await expect(readInferenceResponse(response, new AbortController().signal, () => {}))
+    .rejects.toMatchObject({ code: "assistant-timeout" });
+});

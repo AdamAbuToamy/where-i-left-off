@@ -1,4 +1,4 @@
-import {allowConnectionRequest} from './connectionRateLimit.mjs';
+import { allowConnectionRequest } from "./connectionRateLimit.mjs";
 const encoder = new TextEncoder();
 const decode = (value) =>
   Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
@@ -47,10 +47,25 @@ export async function accountAssistant(
   upstream = fetch,
 ) {
   const reply = (result) => json({ result }, headers);
-  if(!['connection-status','connection-save','connection-delete','completion'].includes(data.action))return json({error:'invalid-action'},headers,400);
-  if(!await allowConnectionRequest(env,uid,data.action)){
-   console.warn('security.http.denied',{reason:'account-rate-limit',status:429});
-   return json({error:'assistant-rate-limit'},{...headers,'retry-after':'60'},429);
+  if (
+    ![
+      "connection-status",
+      "connection-save",
+      "connection-delete",
+      "completion",
+    ].includes(data.action)
+  )
+    return json({ error: "invalid-action" }, headers, 400);
+  if (!(await allowConnectionRequest(env, uid, data.action))) {
+    console.warn("security.http.denied", {
+      reason: "account-rate-limit",
+      status: 429,
+    });
+    return json(
+      { error: "assistant-rate-limit" },
+      { ...headers, "retry-after": "60" },
+      429,
+    );
   }
   if (data.action === "connection-status") {
     const row = await env.DB.prepare(
@@ -107,23 +122,44 @@ export async function accountAssistant(
     .bind(lease, uid, now)
     .run();
   if (!claimed.meta.changes)
-    return json({ error: "assistant-busy" }, headers, 429);
+    return json(
+      { error: "assistant-busy" },
+      { ...headers, "retry-after": "2" },
+      429,
+    );
   const release = () =>
     env.DB.prepare(
       "UPDATE assistant_connections SET lease_until=0 WHERE uid=? AND lease_until=?",
     )
       .bind(uid, lease)
       .run();
-  const controller = new AbortController(),
-    timer = setTimeout(() => controller.abort(), 60000);
-  const abort = () => controller.abort();
-  request.signal.addEventListener("abort", abort, { once: true });
+  const controller = new AbortController();
+  let reader, cleanup, timer, hardTimer;
   let handedOff = false;
-  const finish = async () => {
-    clearTimeout(timer);
-    request.signal.removeEventListener("abort", abort);
-    await release();
+  // Release independently of upstream reads: some providers leave a pending read
+  // unresolved after abort. The lease token prevents an old cleanup releasing a new request.
+  const finish = () => {
+    if (!cleanup) {
+      clearTimeout(timer);
+      clearTimeout(hardTimer);
+      request.signal.removeEventListener("abort", abort);
+      cleanup = release();
+    }
+    return cleanup;
   };
+  const abort = () => {
+    controller.abort();
+    void reader?.cancel().catch(() => {});
+    void finish().catch(() => console.warn("assistant.lease.release-failed"));
+  };
+  const activity = () => {
+    clearTimeout(timer);
+    timer = setTimeout(abort, 20000);
+  };
+  hardTimer = setTimeout(abort, 60000);
+  activity();
+  request.signal.addEventListener("abort", abort, { once: true });
+  if (request.signal.aborted) abort();
   try {
     const response = await upstream(
       "https://gen.pollinations.ai/v1/chat/completions",
@@ -173,17 +209,33 @@ export async function accountAssistant(
       );
     if (!response.body)
       return json({ error: "assistant-network" }, headers, 502);
-    const reader = response.body.getReader();
+    reader = response.body.getReader();
     const stream = new ReadableStream({
       async pull(sink) {
         try {
           const item = await reader.read();
           if (item.done) {
+            if (controller.signal.aborted)
+              sink.enqueue(
+                encoder.encode(
+                  'data: {"error":{"code":"assistant-timeout"}}\n\n',
+                ),
+              );
             sink.close();
             await finish();
-          } else sink.enqueue(item.value);
+          } else {
+            activity();
+            sink.enqueue(item.value);
+          }
         } catch {
-          sink.error(new Error("assistant-network"));
+          if (controller.signal.aborted) {
+            sink.enqueue(
+              encoder.encode(
+                'data: {"error":{"code":"assistant-timeout"}}\n\n',
+              ),
+            );
+            sink.close();
+          } else sink.error(new Error("assistant-network"));
           await finish();
         }
       },
@@ -207,6 +259,10 @@ export async function accountAssistant(
           : "application/json",
       },
     });
+  } catch (error) {
+    if (controller.signal.aborted)
+      return json({ error: "assistant-timeout" }, headers, 504);
+    throw error;
   } finally {
     if (!handedOff) await finish();
   }

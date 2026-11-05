@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { database } from "./test-db.mjs";
 import { createWorker } from "./src/index.mjs";
-import { openConnection } from "./src/accountAssistant.mjs";
+import { accountAssistant, openConnection } from "./src/accountAssistant.mjs";
 function fixture() {
   let uid = "alice",
     active = true;
@@ -205,3 +205,55 @@ test("rejects simultaneous generations for the same owner without contacting the
   );
   assert.equal(f.sent.length, 0);
 });
+
+for (const termination of ["client-abort", "deadline", "stream-cancel"]) {
+  test(`a ${termination} releases a stalled generation so the next ordinary request is accepted`, async (t) => {
+    const f = fixture();
+    await f.call({ action: "connection-save", key });
+    if (termination === "deadline")
+      t.mock.timers.enable({ apis: ["setTimeout"] });
+    const controller = new AbortController();
+    const request = new Request("https://worker.test/assistant-account", {
+      signal: controller.signal,
+    });
+    let cancelled = false;
+    const response = await accountAssistant(
+      request,
+      f.env,
+      "alice",
+      {
+        action: "completion",
+        input: { messages: [{ role: "user", content: "Schedule tomorrow" }] },
+      },
+      {},
+      async () =>
+        new Response(
+          new ReadableStream({
+            cancel() {
+              cancelled = true;
+            },
+          }),
+          { headers: { "content-type": "text/event-stream" } },
+        ),
+    );
+    const pending = response.body.getReader();
+    const read = pending.read();
+    if (termination === "client-abort") controller.abort();
+    else if (termination === "deadline") t.mock.timers.tick(20000);
+    else await pending.cancel();
+    await read;
+    assert.equal(cancelled, true);
+    assert.equal(
+      f.env.DB.sqlite
+        .prepare("SELECT lease_until FROM assistant_connections")
+        .get().lease_until,
+      0,
+    );
+    const next = await f.call({
+      action: "completion",
+      input: { messages: [{ role: "user", content: "Hi" }] },
+    });
+    assert.equal(next.status, 200);
+    await next.text();
+  });
+}
