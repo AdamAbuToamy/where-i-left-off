@@ -11,7 +11,7 @@ import { workflowText } from "../workflowText";
 import { cardAction } from "../lib/cardAction";
 import ExtraLinks from "./ExtraLinks";
 import LinkedText from "./LinkedText";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode, FormEvent } from "react";
 import type { Project, Section, GroupMember } from "../types";
 import type { Language } from "../translations";
@@ -97,8 +97,57 @@ export default function ProjectCard({
     surface = useRef<HTMLElement>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const fullscreen = phone && !!kitchenStudy && (detailsOpen || isEditing);
-  usePhoneSurface(surface, fullscreen);
+  const fullscreen = !!kitchenStudy && (detailsOpen || isEditing);
+  const [detailPage, setDetailPage] = useState("overview");
+  const pages =
+    language === "ar"
+      ? {
+          overview: "المتابعة",
+          tasks: "قائمة المهام",
+          notes: "الملاحظات",
+          links: "الروابط والمواعيد",
+        }
+      : language === "he"
+        ? {
+            overview: "המשך עבודה",
+            tasks: "רשימת משימות",
+            notes: "הערות",
+            links: "קישורים ותאריכים",
+          }
+        : {
+            overview: "Overview",
+            tasks: "Checklist",
+            notes: "Notes",
+            links: "Links and dates",
+          };
+  usePhoneSurface(surface, fullscreen, phone ? "phone" : "card");
+  useEffect(() => {
+    if (!fullscreen) return;
+    requestAnimationFrame(() =>
+      surface.current
+        ?.querySelector<HTMLButtonElement>(".card-detail-heading button")
+        ?.focus({ preventScroll: true }),
+    );
+    if (phone) return;
+    document.body.classList.add("card-detail-docked");
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented && !isEditing) {
+        setDetailsOpen(false);
+      }
+    };
+    document.addEventListener("keydown", close);
+    return () => {
+      document.body.classList.remove("card-detail-docked");
+      document.removeEventListener("keydown", close);
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLButtonElement>(
+            `[data-project="${CSS.escape(project.id)}"] .envelope-expand`,
+          )
+          ?.focus({ preventScroll: true }),
+      );
+    };
+  }, [fullscreen, phone, isEditing, project.id]);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [name, setName] = useState(project.name);
   const [nextStep, setNextStep] = useState(project.nextStep);
@@ -190,10 +239,10 @@ export default function ProjectCard({
             void markCardViewed(project.id, groupId);
         }}
         data-project={project.id}
-        className={`project-card ${fullscreen ? "phone-card-fullscreen" : ""} ${isActive ? "is-active" : ""} is-${project.status}`}
+        className={`project-card ${fullscreen ? (phone ? "phone-card-fullscreen card-detail-panel" : "desktop-card-panel card-detail-panel") : ""} ${isActive ? "is-active" : ""} is-${project.status}`}
       >
         {fullscreen && (
-          <div className="phone-surface-heading">
+          <div className="phone-surface-heading card-detail-heading">
             <strong>{isEditing ? t.editProject : project.name}</strong>
             <button
               type="button"
@@ -336,7 +385,10 @@ export default function ProjectCard({
           <CompactCardShell
             summaryExtras={summaryExtras}
             expanded={detailsOpen}
-            onExpandedChange={setDetailsOpen}
+            onExpandedChange={(open) => {
+              if (open) setDetailPage("overview");
+              setDetailsOpen(open);
+            }}
             project={project}
             sections={sections}
             language={language}
@@ -375,187 +427,277 @@ export default function ProjectCard({
                   r.noSection}
               </span>
             </div>
-            {project.checkpoint && (
-              <>
-                <p className="label">{r.checkpoint}</p>
-                <p className="checkpoint-copy" dir="auto">
-                  <LinkedText text={project.checkpoint} />
-                </p>
-              </>
-            )}
-            {!!checklistItems(checklist).length && (
-              <ol className="recall-checklist">
-                {checklistItems(checklist).map((item, number) => (
-                  <li key={item.index}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        disabled={!canEdit}
-                        checked={item.done}
-                        onChange={() => {
-                          const text = toggleChecklist(checklist, item.index);
-                          setOptimisticChecklist({
-                            revision: project.revision,
-                            text,
-                          });
-                          void onUpdate(
-                            project.id,
-                            project.name,
-                            project.nextStep,
-                            { ...project, checklist: text },
-                            project.revision,
-                          ).then((ok) => {
-                            if (!ok) setOptimisticChecklist(null);
-                          });
-                        }}
-                      />
-                      <span className="check-number" aria-hidden="true">
-                        {number + 1}.
-                      </span>
-                      <span dir="auto">
-                        <LinkedText text={item.text} />
-                      </span>
-                    </label>
-                  </li>
-                ))}
-              </ol>
-            )}
-            {project.catalogSource && (
-              <small className="catalog-credit">
-                <a
-                  href={
-                    project.catalogSource === "tvmaze"
-                      ? `https://www.tvmaze.com/shows/${project.catalogId}`
-                      : `https://openlibrary.org/works/${project.catalogId}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {workflowText[language].source}:{" "}
-                  {project.catalogSource === "tvmaze"
-                    ? "TVmaze"
-                    : "Open Library"}
-                </a>
-              </small>
-            )}
-            {project.description && (
-              <details className="resource-description">
-                <summary>
-                  {language === "ar"
-                    ? "الملاحظات والوصف"
+            {fullscreen && (
+              <nav
+                className="card-detail-pages"
+                aria-label={
+                  language === "ar"
+                    ? "تفاصيل البطاقة"
                     : language === "he"
-                      ? "הערות ותיאור"
-                      : "Notes and description"}
-                </summary>
-                <p dir="auto">
-                  <LinkedText text={project.description} />
-                </p>
-              </details>
-            )}
-            {!!project.totalUnits && (
-              <p className="resource-count">
-                {project.progressUnits || 0} / {project.totalUnits}
-              </p>
-            )}
-            {project.followUpDate && (
-              <p>
-                {workflowText[language].followUp}:{" "}
-                <time dateTime={project.followUpDate}>
-                  {project.followUpDate}
-                </time>
-              </p>
-            )}
-            <p className="label">{t.nextStep}</p>
-            <p className="next-step" dir="auto">
-              <LinkedText text={project.nextStep || t.nextStepPlaceholder} />
-            </p>
-
-            {(project.projectUrl ||
-              project.attachmentUrl ||
-              project.links?.length ||
-              project.dueDate) && (
-              <div className="project-details">
-                {project.dueDate && (
-                  <p className="project-date">
-                    <strong>{t.dueDate}:</strong>{" "}
-                    <time dateTime={project.dueDate}>{project.dueDate}</time>
-                  </p>
-                )}
-                {project.projectUrl && (
-                  <a
-                    href={project.projectUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    ↗ {r.open}
-                  </a>
-                )}
-                {project.links?.map((url, i) => (
-                  <a
-                    key={i}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    dir="ltr"
-                  >
-                    ↗ {url}
-                  </a>
-                ))}
-                {project.attachmentUrl && (
-                  <a
-                    href={project.attachmentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    ↗ {t.attachmentUrl}
-                  </a>
-                )}
-              </div>
-            )}
-
-            {canEdit && (
-              <button
-                type="button"
-                onClick={() =>
-                  void onUpdate(
-                    project.id,
-                    project.name,
-                    project.nextStep,
-                    { ...project, status: action.status },
-                    project.revision,
-                  )
+                      ? "פרטי הכרטיס"
+                      : "Card details"
                 }
               >
-                <span
-                  key={`${language}-${project.status}`}
-                  className="button-copy"
-                >
-                  {action.label}
-                </span>
-              </button>
+                {Object.entries(pages).map(([key, label]) => (
+                  <button
+                    type="button"
+                    key={key}
+                    aria-pressed={detailPage === key}
+                    onClick={() => setDetailPage(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
             )}
-
-            {canEdit &&
-              project.status !== "waiting" &&
-              project.resourceType !== "shopping" &&
-              project.resourceType !== "idea" &&
-              auth?.currentUser && (
-                <FocusSession
-                  project={project}
-                  user={auth.currentUser as User}
-                  language={language}
-                  groupId={groupId}
-                  onSave={(details, revision) =>
-                    onUpdate(
+            <section
+              className="card-detail-page"
+              hidden={fullscreen && detailPage !== "overview"}
+              aria-label={pages.overview}
+            >
+              {project.checkpoint && (
+                <>
+                  <p className="label">{r.checkpoint}</p>
+                  <p className="checkpoint-copy" dir="auto">
+                    <LinkedText text={project.checkpoint} />
+                  </p>
+                </>
+              )}
+            </section>
+            <section
+              className="card-detail-page"
+              hidden={fullscreen && detailPage !== "tasks"}
+              aria-label={pages.tasks}
+            >
+              {fullscreen && !checklistItems(checklist).length && (
+                <p className="card-detail-empty">
+                  {language === "ar"
+                    ? "لا توجد عناصر في قائمة المهام بعد."
+                    : language === "he"
+                      ? "אין עדיין פריטים ברשימה."
+                      : "No checklist items yet."}
+                </p>
+              )}
+              {!!checklistItems(checklist).length && (
+                <ol className="recall-checklist">
+                  {checklistItems(checklist).map((item, number) => (
+                    <li key={item.index}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          disabled={!canEdit}
+                          checked={item.done}
+                          onChange={() => {
+                            const text = toggleChecklist(checklist, item.index);
+                            setOptimisticChecklist({
+                              revision: project.revision,
+                              text,
+                            });
+                            void onUpdate(
+                              project.id,
+                              project.name,
+                              project.nextStep,
+                              { ...project, checklist: text },
+                              project.revision,
+                            ).then((ok) => {
+                              if (!ok) setOptimisticChecklist(null);
+                            });
+                          }}
+                        />
+                        <span className="check-number" aria-hidden="true">
+                          {number + 1}.
+                        </span>
+                        <span dir="auto">
+                          <LinkedText text={item.text} />
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+            <section
+              className="card-detail-page"
+              hidden={fullscreen && detailPage !== "notes"}
+              aria-label={pages.notes}
+            >
+              {fullscreen && !project.description && (
+                <p className="card-detail-empty">
+                  {language === "ar"
+                    ? "لا توجد ملاحظات بعد."
+                    : language === "he"
+                      ? "אין עדיין הערות."
+                      : "No notes yet."}
+                </p>
+              )}
+              {project.catalogSource && (
+                <small className="catalog-credit">
+                  <a
+                    href={
+                      project.catalogSource === "tvmaze"
+                        ? `https://www.tvmaze.com/shows/${project.catalogId}`
+                        : `https://openlibrary.org/works/${project.catalogId}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {workflowText[language].source}:{" "}
+                    {project.catalogSource === "tvmaze"
+                      ? "TVmaze"
+                      : "Open Library"}
+                  </a>
+                </small>
+              )}
+              {project.description && (
+                <details
+                  className="resource-description"
+                  open={fullscreen || undefined}
+                >
+                  <summary>
+                    {language === "ar"
+                      ? "الملاحظات والوصف"
+                      : language === "he"
+                        ? "הערות ותיאור"
+                        : "Notes and description"}
+                  </summary>
+                  <p dir="auto">
+                    <LinkedText text={project.description} />
+                  </p>
+                </details>
+              )}
+            </section>
+            <section
+              className="card-detail-page"
+              hidden={fullscreen && detailPage !== "overview"}
+              aria-label={t.nextStep}
+            >
+              {!!project.totalUnits && (
+                <p className="resource-count">
+                  {project.progressUnits || 0} / {project.totalUnits}
+                </p>
+              )}
+              {project.followUpDate && (
+                <p>
+                  {workflowText[language].followUp}:{" "}
+                  <time dateTime={project.followUpDate}>
+                    {project.followUpDate}
+                  </time>
+                </p>
+              )}
+              <p className="label">{t.nextStep}</p>
+              <p className="next-step" dir="auto">
+                <LinkedText text={project.nextStep || t.nextStepPlaceholder} />
+              </p>
+            </section>
+            <section
+              className="card-detail-page"
+              hidden={fullscreen && detailPage !== "links"}
+              aria-label={pages.links}
+            >
+              {fullscreen &&
+                !project.projectUrl &&
+                !project.attachmentUrl &&
+                !project.links?.length &&
+                !project.dueDate && (
+                  <p className="card-detail-empty">
+                    {language === "ar"
+                      ? "لا توجد روابط أو مواعيد بعد."
+                      : language === "he"
+                        ? "אין עדיין קישורים או תאריכים."
+                        : "No links or dates yet."}
+                  </p>
+                )}
+              {(project.projectUrl ||
+                project.attachmentUrl ||
+                project.links?.length ||
+                project.dueDate) && (
+                <div className="project-details">
+                  {project.dueDate && (
+                    <p className="project-date">
+                      <strong>{t.dueDate}:</strong>{" "}
+                      <time dateTime={project.dueDate}>{project.dueDate}</time>
+                    </p>
+                  )}
+                  {project.projectUrl && (
+                    <a
+                      href={project.projectUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      ↗ {r.open}
+                    </a>
+                  )}
+                  {project.links?.map((url, i) => (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      dir="ltr"
+                    >
+                      ↗ {url}
+                    </a>
+                  ))}
+                  {project.attachmentUrl && (
+                    <a
+                      href={project.attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      ↗ {t.attachmentUrl}
+                    </a>
+                  )}
+                </div>
+              )}
+            </section>
+            <section
+              className="card-detail-page card-detail-actions"
+              hidden={fullscreen && detailPage !== "overview"}
+            >
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void onUpdate(
                       project.id,
                       project.name,
-                      details.nextStep ?? project.nextStep,
-                      { ...project, ...details },
-                      revision,
+                      project.nextStep,
+                      { ...project, status: action.status },
+                      project.revision,
                     )
                   }
-                />
+                >
+                  <span
+                    key={`${language}-${project.status}`}
+                    className="button-copy"
+                  >
+                    {action.label}
+                  </span>
+                </button>
               )}
+
+              {canEdit &&
+                project.status !== "waiting" &&
+                project.resourceType !== "shopping" &&
+                project.resourceType !== "idea" &&
+                auth?.currentUser && (
+                  <FocusSession
+                    project={project}
+                    user={auth.currentUser as User}
+                    language={language}
+                    groupId={groupId}
+                    onSave={(details, revision) =>
+                      onUpdate(
+                        project.id,
+                        project.name,
+                        details.nextStep ?? project.nextStep,
+                        { ...project, ...details },
+                        revision,
+                      )
+                    }
+                  />
+                )}
+            </section>
             {(canEdit || canManage) && (
               <details className="card-options">
                 <summary>{pageText[language].more}</summary>
@@ -618,12 +760,25 @@ export default function ProjectCard({
       )}
     </>
   );
-  return fullscreen
-    ? createPortal(
-        <fieldset className="phone-form-boundary" disabled={disabled}>
+  return fullscreen ? (
+    <>
+      {!phone && (
+        <div className="card-panel-placeholder" aria-hidden="true">
+          {project.name}
+        </div>
+      )}
+      {createPortal(
+        <fieldset
+          className="phone-form-boundary"
+          dir={language === "en" ? "ltr" : "rtl"}
+          disabled={disabled}
+        >
           {content}
         </fieldset>,
         document.body,
-      )
-    : content;
+      )}
+    </>
+  ) : (
+    content
+  );
 }

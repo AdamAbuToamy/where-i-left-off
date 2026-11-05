@@ -21,7 +21,10 @@
   overflow-wrap: anywhere;
 }
 
-.project-date { margin: 0; color: var(--site-muted,#59684f); }
+.project-date {
+  margin: 0;
+  color: var(--site-muted, #59684f);
+}
 
 .project-card .card-actions button {
   flex: 1;
@@ -67,7 +70,7 @@
   border: 1px solid #bbc7b5;
   border-radius: 9px;
   background: #fffef9;
-  color: var(--site-text,#25332e);
+  color: var(--site-text, #25332e);
   line-height: 1.7;
 
   transition:
@@ -126,5 +129,257 @@
   .card-editor input,
   .card-editor textarea {
     transition: none;
+  }
+}
+
+/* Expanded cards share the dock pattern while keeping the board in view. */
+.card-detail-pages {
+  display: flex;
+  gap: 6px;
+  overflow: auto;
+  padding: 6px;
+  margin: 18px 0;
+  background: var(--site-soft, #edf1eb);
+  border-radius: 16px;
+  scrollbar-width: thin;
+}
+.card-detail-pages button {
+  flex: 1;
+  white-space: nowrap;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 11px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--site-text, #25332e);
+  font-size: 14px;
+}
+.card-detail-pages button[aria-pressed="true"] {
+  background: var(--site-primary, #385c4b);
+  color: white;
+  box-shadow: 0 3px 9px #25332e18;
+}
+.card-detail-panel .card-detail-page[hidden] {
+  display: none !important;
+}
+.card-detail-panel .card-detail-page:not([hidden]) {
+  animation: card-page-reveal 0.2s ease-out;
+}
+.card-detail-panel .card-detail-page {
+  min-width: 0;
+}
+.card-detail-empty {
+  padding: 28px 12px;
+  color: var(--site-muted, #59684f);
+  text-align: center;
+}
+.card-detail-panel .envelope-expanded-toolbar {
+  display: none;
+}
+.card-detail-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.card-detail-heading strong {
+  overflow-wrap: anywhere;
+}
+@media (min-width: 601px) {
+  body.card-detail-docked {
+    --card-dock-width: clamp(480px, 64vw, 960px);
+  }
+  body.card-detail-docked #root {
+    padding-left: var(--card-dock-width);
+    transition: padding-left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  body.card-detail-docked .workspace {
+    width: 100%;
+    padding-inline: 20px;
+    min-width: 0;
+  }
+  body.card-detail-docked .projects-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .desktop-card-panel.project-card {
+    position: fixed;
+    inset: 16px auto 16px 16px;
+    z-index: 1800;
+    box-sizing: border-box;
+    width: calc(var(--card-dock-width) - 32px);
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 24px clamp(20px, 3vw, 44px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--site-border, #d1c4ab);
+    border-radius: 26px;
+    background: var(--site-surface, #fffdf7);
+    box-shadow: 0 18px 60px #25332e24;
+    animation: card-dock-reveal 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .desktop-card-panel .card-detail-heading {
+    position: sticky;
+    top: -24px;
+    z-index: 4;
+    padding: 18px 0;
+    background: var(--site-surface, #fffdf7);
+    border-bottom: 1px solid var(--site-border, #d1c4ab);
+  }
+  .desktop-card-panel .card-detail-heading strong {
+    font-size: 20px;
+  }
+  .desktop-card-panel .card-detail-pages {
+    position: sticky;
+    top: 56px;
+    z-index: 3;
+  }
+  .desktop-card-panel .card-detail-page {
+    line-height: 1.8;
+  }
+  .desktop-card-panel .card-editor {
+    max-width: 680px;
+    margin-inline: auto;
+  }
+}
+@media (min-width: 601px) and (max-width: 900px) {
+  body.card-detail-docked {
+    --card-dock-width: 100vw;
+  }
+  body.card-detail-docked #root {
+    padding-left: 0;
+  }
+}
+@keyframes card-dock-reveal {
+  from {
+    opacity: 0.3;
+    transform: translateX(-32px) scale(0.97);
+    clip-path: inset(0 12% 0 0 round 26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0 round 26px);
+  }
+}
+@keyframes card-page-reveal {
+  from {
+    opacity: 0.5;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.card-detail-docked #root,
+  .card-detail-panel,
+  .card-detail-panel .card-detail-page:not([hidden]) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.card-detail-panel .card-detail-heading strong {
+  flex: 1;
+  min-width: 0;
+}
+.card-detail-panel .card-detail-heading button {
+  flex: none;
+  width: auto;
+  min-width: 76px;
+  margin: 0;
+  padding: 10px 18px;
+  background: var(--site-soft, #edf1eb);
+  color: var(--site-text, #25332e);
+  border: 1px solid var(--site-border, #d1c4ab);
+  box-shadow: none;
+}
+.card-detail-panel .envelope-content > h2 {
+  display: none;
+}
+body.card-detail-docked #root {
+  overflow-x: clip;
+}
+body.card-detail-docked .page-header {
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .card-detail-pages button {
+    font-size: 12px;
+    padding: 10px;
+  }
+  :root[data-kitchen-study="on"] .phone-card-fullscreen.card-detail-panel {
+    animation: card-phone-reveal 0.22s ease-out !important;
+  }
+}
+@keyframes card-phone-reveal {
+  from {
+    opacity: 0.45;
+    clip-path: inset(4% 0 0 round 22px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 round 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-kitchen-study="on"] .phone-card-fullscreen.card-detail-panel {
+    animation: none !important;
+  }
+}
+
+.card-panel-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  padding: 24px;
+  border: 1px dashed var(--site-primary, #385c4b);
+  border-radius: 22px;
+  background: var(--site-soft, #edf1eb);
+  color: var(--site-muted, #59684f);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 901px) {
+  :root[data-design-preview="on"]
+    body.card-detail-docked
+    .workspace
+    > .page-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  :root[data-design-preview="on"]
+    body.card-detail-docked
+    .page-header
+    .heading-copy {
+    width: 100%;
+    max-width: 100%;
+  }
+  :root[data-design-preview="on"]
+    body.card-detail-docked
+    .header-account-actions {
+    flex-wrap: wrap;
+  }
+  body.card-detail-docked .brand-face strong {
+    font-size: clamp(22px, 2.5vw, 34px);
+    white-space: normal;
+  }
+}
+body.card-detail-docked.card-detail-docked #root {
+  padding-left: var(--card-dock-width);
+}
+body.card-detail-docked .assistant-root {
+  visibility: hidden;
+}
+@media (max-width: 900px) {
+  body.card-detail-docked.card-detail-docked #root {
+    padding-left: 0;
   }
 }

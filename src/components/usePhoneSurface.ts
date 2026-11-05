@@ -17,6 +17,7 @@ export const usePhoneLayout = () =>
 export function usePhoneSurface(
   ref: RefObject<HTMLElement | null>,
   active: boolean,
+  surfaceKind: "phone" | "card" = "phone",
 ) {
   useLayoutEffect(() => {
     const node = ref.current;
@@ -31,9 +32,9 @@ export function usePhoneSurface(
     };
     const hidden: Array<[HTMLElement, boolean]> = [];
     body.style.overflow = "hidden";
-    const previousSurface =
-      document.documentElement.getAttribute("data-phone-surface");
-    document.documentElement.setAttribute("data-phone-surface", "on");
+    const attribute = `data-${surfaceKind}-surface`;
+    const previousSurface = document.documentElement.getAttribute(attribute);
+    document.documentElement.setAttribute(attribute, "on");
     let branch: HTMLElement = node;
     while (branch.parentElement && branch !== body) {
       for (const sibling of branch.parentElement.children)
@@ -74,15 +75,11 @@ export function usePhoneSurface(
         element.toggleAttribute("inert", inert);
       Object.assign(body.style, previous);
       if (previousSurface === null)
-        document.documentElement.removeAttribute("data-phone-surface");
-      else
-        document.documentElement.setAttribute(
-          "data-phone-surface",
-          previousSurface,
-        );
+        document.documentElement.removeAttribute(attribute);
+      else document.documentElement.setAttribute(attribute, previousSurface);
       node.style.removeProperty("--phone-height");
       node.style.removeProperty("--phone-top");
       window.scrollTo({ top: scrollY, behavior: "instant" });
     };
-  }, [ref, active]);
+  }, [ref, active, surfaceKind]);
 }
