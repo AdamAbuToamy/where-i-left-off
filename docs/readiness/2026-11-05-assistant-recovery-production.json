@@ -1,0 +1,43 @@
+{
+  "release": "wilo-assistant-request-recovery-20261105",
+  "workerVersion": "ca035a73-74e0-4ba6-b514-5bf45ec67985",
+  "checks": [
+    {
+      "path": "index.html",
+      "match": true,
+      "sha256": "6fba174fc7ab1e6042e54eb78d76d8562a48c73af27c287b052f4a06c7aaeb8c"
+    },
+    {
+      "path": "sw.js",
+      "match": true,
+      "sha256": "d1aa2e5625fa65bb253134d2b6eb870b45ab38e79d8d50f042d7cc2a158560c4"
+    },
+    {
+      "path": "wilo-release.json",
+      "match": true,
+      "sha256": "475c6b0dff65958ea68a0b5fd8bde5a92a3bcd5b988b2a13d2aa4e7bc889cd55"
+    },
+    {
+      "path": "assistant-config.json",
+      "match": true,
+      "sha256": "10a7bb2868f73cda1cc54bc9c14065c517beb1a34790f73eca13a076f09d6135"
+    },
+    {
+      "path": "push-config.json",
+      "match": true,
+      "sha256": "cab6fb1bef86e4a93f0a1f22e08883a9c251585e053ca23b9ce3336aed4b53b6"
+    },
+    {
+      "path": "assets/AssistantWidget-DheBbIAI.css",
+      "match": true,
+      "sha256": "45567dee9f4b2e86d5622529c26258327e1fecbf6fd30e93bc13128f1242be78"
+    },
+    {
+      "path": "assets/AssistantWidget-DidAigde.js",
+      "match": true,
+      "sha256": "d80f05f8395774236f3b21fe9f33020fac6196c5c513a56358c57f97ef2246ea"
+    }
+  ],
+  "verifiedAt": "2026-11-05T11:29:29.0518207Z",
+  "liveInferenceTested": false
+}
