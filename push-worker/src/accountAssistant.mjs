@@ -210,6 +210,29 @@ export async function accountAssistant(
     if (!response.body)
       return json({ error: "assistant-network" }, headers, 502);
     reader = response.body.getReader();
+    const isEventStream = response.headers
+      .get("content-type")
+      ?.includes("text/event-stream");
+    const decoder = new TextDecoder();
+    let eventBuffer = "";
+    const endsGeneration = (chunk) => {
+      if (!isEventStream) return false;
+      eventBuffer += decoder.decode(chunk, { stream: true });
+      let boundary;
+      while ((boundary = /\r?\n\r?\n/.exec(eventBuffer))) {
+        const event = eventBuffer.slice(0, boundary.index);
+        eventBuffer = eventBuffer.slice(boundary.index + boundary[0].length);
+        const data = event
+          .split(/\r?\n/)
+          .filter((line) => line.startsWith("data:"))
+          .map((line) => line.slice(5).trimStart())
+          .join("\n");
+        if (data.trim() === "[DONE]") return true;
+      }
+      if (eventBuffer.length > 200000)
+        throw new Error("assistant-response-too-large");
+      return false;
+    };
     const stream = new ReadableStream({
       async pull(sink) {
         try {
@@ -221,8 +244,16 @@ export async function accountAssistant(
                   'data: {"error":{"code":"assistant-timeout"}}\n\n',
                 ),
               );
-            sink.close();
             await finish();
+            sink.close();
+          } else if (endsGeneration(item.value)) {
+            // The browser can immediately start the next tool round or message
+            // after DONE. Release before exposing it, without waiting for provider EOF.
+            await finish();
+            sink.enqueue(item.value);
+            sink.close();
+            controller.abort();
+            void reader.cancel().catch(() => {});
           } else {
             activity();
             sink.enqueue(item.value);
@@ -241,11 +272,8 @@ export async function accountAssistant(
       },
       async cancel() {
         controller.abort();
-        try {
-          await reader.cancel();
-        } finally {
-          await finish();
-        }
+        await finish();
+        await reader.cancel();
       },
     });
     handedOff = true;

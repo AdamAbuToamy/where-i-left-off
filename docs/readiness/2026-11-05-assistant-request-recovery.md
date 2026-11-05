@@ -20,3 +20,10 @@ Scope: shared account-proxy request lifecycle, not phrase matching or a language
 ## Limits and delivery
 
 These are injected-provider regression checks, not successful live inference evidence. No new live provider key was used, no actual account content was queried, and the screenshot alone cannot establish the provider's reason for latency. This change does not guarantee model latency/semantic accuracy, remove real provider quotas, or claim every possible request is solved. Published on explicit follow-up approval. Production release: `wilo-assistant-request-recovery-20261105`; worker version: `ca035a73-74e0-4ba6-b514-5bf45ec67985`. Hosting byte verification matched all seven checked files, including the assistant chunk. See `2026-11-05-assistant-recovery-production.json`. Live inference remains unverified.
+
+
+## Follow-up: completed-response handoff
+
+The user's live retry exposed another lifecycle path: the browser stops at SSE `[DONE]` while the provider socket can stay open. The proxy now parses bounded SSE event framing, including split chunks and CRLF, and awaits token-qualified lease release **before forwarding DONE**. It then closes its downstream stream and cancels upstream. Natural EOF also releases before downstream close; cancellation releases before waiting on upstream cancellation. No change to user intent, permissions or writes.
+
+Backend suite: 895 passed, including immediate next request after DONE against a provider that never closes its socket (whole and fragmented terminal event). Credential scan and diff checks passed. Backend-only deployment active: `5f342587-ca88-4217-9b9b-815055b82065`, verified through the deployments API. Frontend unchanged. Live authenticated model inference was not performed.

@@ -257,3 +257,58 @@ for (const termination of ["client-abort", "deadline", "stream-cancel"]) {
     await next.text();
   });
 }
+
+for (const chunks of [
+  ['data: {"choices":[]}\n\ndata: [DONE]\n\n'],
+  ['data: {"choices":[]}\r\n\r\ndata: [DO', "NE]\r\n\r\n"],
+]) {
+  test("completed SSE releases the lease before exposing DONE even when the provider never closes", async () => {
+    const f = fixture();
+    await f.call({ action: "connection-save", key });
+    let cancelled = false;
+    const response = await accountAssistant(
+      new Request("https://worker.test"),
+      f.env,
+      "alice",
+      {
+        action: "completion",
+        input: { messages: [{ role: "user", content: "Hi" }] },
+      },
+      {},
+      async () =>
+        new Response(
+          new ReadableStream({
+            start(sink) {
+              for (const chunk of chunks)
+                sink.enqueue(new TextEncoder().encode(chunk));
+            },
+            cancel() {
+              cancelled = true;
+            },
+          }),
+          { headers: { "content-type": "text/event-stream" } },
+        ),
+    );
+    const reader = response.body.getReader();
+    let text = "";
+    while (!text.includes("[DONE]")) {
+      const chunk = await reader.read();
+      assert.equal(chunk.done, false);
+      text += new TextDecoder().decode(chunk.value);
+    }
+    assert.equal(
+      f.env.DB.sqlite
+        .prepare("SELECT lease_until FROM assistant_connections")
+        .get().lease_until,
+      0,
+    );
+    const next = await f.call({
+      action: "completion",
+      input: { messages: [{ role: "user", content: "My lessons today" }] },
+    });
+    assert.equal(next.status, 200);
+    await next.text();
+    assert.equal((await reader.read()).done, true);
+    assert.equal(cancelled, true);
+  });
+}
