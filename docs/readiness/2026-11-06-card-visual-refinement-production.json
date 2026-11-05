@@ -1,0 +1,35 @@
+{
+  "release": "wilo-card-visual-refinement-20261106",
+  "verifiedAt": "2026-11-05T23:54:37.6395118Z",
+  "backendUnchanged": true,
+  "checks": [
+    {
+      "path": "index.html",
+      "match": true
+    },
+    {
+      "path": "sw.js",
+      "match": true
+    },
+    {
+      "path": "wilo-release.json",
+      "match": true
+    },
+    {
+      "path": "assets/index-BKBdtw1-.css",
+      "match": true
+    },
+    {
+      "path": "assets/index-Nkce-vkI.js",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-CtLeuT0W.css",
+      "match": true
+    },
+    {
+      "path": "assets/Workspace-DTwTkr4h.js",
+      "match": true
+    }
+  ]
+}

@@ -147,14 +147,6 @@
     width: 32px;
     height: 25px;
   }
-  :root[data-kitchen-study="on"]
-    .project-card:has(.envelope-shell:not(.is-expanded))
-    > .status {
-    font-size: 10px;
-    line-height: 16px;
-    padding: 2px 7px;
-    margin-bottom: 4px;
-  }
   :root[data-kitchen-study="on"] .project-card .envelope-summary {
     min-height: 0;
     padding-block-start: 0;

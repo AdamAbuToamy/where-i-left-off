@@ -383,3 +383,77 @@ body.card-detail-docked .assistant-root {
     padding-left: 0;
   }
 }
+
+/* Card labels read as quiet annotations, rather than another row of buttons. */
+:root[data-kitchen-study="on"]
+  .project-card:is(.is-later, .is-active, .is-waiting, .is-done)
+  > .status {
+  padding: 0 0 0 8px;
+  padding-inline: 8px 0;
+  margin-block: 0 10px;
+  border: 0;
+  border-inline-start: 2px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--site-muted, #59684f);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+:root[data-kitchen-study="on"] .project-card > .status::before {
+  display: none;
+}
+:root[data-kitchen-study="on"] .project-card.is-active > .status {
+  color: var(--site-primary, #385c4b);
+}
+:root[data-kitchen-study="on"] .project-card.is-waiting > .status {
+  color: #76552c;
+}
+:root[data-kitchen-study="on"] .project-card.is-done > .status {
+  color: #3f654e;
+}
+:root[data-kitchen-study="on"] .project-card .card-meta {
+  gap: 0;
+  margin-block: 10px 18px;
+  color: var(--site-muted, #59684f);
+}
+:root[data-kitchen-study="on"] .project-card .card-meta span {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 12px;
+}
+:root[data-kitchen-study="on"] .project-card .card-meta span + span {
+  margin-inline-start: 10px;
+  padding-inline-start: 10px;
+  border-inline-start: 1px solid var(--site-border, #d1c4ab);
+}
+:root[data-kitchen-study="on"] .project-card button.card-secondary {
+  background: var(--site-soft, #edf1eb);
+  border-color: var(--site-border, #d1c4ab);
+  color: var(--site-text, #25332e);
+  box-shadow: none;
+}
+:root[data-kitchen-study="on"] .project-card button.card-delete {
+  background: transparent;
+  border-color: #d9bfb4;
+  color: #843f30;
+  box-shadow: none;
+}
+:root[data-kitchen-study="on"] .card-detail-panel .card-options > summary {
+  display: inline-flex;
+  padding: 8px 0;
+  color: var(--site-muted, #59684f);
+  font-size: 13px;
+  text-decoration: none;
+}
+:root[data-kitchen-study="on"] .project-card .project-details {
+  background: transparent;
+  border: 0;
+  border-block-start: 1px solid var(--site-border, #d1c4ab);
+  border-radius: 0;
+  padding: 16px 0;
+}
