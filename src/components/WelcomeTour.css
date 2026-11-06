@@ -300,3 +300,73 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+
+/* Decorative preview: isolated markup, no application actions or persisted data. */
+.tour-example {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #b7c6b9;
+  border-radius: 14px;
+  background: #edf2e9;
+  color: #294c3e;
+  font-size: 13px;
+  animation: tour-example-in 0.45s ease-out both;
+}
+.tour-example small {
+  font-size: 11px;
+  opacity: 0.75;
+}
+.tour-example strong {
+  font-size: 16px;
+}
+.tour-example-line {
+  height: 2px;
+  width: 65%;
+  background: #c09054;
+  transform-origin: right;
+  animation: tour-example-draw 1s 0.2s both;
+}
+.tour-example i {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b6b54;
+  animation: tour-example-pulse 2.4s ease-in-out infinite;
+}
+@keyframes tour-example-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) rotate(-1deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tour-example-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes tour-example-pulse {
+  50% {
+    box-shadow: 0 0 0 6px #3b6b5418;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-example,
+  .tour-example-line,
+  .tour-example i {
+    animation: none;
+  }
+}

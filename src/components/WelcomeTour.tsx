@@ -17,7 +17,6 @@ import {
 import type { User } from "firebase/auth";
 import type { Language } from "../translations";
 import { route } from "../lib/navigation";
-import { isAdmin } from "../lib/admin";
 import { tourText } from "../tourText";
 import { tourGeometry } from "./tourGeometry";
 import type { TourRect } from "./tourGeometry";
@@ -53,6 +52,44 @@ const visible = (node: HTMLElement) => {
 };
 const focusable =
   "button:not(:disabled),a[href],summary,[tabindex]:not([tabindex='-1'])";
+const examples: Record<string, [string, string, string]> = {
+  cards: ["مشروع التخرج", "Graduation project", "פרויקט גמר"],
+  create: [
+    "عنوان: تعلّم لغة جديدة",
+    "Title: learn a new language",
+    "כותרת: ללמוד שפה חדשה",
+  ],
+  details: [
+    "توقفت عند: الفصل الثاني",
+    "Checkpoint: chapter two",
+    "נקודת עצירה: פרק שני",
+  ],
+  week: [
+    "الأحد · مراجعة الخطة",
+    "Sunday · review the plan",
+    "ראשון · בדיקת התוכנית",
+  ],
+  board: [
+    "فكرة ← خطة ← تنفيذ",
+    "Idea → Plan → Action",
+    "רעיון ← תוכנית ← ביצוע",
+  ],
+  courses: [
+    "رياضيات · واجب يوم الخميس",
+    "Math · assignment due Thursday",
+    "מתמטיקה · הגשה ביום חמישי",
+  ],
+  assistant: [
+    "«أضف بطاقة لمراجعة الامتحان»",
+    "“Add a card to revise for the exam”",
+    "״הוסף כרטיס לחזרה למבחן״",
+  ],
+  appearance: [
+    "اختر المظهر الذي يريح عينيك",
+    "Choose a comfortable appearance",
+    "בחרו מראה נוח לעיניים",
+  ],
+};
 /** Read-only guided navigation: no simulated app actions, writes or provider requests. */
 export default function WelcomeTour({
   user,
@@ -81,13 +118,9 @@ export default function WelcomeTour({
     titleId = useId(),
     bodyId = useId();
   const t = tourText[language];
-  const admin = isAdmin(user.email, user.emailVerified);
   const steps = useMemo(
-    () =>
-      t.steps.filter(
-        (step) => (!step.desktopOnly || desktop) && (!step.adminOnly || admin),
-      ),
-    [t, desktop, admin],
+    () => t.steps.filter((step) => !step.desktopOnly || desktop),
+    [t, desktop],
   );
   const index = Math.max(
       0,
@@ -173,7 +206,7 @@ export default function WelcomeTour({
     const resized = () => {
       const enabled = desktopAvailable();
       setDesktop(enabled);
-      if (!enabled) setStepId((id) => (id === "board" ? "resume" : id));
+      if (!enabled) setStepId((id) => (id === "board" ? "courses" : id));
     };
     window.addEventListener("replay-welcome-tour", replay);
     window.addEventListener("hashchange", changed);
@@ -492,6 +525,40 @@ export default function WelcomeTour({
             {current.title}
           </h2>
           <p id={bodyId}>{current.body}</p>
+          <div
+            className="tour-example"
+            aria-label={
+              language === "ar"
+                ? "مثال توضيحي فقط، لا يتم حفظه"
+                : language === "he"
+                  ? "דוגמה בלבד, לא נשמרת"
+                  : "Preview only — never saved"
+            }
+          >
+            <small>
+              {language === "ar"
+                ? "مثال فقط · لا يُحفظ"
+                : language === "he"
+                  ? "דוגמה בלבד · לא נשמרת"
+                  : "Example only · never saved"}
+            </small>
+            <strong>
+              {
+                examples[current.id]?.[
+                  language === "ar" ? 0 : language === "he" ? 2 : 1
+                ]
+              }
+            </strong>
+            <span className="tour-example-line" />
+            <span>
+              {language === "ar"
+                ? "معاينة توضيحية — بيانات حسابك لا تتغير"
+                : language === "he"
+                  ? "תצוגה לדוגמה — נתוני החשבון אינם משתנים"
+                  : "Illustration — your account data stays unchanged"}
+            </span>
+            <i aria-hidden="true" />
+          </div>
         </div>
         {offPage && (
           <button

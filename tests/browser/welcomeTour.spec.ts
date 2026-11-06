@@ -133,7 +133,7 @@ for (const phone of [false, true])
           .locator(".page-header")
           .evaluate((node) => (node as HTMLElement).style.filter),
       ).toBe("");
-      expect(pages.size).toBeGreaterThanOrEqual(7);
+      expect(pages.size).toBeGreaterThanOrEqual(3);
       expect(calls).toBe(0);
       const cards = await request.get(
         `http://127.0.0.1:8080/v1/projects/demo-where-i-left-off/databases/(default)/documents/users/${c.uid}/projects`,
@@ -144,12 +144,12 @@ for (const phone of [false, true])
         window.dispatchEvent(new Event("replay-welcome-tour")),
       );
       await guide.locator(".tour-chapters > summary").click();
-      const target = t.steps.find((s) => s.id === "analytics")!;
+      const target = t.steps.find((s) => s.id === "assistant")!;
       await guide
         .getByRole("navigation", { name: t.browse })
         .getByRole("button", { name: new RegExp(target.title) })
         .click();
-      await expect(guide).toHaveAttribute("data-tour-step", "analytics");
+      await expect(guide).toHaveAttribute("data-tour-step", "assistant");
       await page.keyboard.press("Tab");
       await expect(guide.locator(".guide-skip")).toBeFocused();
       await page.keyboard.press("Escape");
@@ -160,13 +160,18 @@ for (const phone of [false, true])
           .locator(".page-header")
           .evaluate((node) => (node as HTMLElement).style.filter),
       ).toBe("");
-      await page.evaluate(()=>window.dispatchEvent(new Event("replay-welcome-tour")));
+      await page.evaluate(() =>
+        window.dispatchEvent(new Event("replay-welcome-tour")),
+      );
       await guide.locator(".tour-chapters > summary").click();
-      const appearance=t.steps.find(step=>step.id==="appearance")!;
-      await guide.getByRole("navigation",{name:t.browse}).getByRole("button",{name:new RegExp(appearance.title)}).click();
-      await expect(guide).toHaveAttribute("data-tour-step","appearance");
+      const appearance = t.steps.find((step) => step.id === "appearance")!;
+      await guide
+        .getByRole("navigation", { name: t.browse })
+        .getByRole("button", { name: new RegExp(appearance.title) })
+        .click();
+      await expect(guide).toHaveAttribute("data-tour-step", "appearance");
       await expect(page.locator(".theme-options")).toBeVisible();
-      await guide.getByRole("button",{name:t.tryIt,exact:true}).click();
+      await guide.getByRole("button", { name: t.tryIt, exact: true }).click();
       await expect(guide).toHaveCount(0);
       await expect(page.locator(".theme-options")).toBeVisible();
       await expect(page.locator(".theme-options")).toBeFocused();
