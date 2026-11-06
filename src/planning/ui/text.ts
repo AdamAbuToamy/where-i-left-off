@@ -20,7 +20,7 @@ export const planningWords = {
     empty: "أضف بطاقة أو ورقة لتبدأ خريطتك",
     help: "طريقة الاستخدام",
     helpText:
-      "حرّك الأوراق بحرية. اسحب من الدبوس الأحمر إلى دبوس آخر لربطهما. بالقلم ارسم دائرة مغلقة لتحسينها. إزالة بطاقة من اللوح لا تحذف البطاقة الأصلية.",
+      "حرّك الأوراق بحرية. اسحب من الدبوس الأحمر إلى دبوس آخر لربطهما. بالقلم ارسم دائرة مغلقة لتحسينها. إزالة بطاقة من اللوح لا تحذف البطاقة الأصلية. التراجع يخص اللوح ولا يحذف بطاقة أنشأتها من ملاحظة.",
     saved: "محفوظ",
     saving: "يحفظ…",
     local: "محفوظ على الجهاز",
@@ -59,7 +59,7 @@ export const planningWords = {
     empty: "Add a card or note to start your map",
     help: "How to use",
     helpText:
-      "Move notes freely. Drag from one red pin to another to connect them. Draw a closed circle with the pen to tidy it. Removing a card from the board never deletes the original card.",
+      "Move notes freely. Drag from one red pin to another to connect them. Draw a closed circle with the pen to tidy it. Removing a card from the board never deletes the original card. Undo affects the board only; it never deletes a card created from a note.",
     saved: "Saved",
     saving: "Saving…",
     local: "Saved on this device",
@@ -101,7 +101,7 @@ export const planningWords = {
     empty: "הוסיפו כרטיס או פתק כדי להתחיל",
     help: "איך משתמשים",
     helpText:
-      "מזיזים פתקים בחופשיות. גוררים מסיכה אדומה לסיכה אחרת כדי לחבר. מציירים עיגול סגור בעט לשיפורו. הסרת כרטיס מהלוח אינה מוחקת את הכרטיס המקורי.",
+      "מזיזים פתקים בחופשיות. גוררים מסיכה אדומה לסיכה אחרת כדי לחבר. מציירים עיגול סגור בעט לשיפורו. הסרת כרטיס מהלוח אינה מוחקת את הכרטיס המקורי. ביטול פעולה בלוח אינו מוחק כרטיס שנוצר מהערה.",
     saved: "נשמר",
     saving: "שומר…",
     local: "נשמר במכשיר",

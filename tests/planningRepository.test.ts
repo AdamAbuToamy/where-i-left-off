@@ -3,6 +3,11 @@ import {
   addBoardNote,
   editBoardNote,
   emptyPlanningState,
+  addBoardCard,
+  connectBoardItems,
+  editBoardThread,
+  addBoardZone,
+  moveBoardItem,
 } from "../src/planning/domain";
 import { BoardConflict, PlanningRepository } from "../src/planning/repository";
 import type {
@@ -218,4 +223,30 @@ it("never writes a queued board after its account changes", async () => {
   expect(shared.writes).toBe(0);
   expect(() => repo.apply(note())).toThrow("planning-account");
   repo.stop();
+});
+
+it("undoes semantic and area changes in the same durable board journal", () => {
+  const local = device(server()),
+    repo = local.create();
+  const stop = repo.start(() => {});
+  let s = addBoardCard(emptyPlanningState(), "a", { x: 10, y: 20 });
+  s = addBoardCard(s, "b", { x: 800, y: 20 });
+  s = connectBoardItems(s, "ab", "a", "b");
+  repo.apply(s);
+  repo.apply(
+    editBoardThread(repo.state, "ab", {
+      kind: "depends",
+      label: "Hardware first",
+    }),
+  );
+  repo.undo();
+  expect(repo.state.threads[0].kind).toBeUndefined();
+  repo.redo();
+  expect(repo.state.threads[0].kind).toBe("depends");
+  repo.apply(addBoardZone(repo.state, "zone", { x: 0, y: 0 }, "Build"));
+  const before = repo.state;
+  repo.apply(moveBoardItem(repo.state, "zone", { x: 100, y: 100 }));
+  repo.undo();
+  expect(repo.state).toEqual(before);
+  stop();
 });

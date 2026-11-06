@@ -154,3 +154,45 @@ it("blocks suspended or deleting accounts while leaving project records unchange
     updateDoc(ref, { revision: 2, updatedAt: serverTimestamp() }),
   );
 });
+
+it("keeps enriched board payloads owner-only without granting project mutation access", async () => {
+  const board = {
+    version: 1,
+    items: [
+      { id: "a", kind: "card", projectId: "card_a", x: 10, y: 20 },
+      { id: "b", kind: "card", projectId: "card_b", x: 400, y: 20 },
+      {
+        id: "area",
+        kind: "zone",
+        title: "Build",
+        x: 0,
+        y: 0,
+        width: 600,
+        height: 400,
+      },
+    ],
+    threads: [
+      {
+        id: "ab",
+        source: "a",
+        target: "b",
+        kind: "depends",
+        label: "Materials first",
+      },
+    ],
+    circles: [],
+  };
+  const owner = doc(client("alice"), "users/alice/planningBoards/personal");
+  await assertSucceeds(
+    setDoc(owner, { ...data(), payload: JSON.stringify(board) }),
+  );
+  await assertFails(
+    getDoc(doc(client("bob"), "users/alice/planningBoards/personal")),
+  );
+  await assertFails(
+    setDoc(doc(client("bob"), "users/alice/planningBoards/personal"), {
+      ...data(),
+      payload: JSON.stringify(board),
+    }),
+  );
+});

@@ -1,8 +1,7 @@
 import BoardRelationshipsProvider from "../../productivity/Provider";
 import { useBoardRelationships } from "../../productivity/context";
 import { cardKey } from "../../productivity/state";
-import type { Relation } from "../../productivity/state";
-import { relate } from "../../productivity/relations";
+
 import { createPortal } from "react-dom";
 import { PlanningActions } from "./actions";
 import {
@@ -26,6 +25,9 @@ import {
 import type { Connection } from "@xyflow/react";
 import {
   Check,
+  Frame,
+  Focus,
+  LocateFixed,
   CircleHelp,
   Download,
   Hand,
@@ -46,7 +48,10 @@ import {
 import type { Project, Section } from "../../types";
 import type { Language } from "../../translations";
 import { createClientId } from "../../lib/clientId";
-import { createPlanningRepository } from "../browserRepository";
+import {
+  boardNavigationCache,
+  createPlanningRepository,
+} from "../browserRepository";
 import type { BoardView, PlanningRepository } from "../repository";
 import {
   addBoardCard,
@@ -59,16 +64,25 @@ import {
   removeBoardItem,
   removeBoardThread,
   parsePlanningState,
+  editBoardThread,
+  addBoardZone,
+  editBoardZone,
+  convertBoardNote,
+  boardNeighborhood,
+  boardBlockers,
+  boardBounds,
 } from "../domain";
-import type { PlanningState, Point } from "../domain";
+import type { PlanningState, Point, ThreadKind } from "../domain";
 import {
   PlanningCardNode,
   PlanningNoteNode,
+  PlanningZoneNode,
   RopeEdge,
   RopeConnection,
 } from "./Nodes";
 import type { PlanningNode, PlanningEdge } from "./Nodes";
 import CircleLayer from "./CircleLayer";
+import { boardWords } from "./detailsText";
 import { planningWords } from "./text";
 import "@xyflow/react/dist/style.css";
 import "./planning.css";
@@ -81,8 +95,13 @@ type Props = {
   language: Language;
   onClose: () => void;
   onOpenCard: (id: string) => void;
+  onConvertNote?: (noteId: string, text: string) => Promise<string | null>;
 };
-const nodeTypes = { card: PlanningCardNode, note: PlanningNoteNode };
+const nodeTypes = {
+  card: PlanningCardNode,
+  note: PlanningNoteNode,
+  zone: PlanningZoneNode,
+};
 const edgeTypes = { rope: RopeEdge };
 export default function PlanningBoardDialog(props: Props) {
   const dialog = useRef<HTMLDialogElement>(null),
@@ -107,6 +126,41 @@ export default function PlanningBoardDialog(props: Props) {
       stop();
     };
   }, [repository]);
+  const inspectionCleanup = useRef<() => void>(() => {});
+  useEffect(() => () => inspectionCleanup.current(), []);
+  const openMainCard = props.onOpenCard;
+  const inspect = useCallback(
+    (id: string) => {
+      inspectionCleanup.current();
+      const element = dialog.current;
+      if (!element) return;
+      element.close();
+      let started = false;
+      const restore = () => {
+        observer.disconnect();
+        clearTimeout(timer);
+        if (element.isConnected && !element.open) element.showModal();
+      };
+      const observer = new MutationObserver(() => {
+        if (document.documentElement.hasAttribute("data-card-surface"))
+          started = true;
+        else if (started) restore();
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-card-surface"],
+      });
+      const timer = setTimeout(() => {
+        if (!started) restore();
+      }, 4000);
+      inspectionCleanup.current = () => {
+        observer.disconnect();
+        clearTimeout(timer);
+      };
+      openMainCard(id);
+    },
+    [openMainCard],
+  );
   return createPortal(
     <dialog
       ref={dialog}
@@ -121,6 +175,7 @@ export default function PlanningBoardDialog(props: Props) {
         <ReactFlowProvider>
           <PlanningCanvas
             {...props}
+            onOpenCard={inspect}
             titleId={title}
             repository={repository}
             view={view}
@@ -142,6 +197,7 @@ function PlanningCanvas({
   titleId: string;
 }) {
   const experience = useBoardRelationships();
+  const w = boardWords(props.language);
   const t = planningWords[props.language],
     container = useRef<HTMLDivElement>(null),
     dragging = useRef<string | null>(null),
@@ -150,7 +206,18 @@ function PlanningCanvas({
     [edges, setEdges, onEdgesChange] = useEdgesState<PlanningEdge>([]);
   const flow = useReactFlow<PlanningNode, PlanningEdge>(),
     initialized = useNodesInitialized();
-  const [mode, setMode] = useState<"move" | "pen">("move"),
+  const navigation = useMemo(
+    () => boardNavigationCache(props.uid, props.scope),
+    [props.uid, props.scope],
+  );
+  const [initialNavigation] = useState(() => navigation.read());
+  const [selectedItem, setSelectedItem] = useState(
+    initialNavigation?.selected || "",
+  );
+  const [focusMode, setFocusMode] = useState(false);
+  const [focusedThread, setFocusedThread] = useState("");
+  const [converting, setConverting] = useState("");
+  const [mode, setMode] = useState<"move" | "pen" | "thread">("move"),
     [picker, setPicker] = useState(false),
     [query, setQuery] = useState(""),
     [selectedCircle, setSelectedCircle] = useState(""),
@@ -158,35 +225,84 @@ function PlanningCanvas({
   const change = useCallback(
     (update: (state: PlanningState) => PlanningState, historyGroup = "") => {
       try {
+        if (
+          repository.view.conflict ||
+          repository.view.error === "invalid-local"
+        )
+          throw new Error("planning-conflict");
         repository.apply(update(repository.state), historyGroup);
         setMessage("");
+        return true;
       } catch (error) {
         const code = (error as { code?: string }).code;
         setMessage(
-          code === "planning-circle"
-            ? t.invalidCircle
-            : code === "planning-full"
-              ? t.full
-              : code === "planning-local"
-                ? t.localError
-                : t.invalid,
+          code === "planning-cycle"
+            ? w.cycle
+            : code === "planning-circle"
+              ? t.invalidCircle
+              : code === "planning-full"
+                ? t.full
+                : code === "planning-local"
+                  ? t.localError
+                  : t.invalid,
         );
+        return false;
       }
     },
-    [repository, t],
+    [repository, t, w.cycle],
   );
-  const { onClose, onOpenCard } = props;
+  const { onOpenCard, onConvertNote, projects } = props;
   const actions = useMemo(
     () => ({
       editNote: (id: string, text: string) =>
         change((state) => editBoardNote(state, id, text), "note:" + id),
       remove: (id: string) => change((state) => removeBoardItem(state, id)),
       open: (id: string) => {
-        onClose();
+        if (!projects.some((project) => project.id === id)) {
+          setMessage(w.unavailable);
+          return;
+        }
         onOpenCard(id);
       },
+      editZone: (
+        id: string,
+        changes: {
+          title?: string;
+          width?: number;
+          height?: number;
+          x?: number;
+          y?: number;
+        },
+      ) =>
+        change(
+          (state) => editBoardZone(state, id, changes),
+          changes.title !== undefined ? "zone-title:" + id : "",
+        ),
+      convert: onConvertNote
+        ? async (id: string, text: string) => {
+            if (converting || !text.trim() || text.length > 1000) return;
+            setConverting(id);
+            try {
+              const projectId = await onConvertNote?.(id, text);
+              if (!projectId) throw new Error("planning-convert");
+              change((state) => convertBoardNote(state, id, projectId));
+            } catch {
+              setMessage(t.localError);
+            } finally {
+              setConverting("");
+            }
+          }
+        : undefined,
     }),
-    [change, onClose, onOpenCard],
+    [
+      change,
+      onOpenCard,
+      onConvertNote,
+      converting,
+      t.localError,
+      projects,
+      w.unavailable,
+    ],
   );
   const removeEdge = useCallback(
     (id: string) => change((state) => removeBoardThread(state, id)),
@@ -214,6 +330,12 @@ function PlanningCanvas({
                 : { x: item.x, y: item.y },
             selected: old?.selected,
             dragHandle: ".plan-node-grip",
+            ...(item.kind === "zone"
+              ? {
+                  style: { width: item.width, height: item.height },
+                  zIndex: -1,
+                }
+              : {}),
             data: {
               item,
               project,
@@ -246,8 +368,12 @@ function PlanningCanvas({
     const project =
       item.kind === "card" ? currentProjects.get(item.projectId) : undefined;
     if (item.kind === "card" && !project) return [];
-    if (node.data.item === item && node.data.project === project) return [node];
-    return [{ ...node, data: { ...node.data, item, project } }];
+    return [
+      {
+        ...node,
+        data: { ...node.data, item, project },
+      },
+    ];
   });
   const linkedProjectId = useCallback(
     (id: string) => {
@@ -257,47 +383,75 @@ function PlanningCanvas({
     [repository],
   );
   const relationRows = experience?.view.state.relations;
-  const setMeaning = useCallback(
-    (source: string, target: string, kind: Relation["kind"]) => {
-      if (!experience) return;
-      try {
-        const from = cardKey(source, props.scope || undefined),
-          to = cardKey(target, props.scope || undefined);
-        experience.change((state) =>
-          relate(
+  const effectiveState = useMemo(
+    () => ({
+      ...view.state,
+      threads: view.state.threads.map((edge) => ({
+        ...edge,
+        kind:
+          edge.kind ||
+          relationRows?.find(
+            (r) =>
+              r.source ===
+                cardKey(
+                  linkedProjectId(edge.source),
+                  props.scope || undefined,
+                ) &&
+              r.target ===
+                cardKey(linkedProjectId(edge.target), props.scope || undefined),
+          )?.kind ||
+          ("related" as const),
+      })),
+    }),
+    [view.state, relationRows, linkedProjectId, props.scope],
+  );
+  const updateThread = useCallback(
+    (
+      edgeId: string,
+      changes: { kind?: ThreadKind; label?: string; reverse?: boolean },
+      group = "",
+    ) => {
+      if (
+        experience &&
+        !experience.view.ready &&
+        !experience.view.state.relations.length &&
+        repository.state.threads.some((edge) => !edge.kind)
+      ) {
+        setMessage(t.localError);
+        return;
+      }
+      change(
+        (state) =>
+          editBoardThread(
             {
               ...state,
-              relations: state.relations.filter(
-                (r) => !(r.source === from && r.target === to),
-              ),
+              threads: state.threads.map((edge) => ({
+                ...edge,
+                kind:
+                  edge.kind ||
+                  effectiveState.threads.find((value) => value.id === edge.id)
+                    ?.kind ||
+                  "related",
+              })),
             },
-            { id: createClientId(), source: from, target: to, kind },
-            new Set(
-              props.projects.map((p) =>
-                cardKey(p.id, props.scope || undefined),
-              ),
-            ),
+            edgeId,
+            changes,
           ),
-        );
-        setMessage("");
-      } catch {
-        setMessage(
-          props.language === "ar"
-            ? "تعذّر حفظ العلاقة. تحقق من الاتصال وعدم وجود اعتماد دائري."
-            : props.language === "he"
-              ? "לא ניתן לשמור קשר. בדקו חיבור ותלויות מעגליות."
-              : "Could not save relationship. Check connection and dependency cycles.",
-        );
-      }
+        group,
+      );
     },
-    [experience, props.scope, props.projects, props.language],
+    [change, effectiveState, experience, repository, t.localError],
+  );
+  const setMeaning = useCallback(
+    (edgeId: string, kind: ThreadKind) => updateThread(edgeId, { kind }),
+    [updateThread],
   );
   const visibleIds = useMemo(
     () => new Set(nodes.map((node) => node.id)),
     [nodes],
   );
   useEffect(() => {
-    setEdges((previous) =>
+    setEdges(() =>
       view.state.threads
         .filter(
           (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
@@ -309,40 +463,51 @@ function PlanningCanvas({
           target: edge.target,
           sourceHandle: "pin",
           targetHandle: "pin",
-          selected: previous.find((value) => value.id === edge.id)?.selected,
+          selected: focusedThread === edge.id,
           data: {
             remove: removeEdge,
             language: props.language,
-            meaning: relationRows?.find(
-              (r) =>
-                r.source ===
-                  cardKey(
-                    linkedProjectId(edge.source),
-                    props.scope || undefined,
-                  ) &&
-                r.target ===
-                  cardKey(
-                    linkedProjectId(edge.target),
-                    props.scope || undefined,
-                  ),
-            )?.kind,
-            setMeaning:
-              repository.state.items.find((i) => i.id === edge.source)?.kind ===
-                "card" &&
-              repository.state.items.find((i) => i.id === edge.target)?.kind ===
-                "card"
-                ? (kind: Relation["kind"]) =>
-                    setMeaning(
+            meaning:
+              edge.kind ||
+              relationRows?.find(
+                (r) =>
+                  r.source ===
+                    cardKey(
                       linkedProjectId(edge.source),
+                      props.scope || undefined,
+                    ) &&
+                  r.target ===
+                    cardKey(
                       linkedProjectId(edge.target),
-                      kind,
-                    )
-                : undefined,
+                      props.scope || undefined,
+                    ),
+              )?.kind ||
+              "related",
+            label: edge.label || "",
+            sourceName:
+              view.state.items.find((i) => i.id === edge.source)?.kind ===
+              "card"
+                ? props.projects.find(
+                    (p) => p.id === linkedProjectId(edge.source),
+                  )?.name || ""
+                : t.note,
+            targetName:
+              view.state.items.find((i) => i.id === edge.target)?.kind ===
+              "card"
+                ? props.projects.find(
+                    (p) => p.id === linkedProjectId(edge.target),
+                  )?.name || ""
+                : t.note,
+            setMeaning: (kind: ThreadKind) => setMeaning(edge.id, kind),
+            setLabel: (label: string) =>
+              updateThread(edge.id, { label }, "thread:" + edge.id),
+            reverse: () => updateThread(edge.id, { reverse: true }),
           },
         })),
     );
   }, [
     view.state.threads,
+    focusedThread,
     visibleIds,
     props.language,
     props.scope,
@@ -352,13 +517,77 @@ function PlanningCanvas({
     relationRows,
     linkedProjectId,
     setMeaning,
+    updateThread,
+    props.projects,
+    t.note,
+    view.state.items,
   ]);
   useEffect(() => {
     if (initialized && nodes.length && !fitted.current) {
       fitted.current = true;
-      void flow.fitView({ padding: 0.3, maxZoom: 1 });
+      if (initialNavigation) void flow.setViewport(initialNavigation);
+      else void flow.fitView({ padding: 0.3, maxZoom: 1 });
     }
-  }, [initialized, nodes.length, flow]);
+  }, [initialized, nodes.length, flow, initialNavigation]);
+  const neighborhood = boardNeighborhood(effectiveState, selectedItem);
+  const projectStatus = new Map(props.projects.map((p) => [p.id, p.status]));
+  const displayedNodes = graphNodes.map((node) => ({
+    ...node,
+    className:
+      focusMode &&
+      selectedItem &&
+      !neighborhood.has(node.id) &&
+      node.type !== "zone"
+        ? "plan-dimmed"
+        : "",
+    data: {
+      ...node.data,
+      converting: converting === node.id,
+      blockers: boardBlockers(effectiveState, node.id, projectStatus).map(
+        (item) => ({
+          id: item.projectId,
+          name: currentProjects.get(item.projectId)?.name || w.unavailable,
+        }),
+      ),
+    },
+  }));
+  const remember = () => {
+    try {
+      navigation.write({ ...flow.getViewport(), selected: selectedItem });
+    } catch {
+      setMessage(t.localError);
+    }
+  };
+  const centerSelected = () => {
+    if (selectedItem)
+      void flow.fitView({
+        nodes: [{ id: selectedItem }],
+        padding: 0.6,
+        maxZoom: 1,
+        duration: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? 0
+          : 250,
+      });
+  };
+  const fitEverything = () => {
+    const sizes = new Map(
+      flow.getNodes().map((node) => [
+        node.id,
+        {
+          width: node.measured?.width || 260,
+          height: node.measured?.height || 220,
+        },
+      ]),
+    );
+    const bounds = boardBounds(repository.state, sizes);
+    if (bounds)
+      void flow.fitBounds(bounds, {
+        padding: 0.2,
+        duration: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? 0
+          : 250,
+      });
+  };
   const place = (): Point => {
     const rect = container.current!.getBoundingClientRect(),
       count = repository.state.items.length;
@@ -374,17 +603,14 @@ function PlanningCanvas({
     };
   };
   const connect = (connection: Connection) => {
-    if (connection.source && connection.target)
-      change((state) =>
-        connectBoardItems(
-          state,
-          createClientId(),
-          connection.source,
-          connection.target,
-        ),
-      );
+    if (!connection.source || !connection.target) return;
+    const id = createClientId();
+    change((state) =>
+      connectBoardItems(state, id, connection.source!, connection.target!),
+    );
+    setFocusedThread(id);
   };
-  const disabled = view.error === "invalid-local";
+  const disabled = view.error === "invalid-local" || !!view.conflict;
   const saveWord = view.pending
     ? view.ready && !view.error
       ? t.saving
@@ -458,6 +684,19 @@ function PlanningCanvas({
               </button>
               <button
                 type="button"
+                aria-pressed={mode === "thread"}
+                aria-label={w.thread}
+                title={w.thread}
+                disabled={disabled}
+                onClick={() => {
+                  setMode("thread");
+                  setPicker(false);
+                }}
+              >
+                <Network size={18} />
+              </button>
+              <button
+                type="button"
                 aria-pressed={mode === "pen"}
                 title={t.pen}
                 aria-label={t.pen}
@@ -494,6 +733,32 @@ function PlanningCanvas({
               }
             >
               <StickyNote size={18} />
+            </button>
+            <button
+              type="button"
+              title={w.zone}
+              aria-label={w.zone}
+              disabled={disabled}
+              onClick={() => {
+                setMode("move");
+                change((state) =>
+                  addBoardZone(state, createClientId(), place(), w.zone),
+                );
+              }}
+            >
+              <Frame size={18} />
+            </button>
+            <button
+              type="button"
+              title={w.focus}
+              aria-label={w.focus}
+              aria-pressed={focusMode}
+              onClick={() => {
+                setFocusMode((v) => !v);
+                setMode("move");
+              }}
+            >
+              <Focus size={18} />
             </button>
             <button
               type="button"
@@ -625,14 +890,68 @@ function PlanningCanvas({
             </button>
           </div>
         )}
+        <div className="planning-mode-hint" role="status">
+          {mode === "pen"
+            ? w.modePen
+            : mode === "thread"
+              ? w.modeThread
+              : w.modeMove}
+          {focusMode && ` · ${w.focus}`}
+        </div>
         <div ref={container} className="planning-canvas" dir="ltr">
           <ReactFlow<PlanningNode, PlanningEdge>
-            nodes={graphNodes}
-            edges={edges}
+            nodes={displayedNodes}
+            edges={edges.map((edge) => ({
+              ...edge,
+              data: edge.data
+                ? {
+                    ...edge.data,
+                    label:
+                      view.state.threads.find((value) => value.id === edge.id)
+                        ?.label || "",
+                    meaning:
+                      effectiveState.threads.find(
+                        (value) => value.id === edge.id,
+                      )?.kind || "related",
+                  }
+                : undefined,
+              style:
+                focusMode &&
+                selectedItem &&
+                !neighborhood.has(edge.source) &&
+                !neighborhood.has(edge.target)
+                  ? { opacity: 0.12 }
+                  : undefined,
+            }))}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
+            onNodeClick={(_event, node) => {
+              setSelectedItem(node.id);
+              try {
+                navigation.write({ ...flow.getViewport(), selected: node.id });
+              } catch {
+                setMessage(t.localError);
+              }
+            }}
+            onMoveEnd={() => remember()}
+            onEdgesChange={(changes) => {
+              const selected = changes.find(
+                (change) => change.type === "select" && change.selected,
+              );
+              if (selected?.type === "select") setFocusedThread(selected.id);
+              else if (
+                changes.some(
+                  (change) =>
+                    change.type === "select" &&
+                    !change.selected &&
+                    change.id === focusedThread,
+                )
+              )
+                setFocusedThread("");
+              onEdgesChange(changes);
+            }}
+            onEdgeClick={(_event, edge) => setFocusedThread(edge.id)}
             onConnect={connect}
             connectionMode={ConnectionMode.Loose}
             connectionLineComponent={RopeConnection}
@@ -642,7 +961,19 @@ function PlanningCanvas({
             }}
             onNodeDragStop={(_event, node) => {
               dragging.current = null;
-              change((state) => moveBoardItem(state, node.id, node.position));
+              if (
+                !change((state) => moveBoardItem(state, node.id, node.position))
+              )
+                setNodes((previous) =>
+                  previous.map((item) => {
+                    const saved = repository.state.items.find(
+                      (value) => value.id === item.id,
+                    );
+                    return saved
+                      ? { ...item, position: { x: saved.x, y: saved.y } }
+                      : item;
+                  }),
+                );
             }}
             onNodesDelete={(removed) =>
               change((state) =>
@@ -661,8 +992,8 @@ function PlanningCanvas({
               )
             }
             nodesDraggable={mode === "move" && !disabled}
-            nodesConnectable={mode === "move" && !disabled}
-            elementsSelectable={mode === "move" && !disabled}
+            nodesConnectable={mode !== "pen" && !disabled}
+            elementsSelectable={mode !== "pen" && !disabled}
             panOnDrag={mode === "move"}
             snapToGrid={false}
             minZoom={0.2}
@@ -672,7 +1003,10 @@ function PlanningCanvas({
               [24000, 24000],
             ]}
             deleteKeyCode={disabled ? null : ["Backspace", "Delete"]}
-            onPaneClick={() => setSelectedCircle("")}
+            onPaneClick={() => {
+              setSelectedCircle("");
+              setFocusedThread("");
+            }}
           ></ReactFlow>
           <CircleLayer
             circles={view.state.circles}
@@ -700,6 +1034,18 @@ function PlanningCanvas({
           <div className="planning-zoom">
             <button
               type="button"
+              title={w.locate}
+              aria-label={w.locate}
+              disabled={
+                !selectedItem ||
+                !view.state.items.some((item) => item.id === selectedItem)
+              }
+              onClick={centerSelected}
+            >
+              <LocateFixed size={18} />
+            </button>
+            <button
+              type="button"
               title={t.zoomIn}
               aria-label={t.zoomIn}
               onClick={() => {
@@ -723,7 +1069,7 @@ function PlanningCanvas({
               title={t.fit}
               aria-label={t.fit}
               onClick={() => {
-                void flow.fitView({ padding: 0.3, maxZoom: 1 });
+                fitEverything();
               }}
             >
               <Maximize2 size={18} />

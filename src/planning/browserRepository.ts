@@ -104,3 +104,51 @@ export function createPlanningRepository(uid: string, scope: string) {
     },
   });
 }
+
+export type BoardNavigation = {
+  x: number;
+  y: number;
+  zoom: number;
+  selected: string;
+};
+/** View navigation is per account/device, never part of document undo history. */
+export function boardNavigationCache(uid: string, scope: string) {
+  if (scope && !/^[A-Za-z0-9]{20}$/.test(scope))
+    throw new PlanningError("planning-invalid");
+  const key = `planning-navigation:v1/${db!.app.options.projectId}/${uid}/${scope || "personal"}`;
+  const check = () => {
+    if (auth?.currentUser?.uid !== uid)
+      throw new PlanningError("planning-account");
+  };
+  const valid = (v: unknown): v is BoardNavigation => {
+    if (!v || typeof v !== "object") return false;
+    const a = v as BoardNavigation;
+    return (
+      Number.isFinite(a.x) &&
+      Math.abs(a.x) <= 100000 &&
+      Number.isFinite(a.y) &&
+      Math.abs(a.y) <= 100000 &&
+      Number.isFinite(a.zoom) &&
+      a.zoom >= 0.2 &&
+      a.zoom <= 2 &&
+      typeof a.selected === "string" &&
+      a.selected.length <= 100
+    );
+  };
+  return {
+    read(): BoardNavigation | null {
+      check();
+      try {
+        const v = JSON.parse(localStorage.getItem(key) || "null");
+        return valid(v) ? v : null;
+      } catch {
+        return null;
+      }
+    },
+    write(value: BoardNavigation) {
+      check();
+      if (!valid(value)) throw new PlanningError("planning-invalid");
+      localStorage.setItem(key, JSON.stringify(value));
+    },
+  };
+}

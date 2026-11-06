@@ -1,3 +1,5 @@
+import { auth } from "../lib/firebase";
+import { isAdmin } from "../lib/admin";
 import { useEffect, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { createExperienceRepository } from "./browserRepository";
@@ -5,6 +7,20 @@ import { RelationshipContext } from "./context";
 import type { ExperienceState } from "./state";
 /** Board-scoped only. The legacy codec retains saved data without running retired features. */
 export default function BoardRelationshipsProvider({
+  uid,
+  children,
+}: {
+  uid: string;
+  children: ReactNode;
+}) {
+  return auth?.currentUser?.uid === uid &&
+    isAdmin(auth.currentUser.email, auth.currentUser.emailVerified) ? (
+    <LegacyBoardRelationships uid={uid}>{children}</LegacyBoardRelationships>
+  ) : (
+    <>{children}</>
+  );
+}
+function LegacyBoardRelationships({
   uid,
   children,
 }: {

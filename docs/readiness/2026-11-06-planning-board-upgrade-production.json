@@ -1,0 +1,62 @@
+{
+  "backendUnchanged": true,
+  "verifiedAt": "2026-11-06T03:17:04.9614134Z",
+  "checks": [
+    {
+      "sha256": "1a17acb447850bc8a7d23351a929eddb130ae3a5f8f140505e577879225cf0ef",
+      "path": "index.html",
+      "match": true
+    },
+    {
+      "sha256": "3a8fb738a4712b2fab03ebc030c04831cd896c0b0256e33832e2ab415e56462f",
+      "path": "sw.js",
+      "match": true
+    },
+    {
+      "sha256": "eda61bb17f4cd933298a90ebdb674b617780495ab58ac86aa07ea185427615de",
+      "path": "wilo-release.json",
+      "match": true
+    },
+    {
+      "sha256": "10a7bb2868f73cda1cc54bc9c14065c517beb1a34790f73eca13a076f09d6135",
+      "path": "assistant-config.json",
+      "match": true
+    },
+    {
+      "sha256": "cab6fb1bef86e4a93f0a1f22e08883a9c251585e053ca23b9ce3336aed4b53b6",
+      "path": "push-config.json",
+      "match": true
+    },
+    {
+      "sha256": "c6da05b2b98a2affc7081af0bdebdb5f08a7feacefa7faec27419fb9764fc6dc",
+      "path": "assets/index-BKBdtw1-.css",
+      "match": true
+    },
+    {
+      "sha256": "84dfba3aa2e7880ed2a810b2efba2a73e001e09e4613663e650d5ed342ef172c",
+      "path": "assets/index-Bsu9M36Z.js",
+      "match": true
+    },
+    {
+      "sha256": "e5b08efc42347b6d4af58bc1099ab01ee4d9829cf9ae54906804b5bfdb58ed46",
+      "path": "assets/PlanningBoardDialog-BgNKy80p.css",
+      "match": true
+    },
+    {
+      "sha256": "cbdd36c4d163cdb1b11b8e9304f45e640eee514f07e0b5f80bf21aeef81602ab",
+      "path": "assets/PlanningBoardDialog-DBVSYMcF.js",
+      "match": true
+    },
+    {
+      "sha256": "7ebf924f448e6d2df834f410c36266991daed072717297ed263988cab98c1cf7",
+      "path": "assets/Workspace-C0WSKeKe.js",
+      "match": true
+    },
+    {
+      "sha256": "af5fdbffdf3f6068bbeb8a985db78ea471ebd17ec7a2aa502e14cd94fa695c2a",
+      "path": "assets/Workspace-mBWUQSxc.css",
+      "match": true
+    }
+  ],
+  "release": "wilo-planning-board-upgrade-20261106"
+}

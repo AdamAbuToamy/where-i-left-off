@@ -649,6 +649,47 @@ export default function Workspace({
                     sections={sections}
                     language={language}
                     onOpenCard={openPlanningCard}
+                    onConvertNote={
+                      canCreate
+                        ? async (noteId, text) => {
+                            const digest = await crypto.subtle.digest(
+                              "SHA-256",
+                              new TextEncoder().encode(
+                                `${user.uid}/${group?.id || "personal"}/${noteId}`,
+                              ),
+                            );
+                            const id =
+                              "plan_" +
+                              Array.from(new Uint8Array(digest))
+                                .map((byte) =>
+                                  byte.toString(16).padStart(2, "0"),
+                                )
+                                .join("");
+                            const name = text
+                              .trim()
+                              .split(/\r?\n/)[0]
+                              .slice(0, 100);
+                            const ok = await run(() => {
+                              if (!canCreate || accountSuspended)
+                                throw new Error("permission-denied");
+                              return repository.current!.addOnce(
+                                id,
+                                name,
+                                "",
+                                (projects[0]?.rank ?? 1024) - 1024,
+                                {
+                                  description: text,
+                                  ...(group && !canManage
+                                    ? { assignedTo: user.uid }
+                                    : {}),
+                                },
+                                true,
+                              );
+                            }, "project.create");
+                            return ok ? id : null;
+                          }
+                        : undefined
+                    }
                   />
                 )}
               </div>

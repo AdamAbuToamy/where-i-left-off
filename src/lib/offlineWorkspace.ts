@@ -109,12 +109,19 @@ export class OfflineWorkspace {
     const after = ProjectEntity.create(this.id(), name, nextStep, rank, details, this.now()).snapshot()
     return this.queue(() => ({ id: this.id(), entity: 'project', entityId: after.id, before: null, after }))
   }
-  /** Deterministic capture/recurrence identity makes an explicit retry idempotent. */
-  addOnce(id: string, name: string, nextStep: string, rank: number, details: ProjectDetails) {
+  /** Deterministic captures are idempotent; note conversion may require matching existing content. */
+  addOnce(id: string, name: string, nextStep: string, rank: number, details: ProjectDetails, requireMatchingContent = false) {
     if (!/^[-\w]{1,100}$/.test(id)) throw new DomainError('invalid-project');
     const after = ProjectEntity.create(id, name, nextStep, rank, details, this.now()).snapshot();
     return this.update(state => {
-      if (projectedState(state).projects.some(project => project.id === id)) return state;
+      const existing = projectedState(state).projects.find(project => project.id === id);
+      if (existing) {
+        if (requireMatchingContent && (
+          existing.name !== name || existing.nextStep !== nextStep ||
+          existing.description !== details.description || existing.trashedAt || existing.archivedAt
+        )) throw new DomainError('invalid-project');
+        return state;
+      }
       return { ...state, operations: [...state.operations, {id,entity:'project',entityId:id,before:null,after}] };
     });
   }

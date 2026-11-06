@@ -102,3 +102,12 @@ it('does not restart listeners for an account that is no longer active',async()=
  const stop=workspace.start();
  try{await vi.waitFor(()=>expect(watch).toHaveBeenCalledTimes(1));current=false;workspace.retry();expect(watch).toHaveBeenCalledTimes(1);}finally{stop();}
 });
+it('retries a planning note capture once without duplicating or overwriting different content', async () => {
+ await workspace.addOnce('plan_note','Note','',0,{description:'Full note'},true);
+ await workspace.addOnce('plan_note','Note','',0,{description:'Full note'},true);
+ expect(local.state.operations).toHaveLength(1);
+ await expect(workspace.addOnce('plan_note','Changed','',0,{description:'Changed'},true)).rejects.toThrow('invalid-project');
+ expect(projectedState(local.state).projects[0].description).toBe('Full note');
+ await workspace.change(projectedState(local.state).projects[0],'edit',{trashedAt:2000});
+ await expect(workspace.addOnce('plan_note','Note','',0,{description:'Full note'},true)).rejects.toThrow('invalid-project');
+});

@@ -17,6 +17,7 @@ export default function DesktopPlanningButton(props: {
   sections: Section[];
   language: Language;
   onOpenCard: (id: string) => void;
+  onConvertNote?: (noteId: string, text: string) => Promise<string | null>;
 }) {
   const desktop = useSyncExternalStore(subscribe, snapshot, () => false),
     [open, setOpen] = useState(false);

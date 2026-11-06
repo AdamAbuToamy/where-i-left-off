@@ -7,6 +7,7 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   useViewport,
+  NodeResizer,
 } from "@xyflow/react";
 import type {
   Node,
@@ -15,21 +16,34 @@ import type {
   EdgeProps,
   ConnectionLineComponentProps,
 } from "@xyflow/react";
-import { ArrowUpRight, FileText, X } from "lucide-react";
+import { ArrowUpRight, ArrowLeftRight, FileText, X } from "lucide-react";
 import type { Project } from "../../types";
 import type { Language } from "../../translations";
-import type { BoardItem } from "../domain";
+import type { BoardItem, ThreadKind } from "../domain";
 import RoughMark from "../../components/pinboard/RoughMark";
+import { boardWords } from "./detailsText";
 import { planningWords } from "./text";
 export type PlanningNode = Node<
-  { item: BoardItem; project?: Project; section: string; language: Language },
-  "card" | "note"
+  {
+    item: BoardItem;
+    project?: Project;
+    section: string;
+    language: Language;
+    blockers?: { id: string; name: string }[];
+    converting?: boolean;
+  },
+  "card" | "note" | "zone"
 >;
 export type PlanningEdge = Edge<
   {
     remove: (id: string) => void;
     language: Language;
-    meaning?: Relation["kind"];
+    meaning?: ThreadKind;
+    label?: string;
+    sourceName?: string;
+    targetName?: string;
+    setLabel?: (text: string) => void;
+    reverse?: () => void;
     setMeaning?: (kind: Relation["kind"]) => void;
   },
   "rope"
@@ -39,7 +53,8 @@ export function PlanningCardNode({ data }: NodeProps<PlanningNode>) {
   const [marked, setMarked] = useState(false),
     actions = usePlanningActions(),
     t = planningWords[data.language],
-    project = data.project;
+    project = data.project,
+    words = boardWords(data.language);
   if (!project) return null;
   return (
     <article
@@ -76,6 +91,27 @@ export function PlanningCardNode({ data }: NodeProps<PlanningNode>) {
           </RoughMark>
         </h2>
       </header>
+      <span className={`plan-card-status is-${project.status}`}>
+        {words.status[project.status]}
+      </span>
+      {!!data.blockers?.length && (
+        <div
+          className="plan-blockers nodrag nopan"
+          aria-label={words.blocked}
+          title={words.blockedHint}
+        >
+          <small>{words.blocked}</small>
+          {data.blockers.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => actions.open(item.id)}
+            >
+              {item.name}
+            </button>
+          ))}
+        </div>
+      )}
       <p className="plan-card-preview" dir="auto">
         {project.nextStep || project.checkpoint || project.description}
       </p>
@@ -133,7 +169,75 @@ export function PlanningNoteNode({ data }: NodeProps<PlanningNode>) {
         }}
         dir="auto"
       />
+      {actions.convert && (
+        <footer className="nodrag nopan">
+          {sourceText.length > 1000 && (
+            <small>{boardWords(data.language).longNote}</small>
+          )}
+          <button
+            type="button"
+            disabled={
+              data.converting || !sourceText.trim() || sourceText.length > 1000
+            }
+            onClick={() => void actions.convert?.(note.id, sourceText)}
+          >
+            {data.converting
+              ? boardWords(data.language).converting
+              : boardWords(data.language).convert}
+          </button>
+        </footer>
+      )}
     </article>
+  );
+}
+export function PlanningZoneNode({ data, selected }: NodeProps<PlanningNode>) {
+  const actions = usePlanningActions(),
+    zone = data.item,
+    t = planningWords[data.language],
+    w = boardWords(data.language);
+  if (zone.kind !== "zone") return null;
+  return (
+    <section
+      className="plan-zone"
+      dir={data.language === "en" ? "ltr" : "rtl"}
+      aria-label={zone.title || w.zone}
+    >
+      <NodeResizer
+        isVisible={selected}
+        minWidth={240}
+        minHeight={180}
+        maxWidth={4000}
+        maxHeight={4000}
+        onResizeEnd={(_event, size) =>
+          actions.editZone(zone.id, {
+            width: size.width,
+            height: size.height,
+            x: size.x,
+            y: size.y,
+          })
+        }
+      />
+      <header className="plan-node-grip" title={w.zoneHint}>
+        <span className="plan-zone-grip" aria-hidden="true">
+          ⠿
+        </span>
+        <input
+          className="nodrag nopan"
+          aria-label={w.zoneTitle}
+          maxLength={100}
+          value={zone.title}
+          onChange={(e) => actions.editZone(zone.id, { title: e.target.value })}
+        />
+        <button
+          className="nodrag nopan"
+          type="button"
+          aria-label={t.remove}
+          onClick={() => actions.remove(zone.id)}
+        >
+          <X size={14} />
+        </button>
+      </header>
+    </section>
   );
 }
 function rope(x1: number, y1: number, x2: number, y2: number) {
@@ -161,6 +265,20 @@ export function RopeEdge({
         className="plan-rope-base"
       />
       <path d={path} className="plan-rope-strand" pointerEvents="none" />
+      {!selected && data && (data.meaning !== "related" || !!data.label) && (
+        <EdgeLabelRenderer>
+          <span
+            className="plan-thread-caption"
+            dir={data.language === "en" ? "ltr" : "rtl"}
+            style={{
+              transform: `translate(-50%,-50%) translate(${x}px,${y}px)`,
+            }}
+          >
+            {data.label ||
+              `${data.sourceName} — ${boardWords(data.language)[data.meaning || "related"]} ${data.targetName}`}
+          </span>
+        </EdgeLabelRenderer>
+      )}
       {selected && data && (
         <EdgeLabelRenderer>
           <div
@@ -168,7 +286,11 @@ export function RopeEdge({
             style={{
               transform: `translate(-50%,-50%) translate(${x}px,${y}px)`,
             }}
+            dir={data.language === "en" ? "ltr" : "rtl"}
           >
+            <small className="plan-thread-direction">
+              {data.sourceName} → {data.targetName}
+            </small>
             {data.setMeaning &&
               (["related", "part", "depends"] as const).map((kind) => (
                 <button
@@ -177,19 +299,28 @@ export function RopeEdge({
                   aria-pressed={data.meaning === kind}
                   onClick={() => data.setMeaning?.(kind)}
                 >
-                  {data.language === "ar"
-                    ? {
-                        related: "مرتبط",
-                        part: "جزء من",
-                        depends: "يتوقف على",
-                      }[kind]
-                    : {
-                        related: "Related",
-                        part: "Part of",
-                        depends: "Depends on",
-                      }[kind]}
+                  {boardWords(data.language)[kind]}
                 </button>
               ))}
+            {data.reverse && (
+              <button
+                type="button"
+                title={boardWords(data.language).reverse}
+                aria-label={boardWords(data.language).reverse}
+                onClick={data.reverse}
+              >
+                <ArrowLeftRight size={15} />
+              </button>
+            )}
+            {data.setLabel && (
+              <input
+                aria-label={boardWords(data.language).label}
+                placeholder={boardWords(data.language).label}
+                value={data.label || ""}
+                maxLength={240}
+                onChange={(e) => data.setLabel?.(e.target.value)}
+              />
+            )}
             <button
               type="button"
               onClick={() => data.remove(id)}
