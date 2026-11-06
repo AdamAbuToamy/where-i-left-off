@@ -384,21 +384,20 @@ body.card-detail-docked .assistant-root {
   }
 }
 
-/* Card labels read as quiet annotations, rather than another row of buttons. */
+/* Colored paper tabs distinguish workflow states without decorative dots. */
 :root[data-kitchen-study="on"]
   .project-card:is(.is-later, .is-active, .is-waiting, .is-done)
   > .status {
-  padding: 0 0 0 8px;
-  padding-inline: 8px 0;
+  padding: 5px 12px 5px 10px;
   margin-block: 0 10px;
   border: 0;
-  border-inline-start: 2px solid currentColor;
-  border-radius: 0;
-  background: transparent;
+  border-inline-start: 3px solid var(--card-state-ink, #65516f);
+  border-radius: 3px 9px 9px 3px;
+  background: var(--card-state-paper, #eee5f0);
   box-shadow: none;
-  color: var(--site-muted, #59684f);
+  color: var(--card-state-ink, #65516f);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 650;
   line-height: 1.4;
   letter-spacing: 0;
 }
@@ -406,13 +405,16 @@ body.card-detail-docked .assistant-root {
   display: none;
 }
 :root[data-kitchen-study="on"] .project-card.is-active > .status {
-  color: var(--site-primary, #385c4b);
+  --card-state-ink: #315c43;
+  --card-state-paper: #e2eddd;
 }
 :root[data-kitchen-study="on"] .project-card.is-waiting > .status {
-  color: #76552c;
+  --card-state-ink: #79521f;
+  --card-state-paper: #f4e7c9;
 }
 :root[data-kitchen-study="on"] .project-card.is-done > .status {
-  color: #3f654e;
+  --card-state-ink: #355d6b;
+  --card-state-paper: #dfedf0;
 }
 :root[data-kitchen-study="on"] .project-card .card-meta {
   gap: 0;
@@ -456,4 +458,8 @@ body.card-detail-docked .assistant-root {
   border-block-start: 1px solid var(--site-border, #d1c4ab);
   border-radius: 0;
   padding: 16px 0;
+}
+
+:root[data-kitchen-study="on"][dir="rtl"] .project-card > .status {
+  border-radius: 9px 3px 3px 9px;
 }
