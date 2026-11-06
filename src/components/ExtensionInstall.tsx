@@ -156,6 +156,7 @@ export default function ExtensionInstall({
   return (
     <PreviewDetails language={language} label={t.title} disabled={settings}>
       <section
+        data-tour="extension"
         className={settings ? "settings-section" : "extension-prompt"}
         aria-label={t.settings}
       >

@@ -1,0 +1,52 @@
+{
+  "release": "wilo-guided-tour-focus-20261106-r2",
+  "backendUnchanged": true,
+  "verifiedAt": "2026-11-06T15:30:58.9801319Z",
+  "checks": [
+    {
+      "sha256": "9cd7a3ec0724310837cec26bc788166699a0a9e01ecda36e2938737bedf9ceb6",
+      "match": true,
+      "path": "index.html"
+    },
+    {
+      "sha256": "89222df55ad56006e369af07aa60ceaf2801782180b098eb2339d7d4f0383603",
+      "match": true,
+      "path": "sw.js"
+    },
+    {
+      "sha256": "eda61a6960bb9102451ae44202da402bff5691742d1e4e7387f513d0a0b27ae4",
+      "match": true,
+      "path": "wilo-release.json"
+    },
+    {
+      "sha256": "10a7bb2868f73cda1cc54bc9c14065c517beb1a34790f73eca13a076f09d6135",
+      "match": true,
+      "path": "assistant-config.json"
+    },
+    {
+      "sha256": "cab6fb1bef86e4a93f0a1f22e08883a9c251585e053ca23b9ce3336aed4b53b6",
+      "match": true,
+      "path": "push-config.json"
+    },
+    {
+      "sha256": "e003c56079c9070e8e4c766ef8bdfa5c5c7cb798c49c4c4578f95155624ee470",
+      "match": true,
+      "path": "assets/index-6HsNT5ac.js"
+    },
+    {
+      "sha256": "e8fe3a55542a50337dd8a2ecf15c76d6967dba14192595a5c284ee5ca1d51468",
+      "match": true,
+      "path": "assets/index-BExg9K3b.css"
+    },
+    {
+      "sha256": "fbe6e949add07f05820f74a20dfb69c0c86177429ae69e41a13e34ad39c0c238",
+      "match": true,
+      "path": "assets/Workspace-CLbdML82.js"
+    },
+    {
+      "sha256": "af5fdbffdf3f6068bbeb8a985db78ea471ebd17ec7a2aa502e14cd94fa695c2a",
+      "match": true,
+      "path": "assets/Workspace-mBWUQSxc.css"
+    }
+  ]
+}

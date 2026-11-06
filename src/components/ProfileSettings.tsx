@@ -48,7 +48,7 @@ export default function ProfileSettings({ user, language }: { user: User; langua
     <SettingsGroup title={l.rest}><SleepPreference uid={user.uid} language={language} /><section className="settings-section tour-settings"><h3>{tourText[language].replay}</h3><button className="secondary-button tour-replay" onClick={() => window.dispatchEvent(new Event('replay-welcome-tour'))}>{tourText[language].replay}</button></section></SettingsGroup>
     {installed && <SettingsGroup title={pushText[language].title}><section className="settings-section"><p>{pushText[language].intro}</p><a className="primary-button" href="#/notifications">{pushText[language].open}</a></section></SettingsGroup>}
     <SettingsGroup title={l.extension}><ExtensionInstall language={language} settings admin={isAdmin(user.email, user.emailVerified)} /></SettingsGroup>
-    <SettingsGroup title={support.legal}><section className="settings-section"><h3>{support.legal}</h3><p>{support.exportHint}</p><button className="secondary-button" disabled={exporting} onClick={async () => {
+    <SettingsGroup title={support.legal}><section className="settings-section" data-tour="account-data"><h3>{support.legal}</h3><p>{support.exportHint}</p><button className="secondary-button" disabled={exporting} onClick={async () => {
       setExporting(true); setExportError(false)
       try {
         const data = await exportPersonalData(db!, user.uid), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })), anchor = document.createElement('a')
