@@ -1,3 +1,4 @@
+import CinematicExperience from "./experience/CinematicExperience";
 import MobileNavigation from './components/MobileNavigation';
 import NotificationBell from './components/NotificationBell';
 import HeaderSpotlight from './components/HeaderSpotlight';
@@ -75,6 +76,7 @@ export default function App() {
   const logout=() => void traced('auth.signout', async () => { try { await preparePushSignOut() } catch { /* Local delivery gate is already cleared. */ } await signOut(auth!) }).catch(() => {});
   return <DesignPreviewProvider user={user}><StudyLocaleProvider value={language}><IdleSleep key={user?.uid || 'signed-out'} uid={user?.uid} user={user || undefined} language={language}><div className={`workspace language-${language}`}>
     <a className="skip-to-content" href="#wilo-main" onClick={event=>{event.preventDefault();const main=document.getElementById("wilo-main");main?.focus({preventScroll:true});main?.scrollIntoView({block:"start",behavior:"instant"});}}>{{ar:"انتقل إلى المحتوى",en:"Skip to content",he:"דלגו לתוכן"}[language]}</a>
+    <CinematicExperience key={user?.uid || "signed-out"} user={user} />
     <PushLifecycle user={user} />
     {!loading && <header className="page-header"><div className="heading-copy"><HeaderSpotlight brand={t.appName} language={language} installed={installed}/></div><div className="header-account-actions">{user&&user.emailVerified&&<NotificationBell key={user.uid} user={user} language={language}/>}<LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={logout}>{c.logout}</button>}</div></header>}
     {emulatorMode && <p className="notice">{c.demo}</p>}

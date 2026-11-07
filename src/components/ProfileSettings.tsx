@@ -1,3 +1,4 @@
+import ExperienceSettings from "../experience/ExperienceSettings";
 import { useInstalledApp } from '../lib/pushNotifications'
 import { pushText } from '../pushText'
 import { isAdmin } from '../lib/admin'
@@ -45,6 +46,7 @@ export default function ProfileSettings({ user, language }: { user: User; langua
     <SettingsGroup title={a.account}><section className="settings-section"><h3>{a.account}</h3><div className="settings-account-details"><span dir="auto">{user.email}</span><span className="settings-status">{user.emailVerified ? a.verified : a.notVerified}</span></div></section><PasswordChange user={user} language={language} /></SettingsGroup>
     <SettingsGroup title={a.appearance}><ThemePicker uid={user.uid} language={language} /></SettingsGroup>
     <SettingsGroup title={w.workflow}><WorkflowSettings uid={user.uid} language={language} /></SettingsGroup>
+    {isAdmin(user.email,user.emailVerified) && <SettingsGroup title={language === "ar" ? "الحركة والصوت" : language === "he" ? "תנועה וצליל" : "Motion & sound"}><ExperienceSettings uid={user.uid} language={language}/></SettingsGroup>}
     <SettingsGroup title={l.rest}><SleepPreference uid={user.uid} language={language} /><section className="settings-section tour-settings"><h3>{tourText[language].replay}</h3><button className="secondary-button tour-replay" onClick={() => window.dispatchEvent(new Event('replay-welcome-tour'))}>{tourText[language].replay}</button></section></SettingsGroup>
     {installed && <SettingsGroup title={pushText[language].title}><section className="settings-section"><p>{pushText[language].intro}</p><a className="primary-button" href="#/notifications">{pushText[language].open}</a></section></SettingsGroup>}
     <SettingsGroup title={l.extension}><ExtensionInstall language={language} settings admin={isAdmin(user.email, user.emailVerified)} /></SettingsGroup>
