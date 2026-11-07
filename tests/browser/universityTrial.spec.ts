@@ -181,9 +181,11 @@ test("university default view keeps the original menu, assistant, personal cards
   });
   await expect(card).toBeVisible();
   await card.hover();
-  if (await card.locator(".envelope-expand").isVisible())
-    await card.locator(".envelope-expand").click();
-  await expect(card.locator(".card-options summary")).toBeVisible();
+  await card.getByRole("button", {name: "تكبير البطاقة: Original cards remain", exact: true}).click();
+  const details = page.locator(".card-detail-panel");
+  await expect(details.locator(".card-options summary")).toBeVisible();
+  await details.getByRole("button", {name: "رجوع", exact: true}).click();
+  await expect(details).toHaveCount(0);
   await expect(page.locator(".admin-preview")).toHaveCount(0);
   await expect(page.locator(".study-university-trial")).toHaveCount(0);
   await page.goto("/#/university");

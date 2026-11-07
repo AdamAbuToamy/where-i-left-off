@@ -61,6 +61,8 @@ export default function NewProjectForm({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [saveFailed, setSaveFailed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false);
   const [name, setName] = useState(() => initialValues?.name ?? "");
   const [nextStep, setNextStep] = useState("");
   const [projectUrl, setProjectUrl] = useState(
@@ -92,36 +94,43 @@ export default function NewProjectForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (disabled || submitLock.current || !name.trim()) return;
+    submitLock.current = true;
+    setSubmitting(true);
     setSaveFailed(false);
-
-    if (!name.trim()) return;
-
-    if (
-      !(await onAdd(name.trim(), nextStep.trim(), {
-        ...metadata,
-        projectUrl: projectUrl.trim(),
-        attachmentUrl: attachmentUrl.trim(),
-        dueDate,
-        links: links.map((url) => url.trim()).filter(Boolean),
-      }))
-    ) {
+    try {
+      if (
+        !(await onAdd(name.trim(), nextStep.trim(), {
+          ...metadata,
+          projectUrl: projectUrl.trim(),
+          attachmentUrl: attachmentUrl.trim(),
+          dueDate,
+          links: links.map((url) => url.trim()).filter(Boolean),
+        }))
+      ) {
+        setSaveFailed(true);
+        return;
+      }
+      setName("");
+      setNextStep("");
+      setProjectUrl("");
+      setAttachmentUrl("");
+      setDueDate("");
+      setLinks([]);
+      setMetadata({
+        assignedTo: defaultAssignedTo,
+        status: "later",
+        kind: "resume",
+        sectionId: defaultSectionId,
+        checkpoint: "",
+        checklist: "",
+      });
+    } catch {
       setSaveFailed(true);
-      return;
+    } finally {
+      submitLock.current = false;
+      setSubmitting(false);
     }
-    setName("");
-    setNextStep("");
-    setProjectUrl("");
-    setAttachmentUrl("");
-    setDueDate("");
-    setLinks([]);
-    setMetadata({
-      assignedTo: defaultAssignedTo,
-      status: "later",
-      kind: "resume",
-      sectionId: defaultSectionId,
-      checkpoint: "",
-      checklist: "",
-    });
   }
 
   const content = (
@@ -137,18 +146,24 @@ export default function NewProjectForm({
         (fullscreen ? " phone-form-fullscreen" : "")
       }
       onSubmit={handleSubmit}
+      aria-busy={submitting}
     >
       {fullscreen ? (
         <div className="phone-surface-heading">
           <h2>{r.newCard}</h2>
-          <button type="button" className="secondary-button" onClick={onCancel}>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={submitting}
+            onClick={onCancel}
+          >
             {language === "ar" ? "رجوع" : language === "he" ? "חזרה" : "Back"}
           </button>
         </div>
       ) : (
         <h2>{r.newCard}</h2>
       )}
-      {fullscreen && saveFailed && (
+      {saveFailed && (
         <p className="notice error" role="alert">
           {language === "ar"
             ? "تعذّر الحفظ. بقيت بياناتك هنا؛ راجع الحقول أو الاتصال وأعد المحاولة."
@@ -354,12 +369,23 @@ export default function NewProjectForm({
           type="submit"
           data-tour="save-project"
           className="primary-button"
-          disabled={!name.trim()}
+          disabled={disabled || submitting || !name.trim()}
         >
-          {r.saveCard}
+          {submitting
+            ? language === "ar"
+              ? "جارٍ الحفظ…"
+              : language === "he"
+                ? "שומר…"
+                : "Saving…"
+            : r.saveCard}
         </button>
 
-        <button type="button" className="secondary-button" onClick={onCancel}>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={submitting}
+          onClick={onCancel}
+        >
           {t.cancel}
         </button>
       </div>

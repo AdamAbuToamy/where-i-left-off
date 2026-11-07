@@ -1,7 +1,14 @@
 # Tooling security maintenance
 
-The application, Firestore rules and production UI are unchanged by this update.
-The full npm audit remains blocking in CI; no advisories are ignored.
+## Current review — 2026-11-07
+
+The notes below describe a historical baseline, not the currently installed dependency tree. The current lockfile audit reports **zero runtime advisories**, and **23 moderate development-tool advisories** (no high/critical). See the dated video review for the actual verification. Current CI blocks high/critical runtime and tool vulnerabilities; it does not claim the full tree is advisory-free.
+
+Current affected development chains include glob/minimatch, UUID and OpenTelemetry under Firebase CLI and ESLint. `npm audit fix --force` proposes major downgrades; those were not applied. Historical scoped overrides below are not currently active except the gRPC/basic-ftp entries visible in package.json. Do not treat these old notes as proof that a vulnerable version is patched. Re-evaluate supported upstream fixes and test CLI/emulator compatibility before changing the toolchain.
+
+## Historical maintenance notes
+
+The application, Firestore rules and production UI were unchanged by that historical update.
 
 Scoped overrides:
 - firebase-tools -> chokidar 4.0.3 removes braces and its unpatched recursive-pattern vulnerability. This project's Firestore watcher uses a literal rules-file path, supported by Chokidar 4. Firebase Functions watchers can depend on glob ignore patterns removed in Chokidar 4; review this override before adding Functions or glob-based watching.

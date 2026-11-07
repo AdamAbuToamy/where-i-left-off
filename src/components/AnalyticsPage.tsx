@@ -1,3 +1,4 @@
+import ContentSkeleton from "./ContentSkeleton";
 import type { User } from "firebase/auth";
 import type { Language } from "../translations";
 import { workflowText } from "../workflowText";
@@ -17,6 +18,7 @@ export default function AnalyticsPage({
     { allEntries, suspended, ready } = useTaskOverview(user, "Personal");
   if (suspended)
     return <p role="alert">{translations[language].accountSuspended}</p>;
+  if (!ready) return <ContentSkeleton language={language} />;
   const history = ready ? sessionsWithExistingCards(items, allEntries) : [];
   const stats = progressStats(items, allEntries);
   const rows = [

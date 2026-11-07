@@ -1,6 +1,6 @@
 import { usePhoneLayout } from "../components/usePhoneSurface";
 import { useDesignPreview } from "../components/designPreviewContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { ReactNode } from "react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import {
@@ -117,8 +117,9 @@ export default function UniversityTrial(props: Props) {
       requestedPage,
       Math.max(0, Math.ceil(filtered.length / 20) - 1),
     );
+  const coursesById = useMemo(() => new Map(state.courses.map(course => [course.id, course])), [state.courses]);
   const name = (id: string) =>
-    state.courses.find((course) => course.id === id)?.name || "";
+    coursesById.get(id)?.name || "";
   return (
     <StudyLocalized>
       <MotionConfig reducedMotion={reduced ? "always" : "user"}>

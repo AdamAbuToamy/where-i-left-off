@@ -1,6 +1,7 @@
 import { useDesignPreview } from "./designPreviewContext";
 import { ChevronDown, PanelsTopLeft } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { sectionSummary } from "../lib/sectionSummary";
 import type { Language } from "../translations";
 import type { Project, Section } from "../types";
 import { recallText } from "../recallTranslations";
@@ -31,6 +32,10 @@ export default function Sections({
 }) {
   const { enabled } = useDesignPreview();
   const t = recallText[language];
+  const summary = useMemo(
+    () => sectionSummary(sections, projects),
+    [sections, projects],
+  );
   const selectedName =
     selected === "all"
       ? t.allSections
@@ -103,19 +108,15 @@ export default function Sections({
                 {t.allSections}
               </button>
             )}
-            {sections.length > 0 &&
-              projects.some(
-                (p) =>
-                  !p.sectionId || !sections.some((s) => s.id === p.sectionId),
-              ) && (
-                <button
-                  className="secondary-button"
-                  aria-pressed={selected === ""}
-                  onClick={() => onSelect("")}
-                >
-                  {t.noSection}
-                </button>
-              )}
+            {sections.length > 0 && summary.unassigned > 0 && (
+              <button
+                className="secondary-button"
+                aria-pressed={selected === ""}
+                onClick={() => onSelect("")}
+              >
+                {t.noSection}
+              </button>
+            )}
             {sections.map((s) => (
               <button
                 data-section={s.id}
@@ -125,9 +126,7 @@ export default function Sections({
                 onClick={() => onSelect(s.id)}
               >
                 <span dir="auto">{s.name}</span>
-                <small>
-                  {projects.filter((p) => p.sectionId === s.id).length}
-                </small>
+                <small>{summary.counts.get(s.id) || 0}</small>
               </button>
             ))}
             {canManage && (

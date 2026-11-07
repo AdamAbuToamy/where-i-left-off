@@ -1,3 +1,4 @@
+import ContentSkeleton from "./ContentSkeleton";
 import { createPortal } from "react-dom";
 import DesktopPlanningButton from "../planning/DesktopPlanningButton";
 import {
@@ -599,9 +600,7 @@ export default function Workspace({
         </section>
       ) : (
         !loaded && (
-          <p className="notice" role="status">
-            {c.loading}
-          </p>
+          <ContentSkeleton language={language} />
         )
       )}
       {!accountSuspended && loaded && (

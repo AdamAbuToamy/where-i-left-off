@@ -1,0 +1,11 @@
+{
+  "kind": "local-synthetic-lookup-only",
+  "sections": 500,
+  "cards": 10000,
+  "beforeComparisons": 5000000,
+  "afterCardReads": 10000,
+  "beforeMs": 62.72634000000001,
+  "afterMs": 1.2137789999999882,
+  "countsEqual": true,
+  "notAProductionLoadTest": true
+}

@@ -219,11 +219,13 @@ export default function AssistantWidget({
   const requestGeneration = useRef(0),
     requestAbort = useRef<AbortController | null>(null);
   useEffect(() => {
+    const generation = requestGeneration;
+    const abort = requestAbort;
     mounted.current = true;
     return () => {
       mounted.current = false;
-      requestGeneration.current++;
-      requestAbort.current?.abort();
+      generation.current++;
+      abort.current?.abort();
     };
   }, []);
   useEffect(() => {

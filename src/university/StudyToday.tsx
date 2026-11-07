@@ -1,5 +1,5 @@
 import StudyLocalized from "./StudyLocale";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import type { Language } from '../translations';
 import { db } from '../lib/firebase';
@@ -14,7 +14,8 @@ export default function StudyToday({user,language}:{user:User;language:Language}
  const [now,setNow]=useState(()=>new Date());
  const cloud=useStudySync(store,user.uid,setState);
  useEffect(()=>{const timer=setInterval(()=>setNow(new Date()),30000);return()=>clearInterval(timer);},[]);
- const t=words[language],today=studyToday(state,now),name=(id:string)=>state.courses.find(c=>c.id===id)?.name||'';
+  const coursesById = useMemo(() => new Map(state.courses.map(course => [course.id, course])), [state.courses]);
+ const t=words[language],today=studyToday(state,now),name=(id:string)=>coursesById.get(id)?.name||'';
  return <StudyLocalized>{<section className="study-today" dir={language==='en'?'ltr':'rtl'} aria-label={t.title}>
   <header><h3>{t.title}</h3><a href="#/university">{t.open} ↗</a></header>
   {cloud.status.error&&<p role="status">{cloud.status.error}</p>}

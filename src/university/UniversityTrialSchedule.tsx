@@ -1,5 +1,5 @@
 import ChoicePicker from "../components/ChoicePicker";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CalendarDays, Clock, MapPin, Pencil } from "lucide-react";
 import Timetable from "./Timetable";
 import LinkedText from "../components/LinkedText";
@@ -28,6 +28,7 @@ export default function UniversityTrialSchedule({
       innerWidth < 760 ? "day" : "week",
     ),
     [day, setDay] = useState(new Date().getDay());
+  const coursesById = useMemo(() => new Map(courses.map(course => [course.id, course])), [courses]);
   const visible = lessons
     .filter(
       (lesson) => (!filter || lesson.courseId === filter) && lesson.day === day,
@@ -99,7 +100,7 @@ export default function UniversityTrialSchedule({
                 <div>
                   <strong dir="auto">
                     {
-                      courses.find((course) => course.id === lesson.courseId)
+                      coursesById.get(lesson.courseId)
                         ?.name
                     }
                   </strong>
@@ -122,7 +123,7 @@ export default function UniversityTrialSchedule({
                   aria-label={
                     translateStudyText("تعديل", language) +
                     " " +
-                    (courses.find((course) => course.id === lesson.courseId)
+                    (coursesById.get(lesson.courseId)
                       ?.name || "")
                   }
                   onClick={() => edit(lesson)}

@@ -23,7 +23,7 @@ import { parseStudyCapture, acceptStudyCapture, captureMatches } from "./studyCa
 import PlanImport from "./PlanImport";
 import { lessonConflicts, mergePlan, parsePlanBackup, planBackup } from "./planImport";
 import type { PlanPreview } from "./planImport";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { ReactNode } from "react";
 import type { User } from "firebase/auth";
 import { db } from "../lib/firebase";
@@ -176,8 +176,9 @@ function Workspace({ user }: {
             setBusy(false);
         }
     }
+  const coursesById = useMemo(() => new Map(state.courses.map(course => [course.id, course])), [state.courses]);
     const selectedCourse = state.courses.find(c => c.id === filter) || (!mobileStudy && state.courses.length === 1 ? state.courses[0] : undefined);
-    const courseName = (id: string) => state.courses.find((c) => c.id === id)?.name || "بدون كورس";
+    const courseName = (id: string) => coursesById.get(id)?.name || "بدون كورس";
     const courseColor = trialCourseColor;
     const pending = state.tasks.filter((t) => !t.done && (!filter || t.courseId === filter));
     const next = pending

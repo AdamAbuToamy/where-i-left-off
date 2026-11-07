@@ -6,7 +6,7 @@ import { isAdmin } from "../lib/admin";
 import { db } from "../lib/firebase";
 import { cloudText } from "../cloudTranslations";
 import { pushText } from "../pushText";
-import LoadingScreen from "./LoadingScreen";
+import ContentSkeleton from "./ContentSkeleton";
 const Workspace = lazy(() => import("./Workspace"));
 const GroupSpaces = lazy(() => import("./GroupSpaces"));
 const ContinueNow = lazy(() => import("./ContinueNow"));
@@ -29,9 +29,15 @@ export default function AccountPage(props: Props) {
   return (
     <Suspense
       fallback={
-        <LoadingScreen
+        <ContentSkeleton
           language={props.language}
-          status={cloudText[props.language].loading}
+          layout={
+            props.page === "university"
+              ? "study"
+              : props.page === "settings"
+                ? "settings"
+                : "cards"
+          }
         />
       }
     >
