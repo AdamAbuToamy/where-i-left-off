@@ -1,3 +1,4 @@
+import {sameImportedStudyTask} from "../../shared/studyIdentity.mjs";
 import { createClientId } from '../lib/clientId'
 import { resourceUrl, validateCourse } from './state';
 import type { Course, CourseDetails, Lesson, StudyTask, UniversityState } from './state';
@@ -90,7 +91,7 @@ export function parsePlanText(raw: string, mode: ImportMode, state: UniversitySt
                     if (!title || title.length > 500)
                         throw new Error('أضف عنوانًا حتى 500 حرف');
                     const task: StudyTask = { id: createClientId(), courseId: course.id, title, due: localDue(date), kind: kind(type), notes, done: false, url: '' };
-                    if ([...state.tasks, ...out.tasks].some(t => t.courseId === task.courseId && fold(t.title) === fold(task.title) && t.kind === task.kind && t.due === task.due)) {
+                    if ([...state.tasks, ...out.tasks].some(t => sameImportedStudyTask(t,task))) {
                         out.skipped++;
                         continue;
                     }

@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/generate-sw.mjs && node scripts/check-credentials.mjs --dist",
+    "build": "tsc -b && vite build && node scripts/publish-api-contract.mjs && node scripts/generate-sw.mjs && node scripts/check-credentials.mjs --dist",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:api": "node --test push-worker/api*.test.mjs",
+    "test:api:emulator": "firebase emulators:exec --project demo-where-i-left-off --only firestore \"node --test tests/integration/apiFirestore.emulator.mjs\"",
     "test:rules": "firebase emulators:exec --project demo-where-i-left-off --only firestore \"env TEST_SUITE=security vitest run\"",
     "test:e2e": "node scripts/run-browser-tests.mjs",
     "emulators": "firebase emulators:start --project demo-where-i-left-off --only auth,firestore",
@@ -23,7 +25,9 @@
     "check:architecture": "node scripts/check-architecture.mjs",
     "test:speech:audio": "node scripts/test-session-speech-audio.mjs",
     "check:secrets:history": "node scripts/check-git-secrets.mjs",
-    "check:seo": "node scripts/check-seo.mjs"
+    "check:seo": "node scripts/check-seo.mjs",
+    "check:api:domain": "node scripts/generate-api-domain.mjs --check",
+    "generate:api:domain": "node scripts/generate-api-domain.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

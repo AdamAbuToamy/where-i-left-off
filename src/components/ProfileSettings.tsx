@@ -1,3 +1,4 @@
+import ApiKeySettings from './ApiKeySettings';
 import ExperienceSettings from "../experience/ExperienceSettings";
 import { useInstalledApp } from '../lib/pushNotifications'
 import { pushText } from '../pushText'
@@ -44,6 +45,7 @@ export default function ProfileSettings({ user, language }: { user: User; langua
       {saved && <p role="status">{t.saved}</p>}{error !== null && <p role="alert">{errorText(error, language)}</p>}
     </form></SettingsGroup>
     <SettingsGroup title={a.account}><section className="settings-section"><h3>{a.account}</h3><div className="settings-account-details"><span dir="auto">{user.email}</span><span className="settings-status">{user.emailVerified ? a.verified : a.notVerified}</span></div></section><PasswordChange user={user} language={language} /></SettingsGroup>
+    <SettingsGroup title="API Keys"><ApiKeySettings key={user.uid} user={user} language={language}/></SettingsGroup>
     <SettingsGroup title={a.appearance}><ThemePicker uid={user.uid} language={language} />{isAdmin(user.email,user.emailVerified) && <ExperienceSettings uid={user.uid} language={language}/>}</SettingsGroup>
     <SettingsGroup title={w.workflow}><WorkflowSettings uid={user.uid} language={language} /></SettingsGroup>
     <SettingsGroup title={l.rest}><SleepPreference uid={user.uid} language={language} /><section className="settings-section tour-settings"><h3>{tourText[language].replay}</h3><button className="secondary-button tour-replay" onClick={() => window.dispatchEvent(new Event('replay-welcome-tour'))}>{tourText[language].replay}</button></section></SettingsGroup>

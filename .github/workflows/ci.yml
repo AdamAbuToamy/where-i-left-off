@@ -30,6 +30,7 @@ jobs:
       - run: npm run check:credentials
       - run: npm run check:secrets:history
       - run: npm run lint
+      - run: npm run check:api:domain
       - run: npm run check:architecture
       - run: VITE_USE_EMULATORS=false npm run build
       - run: npm test
@@ -49,6 +50,7 @@ jobs:
       - run: ONNXRUNTIME_NODE_INSTALL=skip npm ci --no-audit --no-fund
       - run: npm ci --prefix push-worker --no-audit --no-fund
       - run: npm run test:rules
+      - run: npm run test:api:emulator
   auth-recovery:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

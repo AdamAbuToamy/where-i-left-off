@@ -1,3 +1,6 @@
+import {manageApiKeys} from "./apiKeys.mjs";
+import {ApiError} from "../../shared/universityApiPlan.mjs";
+import {createApiHandler} from "./apiEndpoint.mjs";
 import {readNotifications,readThrough,recordNotification} from './notificationCenter.mjs'
 import {ASSISTANT_PROTOCOL,assistantFailure,assistantHealth} from './assistantEndpoint.mjs'
 import {assistant} from './assistant.mjs'
@@ -18,6 +21,7 @@ const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA
 const messages={ar:{due:'حان موعد مهمتك',stale:'بطاقة تنتظر عودتك',private:'افتح التطبيق للاطلاع على التذكير'},en:{due:'Your task reminder',stale:'A card is waiting for you',private:'Open the app to view your reminder'},he:{due:'תזכורת למשימה',stale:'כרטיס מחכה לך',private:'פתחו את האפליקציה לצפייה בתזכורת'}}
 export function createWorker(overrides={}){
  const f={...firebase,...overrides},send=overrides.sendPush || sendPush
+ const publicApi=createApiHandler(overrides.publicApi||{});
  async function sync(env,identity,data){
   const row=await store.account(env,identity.uid)
   await env.DB.prepare('UPDATE scopes SET next_at=?,lease=0 WHERE uid=?').bind(Date.now(),identity.uid).run()
@@ -148,6 +152,7 @@ export function createWorker(overrides={}){
  }
  return {
   async fetch(request,env){
+   if(new URL(request.url).pathname.startsWith("/api/v1/"))return publicApi(request,env);
    const isAssistant=new URL(request.url).pathname==='/assistant',requestId=crypto.randomUUID();let stage='request'
    const origin=request.headers.get('origin'),allowed=(env.APP_ORIGINS || '').split(',').includes(origin)
    const headers={...securityHeaders,'content-type':'application/json','cache-control':'no-store','vary':'Origin'}
@@ -165,6 +170,12 @@ export function createWorker(overrides={}){
     if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase','notifications','notifications-read'].includes(data.action))requestedAction=data.action
     stage='identity';const identity=await f.verifyIdentity(request,env)
     let result
+    if(new URL(request.url).pathname==='/account-api-keys'){
+     if(identity.emailVerified!==true)throw new Error('account-unavailable');
+     await f.accountAvailable(env,identity.uid);
+     try { return new Response(JSON.stringify({result:await manageApiKeys(env,identity.uid,data)}),{headers:{...headers,'pragma':'no-cache'}}); }
+     catch(e){if(!(e instanceof ApiError))throw e;return new Response(JSON.stringify({error:e.code}),{status:e.code==='key-not-found'?404:e.code==='rate-limited'?429:e.code==='api-disabled'?503:422,headers});}
+    }
     if(new URL(request.url).pathname==='/assistant-account'){
      if(identity.emailVerified!==true)throw new Error('ai-email-unverified');
      await f.accountAvailable(env,identity.uid);
@@ -178,6 +189,8 @@ export function createWorker(overrides={}){
    }catch(error){if(isAssistant){const failure=assistantFailure(error,stage,requestId);console.warn('assistant.http.failed',{status:failure.status,...failure.body.diagnostic,code:failure.body.error});return new Response(JSON.stringify(failure.body),{status:failure.status,headers})}const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed',...(error.message==='ai-incomplete-proposal'?{details:error.details}:{} )}),{status,headers})}
   },
   async scheduled(_controller,env){
+   if(env.PUBLIC_API_ENABLED==='true')try{await env.DB.prepare('DELETE FROM api_audit WHERE id IN (SELECT id FROM api_audit WHERE created_at<? ORDER BY created_at LIMIT 1000)').bind(Date.now()-30*DAY).run()}catch{console.warn('api.audit.cleanup-failed')}
+
    if(env.ASSISTANT_FREE_ONLY==='true')try{const cutoff=new Date(Date.now()-7*DAY).toISOString().slice(0,10);await env.DB.prepare('DELETE FROM ai_usage WHERE day<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM ai_budget WHERE day<?').bind(cutoff).run()}catch{console.warn('assistant.maintenance.failed')}
    const now=Date.now(),due=await env.DB.prepare('SELECT s.uid,s.scope FROM scopes s JOIN accounts a ON a.uid=s.uid WHERE s.next_at<=? AND s.lease<=? AND a.enabled=1 ORDER BY s.next_at LIMIT 10').bind(now,now).all()
    for(const scope of due.results){

@@ -56,7 +56,7 @@ export function parseAssistantReply(text: string): AssistantReply {
  }catch(error) {if((error as Error).message==='assistant-format')throw error;throw new Error('assistant-invalid',{cause:error});}
 }
 /** Model output is a proposal. Only whitelisted domain changes reach the persistence adapter. */
-export function planAssistantChanges(data: AssistantData, actions: Action[], now=Date.now(), trackActions=false): Change[] {
+export function planAssistantChanges(data: AssistantData, actions: Action[], now=Date.now(), trackActions=false, newId:()=>string=createClientId): Change[] {
  if(actions.length>50)throw new Error('assistant-invalid');
  if(actions.length===0)return [];
  const working=structuredClone(data),aliases=new Map<string,string>();
@@ -64,7 +64,7 @@ export function planAssistantChanges(data: AssistantData, actions: Action[], now
  const known=new Set([...data.study.courses,...data.study.tasks,...data.study.lessons,...data.scopes.flatMap(s=>[...s.projects,...s.sections])].map(x=>x.id));
  for(const a of actions)if(a.action==='create'){
   if(!a.id||known.has(a.id)||aliases.has(a.id))invalid('assistant-alias');
-  aliases.set(a.id,createClientId());
+  aliases.set(a.id,newId());
  }
  const ref=(id:unknown)=>typeof id==='string'?(aliases.get(id)||id):id;
  for(const [actionIndex,a] of actions.entries()){

@@ -1,3 +1,4 @@
+import {sameStudySourceLink as sameLink} from '../../shared/studyIdentity.mjs';
 import { createClientId } from '../lib/clientId'
 import type { CourseDetails, Course, StudyTask, UniversityState } from './model';
 export type StudyCapture = {
@@ -40,9 +41,6 @@ export function parseStudyCapture(hash: string): StudyCapture | null {
     if(Array.isArray(r.materials))extras.materials=r.materials.slice(0,30).flatMap((x:Record<string,unknown>)=>{try{const u=new URL(String(x.url));if(u.origin!==course.origin||u.protocol!=='https:'||u.username||u.password||[...u.searchParams.keys()].some(k=>/token|sesskey|password|secret/i.test(k)))return [];return [{title:String(x.title||'').slice(0,300),url:u.href.slice(0,2000)}];}catch{return [];}});
     return {version:1, kind:r.kind, courseName:r.courseName.trim(), title:r.title.trim(), courseUrl:course.href, url:page.href,...extras};
   } catch { return null; }
-}
-function sameLink(a: string,b: string): boolean {
-  try { const x=new URL(a),y=new URL(b);return x.origin===y.origin&&x.pathname===y.pathname&&x.searchParams.get('id')===y.searchParams.get('id'); } catch { return false; }
 }
 export function captureMatches(state:UniversityState,capture:StudyCapture) {
   const course = state.courses.find(c=>sameLink(c.url,capture.courseUrl));

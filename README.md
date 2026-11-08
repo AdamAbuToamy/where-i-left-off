@@ -162,3 +162,7 @@ Opt-in Web Push uses a separately configured Cloudflare Worker, D1 and Queues. H
 Permanent Moodle account synchronization, external reply monitoring and binary attachment uploads are not implemented. Account-scoped caching cannot guarantee remote erasure from an offline device. Physical-device checks and operational limitations are documented in the readiness checklist.
 
 [Privacy](https://where-i-left-off.web.app/privacy.html) · [Extension privacy](docs/EXTENSION_PRIVACY.md) · [Earlier test history](TEST_RESULTS.md)
+
+## Public API
+
+Personal API keys for verified accounts, with scoped access to university records, personal cards/sections, board and card reminders. Secrets are shown once and stored as hashes. Worker and Hosting deployed on 8 November 2026; unauthenticated rejection and website health verified. Real signed-in key issuance and authenticated API use remain unverified. See [usage and deployment](docs/PUBLIC_API.md), [published OpenAPI](https://where-i-left-off.web.app/openapi-public-api.json), and the [readiness report](docs/readiness/2026-11-08-public-api.md).

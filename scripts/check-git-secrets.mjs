@@ -1,5 +1,6 @@
 import { execFileSync, spawn } from "node:child_process";
 const rules = [
+  ["wilo-api-key", /wilo_api_[A-Za-z0-9_-]{12}\.[A-Za-z0-9_-]{43}/],
   ["private-key", /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],
   ["service-account", /"type"\s*:\s*"service_account"/],
   [

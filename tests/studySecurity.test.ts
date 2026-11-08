@@ -18,3 +18,9 @@ it('requires revision increments, bounded data and canonical document keys',asyn
  await assertFails(setDoc(doc(db,path),{...data(),revision:1,payload:'x'.repeat(600001)}));
  await assertSucceeds(setDoc(doc(db,path),{...data(),revision:1,deleted:true,payload:''}));
 });
+it('keeps API receipts private even from normal owner/admin clients',async()=>{
+ const path='users/alice/apiOperations/source_synthetic';await env.withSecurityRulesDisabled(async ctx=>setDoc(doc(ctx.firestore(),path),{kind:'source',entityId:'task',base:{title:'Private baseline'}}));
+ for(const context of [env.unauthenticatedContext(),env.authenticatedContext('alice',{email_verified:true}),env.authenticatedContext('bob',{email_verified:true}),env.authenticatedContext('administrator',{email:'adam2002hosny@gmail.com',email_verified:true})]){
+  await assertFails(getDoc(doc(context.firestore(),path)));await assertFails(setDoc(doc(context.firestore(),path),{kind:'receipt'}));
+ }
+});
