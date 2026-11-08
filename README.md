@@ -166,3 +166,7 @@ Permanent Moodle account synchronization, external reply monitoring and binary a
 ## Public API
 
 Personal API keys for verified accounts, with scoped access to university records, personal cards/sections, board and card reminders. Secrets are shown once and stored as hashes. Worker and Hosting deployed on 8 November 2026; unauthenticated rejection and website health verified. Real signed-in key issuance and authenticated API use remain unverified. See [usage and deployment](docs/PUBLIC_API.md), [published OpenAPI](https://where-i-left-off.web.app/openapi-public-api.json), and the [readiness report](docs/readiness/2026-11-08-public-api.md).
+
+## Official development workspace
+
+Use `/home/adam/projects/where-i-left-off` (`main`). The former `/home/adam/wilo-test` copy is retained for recovery, not as a second release source. See [consolidation evidence](docs/readiness/2026-11-08-consolidation.md), [Public API](docs/PUBLIC_API.md) and `/#/api-docs` for the generic assignment-reminder API.

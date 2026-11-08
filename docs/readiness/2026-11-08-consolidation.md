@@ -22,3 +22,13 @@ The four old capture-import adapter/doc/test files are preserved in recovery/dev
 ## Verification / delivery
 
 Results and final release evidence are appended after execution; no unperformed check is passed by this document.
+
+## Completed local verification and integration
+
+- Development application suite1330 passed; official-directory suite1325 passed. The5-test difference is the preserved, untracked legacy capture adapter excluded from official runtime/source, not a removed deployed feature. Public documentation/key settings9 tests passed; browser5 journeys passed; synthetic key component phone/desktop checks passed.
+- Worker915 passed in both development and official directories; focused linking9 passed after the final ownership-before-recovery-hint guard. Firestore REST emulator4 passed; Firebase rules691 and Auth recovery4 passed. No security-critical failures remain.
+- OpenAPI:63 generated request examples +3 workflows +9 HTTP failure cases executed on a synthetic local server;42 JSON bodies validated. No authenticated production task/reminder writes.
+- Lint, tsc, architecture38 modules, generated domain freshness, production build, source/history credential checks passed. Existing Vite large-chunk warnings remain.
+- Official main fast-forwarded to the full development history; original development copy/evaluation files retained. Additional official-directory compatible release fix reads App Check configuration from Vite modulepreload chunks, not only the entry script. Two focused tests passed. It preserves public Firebase/App Check identifiers without a new key or IAM change. Runtime lockfiles installed using npm ci.
+- Existing keyless writer role/delegation read-back verified: data get/list/create/update only, no IAM broadening or user-managed private key.
+- Production delivery evidence is recorded in the release manifest (commit/version and asset hashes) and protected operator verification output; this report is the pre-release local gate, not a claim of actual reminder delivery.

@@ -1,6 +1,6 @@
 # WILO operations and recovery
 
-Reviewed 2026-11-07. This is an actionable runbook, not evidence that every external service is configured.
+Reviewed 2026-11-08. This is an actionable runbook, not evidence that every external service is configured.
 
 ## Release gate
 
@@ -35,3 +35,9 @@ Cloudflare and Firebase supply managed serving infrastructure. WILO still needs 
 ## Security/tooling maintenance
 
 `npm audit --omit=dev` is the runtime inventory; full `npm audit` includes development tools. Record each separately. Do not force major downgrades or suppress advisories to get green output. Patch a vulnerable chain only after checking the actual imports and testing CLI, emulators, lint/build and packaging. Use secret history checks before pushing. Broader DAST, legal compliance and license attestation are separate activities.
+
+## Official workspace after consolidation
+
+Use `/home/adam/projects/where-i-left-off` on main for Wilo development/build/deployment. `/home/adam/wilo-test` is retained as a recovery workspace with untracked evaluation/capture work; do not clean/reset or deploy stale builds from it. Recovery bundles/source manifest: `/home/adam/wilo-recovery/20261108-consolidation-160104`.
+
+Assignment-reminder v1.1 rollout uses the existing Worker and Hosting. Apply only additive `push-worker/reminder-link-schema.sql` to existing D1 before the new Worker. Keep all remote bindings/variables/secrets (do not deploy stale local provider vars); use the existing protected credentials and data-only IAM. No new cron or external scheduler. Match Hosting and Worker release metadata to the reviewed main commit. Smoke checks are anonymous/read-only, with public OpenAPI/asset hashes and normal login entry availability; do not create real reminders as a health test. Actual OAuth/device delivery is a separate owner-driven verification.
