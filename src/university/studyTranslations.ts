@@ -1,4 +1,11 @@
 export const studyTranslations:Record<string,[string,string]> = {
+"عن الكورس": ["About this course", "על הקורס"],
+"مواد الكورس": ["Course materials", "חומרי הקורס"],
+"موضوع": ["topics", "נושאים"],
+"مهام": ["tasks", "משימות"],
+"تقدم الدراسة": ["Study progress", "התקדמות הלימודים"],
+"التسليم القادم": ["Next deadline", "המועד הבא"],
+"ملاحظات محفوظة": ["Saved notes", "הערות שמורות"],
 "عرض المزيد": ["Show more", "הצג עוד"],
 "بقية المهام (": ["Other tasks (", "משימות נוספות ("],
 "كورسات": ["courses", "קורסים"],

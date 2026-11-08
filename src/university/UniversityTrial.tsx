@@ -1,3 +1,4 @@
+import CourseOverview from "./CourseOverview";
 import { usePhoneLayout } from "../components/usePhoneSurface";
 import { useDesignPreview } from "../components/designPreviewContext";
 import { useEffect, useState, useMemo } from "react";
@@ -261,7 +262,7 @@ export default function UniversityTrial(props: Props) {
                   transition={{ duration: reduced ? 0 : 0.16 }}
                 >
                   {panel === "overview" && (
-                    <>
+                    focused ? <CourseOverview course={selected} tasks={tasks} courses={state.courses} now={now} open={setPanel}/> : <>
                       <div className="study-trial-summary">
                         <button
                           onClick={() => {
@@ -341,6 +342,30 @@ export default function UniversityTrial(props: Props) {
                   )}
                   {panel === "tasks" && (
                     <>
+                      {focused && <>                      <div className="study-trial-summary">
+                        <button
+                          onClick={() => {
+                            setFiltersOpen(true);
+                            setStatus("open");
+                            setPanel("tasks");
+                          }}
+                        >
+                          <ListChecks size={17} />
+                          <strong>{pending.length}</strong>مهام مفتوحة
+                        </button>
+                        <button
+                          className={late.length ? "study-trial-late" : ""}
+                          onClick={() => {
+                            setFiltersOpen(true);
+                            setStatus("overdue");
+                            setPanel("tasks");
+                          }}
+                        >
+                          <Clock size={17} />
+                          <strong>{late.length}</strong>مهام متأخرة
+                        </button>
+                      </div>
+</>}
                       <details
                         className="study-trial-filters"
                         open={filtersOpen}

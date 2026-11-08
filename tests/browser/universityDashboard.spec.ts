@@ -97,6 +97,11 @@ for (const phone of [false, true])
     await page.locator(".uni-course-card").click();
     await expect(page.locator(".study-trial-panel")).toBeVisible();
     await expect(page.locator(".study-trial-next")).toHaveCount(0);
+    await expect(page.locator(".course-overview-cards>button")).toHaveCount(4);
+    await expect(page.locator(".study-trial-summary")).toHaveCount(0);
+    await page.locator(".course-overview-cards>button").nth(1).click();
+    await expect(page.locator(".study-trial-summary")).toBeVisible();
+    await page.locator(".study-trial-tabs button").first().click();
     await expect(page.locator(".study-workspace-search input")).toBeVisible();
     await page.locator(".study-workspace-search input").fill("هندسة");
     await expect(page.locator(".study-controls")).toBeEnabled({timeout:15000});

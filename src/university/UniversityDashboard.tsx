@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import StudyLocalized from "./StudyLocale";
 import {
-  BookOpen,
+  GitBranch, BookOpen,
   CalendarDays,
   ChevronDown,
   Plus,
@@ -94,7 +94,7 @@ export default function UniversityDashboard(p: Props) {
                     : <span dir="auto">{courseName(p.filter)}</span>}
             </h2>
           </div>
-          <div className="uni-header-actions">
+          <div className="uni-header-actions"><button className="uni-map-button" aria-label="خريطة الكورسات" onClick={()=>p.navigate("map", "")}><GitBranch size={17}/><span>خريطة الكورسات</span></button>
             <details className="uni-menu" onClick={tools}>
               <summary>
                 <Plus size={18} />
@@ -126,7 +126,7 @@ export default function UniversityDashboard(p: Props) {
                 </button>
                 <button onClick={p.importPlan}>إضافة دفعة</button>
                 <button onClick={p.exportPlan}>تصدير بياناتي</button>
-                <label>
+                <label className="uni-restore">
                   استعادة نسخة احتياطية
                   <input
                     type="file"
@@ -143,9 +143,7 @@ export default function UniversityDashboard(p: Props) {
                     }}
                   />
                 </label>
-                <button onClick={() => p.navigate("map", "")}>
-                  خريطة الكورسات
-                </button>
+
                 <a href="#/notifications">إعدادات الإشعارات</a>
               </div>
             </details>
