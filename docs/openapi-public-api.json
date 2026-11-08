@@ -2,13 +2,13 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wilo Public API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Generic personal automation. Ownership comes exclusively from the bearer key. No client-supplied account ID. API keys cannot issue keys or change account/security settings."
   },
   "servers": [
     {
       "url": "https://wilo-free-push.adam2002hosny.workers.dev/api/v1",
-      "description": "Requires approved production deployment"
+      "description": "Wilo Public API production endpoint"
     }
   ],
   "security": [
@@ -3554,6 +3554,388 @@
           }
         }
       }
+    },
+    "/tasks/{id}/reminder": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getTaskReminder",
+        "description": "Requires tasks:read and reminders:read. Read back assignment linkage and native schedule state without creating or changing anything. verified means state verification; scheduled:true is separate and never means push delivery.",
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stored link/resource conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "result",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "result": {
+                          "$ref": "#/components/schemas/TaskReminderStatus"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute; Retry-After:60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Read-back state (including unlinked, disabled or awaiting-device)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/TaskReminderStatus"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Setup is durably pending recovery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/TaskReminderStatus"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "linkTaskReminder",
+        "description": "Requires courses:read, tasks:read, tasks:write, reminders:read and reminders:write. Ensure an existing assignment has one native reminder card. Uses existing account timezone, lead time, notification opt-in and device subscriptions. Requires enabled due reminders and a future unfinished task for a new link. Preserves existing/manual linked cards and settings. expectedRevision is checked for a new link; repeated calls never create another card. Receipt and Firestore relation are atomic; D1/native scope recovery is durable. Retry the same body and Idempotency-Key, or poll GET after202. No API consumer receives Firebase credentials.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "expectedRevision"
+                ],
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale revision, incompatible/shared link, disabled notification preferences, completed/past task, idempotency key reused, or manual changes blocking pending recovery. Existing data is not overwritten.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "result",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "result": {
+                          "$ref": "#/components/schemas/TaskReminderStatus"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute; Retry-After:60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Read-back result; inspect status, verified and scheduled instead of assuming success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/TaskReminderStatus"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Partial setup: paused card and durable recovery intent; not success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/TaskReminderStatus"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4398,6 +4780,82 @@
           "time"
         ],
         "additionalProperties": false
+      },
+      "TaskReminderStatus": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "status",
+          "verified",
+          "scheduled"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "projectId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "unlinked",
+              "pending",
+              "blocked",
+              "scheduled",
+              "disabled",
+              "awaiting-device",
+              "outside-window",
+              "manual-recurring",
+              "incomplete"
+            ]
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "The reported state was read back; not proof of delivery."
+          },
+          "scheduled": {
+            "type": "boolean",
+            "description": "True only for a verified enabled native schedule with a registered device."
+          },
+          "reason": {
+            "type": "string"
+          },
+          "reminderAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "nextCheckAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "leadMinutes": {
+            "type": "integer"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Reminder"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       }
     }
   }
