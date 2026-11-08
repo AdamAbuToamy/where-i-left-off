@@ -337,7 +337,16 @@ test("HTTP route enforces every scope, denies cross-account IDs and verifies rea
       .bind("synthetic-device", "alice", "{}")
       .run();
     assert.equal((await h(request(other.key), env)).status, 404);
-    assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM api_reminder_work WHERE uid=?').bind('bob').first()).n,0);
+    assert.equal(
+      (
+        await DB.prepare(
+          "SELECT COUNT(*) AS n FROM api_reminder_work WHERE uid=?",
+        )
+          .bind("bob")
+          .first()
+      ).n,
+      0,
+    );
     const response = await h(request(owner.key), env);
     assert.equal(response.status, 200, await response.clone().text());
     const result = (await response.json()).result;
@@ -363,4 +372,135 @@ test("HTTP route enforces every scope, denies cross-account IDs and verifies rea
   } finally {
     DB.sqlite.close();
   }
+});
+
+for (const leadMinutes of [4320, 5760])
+  test(`per-assignment ${leadMinutes} minute lead reaches the native scheduler without changing account defaults`, async () => {
+    const s = setup();
+    s.task.due = "2026-11-20T12:00:00Z";
+    const rec = s.repository.get("studyRecords", "tasks_task");
+    s.repository.seed("studyRecords", "tasks_task", {
+      ...rec,
+      payload: JSON.stringify(s.task),
+    });
+    const result = await s.service.link(
+      "task",
+      { expectedRevision: 0, leadMinutes },
+      "long-reminder-lead-0001",
+    );
+    assert.equal(result.leadMinutes, leadMinutes);
+    assert.equal(result.scheduled, true);
+    assert.equal(
+      result.reminderAt,
+      Date.parse(s.task.due) - leadMinutes * 60000,
+    );
+    assert.equal(s.p.leadMinutes, 15);
+    const { candidate } = await import("./policy.mjs"),
+      { nextCheck } = await import("./schedule.mjs");
+    const card = s.settings.get(result.projectId),
+      project = s.repository.get("projects", result.projectId);
+    assert.equal(
+      candidate(project, card, s.p, result.reminderAt, NOW - 86400000).key,
+      `due:2026-11-20:14:00:${leadMinutes}`,
+    );
+    assert.equal(
+      candidate(project, {}, s.p, result.reminderAt, NOW - 86400000),
+      null,
+    );
+    assert.equal(
+      nextCheck(project, card, s.p, result.reminderAt - 1000, NOW - 86400000),
+      result.reminderAt,
+    );
+    const retry = await s.service.link(
+      "task",
+      { expectedRevision: 0, leadMinutes },
+      "long-reminder-lead-0001",
+    );
+    assert.equal(retry.projectId, result.projectId);
+    s.settings.set(result.projectId, { ...card, leadMinutes: 1440 });
+    await assert.rejects(
+      () =>
+        s.service.link(
+          "task",
+          { expectedRevision: 1, leadMinutes },
+          "long-reminder-lead-0002",
+        ),
+      { code: "reminder-settings-conflict" },
+    );
+    assert.equal(s.settings.get(result.projectId).leadMinutes, 1440);
+  });
+test("long leads cannot create a past reminder and manual edits retaining the outbox marker block recovery", async () => {
+  const s = setup();
+  await assert.rejects(
+    () =>
+      s.service.link(
+        "task",
+        { expectedRevision: 0, leadMinutes: 4320 },
+        "past-reminder-lead-0001",
+      ),
+    { code: "reminder-time-in-past" },
+  );
+  assert.equal(s.repository.get("studyRecords", "tasks_task").revision, 0);
+  s.task.due = "2026-11-20T12:00:00Z";
+  const rec = s.repository.get("studyRecords", "tasks_task");
+  s.repository.seed("studyRecords", "tasks_task", {
+    ...rec,
+    payload: JSON.stringify(s.task),
+  });
+  s.setPhase("after-claim");
+  assert.equal(
+    (
+      await s.service.link(
+        "task",
+        { expectedRevision: 0, leadMinutes: 4320 },
+        "manual-lead-change-0001",
+      )
+    ).status,
+    "pending",
+  );
+  for (const [id, value] of s.settings)
+    s.settings.set(id, { ...value, leadMinutes: 5760 });
+  s.setPhase("");
+  const result = await s.service.link(
+    "task",
+    { expectedRevision: 0, leadMinutes: 4320 },
+    "manual-lead-change-0001",
+  );
+  assert.equal(result.status, "blocked");
+  assert.equal(s.settings.get(result.projectId).leadMinutes, 5760);
+});
+
+test("absolute task reminders work without a deadline and preserve user schedule on replay", async () => {
+  const s = setup();
+  const record = s.repository.get("studyRecords", "tasks_task");
+  const task = JSON.parse(record.payload);
+  task.due = "";
+  s.repository.seed("studyRecords", "tasks_task", {
+    ...record,
+    payload: JSON.stringify(task),
+  });
+  const body = {
+    expectedRevision: 0,
+    schedule: {
+      mode: "absolute",
+      scheduledAt: "2026-11-15T09:00:00+02:00",
+      timeZone: "Asia/Jerusalem",
+    },
+  };
+  const result = await s.service.link(
+    "task",
+    body,
+    "synthetic-absolute-reminder-0001",
+  );
+  assert.equal(result.verified, true);
+  assert.equal(result.scheduled, true);
+  assert.equal(s.repository.get("projects", result.projectId).dueDate, "");
+  assert.equal(s.settings.get(result.projectId).schedule.mode, "absolute");
+  const again = await s.service.link(
+    "task",
+    body,
+    "synthetic-absolute-reminder-0001",
+  );
+  assert.equal(again.projectId, result.projectId);
+  assert.equal(s.settings.size, 1);
 });

@@ -1,22 +1,36 @@
+import {
+  normalizeCardSchedule,
+  resolveCardSchedule,
+} from "../../shared/cardReminderSchedule.mjs";
 import { ApiError, object, validId } from "../../shared/universityApiPlan.mjs";
 import { hydrateStudy } from "./apiStudyService.mjs";
 import { ProjectEntity } from "../../shared/wiloApiDomain.mjs";
 import { reminderCardFields } from "../../shared/universityReminder.mjs";
 import { sha256, stableJson } from "../../shared/apiHash.mjs";
-import { localParts, zonedTime } from "../policy.mjs";
+import {
+  localParts,
+  zonedTime,
+  reminderLead,
+  reminderLeads,
+  validLeadMinutes,
+} from "../policy.mjs";
 import { afterQuiet } from "../schedule.mjs";
 const fail = (code) => {
   throw new ApiError(code);
 };
-const preferencesHash = (p) =>
+const preferencesHash = (p, explicit = false) =>
   sha256(
-    stableJson({
-      timezone: p.timezone,
-      enabled: p.enabled,
-      due: p.due,
-      leadMinutes: p.leadMinutes,
-      defaultTime: p.defaultTime,
-    }),
+    stableJson(
+      explicit
+        ? { enabled: p.enabled }
+        : {
+            timezone: p.timezone,
+            enabled: p.enabled,
+            due: p.due,
+            leadMinutes: p.leadMinutes,
+            defaultTime: p.defaultTime,
+          },
+    ),
   );
 /** Cross-store recovery is an application use case; the delivery scheduler is unchanged. */
 export function createTaskReminderService({
@@ -72,6 +86,36 @@ export function createTaskReminderService({
     const { value: p, enabledAt } = await reminders.preferences(),
       settings = await reminders.read(s.task.reminderProjectId),
       schedule = await reminders.schedule(id);
+    if (reminders.view) {
+      const actual = await reminders.view(s.project, s.task.reminderProjectId);
+      const pending =
+        s.intent?.state === "pending" ||
+        (s.intent?.state === "complete" && schedule.recoveryPending);
+      const state = pending
+        ? "pending"
+        : s.intent?.state === "blocked"
+          ? "blocked"
+          : actual.status;
+      return {
+        ...actual,
+        taskId: id,
+        revision: s.record.revision,
+        projectId: s.task.reminderProjectId,
+        status: state,
+        verified: !["pending", "blocked", "incomplete"].includes(state),
+        scheduled: state === "scheduled",
+        reminderAt: actual.effectiveAt ? Date.parse(actual.effectiveAt) : null,
+        timezone: actual.timeZone,
+        settings: settings
+          ? {
+              disabled: !!settings.disabled,
+              weekly: !!settings.weekly,
+              time: settings.time || "",
+            }
+          : null,
+        ...(s.intent?.reason ? { reason: s.intent.reason } : {}),
+      };
+    }
     let state =
       s.intent?.state === "pending" ||
       (s.intent?.state === "complete" && schedule.recoveryPending)
@@ -90,22 +134,27 @@ export function createTaskReminderService({
     if (state === "configured") {
       if (
         !p.enabled ||
-        !p.due ||
-        s.task.done ||
+        (!settings.schedule && !p.due) ||
+        (!settings.schedule && s.task.done) ||
         settings.disabled ||
-        s.project.status === "done" ||
-        !s.project.dueDate
+        (!settings.schedule && s.project.status === "done") ||
+        (!settings.schedule && !s.project.dueDate)
       )
         state = "disabled";
-      else if (settings.weekly) state = "manual-recurring";
+      else if (settings.weekly && !settings.schedule)
+        state = "manual-recurring";
       else {
-        const due = zonedTime(
-          s.project.dueDate,
-          settings.time || p.defaultTime,
-          p.timezone,
-        );
+        const due = settings.schedule
+          ? resolveCardSchedule(settings.schedule, s.project.dueDate)
+          : zonedTime(
+              s.project.dueDate,
+              settings.time || p.defaultTime,
+              p.timezone,
+            );
         if (due !== null) {
-          const at = due - p.leadMinutes * 60000;
+          const at = settings.schedule
+            ? due
+            : due - reminderLead(settings, p) * 60000;
           if (at >= enabledAt && now() - at < 86400000)
             reminderAt = afterQuiet(p, Math.max(now(), at));
         }
@@ -130,7 +179,9 @@ export function createTaskReminderService({
       reminderAt,
       nextCheckAt: schedule.nextCheckAt,
       timezone: p.timezone,
-      leadMinutes: p.leadMinutes,
+      leadMinutes: reminderLead(settings || {}, p),
+      schedule: settings?.schedule || null,
+      settingsVersion: settings ? await sha256(stableJson(settings)) : null,
       settings: validSettings
         ? {
             disabled: settings.disabled,
@@ -164,7 +215,7 @@ export function createTaskReminderService({
       return;
     }
     const { value: p } = await reminders.preferences();
-    if ((await preferencesHash(p)) !== i.preferencesHash) {
+    if ((await preferencesHash(p, !!i.schedule)) !== i.preferencesHash) {
       await block(id, i.generation, "reminder-preferences-changed");
       return;
     }
@@ -173,8 +224,15 @@ export function createTaskReminderService({
       weekly: false,
       time: i.time,
       apiReminderIntent: i.generation,
+      ...(i.leadMinutes !== undefined ? { leadMinutes: i.leadMinutes } : {}),
+      ...(i.schedule ? { schedule: i.schedule } : {}),
     });
-    if (claimed?.apiReminderIntent !== i.generation) {
+    if (
+      claimed?.apiReminderIntent !== i.generation ||
+      (i.schedule
+        ? stableJson(claimed.schedule) !== stableJson(i.schedule)
+        : reminderLead(claimed, p) !== (i.leadMinutes ?? p.leadMinutes))
+    ) {
       await block(id, i.generation, "reminder-settings-changed");
       return;
     }
@@ -204,7 +262,7 @@ export function createTaskReminderService({
       })
         .apply(
           "edit",
-          { dueDate: i.date, status: "active" },
+          { dueDate: i.date, status: current.task.done ? "done" : "active" },
           i.projectRevision,
           now(),
         )
@@ -222,7 +280,18 @@ export function createTaskReminderService({
     await reminders.complete(id);
   }
   async function link(id, body, idempotencyKey) {
-    object(body, ["expectedRevision"], ["expectedRevision"]);
+    object(
+      body,
+      ["expectedRevision", "leadMinutes", "schedule"],
+      ["expectedRevision"],
+    );
+    if (body.schedule !== undefined && body.leadMinutes !== undefined)
+      fail("invalid-input");
+    if (
+      body.leadMinutes !== undefined &&
+      !validLeadMinutes(body.leadMinutes)
+    )
+      fail("invalid-input");
     if (
       !Number.isSafeInteger(body.expectedRevision) ||
       body.expectedRevision < 0
@@ -241,11 +310,11 @@ export function createTaskReminderService({
         20,
       );
     const { value: p } = await reminders.preferences(),
-      prefsHash = await preferencesHash(p),
+      prefsHash = await preferencesHash(p, body.schedule !== undefined),
       generation = uuid();
     // Only an owned, valid task may allocate a recovery hint. Invalid IDs must
     // not fill the recovery queue. Recheck the snapshot inside the write transaction.
-    await repository.transact(tx=>snapshot(tx,id));
+    await repository.transact((tx) => snapshot(tx, id));
     // Durable hint precedes Firestore. A crash cannot strand a committed outbox.
     await reminders.enqueue(id);
     await repository.transact(async (tx) => {
@@ -260,20 +329,62 @@ export function createTaskReminderService({
         return;
       }
       const s = await snapshot(tx, id);
+      if (s.task.reminderProjectId && body.schedule !== undefined) {
+        const settings = await reminders.read(s.task.reminderProjectId);
+        let expected;
+        try {
+          expected = normalizeCardSchedule(body.schedule, {
+            ...p,
+            time: settings?.time || p.defaultTime,
+          });
+        } catch {
+          fail("invalid-input");
+        }
+        if (stableJson(settings?.schedule) !== stableJson(expected))
+          fail("reminder-settings-conflict");
+      }
+      if (s.task.reminderProjectId && body.leadMinutes !== undefined) {
+        const settings = await reminders.read(s.task.reminderProjectId);
+        if (reminderLead(settings || {}, p) !== body.leadMinutes)
+          fail("reminder-settings-conflict");
+      }
       if (!s.task.reminderProjectId) {
         if (s.record.revision !== body.expectedRevision)
           fail("revision-conflict");
-        if (!p.enabled || !p.due) fail("reminder-preferences-disabled");
+        if (!p.enabled || (!body.schedule && !p.due))
+          fail("reminder-preferences-disabled");
         if (
-          s.task.done ||
-          !s.task.due ||
-          !Number.isFinite(Date.parse(s.task.due)) ||
-          Date.parse(s.task.due) <= now()
+          (!body.schedule && s.task.done) ||
+          (!body.schedule && !s.task.due) ||
+          (!body.schedule &&
+            (!Number.isFinite(Date.parse(s.task.due)) ||
+              Date.parse(s.task.due) <= now()))
         )
           fail("task-not-remindable");
         const collision = await tx.getProject(projectId);
         if (collision) fail("reminder-link-conflict");
-        const local = localParts(Date.parse(s.task.due), p.timezone);
+        const local = s.task.due
+          ? localParts(Date.parse(s.task.due), p.timezone)
+          : { date: "", time: p.defaultTime };
+        let explicit;
+        try {
+          if (body.schedule)
+            explicit = normalizeCardSchedule(body.schedule, {
+              ...p,
+              time: local.time,
+            });
+        } catch {
+          fail("invalid-input");
+        }
+        const dueAt = zonedTime(local.date, local.time, p.timezone);
+        if (
+          explicit
+            ? resolveCardSchedule(explicit, local.date) === null ||
+              resolveCardSchedule(explicit, local.date) <= now()
+            : dueAt === null ||
+              dueAt - (body.leadMinutes ?? p.leadMinutes) * 60000 <= now()
+        )
+          fail("reminder-time-in-past");
         let project;
         try {
           const fields = reminderCardFields(s.task, undefined, now());
@@ -306,6 +417,10 @@ export function createTaskReminderService({
           projectRevision: 0,
           preferencesHash: prefsHash,
           time: local.time,
+          ...(body.leadMinutes !== undefined
+            ? { leadMinutes: body.leadMinutes }
+            : {}),
+          ...(explicit ? { schedule: explicit } : {}),
           date: local.date,
           state: "pending",
           pending: true,

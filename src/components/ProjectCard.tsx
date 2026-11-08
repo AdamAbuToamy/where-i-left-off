@@ -11,7 +11,7 @@ import { workflowText } from "../workflowText";
 import { cardAction } from "../lib/cardAction";
 import ExtraLinks from "./ExtraLinks";
 import LinkedText from "./LinkedText";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import type { ReactNode, FormEvent } from "react";
 import type { Project, Section, GroupMember } from "../types";
 import type { Language } from "../translations";
@@ -26,6 +26,8 @@ import { toggleChecklist } from "../lib/projects";
 import type { ProjectDetails } from "../lib/projects";
 import RecallFields from "./RecallFields";
 import type { RecallDetails } from "./RecallFields";
+
+const CardReminderControl = lazy(() => import("./CardReminderControl"));
 
 type ProjectCardProps = {
   summaryExtras?: ReactNode;
@@ -654,6 +656,20 @@ export default function ProjectCard({
               className="card-detail-page card-detail-actions"
               hidden={fullscreen && detailPage !== "overview"}
             >
+              {fullscreen &&
+                canManage &&
+                (!groupId || project.assignedTo === auth?.currentUser?.uid) && (
+                  <Suspense fallback={null}>
+                    <CardReminderControl
+                      compact
+                      id={project.id}
+                      groupId={groupId}
+                      name={project.name}
+                      dueDate={project.dueDate}
+                      language={language}
+                    />
+                  </Suspense>
+                )}
               {canEdit && (
                 <button
                   type="button"

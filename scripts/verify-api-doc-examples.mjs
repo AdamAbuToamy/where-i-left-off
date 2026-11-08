@@ -49,6 +49,8 @@ const server = createServer(async (req, res) => {
       req.headers["idempotency-key"],
       /^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$/,
     );
+  if (op.parameters.some((p) => p.name === "If-Match"))
+    assert.ok(req.headers["if-match"]);
   if (op.requestBody) {
     assert.match(req.headers["content-type"], /application\/json/);
     captured.push({ operationId: op.id, body: JSON.parse(text) });
@@ -68,18 +70,22 @@ const server = createServer(async (req, res) => {
   }
   res.statusCode = req.method === "POST" && op.responses["201"] ? 201 : 200;
   const result =
-    req.method === "GET"
-      ? {
-          items: [
-            {
-              id: "SYNTHETIC_COURSE",
-              name: "Synthetic local course",
-              revision: 0,
-            },
-          ],
-          nextCursor: null,
-        }
-      : { id: "SYNTHETIC_RESOURCE", revision: 0, created: true };
+    op.id === "getCardReminder"
+      ? { settingsVersion: "0".repeat(64) }
+      : req.method === "GET"
+        ? {
+            items: [
+              {
+                id: "SYNTHETIC_COURSE",
+                name: "Synthetic local course",
+                revision: 0,
+              },
+            ],
+            nextCursor: null,
+          }
+        : op.id === "getCardReminder"
+          ? { settingsVersion: "0".repeat(64) }
+          : { id: "SYNTHETIC_RESOURCE", revision: 0, created: true };
   res.end(JSON.stringify({ result, requestId: "synthetic-request" }));
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -87,6 +93,7 @@ const base = "http://127.0.0.1:" + server.address().port + "/api/v1";
 async function execute(code, language) {
   const local = code
     .replaceAll(docs.apiBase, base)
+    .replaceAll("REPLACE_WITH_SETTINGS_VERSION", "0".repeat(64))
     .replaceAll("REPLACE_WITH_COURSE_ID_FROM_RESPONSE", "SYNTHETIC_COURSE");
   const args =
     language === "curl"
@@ -105,6 +112,7 @@ try {
     for (const op of docs.operations)
       await execute(docs.requestCode(op, language), language);
     await execute(docs.workflowCode(language), language);
+    await execute(docs.reminderWorkflowCode(language), language);
     for (const status of [401, 403, 429]) {
       forcedStatus = status;
       await assert.rejects(
@@ -139,7 +147,7 @@ print(len(payload['captured']))`;
     throw new Error("OpenAPI validation failed: " + error.stderr.slice(-1500));
   });
   console.log(
-    `Passed ${docs.operations.length * 3} generated request examples, 3 workflows, 9 HTTP error handling cases; ${result.stdout.trim()} captured JSON bodies validated against OpenAPI. Local synthetic server only.`,
+    `Passed ${docs.operations.length * 3} generated request examples, 6 workflows, 9 HTTP error handling cases; ${result.stdout.trim()} captured JSON bodies validated against OpenAPI. Local synthetic server only.`,
   );
 } finally {
   await new Promise((resolve) => server.close(resolve));

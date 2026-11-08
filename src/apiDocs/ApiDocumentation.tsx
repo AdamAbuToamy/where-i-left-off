@@ -6,6 +6,7 @@ import {
   operations,
   requestCode,
   workflowCode,
+  reminderWorkflowCode,
   operationBody,
   resolveSchema,
   errorResponseCode,
@@ -56,7 +57,7 @@ const words = {
     retry:
       "للعمليات التي تعلن Idempotency-Key، استخدم معرّفًا جديدًا لكل عملية مقصودة واحفظه. عند انقطاع الاتصال أعد نفس الطلب بنفس المعرف، ولا تنشئ معرفًا جديدًا للمحاولة نفسها. تغيّر المحتوى مع المعرف نفسه يعيد 409. أسماء المعرفات في الأمثلة توضيحية؛ غيّرها للعمليات الجديدة.",
     conflict:
-      "عند 409 اقرأ أحدث نسخة وراجع التعديلات قبل إعادة الإرسال. لا تستبدل تعديلاتك أو تعديلات المستخدم تلقائيًا. استبدال اللوح عبر PUT يستبدل حالته كاملة؛ اقرأ اللوح أولًا وحافظ على العناصر التي تريد إبقاءها. لربط واجب موجود استخدم POST /tasks/{id}/reminder ثم تحقق عبر GET للمسار نفسه؛ 202 تعني انتظار الإكمال، ولا تعتبر العملية مجدولة إلا إذا كانت scheduled=true. تعديل محتوى السجلات المرتبطة يبقى عبر واجهة Wilo. تحديث إعدادات تذكير البطاقة عملية PUT مطلقة ولا يفعّل الإشعارات العامة.",
+      "عند 409 اقرأ أحدث نسخة وراجع التعديلات قبل إعادة الإرسال. لا تستبدل تعديلاتك أو تعديلات المستخدم تلقائيًا. استبدال اللوح عبر PUT يستبدل حالته كاملة؛ اقرأ اللوح أولًا وحافظ على العناصر التي تريد إبقاءها. لربط واجب موجود استخدم POST /tasks/{id}/reminder ثم تحقق عبر GET للمسار نفسه؛ 202 تعني انتظار الإكمال، ولا تعتبر العملية مجدولة إلا إذا كانت scheduled=true. تعديل محتوى السجلات المرتبطة يبقى عبر واجهة Wilo. لكل بطاقة GET/PUT/DELETE /reminders/{projectId}: اختر schedule بنمط relative أو absolute، واقرأ settingsVersion قبل التعديل أو الإلغاء مع Idempotency-Key ثابت. الأيام والأسابيع تستخدم التقويم وlocalTime؛ الدقائق والساعات مدة دقيقة. يظل الهدوء حسب منطقة الحساب. للإشعار الفوري استخدم POST /tasks/{id}/notification أو /projects/{id}/notification؛ قبول مزوّد Push ليس وصولًا للهاتف.",
     keySafety:
       "أي شخص يمتلك المفتاح قد يصل إلى بيانات حسابك ضمن الصلاحيات الممنوحة. لا تشاركه ولا تضعه في Git أو URL أو سجلات الطلبات. خزّنه في مخزن أسرار على خادمك، واستخدم مفتاحًا منفصلًا لكل تطبيق.",
     rotation:
@@ -116,7 +117,7 @@ const words = {
     retry:
       "Where Idempotency-Key is declared, generate and save a unique identifier for each intended operation. Retry the exact request with the same identifier after a connection failure. Do not generate a new key for the same retry. Reusing a key with different content returns409. Example identifiers are illustrative; change them for new operations.",
     conflict:
-      "On409, reread the latest revision and review changes before resubmitting. Never blindly overwrite manual changes. Board PUT replaces the whole state: read it first and preserve items you want to keep. Link existing assignments with POST /tasks/{id}/reminder, then GET the same path to verify.202 is pending, and only scheduled=true confirms native schedule registration. Editing linked record contents still requires the Wilo UI. Reminder settings PUT is an absolute replacement and never enables global notification delivery.",
+      "On409, reread the latest revision and review changes before resubmitting. Never blindly overwrite manual changes. Board PUT replaces the whole state: read it first and preserve items you want to keep. Link existing assignments with POST /tasks/{id}/reminder, then GET the same path to verify.202 is pending, and only scheduled=true confirms native schedule registration. Editing linked record contents still requires the Wilo UI. For any owned card use GET/PUT/DELETE /reminders/{projectId}: provide a relative or absolute schedule, read settingsVersion before editing/cancelling and reuse a stable Idempotency-Key. Days/weeks use calendar dates and localTime; minutes/hours are precise offsets. Quiet hours use the account zone. Immediate POST /tasks/{id}/notification or /projects/{id}/notification only confirms durable acceptance/provider acknowledgement, never phone arrival.",
     keySafety:
       "Anyone holding a key can access its owner’s data within granted scopes. Never share it or put it in Git, URLs or request logs. Use a server-side secret manager and a separate key for each application.",
     rotation:
@@ -344,6 +345,16 @@ export default function ApiDocumentation({ language }: { language: Language }) {
             <Code
               key={"flow-" + codeLanguage}
               code={workflowCode(codeLanguage)}
+              language={language}
+            />
+            <h3>
+              {language === "ar"
+                ? "تذكير بطاقة قبل الموعد بثلاثة أيام"
+                : "Card reminder: three days before at a local time"}
+            </h3>
+            <Code
+              key={"reminder-" + codeLanguage}
+              code={reminderWorkflowCode(codeLanguage)}
               language={language}
             />
           </section>

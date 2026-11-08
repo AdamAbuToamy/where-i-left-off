@@ -5,7 +5,6 @@ import type { PageName } from "../lib/navigation";
 import { isAdmin } from "../lib/admin";
 import { db } from "../lib/firebase";
 import { cloudText } from "../cloudTranslations";
-import { pushText } from "../pushText";
 import ContentSkeleton from "./ContentSkeleton";
 const Workspace = lazy(() => import("./Workspace"));
 const GroupSpaces = lazy(() => import("./GroupSpaces"));
@@ -50,7 +49,6 @@ function AccountRoute({
   groupId,
   user,
   language,
-  installed,
   profileVersion,
 }: Props) {
   switch (page) {
@@ -85,11 +83,7 @@ function AccountRoute({
     case "analytics":
       return <AnalyticsPage user={user} language={language} />;
     case "notifications":
-      return installed ? (
-        <NotificationSettings user={user} language={language} />
-      ) : (
-        <p>{pushText[language].notInstalled}</p>
-      );
+      return <NotificationSettings user={user} language={language} />;
     case "settings":
       return <ProfileSettings user={user} language={language} />;
     case "logs":

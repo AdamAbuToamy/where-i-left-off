@@ -107,6 +107,8 @@ export function operationBody(op: ApiOperation) {
   const schema = op.requestBody?.content["application/json"]?.schema;
   if (!schema) return undefined;
   const body = sample(schema) as Record<string, unknown>;
+  if (op.operationId === "setCardReminder")
+    Object.assign(body, { disabled: false, weekly: false, time: "09:00" });
   if (
     op.method === "PATCH" &&
     body.values &&
@@ -132,6 +134,7 @@ export function requestCode(op: ApiOperation, language: CodeLanguage) {
     apiBase + op.path.replace(/\{[^}]+\}/g, "REPLACE_WITH_RESOURCE_ID");
   const body = operationBody(op),
     json = body === undefined ? undefined : JSON.stringify(body, null, 2),
+    match = op.parameters.some((p) => p.name === "If-Match"),
     idem = op.parameters.some(
       (p) => p.in === "header" && p.name === "Idempotency-Key",
     );
@@ -140,6 +143,11 @@ export function requestCode(op: ApiOperation, language: CodeLanguage) {
 curl --silent --show-error --fail-with-body \\
   --request ${op.method} '${url}' \\
   --header "Authorization: Bearer $API_KEY"${
+    match
+      ? ` \\
+  --header 'If-Match: REPLACE_WITH_SETTINGS_VERSION'`
+      : ""
+  }${
     json
       ? ` \\
   --header 'Content-Type: application/json'`
@@ -161,7 +169,7 @@ import os
 import requests
 
 api_key = os.environ.get("WILO_API_KEY", "${placeholder}")
-headers = {"Authorization": f"Bearer {api_key}"}${
+headers = {"Authorization": f"Bearer {api_key}"}${match ? '\nheaders["If-Match"] = "REPLACE_WITH_SETTINGS_VERSION"' : ""}${
       idem
         ? `
 headers["Idempotency-Key"] = "example-${op.id}-0001"`
@@ -189,7 +197,7 @@ const apiKey = process.env.WILO_API_KEY || "${placeholder}";
 const response = await fetch("${url}", {
   method: "${op.method}",
   headers: {
-    Authorization: \`Bearer ${"${apiKey}"}\`,${json ? '\n    "Content-Type": "application/json",' : ""}${
+    Authorization: \`Bearer ${"${apiKey}"}\`,${match ? '\n    "If-Match": "REPLACE_WITH_SETTINGS_VERSION",' : ""}${json ? '\n    "Content-Type": "application/json",' : ""}${
       idem
         ? `
     "Idempotency-Key": "example-${op.id}-0001",`
@@ -283,4 +291,61 @@ export function errorResponseCode(status: string) {
           ? "ERROR_CODE_FROM_RESPONSE"
           : "REQUEST_ID_FROM_RESPONSE";
   return `HTTP ${status}\n${JSON.stringify(body, null, 2)}`;
+}
+
+/** Routes come from the same published contract as the reference below. */
+export function reminderWorkflowCode(language: CodeLanguage) {
+  const read = operations.find((op) => op.operationId === "getCardReminder")!;
+  const write = operations.find((op) => op.operationId === "setCardReminder")!;
+  if (!read || !write) return "";
+  const url =
+    apiBase + write.path.replace("{projectId}", "REPLACE_WITH_PROJECT_ID");
+  const schedule = {
+    mode: "relative",
+    amount: 3,
+    unit: "days",
+    localTime: "09:00",
+    timeZone: "Asia/Jerusalem",
+  };
+  if (language === "python")
+    return `import os, uuid, requests
+url = "${url}"
+headers = {"Authorization": f"Bearer {os.environ['WILO_API_KEY']}"}
+response = requests.get(url, headers=headers, timeout=30)
+response.raise_for_status()
+version = response.json()["result"]["settingsVersion"]
+# Keep this key and body unchanged if retrying after a timeout.
+headers["Idempotency-Key"] = str(uuid.uuid4())
+body = {"expectedSettingsVersion": version, "disabled": False,
+        "schedule": ${JSON.stringify(schedule)}}
+response = requests.put(url, headers=headers, json=body, timeout=30)
+response.raise_for_status()
+print(response.json())`;
+  if (language === "javascript")
+    return `import { randomUUID } from "node:crypto";
+const url = "${url}";
+const headers = { Authorization: \`Bearer ${"${process.env.WILO_API_KEY}"}\` };
+const current = await fetch(url, { headers });
+if (!current.ok) throw new Error(\`Wilo HTTP ${"${current.status}"}\`);
+const { result } = await current.json();
+// Keep this key and body unchanged if retrying after a timeout.
+const body = { expectedSettingsVersion: result.settingsVersion, disabled: false,
+  schedule: ${JSON.stringify(schedule)} };
+const response = await fetch(url, { method: "PUT", headers: { ...headers,
+  "Content-Type": "application/json", "Idempotency-Key": randomUUID() },
+  body: JSON.stringify(body) });
+if (!response.ok) throw new Error(\`Wilo HTTP ${"${response.status}"}\`);
+console.log(await response.json());`;
+  return (
+    requestCode(read, "curl") +
+    `
+
+# Copy result.settingsVersion above. Use a new identifier for a new operation;
+# preserve the identifier and exact body for retries of that operation.
+curl --fail-with-body --request PUT '${url}' \
+  --header 'Authorization: Bearer ${placeholder}' \
+  --header 'Content-Type: application/json' \
+  --header 'Idempotency-Key: REPLACE_WITH_STABLE_OPERATION_ID' \
+  --data '${JSON.stringify({ expectedSettingsVersion: "REPLACE_WITH_SETTINGS_VERSION", disabled: false, schedule })}'`
+  );
 }

@@ -1,3 +1,9 @@
+import {stableJson} from "../../shared/apiHash.mjs";
+import {cardReminderUpdate} from "../../shared/cardReminderUpdate.mjs";
+import {readReminderView} from "./reminderView.mjs";
+import {createTaskNotificationService} from "./apiTaskNotification.mjs";
+import {createTaskNotificationStore} from "./apiTaskNotificationStore.mjs";
+import {createApiRepository} from "./apiFirestore.mjs";
 import {recoverApiReminderLinks} from './apiReminderRecovery.mjs';
 import {manageApiKeys} from "./apiKeys.mjs";
 import {ApiError} from "../../shared/universityApiPlan.mjs";
@@ -5,7 +11,7 @@ import {createApiHandler} from "./apiEndpoint.mjs";
 import {readNotifications,readThrough,recordNotification} from './notificationCenter.mjs'
 import {ASSISTANT_PROTOCOL,assistantFailure,assistantHealth} from './assistantEndpoint.mjs'
 import {assistant} from './assistant.mjs'
-import {defaults,preferences,clock,validSubscription,cardKey,candidate,quietNow,localParts} from '../policy.mjs'
+import {defaults,preferences,clock,validSubscription,cardKey,candidate,quietNow,localParts,validLeadMinutes,reminderInstant,zonedTime} from '../policy.mjs'
 import {nextCheck,afterQuiet} from '../schedule.mjs'
 import * as firebase from './firebase.mjs'
 import * as store from './store.mjs'
@@ -49,7 +55,7 @@ export function createWorker(overrides={}){
   if(data.action==='notifications-read')return readThrough(env,identity,data.through)
   if(data.action==='get'){
    const cards=await env.DB.prepare('SELECT id,settings FROM cards WHERE uid=?').bind(uid).all()
-   return {preferences:preferences(JSON.parse(row.prefs)),publicKey:env.VAPID_PUBLIC_KEY,cards:Object.fromEntries(cards.results.map(c=>[c.id,JSON.parse(c.settings)]))}
+   return {preferences:preferences(JSON.parse(row.prefs)),publicKey:env.VAPID_PUBLIC_KEY,cards:Object.fromEntries(cards.results.map(c=>[c.id,JSON.parse(c.settings)])),settingsVersions:Object.fromEntries(await Promise.all(cards.results.map(async c=>[c.id,await hash(stableJson(JSON.parse(c.settings)))])))}
   }
   if(data.action==='save'){
    const p=preferences(data.preferences),at=p.enabled&&!row.enabled?Date.now():row.enabled_at
@@ -70,19 +76,30 @@ export function createWorker(overrides={}){
    else{
     const claimed=await env.DB.prepare('UPDATE devices SET last_test=? WHERE id=? AND uid=? AND last_test<? RETURNING id').bind(Date.now(),id,uid,Date.now()-60000).all()
     if(!claimed.results.length)throw new Error('test-unavailable')
-    await env.PUSH_QUEUE.send({type:'test',uid,deviceId:id,createdAt:Date.now()})
+    await env.PUSH_QUEUE.send({type:'test',uid,deviceId:id,createdAt:Date.now()});return {ok:true,status:'queued',target:'this-device',handsetDelivery:'not-confirmed'}
    }
-  }else if(data.action==='card' || data.action==='viewed'){
+  }else if(data.action==='card' || data.action==='viewed' || data.action==='card-status'){
    const groupId=data.groupId || '',id=cardKey(data.projectId,groupId)
-   await f.cardDocument(env,uid,data.projectId,groupId,identity.token)
+   const project=await f.cardDocument(env,uid,data.projectId,groupId,identity.token)
    const card=await store.card(env,uid,id)
+   if(data.action==='card-status')return readReminderView(env,uid,{...project,id:data.projectId},groupId)
    if(data.action==='viewed'){
     if(row.enabled&&Date.now()-(card.lastViewedAt || 0)>3600000){card.lastViewedAt=Date.now();await store.saveCard(env,uid,id,card)}
    }else{
     if(typeof data.disabled!=='boolean'||typeof data.weekly!=='boolean'||data.time!==''&&!clock(data.time))throw new Error('invalid-reminder')
-    await store.saveCard(env,uid,id,{...card,disabled:data.disabled,weekly:data.weekly,time:data.time})
+    const next=cardReminderUpdate(card,data,project,preferences(JSON.parse(row.prefs)),Date.now());
+    if(data.settingsVersion!==undefined){
+     const raw=await env.DB.prepare('SELECT settings FROM cards WHERE uid=? AND id=?').bind(uid,id).first();
+     if(data.settingsVersion!==await hash(stableJson(card)))throw new Error('reminder-settings-conflict');
+     const changed=raw?await env.DB.prepare('UPDATE cards SET settings=? WHERE uid=? AND id=? AND settings=?').bind(JSON.stringify(next),uid,id,raw.settings).run():await env.DB.prepare('INSERT INTO cards(uid,id,settings) VALUES(?,?,?) ON CONFLICT(uid,id) DO NOTHING').bind(uid,id,JSON.stringify(next)).run();
+     if(!changed.meta.changes)throw new Error('reminder-settings-conflict');
+    }else if(data.schedule!==undefined||data.leadMinutes!==undefined||data.remindAt!==undefined){
+     if(Object.keys(card).length)throw new Error('reminder-settings-conflict');
+     const changed=await env.DB.prepare('INSERT INTO cards(uid,id,settings) VALUES(?,?,?) ON CONFLICT(uid,id) DO NOTHING').bind(uid,id,JSON.stringify(next)).run();if(!changed.meta.changes)throw new Error('reminder-settings-conflict');
+    }else await store.saveCard(env,uid,id,next)
    }
    await store.wake(env,uid,groupId)
+   if(data.action==='card')return {ok:true,...await readReminderView(env,uid,{...project,id:data.projectId},groupId)}
   }else throw new Error('unknown-action')
   return {ok:true}
  }
@@ -138,18 +155,18 @@ export function createWorker(overrides={}){
   const project=await f.cardDocument(env,message.uid,message.projectId,message.scope)
   const key=cardKey(message.projectId,message.scope),card=await store.card(env,message.uid,key)
   if(quietNow(p,Date.now())){await env.PUSH_QUEUE.send(message,{delaySeconds:Math.max(1,Math.min(86400,Math.ceil((afterQuiet(p,Date.now())-Date.now())/1000)))});return}
-  if(!p[message.event.type==='due'?'due':'stale'] || card.disabled || project.status==='done'||project.archivedAt||project.trashedAt)return
-  if(message.event.type==='due' && candidate(project,card,p,Date.now(),row.enabled_at)?.key!==message.event.key)return
+  if((message.event.type!=='scheduled'&&!p[message.event.type==='due'?'due':'stale']) || card.disabled || (project.status==='done'&&message.event.type!=='scheduled')||project.archivedAt||project.trashedAt)return
+  if(['due','scheduled'].includes(message.event.type) && candidate(project,card,p,Date.now(),row.enabled_at)?.key!==message.event.key)return
   if(message.event.type==='stale'){
    const last=Math.max(project.activityAt||0,project.updatedAt?.toMillis?.()||0,typeof project.updatedAt==='number'?project.updatedAt:0,card.lastViewedAt||0,row.enabled_at)
    if(Date.now()-last<p.staleDays*DAY)return
   }
   const deliveryId=await hash(`${message.deviceId}/${key}/${message.event.key}`)
-  if(!await store.claimDelivery(env,deliveryId,message.uid))return
+  if(!await store.claimReminderDispatch(env,deliveryId,message.uid,key,message.event.key,message.deviceId))return
   const t=messages[p.language]
-  const payload={uid:message.uid,title:t[message.event.type],body:p.hideContent?t.private:project.name,url:message.scope?`#/groups/${message.scope}/${message.projectId}`:`#/personal/${message.projectId}`,tag:`wilo-${key}-${message.event.type}`}
-  try{await send(env,JSON.parse(device.subscription),payload);try{await recordNotification(env,message.uid,await hash(`${key}/${message.event.type}/${message.event.key}`),payload)}catch{console.warn('push.history.failed',{reason:'storage'})}}
-  catch(error){if([404,410].includes(error.status))await env.DB.prepare('DELETE FROM devices WHERE id=? AND uid=?').bind(message.deviceId,message.uid).run();throw error}
+  const payload={uid:message.uid,title:t[message.event.type==='scheduled'?'due':message.event.type],body:p.hideContent?t.private:project.name,url:message.scope?`#/groups/${message.scope}/${message.projectId}`:`#/personal/${message.projectId}`,tag:`wilo-${key}-${message.event.type}`}
+  try{await send(env,JSON.parse(device.subscription),payload);await store.finishReminderDispatch(env,deliveryId,"provider-accepted");try{await recordNotification(env,message.uid,await hash(`${key}/${message.event.type}/${message.event.key}`),payload)}catch{console.warn('push.history.failed',{reason:'storage'})}}
+  catch(error){await store.finishReminderDispatch(env,deliveryId,Number.isInteger(error?.status)?'failed':'unknown');if([404,410].includes(error.status))await env.DB.prepare('DELETE FROM devices WHERE id=? AND uid=?').bind(message.deviceId,message.uid).run();throw error}
  }
  return {
   async fetch(request,env){
@@ -168,7 +185,7 @@ export function createWorker(overrides={}){
    let requestedAction=isAssistant?'assistant':'unknown'
    try{
     const data=await readBoundedJson(request,new URL(request.url).pathname==='/assistant-account'?500000:65536)
-    if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','viewed','erase','notifications','notifications-read'].includes(data.action))requestedAction=data.action
+    if(!isAssistant&&['get','save','subscribe','unsubscribe','test','sync','card','card-status','viewed','erase','notifications','notifications-read'].includes(data.action))requestedAction=data.action
     stage='identity';const identity=await f.verifyIdentity(request,env)
     let result
     if(new URL(request.url).pathname==='/account-api-keys'){
@@ -187,9 +204,10 @@ export function createWorker(overrides={}){
     else result=await action(env,identity,data)
     console.info(isAssistant?'assistant.http':'push.http',{action:requestedAction,status:200,...(isAssistant?{requestId,protocol:ASSISTANT_PROTOCOL}:{})})
     return new Response(JSON.stringify({result}),{headers})
-   }catch(error){if(isAssistant){const failure=assistantFailure(error,stage,requestId);console.warn('assistant.http.failed',{status:failure.status,...failure.body.diagnostic,code:failure.body.error});return new Response(JSON.stringify(failure.body),{status:failure.status,headers})}const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed',...(error.message==='ai-incomplete-proposal'?{details:error.details}:{} )}),{status,headers})}
+   }catch(error){if(isAssistant){const failure=assistantFailure(error,stage,requestId);console.warn('assistant.http.failed',{status:failure.status,...failure.body.diagnostic,code:failure.body.error});return new Response(JSON.stringify(failure.body),{status:failure.status,headers})}const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:error.message==='reminder-settings-conflict'?409:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed',...(error.message==='ai-incomplete-proposal'?{details:error.details}:{} )}),{status,headers})}
   },
   async scheduled(_controller,env){
+   if(env.PUBLIC_API_ENABLED==='true')try{const jobs=await env.DB.prepare("SELECT uid,task_id FROM api_task_notifications WHERE state<>'complete' AND next_at<=? AND lease_until<=? ORDER BY next_at LIMIT 10").bind(Date.now(),Date.now()).all();for(const job of jobs.results){const resource=job.task_id.startsWith("projects:")?"projects":"tasks",id=job.task_id.slice(job.task_id.indexOf(":")+1);await createTaskNotificationStore(env,job.uid,{resource}).enqueue(id);}}catch{console.warn('api.task-notification.recovery-pending')}
    if(env.PUBLIC_API_ENABLED==='true')try{await recoverApiReminderLinks(env)}catch{console.warn('api.reminder.recovery-pending')}
 
    if(env.PUBLIC_API_ENABLED==='true')try{await env.DB.prepare('DELETE FROM api_audit WHERE id IN (SELECT id FROM api_audit WHERE created_at<? ORDER BY created_at LIMIT 1000)').bind(Date.now()-30*DAY).run()}catch{console.warn('api.audit.cleanup-failed')}
@@ -200,13 +218,15 @@ export function createWorker(overrides={}){
     const lock=await env.DB.prepare('UPDATE scopes SET lease=? WHERE uid=? AND scope=? AND lease<=? RETURNING uid').bind(now+120000,scope.uid,scope.scope,now).all()
     if(lock.results.length)await env.PUSH_QUEUE.send({type:'plan',uid:scope.uid,scope:scope.scope,lease:now+120000})
    }
+   await env.DB.prepare("UPDATE reminder_dispatches SET state='unknown' WHERE state='sending' AND updated_at<?").bind(now-120000).run()
+   await env.DB.prepare('DELETE FROM reminder_dispatches WHERE updated_at<?').bind(now-7*DAY).run()
    await env.DB.prepare('DELETE FROM deliveries WHERE created_at<?').bind(now-7*DAY).run()
   },
   async queue(batch,env){
    for(const message of batch.messages){
     // A previous deployment may have left integration jobs on this shared push queue.
-    if(!['plan','deliver','test'].includes(message.body?.type)){message.ack();continue}
-    try{console.info('push.queue.started',{type:['plan','deliver','test'].includes(message.body.type)?message.body.type:'unknown'});if(message.body.type==='plan')await plan(env,message.body);else await deliver(env,message.body);console.info('push.queue.completed');message.ack()}
+    if(!['plan','deliver','test','task-notification'].includes(message.body?.type)){message.ack();continue}
+    try{console.info('push.queue.started',{type:['plan','deliver','test','task-notification'].includes(message.body.type)?message.body.type:'unknown'});if(message.body.type==='plan')await plan(env,message.body);else if(message.body.type==='task-notification'){await f.accountAvailable(env,message.body.uid);const raw=message.body.taskId,resource=raw.startsWith("projects:")?"projects":"tasks",id=raw.includes(":")?raw.slice(raw.indexOf(":")+1):raw;const repository=(overrides.publicApi?.repository||createApiRepository)(env,message.body.uid),notifications=createTaskNotificationStore(env,message.body.uid,{send,resource});await createTaskNotificationService({repository,notifications,ownerUid:message.body.uid,resource}).deliver(id);}else await deliver(env,message.body);console.info('push.queue.completed');message.ack()}
     catch(error){
      if(error.message==='account-unavailable'){await store.erase(env,message.body.uid);message.ack()}
      else if(error.message==='card-unavailable'){message.ack()}

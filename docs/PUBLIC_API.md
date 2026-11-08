@@ -130,3 +130,54 @@ A new link requires an unfinished future-due task and existing enabled due notif
 Repeated calls, including different operation IDs for the same task, reuse its single link. Firestore atomically commits task/card/receipt/recovery intent. A staged card is paused until D1 configuration succeeds. D1 settings use insert-if-absent; replay never overwrites a manual edit. The existing Worker cron drains bounded recovery hints and wakes its existing reminder scope. No second scheduler/service or broadened IAM role is introduced.200 with `scheduled:true` is verified configuration, not evidence a push was delivered.202 means incomplete recovery, never success: poll GET and retry the same POST/body/idempotency key if needed.409 manual/pref/revision conflicts require review, not blind overwrites.
 
 Internal rollout: apply additive `push-worker/reminder-link-schema.sql` to existing D1 before deploying the Worker. It contains CREATE TABLE/INDEX IF NOT EXISTS only. The table is a cross-store recovery hint, not a parallel reminder database; delivery remains in existing cards/scopes/events/queues. Rollback must preserve pending intents and paused cards; disable PUBLIC_API_ENABLED if needed while assessing recovery, never delete pending user data. No additional IAM permission is required.
+
+
+## Universal card reminders (v1.3)
+
+These operations use the existing Wilo Push queue, subscriptions and minute scheduler. No browser needs to remain open. Configure account notification preferences from Settings → Notifications on desktop or mobile; Push enrollment remains per device. An enrolled phone receives account reminders configured from desktop. Do not assume provider acceptance proves arrival on a device.
+
+| Operation | Scopes | Purpose |
+|---|---|---|
+| `GET /reminders/{projectId}` | `reminders:read` | Read settings, `settingsVersion`, computed `scheduledAt`, quiet-adjusted `effectiveAt`, and actual scheduling/dispatch state. |
+| `PUT /reminders/{projectId}` | `reminders:write` | Set or reschedule an owned personal card reminder. |
+| `DELETE /reminders/{projectId}` | `reminders:write` | Disable/cancel its reminder; retain its configuration for review. |
+| `POST /tasks/{id}/reminder` | `courses:read tasks:read tasks:write reminders:read reminders:write` | Link an owned university task to a native reminder card; use returned projectId for subsequent editing. |
+| `GET /tasks/{id}/reminder` | `tasks:read reminders:read` | Verify the link and actual scheduling state. |
+| `POST /tasks/{id}/notification` | `courses:read tasks:read reminders:write` | Request one immediate notification from trusted assignment data. |
+| `GET /tasks/{id}/notification` | `tasks:read reminders:read` | Inspect immediate dispatch state. |
+| `POST /projects/{id}/notification` | `projects:read reminders:write` | Request one immediate notification for an owned personal card. |
+| `GET /projects/{id}/notification` | `projects:read reminders:read` | Inspect immediate card dispatch state. |
+
+Confirm scopes in the downloadable OpenAPI contract. API keys cannot access group resources or another account's subscriptions. The UI preserves existing access to assigned group cards.
+
+### Exact and relative schedules
+
+Read the card reminder first. PUT includes its `expectedSettingsVersion` and a stable `Idempotency-Key` (16–128 ASCII identifier characters). Example body (replace the version and use a future date):
+
+```json
+{"expectedSettingsVersion":"REPLACE_WITH_SETTINGS_VERSION","disabled":false,"schedule":{"mode":"absolute","scheduledAt":"2027-11-15T09:00:00+02:00","timeZone":"Asia/Jerusalem"}}
+```
+
+Works for eligible personal cards with no due date, including completed non-archived cards. A relative schedule needs a due date:
+
+```json
+{"expectedSettingsVersion":"REPLACE_WITH_SETTINGS_VERSION","disabled":false,"schedule":{"mode":"relative","amount":3,"unit":"days","localTime":"09:00","timeZone":"Asia/Jerusalem"}}
+```
+
+For November 18 due dates, this means November 15 at 09:00 in Jerusalem. Minutes/hours subtract an exact duration from the due instant; days/weeks subtract calendar days and use localTime. `dueTime` optionally specifies the local deadline clock (otherwise the existing card/default clock is frozen). Timezones are IANA names. Nonexistent DST times are rejected. Ambiguous relative local times require `disambiguation: "earlier"` or `"later"`; absolute requests select an instant with their explicit UTC offset. Offset/zone mismatches are rejected. Past new schedules are rejected. Due-date edits recompute relative schedules; absolute reminders remain fixed.
+
+DELETE sends `If-Match: SETTINGS_VERSION` and a stable `Idempotency-Key`, without a request body. `schedule:null` in PUT deliberately returns to automatic defaults. Legacy disabled/weekly/time updates remain supported and do not erase explicit settings when omitted.
+
+On 409 reread current settings and review changes rather than overwriting manual edits. Replaying an accepted key returns current state without restoring an old schedule over subsequent manual changes. A different payload with the same key conflicts. Linking a task reuses the native card/outbox; after a timeout, retry the same request and read its status instead of creating another reminder card.
+
+### Preference policy and delivery state
+
+Account-wide enabled/disabled, card inclusion/disabled flags and quiet hours remain authoritative. Explicit schedules take precedence over automatic due/stale timing and suppress duplicate default reminders for the same card; changing defaults does not rewrite them. Quiet hours defer delivery to their end in the **account** timezone, even when the explicit schedule uses another zone. `scheduledAt` is intended time; `effectiveAt` previews quiet deferral. Native weekly reminders retain their legacy behavior.
+
+The cron runs once per minute; queue load and provider latency add delay. This is not exact-to-the-second delivery. Status distinguishes configured, pending, awaiting-device, scheduled, disabled, expired/invalid-schedule, push-queued, dispatching, provider-accepted, failed and unknown. `handsetDelivery: "not-confirmed"` is intentional: Wilo has no delivery receipt from the phone. Review counts per state; partial acceptance is not universal delivery. Expired subscriptions are removed only for their owner. Editing/cancelling/deleting cards invalidates queued stale events before sending.
+
+### Immediate notification workflow
+
+Create the assignment using the existing task API, then POST its notification route with `{"expectedRevision": CURRENT_REVISION}` and a stable Idempotency-Key. Wilo reads the title and course from owned data; clients cannot specify recipients, subscriptions or arbitrary text. One logical immediate event is allowed per resource, including retries with new keys. GET never sends. Next link the assignment using POST task reminder with a schedule, then GET reminder state to verify setup. Notifications require enabled account preferences and an enrolled device. Disabled preferences and quiet hours are respected.
+
+202 means durable pending/queued/deferred work, not phone delivery. Read status after a timeout. Queue-acknowledgement loss is recovered by the existing cron. An uncertain provider send is recorded as unknown and is not blindly resent; at-most-once dispatch avoids duplicate handset alerts but cannot guarantee delivery after a provider/network ambiguity. Immediate jobs expire after 24 hours. Do not issue a new logical notification to compensate without checking current state.

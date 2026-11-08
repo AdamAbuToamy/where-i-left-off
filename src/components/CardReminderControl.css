@@ -1,0 +1,88 @@
+.card-reminder-control {
+  min-width: 0;
+}
+.card-reminder-control > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.card-reminder-editor {
+  display: grid;
+  gap: 14px;
+  padding-block: 18px;
+  min-width: 0;
+}
+.card-reminder-editor fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.card-reminder-editor label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+.card-reminder-editor input:not([type="checkbox"]),
+.card-reminder-editor select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  font: inherit;
+  padding: 10px;
+  border: 1px solid var(--site-border, #d7dacb);
+  border-radius: 9px;
+  background: var(--site-input, #fff);
+  color: var(--site-text, #25332e);
+}
+.card-reminder-editor .push-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-reminder-editor .push-toggle input {
+  width: 18px;
+  height: 18px;
+}
+.card-reminder-grid,
+.card-reminder-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.card-reminder-preview {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  background: var(--site-soft, #eef1e9);
+  border-radius: 10px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.card-reminder-editor small {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--site-muted, #647369);
+}
+.card-reminder-state {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.card-reminder-actions button {
+  margin: 0;
+  min-height: 44px;
+  padding: 10px;
+  font: inherit;
+  white-space: normal;
+}
+@media (max-width: 380px) {
+  .card-reminder-actions {
+    grid-template-columns: 1fr;
+  }
+}

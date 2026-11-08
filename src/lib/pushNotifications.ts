@@ -1,11 +1,12 @@
+import type {CardSchedule} from "../../shared/cardReminderSchedule.mjs";
 import { getToken } from 'firebase/app-check'
 import { useEffect, useState } from 'react'
 import { auth, db, emulatorMode, appCheck } from './firebase'
 import type { Language } from '../translations'
 
 export type PushPreferences = { enabled:boolean; due:boolean; stale:boolean; staleDays:number; defaultTime:string; leadMinutes:number; quiet:boolean; quietStart:string; quietEnd:string; hideContent:boolean; timezone:string; language:Language }
-export type CardReminder = { disabled?:boolean; weekly?:boolean; time?:string }
-export type PushState = { preferences:PushPreferences; publicKey:string; cards:Record<string,CardReminder> }
+export type CardReminder = { disabled?:boolean; weekly?:boolean; time?:string; leadMinutes?:number; remindAt?:string; schedule?:CardSchedule }
+export type PushState = { preferences:PushPreferences; publicKey:string; cards:Record<string,CardReminder>; settingsVersions?:Record<string,string> }
 export function installedApp() {
   return typeof window!=='undefined' && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || (navigator as Navigator & {standalone?:boolean}).standalone===true)
 }

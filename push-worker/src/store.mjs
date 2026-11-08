@@ -11,3 +11,11 @@ export async function claimEvent(env,uid,id,type,key){
  return result.meta.changes>0
 }
 export async function claimDelivery(env,id,uid){const r=await env.DB.prepare('INSERT OR IGNORE INTO deliveries(id,uid,created_at) VALUES(?,?,?)').bind(id,uid,Date.now()).run();return r.meta.changes>0}
+
+export async function claimReminderDispatch(env,id,uid,key,eventKey,deviceId){
+ const at=Date.now(),result=await env.DB.batch([
+  env.DB.prepare("INSERT INTO reminder_dispatches(delivery_id,uid,card_key,event_key,device_id,state,updated_at) SELECT ?,?,?,?,?,'sending',? WHERE NOT EXISTS(SELECT 1 FROM deliveries WHERE id=?) ON CONFLICT(delivery_id) DO NOTHING").bind(id,uid,key,eventKey,deviceId,at,id),
+  env.DB.prepare("INSERT INTO deliveries(id,uid,created_at) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM reminder_dispatches WHERE delivery_id=?) ON CONFLICT(id) DO NOTHING").bind(id,uid,at,id)
+ ]);return result[0].meta.changes>0;
+}
+export async function finishReminderDispatch(env,id,state){await env.DB.prepare("UPDATE reminder_dispatches SET state=?,updated_at=? WHERE delivery_id=?").bind(state,Date.now(),id).run();}

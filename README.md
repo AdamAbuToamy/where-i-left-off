@@ -170,3 +170,6 @@ Personal API keys for verified accounts, with scoped access to university record
 ## Official development workspace
 
 Use `/home/adam/projects/where-i-left-off` (`main`). The former `/home/adam/wilo-test` copy is retained for recovery, not as a second release source. See [consolidation evidence](docs/readiness/2026-11-08-consolidation.md), [Public API](docs/PUBLIC_API.md) and `/#/api-docs` for the generic assignment-reminder API.
+
+
+Notification settings are available on desktop and mobile. Eligible cards support explicit relative or exact-time reminders using the existing server-side Push scheduler; local Push permission remains device-specific. See [Public API](docs/PUBLIC_API.md#universal-card-reminders-v13) for universal reminder scheduling and idempotent immediate card/assignment notifications. Provider acceptance is not a handset delivery receipt.

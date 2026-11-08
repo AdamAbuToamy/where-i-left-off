@@ -1,9 +1,13 @@
+import { readReminderView } from "./reminderView.mjs";
 import { ApiError } from "../../shared/universityApiPlan.mjs";
 import { preferences, cardKey } from "../policy.mjs";
 import * as store from "./store.mjs";
 export function createApiReminderStore(env, uid) {
   const key = (id) => cardKey(id);
   return {
+    async view(project, id) {
+      return readReminderView(env, uid, { ...project, id });
+    },
     async preferences() {
       const row = await store.account(env, uid);
       if (!row) throw new ApiError("account-unavailable");
