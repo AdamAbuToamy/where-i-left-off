@@ -1,4 +1,5 @@
 import { cancelEntryAudio } from "./entryAudio";
+import { installSceneMotion } from "./sceneMotion";
 import ArrivalScene from "./ArrivalScene";
 import { takeAuthArrival } from "../lib/authEntry";
 import type { Language } from "../translations";
@@ -46,10 +47,24 @@ export default function CinematicExperience({
     document.documentElement.dataset.cinematic = preference.motion
       ? "on"
       : "off";
+    document.documentElement.dataset.motionIntensity = preference.intensity;
+    document.documentElement.dataset.motionInteractions =
+      preference.interactions ? "on" : "off";
     return () => {
       delete document.documentElement.dataset.cinematic;
+      delete document.documentElement.dataset.motionIntensity;
+      delete document.documentElement.dataset.motionInteractions;
     };
-  }, [allowed, preference.motion]);
+  }, [
+    allowed,
+    preference.motion,
+    preference.intensity,
+    preference.interactions,
+  ]);
+  useEffect(() => {
+    if (!allowed || !preference.motion) return;
+    return installSceneMotion(preference);
+  }, [allowed, preference]);
   useEffect(() => {
     if (!allowed || !preference.sound) return;
     const audio = new InteractionAudio();
@@ -116,6 +131,7 @@ export default function CinematicExperience({
         <ArrivalScene
           language={language}
           sound={preference.sound}
+          intensity={preference.intensity}
           onComplete={() => setArrival(false)}
         />
       )}

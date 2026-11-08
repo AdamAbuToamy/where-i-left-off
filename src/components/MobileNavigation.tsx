@@ -1,3 +1,4 @@
+import { workspaceView } from "../lib/navigation";
 import { requestAssistantOpen } from "../assistant/launcherCommands";
 import {
   PanelsTopLeft,
@@ -17,6 +18,7 @@ export default function MobileNavigation({
   language: Language;
   page: PageName;
 }) {
+  const week = page === "personal" && workspaceView().view === "week";
   const t =
     language === "ar"
       ? ["البطاقات", "الجامعة", "ويلو", "الأسبوع", "المزيد"]
@@ -30,7 +32,7 @@ export default function MobileNavigation({
     >
       <a
         href="#/personal"
-        aria-current={page === "personal" ? "page" : undefined}
+        aria-current={page === "personal" && !week ? "page" : undefined}
       >
         <PanelsTopLeft size={21} />
         <span>{t[0]}</span>
@@ -51,7 +53,7 @@ export default function MobileNavigation({
         <Sparkles size={27} />
         <span>{t[2]}</span>
       </button>
-      <a href="#/personal?view=week">
+      <a href="#/personal?view=week" aria-current={week ? "page" : undefined}>
         <CalendarDays size={21} />
         <span>{t[3]}</span>
       </a>
