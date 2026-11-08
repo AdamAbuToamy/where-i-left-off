@@ -76,7 +76,7 @@ export async function manageApiKeys(env, uid, data) {
   if (!rate) throw new ApiError("rate-limited");
   if (data.action === "list") {
     const rows = await env.DB.prepare(
-      "SELECT id,name,scopes,created_at,expires_at,revoked_at,last_used_at FROM user_api_keys WHERE uid=? ORDER BY (revoked_at IS NULL AND (expires_at IS NULL OR expires_at > ?)) DESC, created_at DESC LIMIT 100",
+      "SELECT id,name,scopes,created_at,expires_at,revoked_at,last_used_at FROM user_api_keys WHERE uid=? AND revoked_at IS NULL ORDER BY (expires_at IS NULL OR expires_at > ?) DESC, created_at DESC LIMIT 100",
     )
       .bind(uid, now)
       .all();
@@ -93,13 +93,25 @@ export async function manageApiKeys(env, uid, data) {
   )
     throw new ApiError("invalid-input");
   if (data.action === "revoke") {
-    const row = await env.DB.prepare(
-      "UPDATE user_api_keys SET revoked_at=COALESCE(revoked_at,?) WHERE uid=? AND id=? RETURNING id",
-    )
-      .bind(now, uid, data.id)
-      .first();
-    if (!row) throw new ApiError("key-not-found");
-    await auditApi(env, uid, data.id, "key.revoke", 200);
+    const rows = await env.DB.batch([
+      env.DB.prepare(
+        "INSERT INTO api_audit(id,uid,key_id,operation,status,created_at) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM user_api_keys WHERE uid=? AND id=?)",
+      ).bind(
+        crypto.randomUUID(),
+        uid,
+        data.id,
+        "key.revoke",
+        200,
+        now,
+        uid,
+        data.id,
+      ),
+      env.DB.prepare("DELETE FROM user_api_keys WHERE uid=? AND id=?").bind(
+        uid,
+        data.id,
+      ),
+    ]);
+    if (!rows[1].meta.changes) throw new ApiError("key-not-found");
     return { ok: true };
   }
   let name = data.name,
@@ -168,8 +180,8 @@ export async function manageApiKeys(env, uid, data) {
   if (data.action === "rotate")
     statements.push(
       env.DB.prepare(
-        "UPDATE user_api_keys SET revoked_at=? WHERE uid=? AND id=? AND EXISTS(SELECT 1 FROM user_api_keys WHERE uid=? AND id=?)",
-      ).bind(now, uid, data.id, uid, id),
+        "DELETE FROM user_api_keys WHERE uid=? AND id=? AND EXISTS(SELECT 1 FROM user_api_keys WHERE uid=? AND id=?)",
+      ).bind(uid, data.id, uid, id),
     );
   statements.push(
     env.DB.prepare(

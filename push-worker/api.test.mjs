@@ -67,6 +67,16 @@ test("keys are random, hash-only, owner bound, scoped, one-time and revocable", 
       /key-not-found/,
     );
     await manageApiKeys(env, "alice", { action: "revoke", id: k.metadata.id });
+    assert.equal(
+      await env.DB.prepare("SELECT id FROM user_api_keys WHERE id=?")
+        .bind(k.metadata.id)
+        .first(),
+      null,
+    );
+    assert.equal(
+      (await manageApiKeys(env, "alice", { action: "list" })).keys.length,
+      0,
+    );
     await assert.rejects(
       authenticateApi(request(k.key, "courses"), env),
       /unauthenticated/,
@@ -418,6 +428,12 @@ test("key limit, atomic rotation rollback, management no-store and API kill swit
       id: first.metadata.id,
     });
     assert.ok(rotated.key);
+    assert.equal(
+      await env.DB.prepare("SELECT id FROM user_api_keys WHERE id=?")
+        .bind(first.metadata.id)
+        .first(),
+      null,
+    );
     const other = await key(env, "bob", ["courses:read"]);
     // Failure of the audit INSERT rolls the whole issuance/rotation transaction back.
     env.DB.sqlite.exec(
@@ -554,6 +570,43 @@ test("suspended account and linked reminder edits fail without a write; stable i
     assert.equal(
       JSON.parse(repo.get("studyRecords", "tasks_" + task.id).payload).title,
       "Original imported title",
+    );
+  } finally {
+    close();
+  }
+});
+
+test("revoke audit failure rolls back deletion; purge removes only already revoked keys", async () => {
+  const { env, close } = setup();
+  try {
+    const a = await key(env, "alice", ["courses:read"]),
+      b = await key(env, "bob", ["courses:read"]);
+    env.DB.sqlite.exec(
+      "CREATE TRIGGER reject_api_revoke BEFORE INSERT ON api_audit BEGIN SELECT RAISE(ABORT,'synthetic failure'); END",
+    );
+    await assert.rejects(
+      manageApiKeys(env, "alice", { action: "revoke", id: a.metadata.id }),
+    );
+    assert.equal(
+      (await authenticateApi(request(a.key, "courses"), env)).uid,
+      "alice",
+    );
+    env.DB.sqlite.exec("DROP TRIGGER reject_api_revoke");
+    await env.DB.prepare("UPDATE user_api_keys SET revoked_at=? WHERE id=?")
+      .bind(Date.now(), a.metadata.id)
+      .run();
+    env.DB.sqlite.exec(
+      readFileSync(new URL("./api-purge-revoked.sql", import.meta.url), "utf8"),
+    );
+    assert.equal(
+      await env.DB.prepare("SELECT id FROM user_api_keys WHERE id=?")
+        .bind(a.metadata.id)
+        .first(),
+      null,
+    );
+    assert.equal(
+      (await authenticateApi(request(b.key, "courses"), env)).uid,
+      "bob",
     );
   } finally {
     close();
