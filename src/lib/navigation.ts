@@ -1,4 +1,3 @@
-import { transitionScene } from "../experience/sceneNavigation";
 import { validDate } from "./projects";
 import { useEffect, useState } from "react";
 export type PageName =
@@ -48,7 +47,7 @@ export function navigate(page: PageName, groupId = "") {
 export function usePage() {
   const [current, setCurrent] = useState(() => route());
   useEffect(() => {
-    const changed = () => transitionScene(() => setCurrent(route()));
+    const changed = () => setCurrent(route());
     window.addEventListener("hashchange", changed);
     return () => window.removeEventListener("hashchange", changed);
   }, []);
