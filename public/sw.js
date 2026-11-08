@@ -41,6 +41,17 @@ self.addEventListener("fetch", (event) => {
     ].includes(new URL(event.request.url).pathname)
   )
     return;
+  if (new URL(event.request.url).pathname === "/manifest.webmanifest") {
+    // App identity updates must reach the browser even while an old shell is active.
+    // Offline launches retain the manifest belonging to the cached shell.
+    event.respondWith(
+      fetch(event.request, { cache: "no-cache" }).catch(
+        async () =>
+          (await caches.match("/manifest.webmanifest")) || Response.error(),
+      ),
+    );
+    return;
+  }
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
@@ -72,7 +83,9 @@ self.addEventListener("fetch", (event) => {
   }
   const pathname = new URL(event.request.url).pathname;
   // The desktop planning canvas is loaded and cached only when explicitly opened.
-  if (/^\/assets\/PlanningBoard(?:Dialog|Export)[^/]+\.(?:js|css)$/.test(pathname)) {
+  if (
+    /^\/assets\/PlanningBoard(?:Dialog|Export)[^/]+\.(?:js|css)$/.test(pathname)
+  ) {
     event.respondWith(
       caches.open(CACHE_NAME + "-planning-runtime").then(async (cache) => {
         const saved = await cache.match(event.request);
@@ -131,7 +144,8 @@ self.addEventListener("push", (event) => {
         dir: ["ar", "he"].includes(payload.language) ? "rtl" : "auto",
         data: { url: payload.url, uid: payload.uid },
       });
-      for(const client of await self.clients.matchAll({type:"window"}))client.postMessage({type:"wilo-notification",uid:payload.uid});
+      for (const client of await self.clients.matchAll({ type: "window" }))
+        client.postMessage({ type: "wilo-notification", uid: payload.uid });
     })(),
   );
 });

@@ -8,19 +8,19 @@
   "theme_color": "#aa4c2a",
   "icons": [
     {
-      "src": "/app-icon-192.png",
+      "src": "/app-icon-192.9a457243da2f.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/app-icon-512.png",
+      "src": "/app-icon-512.35445a45697e.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/app-icon-maskable-512.png",
+      "src": "/app-icon-maskable-512.8f41947eb349.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

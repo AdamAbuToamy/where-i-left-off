@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -62,3 +63,16 @@ await writeFile(
 console.log(
   "Generated favicon, Apple touch and standard/maskable PWA icons from the supplied original symbol.",
 );
+
+// Installed Chrome apps compare manifest icon URLs, not just image bytes.
+// Keep the manifest/app ID stable, while making changed icon content explicit.
+const manifestPath = root + "public/manifest.webmanifest";
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+for (const entry of manifest.icons) {
+  const stable = entry.src.replace(/\.[a-f0-9]{12}(?=\.png$)/, "");
+  const bytes = await readFile(root + "public" + stable);
+  const version = createHash("sha256").update(bytes).digest("hex").slice(0, 12);
+  entry.src = stable.replace(/\.png$/, "." + version + ".png");
+  await writeFile(root + "public" + entry.src, bytes);
+}
+await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
