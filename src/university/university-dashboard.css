@@ -475,3 +475,8 @@
   :root .study-page.study-dashboard-preview .study-course-workspace .course-overview-cards>button { min-height:145px; padding:14px; gap:9px; }
 }
 @media(max-width:760px){:root .study-page.study-dashboard-preview .uni-header-actions>.uni-map-button,:root .study-page.study-dashboard-preview .uni-header-actions>.uni-menu>summary{height:50px;min-height:50px;line-height:1.25}}
+@media(max-width:760px){
+  :root .study-page.study-dashboard-preview .uni-dashboard-header .uni-kicker{display:none}
+  :root .study-page.study-dashboard-preview .uni-dashboard-header>div:first-child{margin-bottom:20px}
+  :root .study-page.study-dashboard-preview .uni-dashboard-header h2{margin:0;line-height:1.4}
+}

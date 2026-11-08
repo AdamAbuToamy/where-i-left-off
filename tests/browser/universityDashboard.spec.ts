@@ -9,6 +9,9 @@ for (const phone of [false, true])
       phone ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
     );
     const c = await prepareUniversityPilot(request);
+    // Each viewport starts with its own empty emulator plan, even after prior sync completes.
+    const records=await request.get(`http://127.0.0.1:8080/v1/projects/demo-where-i-left-off/databases/(default)/documents/users/${c.uid}/studyRecords`,{headers:{Authorization:'Bearer owner'}});
+    for(const doc of (await records.json()).documents||[]) await request.delete(`http://127.0.0.1:8080/v1/${doc.name}`,{headers:{Authorization:'Bearer owner'}});
     await page.addInitScript((uid) => {
       localStorage.setItem("language", "ar");
       localStorage.setItem("welcome-tour:v2:" + uid, "done");
@@ -28,6 +31,13 @@ for (const phone of [false, true])
       timeout: 15000,
     });
     await page.goto("/#/university");
+    if(phone){
+      await expect(page.locator('.uni-kicker')).toBeHidden();
+      const spacing=await page.locator('.uni-dashboard-header').evaluate(el=>{const title=el.querySelector('h2')!.getBoundingClientRect();const actions=el.querySelector('.uni-header-actions')!.getBoundingClientRect();return actions.top-title.bottom;});
+      expect(spacing).toBeGreaterThanOrEqual(18);
+      const header=await page.locator('.page-header').evaluate(el=>{const brand=el.querySelector('.heading-copy')!.getBoundingClientRect();const bell=el.querySelector('.header-account-actions')!.getBoundingClientRect();return {gap:bell.left-brand.right,left:brand.left,right:bell.left};});
+      expect(header.gap).toBeGreaterThanOrEqual(20);expect(header.left).toBeLessThan(header.right);
+    }
     await expect(page.locator(".uni-course-empty")).toBeVisible();
     await page.locator(".uni-tools>summary").click();
     const courses = [
