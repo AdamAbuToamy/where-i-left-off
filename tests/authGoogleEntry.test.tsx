@@ -124,3 +124,22 @@ it("a cancelled provider popup releases the presentation hold and remains retrya
   expect(element.querySelector("[role=alert]")).not.toBeNull();
   expect((google() as HTMLButtonElement).disabled).toBe(false);
 });
+
+it("Google remains available from account creation and existing users do not get an age step", async () => {
+  fake.info.mockReturnValue({ isNewUser: false });
+  fake.popup.mockImplementation(async () => {
+    fake.auth.currentUser = user;
+    return { user };
+  });
+  render();
+  const create = Array.from(element.querySelectorAll("button")).find(
+    (button) => button.textContent === "Create account",
+  )!;
+  await act(async () => create.click());
+  expect(element.querySelector(".auth-age-group")).toBeNull();
+  expect(google().disabled).toBe(false);
+  await act(async () => google().click());
+  expect(fake.popup).toHaveBeenCalledTimes(1);
+  expect(element.querySelector(".auth-age-group")).toBeNull();
+  expect(authEntryHeld(user)).toBe(false);
+});

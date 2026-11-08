@@ -18,7 +18,7 @@ test('account connection works in separate desktop and phone contexts and after 
     else throw new Error('Unexpected fixture request');
    });
    const page=await context.newPage();await page.goto('/');
-   await page.getByLabel('Email',{exact:true}).fill(user.email);await page.getByLabel('Password',{exact:true}).fill(user.password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
+   await page.getByLabel('Email',{exact:true}).fill(user.email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('Password',{exact:true}).fill(user.password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
    await expect(page.locator('.side-navigation-toggle')).toBeVisible({timeout:15000});
    if(await page.locator('.guide-skip').isVisible())await page.locator('.guide-skip').click();
    for(const reload of [false,true]){

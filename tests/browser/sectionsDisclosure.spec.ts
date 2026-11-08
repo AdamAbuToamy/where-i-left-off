@@ -6,7 +6,7 @@ for(const touch of [false,true])test.describe(touch ? 'touch sections' : 'mouse 
  test('compact picker opens intentionally and keeps section editing available',async({page,request},testInfo)=>{
   const account=await prepareUniversityPilot(request,`sections-disclosure-${touch}-${testInfo.repeatEachIndex}@example.test`)
   await page.addInitScript(()=>localStorage.setItem('language','en'))
-  await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(account.email);await page.getByLabel('Password',{exact:true}).fill(account.password)
+  await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(account.email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('Password',{exact:true}).fill(account.password)
   await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click()
   await expect(page.locator('.side-navigation-toggle')).toBeVisible()
   const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click()

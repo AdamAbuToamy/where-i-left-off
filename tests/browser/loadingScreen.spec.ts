@@ -14,7 +14,7 @@ test('account loading stays branded, responsive and accessible until real verifi
   try {
     await page.goto('/')
     await page.getByLabel('البريد الإلكتروني', {exact:true}).fill(account.email)
-    await page.getByLabel('كلمة المرور', {exact:true}).fill(account.password)
+    await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('كلمة المرور', {exact:true}).fill(account.password)
     await page.locator('form').getByRole('button', {name:'تسجيل الدخول',exact:true}).click()
     const screen = page.locator('.wilo-loading')
     await expect(screen).toBeVisible()

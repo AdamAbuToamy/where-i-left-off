@@ -22,6 +22,6 @@ test("cleanup leaves the normal sign-in screen usable", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("language", "en"));
   await page.goto("/?code=synthetic-callback&state=synthetic-state#/library");
   await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
   expect(new URL(page.url()).search).toBe("");
 });

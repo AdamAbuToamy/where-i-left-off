@@ -13,7 +13,7 @@ for(const lang of ['en','ar','he'] as const)for(const mobile of [false,true])tes
   await page.getByLabel('Age group',{exact:true}).selectOption('16plus')
   await page.getByLabel('Personal name',{exact:true}).fill('Demo visitor')
   await page.getByLabel('Email',{exact:true}).fill(`layout-${lang}-${mobile}-${Date.now()}@example.test`)
-  await page.getByLabel('Password',{exact:true}).fill('Test-Password-2026')
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('Password',{exact:true}).fill('Test-Password-2026')
   await page.locator('form').getByRole('button',{name:'Create account',exact:true}).click()
   await expect(page.locator('.side-navigation-toggle')).toBeVisible({timeout:15000})
   const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click()

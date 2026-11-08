@@ -39,7 +39,7 @@ test("phone separates secondary tools, course index and course details; records 
   }, c.uid);
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(c.email);
-  await page.getByLabel("Password", { exact: true }).fill(c.password);
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(c.password);
   await page
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })
@@ -222,7 +222,7 @@ test("Arabic phone card form fits the viewport and university prioritizes its co
   }, c.uid);
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(c.email);
-  await page.getByLabel("Password", { exact: true }).fill(c.password);
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(c.password);
   await page
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })

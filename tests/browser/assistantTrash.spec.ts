@@ -23,7 +23,7 @@ test('assistant reviews personal Trash, cancels final confirmation, then deletes
   const reads=payload.messages.filter((m:{role:string})=>m.role==='tool');
   await route.fulfill({json:{choices:[{message:{tool_calls:[reads.length?call('empty_trash',{}):call('read_workspace',{requests:[{target:'projects',view:'catalog',cardState:'trash'}]})]}}]}});
  });
- await page.goto('/');await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(account.email);await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
+ await page.goto('/');await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(account.email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
  await page.locator('form').getByRole('button',{name:'تسجيل الدخول',exact:true}).click();await expect(page.locator('.side-navigation-toggle')).toBeVisible();
  const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click();
  await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();const chat=page.locator('#wilo-assistant');

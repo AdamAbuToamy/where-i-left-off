@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import type { Language } from "../src/translations";
 const api = vi.hoisted(() => ({
+  auth: { currentUser: null as { uid: string } | null },
   create: vi.fn(),
   signIn: vi.fn(),
   google: vi.fn(),
@@ -20,11 +21,13 @@ vi.mock("firebase/auth", () => ({
   getAdditionalUserInfo: () => ({ isNewUser: true }),
   signOut: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("../src/lib/firebase", () => ({ auth: {} }));
+vi.mock("../src/lib/firebase", () => ({ auth: api.auth }));
 vi.mock("../src/lib/logging", () => ({
   traced: async (_name: string, action: () => Promise<unknown>) => action(),
 }));
 import AuthPanel from "../src/components/AuthPanel";
+import { authEntryHeld, finishAuthEntry } from "../src/lib/authEntry";
+import type { User } from "firebase/auth";
 import { registrationEligible } from "../src/lib/registrationEligibility";
 import { registrationText } from "../src/components/registrationText";
 let element: HTMLDivElement, root: ReturnType<typeof createRoot>;
@@ -33,10 +36,20 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
   sessionStorage.clear();
-  api.create.mockResolvedValue({ user: { uid: "new-user" } });
+  api.auth.currentUser = null;
+  api.create.mockImplementation(async () => {
+    api.auth.currentUser = { uid: "new-user" };
+    return { user: api.auth.currentUser };
+  });
   api.profile.mockResolvedValue(undefined);
-  api.signIn.mockResolvedValue({ user: { uid: "existing" } });
-  api.google.mockResolvedValue({ user: { uid: "google" } });
+  api.signIn.mockImplementation(async () => {
+    api.auth.currentUser = { uid: "existing" };
+    return { user: api.auth.currentUser };
+  });
+  api.google.mockImplementation(async () => {
+    api.auth.currentUser = { uid: "google" };
+    return { user: api.auth.currentUser };
+  });
   element = document.createElement("div");
   document.body.append(element);
   root = createRoot(element);
@@ -44,6 +57,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   element.remove();
+  finishAuthEntry(api.auth.currentUser as User | null);
 });
 async function render(language: Language = "en") {
   await act(async () => root.render(<AuthPanel language={language} />));
@@ -83,30 +97,40 @@ it("accepts only an explicit eligible band, not truthy or untrusted values", () 
     expect(registrationEligible(value)).toBe(false);
   expect(registrationEligible("16plus")).toBe(true);
 });
-it("does not contact account creation or collect form details before eligibility", async () => {
+async function accountDetails() {
+  await field("email", "person@example.test");
+  await submit();
+  expect(api.create).not.toHaveBeenCalled();
+  await field("password", "Test-password");
+  await submit();
+  expect(api.create).not.toHaveBeenCalled();
+}
+it("does not create an account until the final eligibility step is explicitly completed", async () => {
   await render();
-  await click(".form-actions button");
-  expect(element.querySelector("#email")).toBeNull();
+  await click(".auth-journey-switch button");
+  expect(element.querySelector("#email")).not.toBeNull();
+  expect(element.querySelector("select")).toBeNull();
+  await accountDetails();
+  await field("name", "Name");
   await submit();
   expect(api.create).not.toHaveBeenCalled();
   await age("under16");
   await submit();
-  await click(".secondary-button");
   expect(api.create).not.toHaveBeenCalled();
-  expect(api.google).not.toHaveBeenCalled();
+  expect(
+    (element.querySelector(".auth-continue") as HTMLButtonElement).disabled,
+  ).toBe(true);
   expect(element.textContent).toContain("New accounts are available");
-  expect(element.querySelector("#email")).toBeNull();
 });
 it("registers an eligible person and never stores an age or DOB", async () => {
   await render();
-  await click(".form-actions button");
-  await age("16plus");
+  await click(".auth-journey-switch button");
+  await accountDetails();
   await field("name", "Name");
-  await field("email", "person@example.test");
-  await field("password", "Test-password");
+  await age("16plus");
   await submit();
   expect(api.create).toHaveBeenCalledWith(
-    {},
+    api.auth,
     "person@example.test",
     "Test-password",
   );
@@ -120,29 +144,35 @@ it("registers an eligible person and never stores an age or DOB", async () => {
 it("preserves existing email sign-in without age or DOB collection", async () => {
   await render();
   await field("email", "existing@example.test");
+  await submit();
   await field("password", "Existing-password");
   await submit();
   expect(api.signIn).toHaveBeenCalledTimes(1);
   expect(api.create).not.toHaveBeenCalled();
   expect(element.querySelector('[aria-label="Age group"]')).toBeNull();
 });
-it("screens the Google account-creation path before any provider popup", async () => {
+it("Google opens immediately but new-account entry remains gated until eligibility", async () => {
   await render();
-  await click(".form-actions button");
-  await click(".secondary-button");
-  expect(api.google).not.toHaveBeenCalled();
-  await age("under16");
-  await click(".secondary-button");
-  expect(api.google).not.toHaveBeenCalled();
-  await age("16plus");
-  await click(".secondary-button");
+  await click(".auth-journey-switch button");
+  await click(".auth-google");
   expect(api.google).toHaveBeenCalledTimes(1);
+  expect(authEntryHeld(api.auth.currentUser as User)).toBe(true);
+  await submit();
+  expect(authEntryHeld(api.auth.currentUser as User)).toBe(true);
+  await age("under16");
+  await submit();
+  expect(authEntryHeld(api.auth.currentUser as User)).toBe(true);
+  await age("16plus");
+  await submit();
+  expect(authEntryHeld(api.auth.currentUser as User)).toBe(false);
+  expect(api.create).not.toHaveBeenCalled();
 });
 it.each(["ar", "he", "en"] as const)(
-  "starts with a neutral, unselected age choice in %s",
+  "starts with a neutral, unselected age choice at the final step in %s",
   async (language) => {
     await render(language);
-    await click(".form-actions button");
+    await click(".auth-journey-switch button");
+    await accountDetails();
     const select = element.querySelector<HTMLSelectElement>("select")!;
     expect(select.value).toBe("");
     expect(select.getAttribute("aria-label")).toBe(

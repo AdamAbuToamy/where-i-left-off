@@ -4,7 +4,7 @@ test('university backup rejects unsafe file types and malformed JSON, then safel
  const user=await prepareUniversityPilot(request,'secure-import@example.test');
  await page.addInitScript(()=>{if(!localStorage.getItem('language'))localStorage.setItem('language','en');});
  await page.route('**/push-config.json',route=>route.fulfill({status:503,body:'{}'}));
- await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(user.email);await page.getByLabel('Password',{exact:true}).fill(user.password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
+ await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(user.email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('Password',{exact:true}).fill(user.password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
  await expect(page.locator('.side-navigation-toggle')).toBeVisible();if(await page.locator('.guide-skip').isVisible())await page.locator('.guide-skip').click();
  await page.evaluate(()=>localStorage.setItem('language','ar'));await page.goto('/#/university');await page.reload();
  await expect(page.locator('.study-university-trial')).toBeVisible();await page.locator('.study-trial-tools summary').click();

@@ -7,7 +7,7 @@ for(const phone of [false,true])test.describe(phone?'Arabic phone semantics':'En
   test.setTimeout(120000);const c=await prepareUniversityPilot(request,'semantics-'+phone+'@example.test');
   await page.addInitScript(uid=>{localStorage.setItem('language','en');localStorage.setItem('welcome-tour:v2:'+uid,'done');},c.uid);
   await page.goto('/');await expect(page.getByRole('main')).toHaveCount(1);await expect(page.getByRole('banner')).toHaveCount(1);await expect(page.getByRole('contentinfo')).toHaveCount(1);
-  await page.getByLabel('Email',{exact:true}).fill(c.email);await page.getByLabel('Password',{exact:true}).fill(c.password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.locator('.workspace-toolbar')).toBeVisible({timeout:15000});
+  await page.getByLabel('Email',{exact:true}).fill(c.email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('Password',{exact:true}).fill(c.password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.locator('.workspace-toolbar')).toBeVisible({timeout:15000});
   if(phone){await page.locator('.mobile-bottom-navigation').getByRole('button',{name:'More',exact:true}).click();await page.locator('.mobile-menu-account').getByRole('button',{name:'العربية',exact:true}).click();}
   for(const [route,selector]of [['personal','.workspace-toolbar'],['university','.study-page'],['settings','.settings-page'],['analytics','.analytics-page'],['library','.library-page'],['groups','.group-spaces'],['support','.support-page']]){
    await page.evaluate(route=>{location.hash='/'+route;},route);await expect(page.locator(selector)).toBeVisible();

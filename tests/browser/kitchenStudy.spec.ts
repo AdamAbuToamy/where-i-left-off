@@ -17,7 +17,7 @@ for (const mobile of [false, true]) {
     await page.addInitScript(() => { if (!localStorage.getItem("language")) localStorage.setItem("language", "en"); });
     await page.goto("/");
     await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(password);
     await page
       .locator("form")
       .getByRole("button", { name: "Sign in", exact: true })
@@ -101,7 +101,7 @@ test("regular accounts retain the current public design", async ({
   await page.addInitScript(() => { if (!localStorage.getItem("language")) localStorage.setItem("language", "en"); });
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(password);
   await page
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })

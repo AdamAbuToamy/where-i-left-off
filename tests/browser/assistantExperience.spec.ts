@@ -15,7 +15,7 @@ for(const mobile of [false,true])test.describe('assistant studio '+(mobile?'phon
    if(pending){await new Promise(resolve=>setTimeout(resolve,1800));try{await route.fulfill({json:{choices:[{message:{content:'LATE_REPLY_MUST_NOT_RENDER'}}]}});}catch{/* The user deliberately cancelled this request. */}return;}
    await route.fulfill({json:{choices:[{message:{content:'## خطوتك القادمة\n\n**كل شيء في مكانه.**\n\n- مشروع البرمجة: 28 أكتوبر\n- المراجعة: 26 أكتوبر\n\n| المهمة | الموعد |\n| --- | --- |\n| البرمجة | 28 أكتوبر |\n| المراجعة | 26 أكتوبر |'}}]}});
   });
-  await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password',{exact:true}).fill(password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('Password',{exact:true}).fill(password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
   await expect(page.locator('.side-navigation-toggle')).toBeVisible();
   const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click();
   await page.goto('/#/personal');await page.getByRole('button',{name:'New card',exact:true}).click();await page.getByLabel('Card title',{exact:true}).fill('مشروع البرمجة');await page.getByLabel('Next step',{exact:true}).fill('تجربة الربط وحفظ البيانات');await page.getByRole('button',{name:'Save card',exact:true}).click();

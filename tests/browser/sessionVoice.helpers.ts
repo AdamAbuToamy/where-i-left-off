@@ -18,7 +18,7 @@ export async function setup(page: Page, injectedInference = false) {
   await page
     .getByLabel("Email", { exact: true })
     .fill(`voice-${Date.now()}@example.test`);
-  await page.getByLabel("Password", { exact: true }).fill("Test-Password-2026");
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill("Test-Password-2026");
   await page
     .locator("form")
     .getByRole("button", { name: "Create account", exact: true })

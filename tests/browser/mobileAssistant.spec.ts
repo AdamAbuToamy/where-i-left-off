@@ -41,7 +41,7 @@ async function signIn(page: Page, request: APIRequestContext, email: string) {
   });
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Password", { exact: true }).fill(user.password);
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(user.password);
   await page
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })

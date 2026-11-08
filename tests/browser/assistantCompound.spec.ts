@@ -29,7 +29,7 @@ test('compound Arabic requests use the cloud, repair malformed proposals, save r
   ];
   await route.fulfill({json:{choices:[{message:{content:null,tool_calls}}]}});
  });
- await page.goto('/');await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(account.email);await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
+ await page.goto('/');await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(account.email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
  await page.locator('form').getByRole('button',{name:'تسجيل الدخول',exact:true}).click();await expect(page.locator('.side-navigation-toggle')).toBeVisible();
  const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click();
  await page.goto('/#/university');await page.getByRole('button',{name:'فتح المساعد',exact:true}).click();const chat=page.locator('#wilo-assistant');

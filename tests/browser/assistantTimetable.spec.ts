@@ -20,7 +20,7 @@ for(const semantic of [false,true])test(`assistant imports fourteen weekly sessi
   await route.fulfill({json:{choices:[{message:tool_calls.length?{content:null,tool_calls}:{content:'الحصص موجودة بالفعل؛ لم أضف نسخًا مكررة.'}}]}});
  });
  await page.goto('/');await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(account.email);
- await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
+ await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('كلمة المرور',{exact:true}).fill(account.password);
  await page.locator('form').getByRole('button',{name:'تسجيل الدخول',exact:true}).click();
  await expect(page.locator('.side-navigation-toggle')).toBeVisible();const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click();
  await page.goto('/#/university');

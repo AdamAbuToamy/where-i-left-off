@@ -6,7 +6,7 @@ test('legacy account can load each page and repeated navigation removes the prev
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>localStorage.setItem('language','en'));
  await page.route('**/push-config.json',r=>r.fulfill({status:503,body:'{}'}));
- await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password',{exact:true}).fill(password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
+ await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(email);await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('Password',{exact:true}).fill(password);await page.locator('form').getByRole('button',{name:'Sign in',exact:true}).click();
  await expect(page.locator('.side-navigation-toggle')).toBeVisible();
  const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click();
  for(const path of ['university','resume','settings','analytics','groups','personal','admin','admin/logs','settings','resume','personal']){

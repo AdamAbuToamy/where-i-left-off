@@ -10,7 +10,7 @@ test("semester planner: edit, checklist, graph, timetable and reload", async ({
   await page.route('**/push-config.json',route=>route.fulfill({status:503,body:'{}'}));
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(admin);
-  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(password);
   await page
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })
@@ -85,7 +85,7 @@ test("course picker: pagination, selection, linked notes and next-course context
   await page.addInitScript(()=>localStorage.setItem('language','ar'));
   await page.goto('/');
   await page.getByLabel('البريد الإلكتروني',{exact:true}).fill(email);
-  await page.getByLabel('كلمة المرور',{exact:true}).fill(password);
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel('كلمة المرور',{exact:true}).fill(password);
   await page.locator('form').getByRole('button',{name:'تسجيل الدخول',exact:true}).click();
   await expect(page.locator('.side-navigation-toggle')).toBeVisible();
   const skip=page.locator('.welcome-guide .guide-skip');if(await skip.isVisible())await skip.click();

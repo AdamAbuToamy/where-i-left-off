@@ -10,7 +10,7 @@ test("admin filters, larger week, tidy undated cards, university agenda and dele
   await page.addInitScript(() => localStorage.setItem("language", "en"));
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(password);
   await page
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })

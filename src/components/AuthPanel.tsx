@@ -7,12 +7,14 @@ import {
   pendingGoogleRegistration,
 } from "../lib/authEntry";
 import "./authPrivacy.css";
+import "./authJourney.css";
+import { authJourneyText } from "./authJourneyText";
+import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import ChoicePicker from "./ChoicePicker";
 import { registrationText } from "./registrationText";
 import { registrationEligible } from "../lib/registrationEligibility";
 import type { RegistrationAgeBand } from "../lib/registrationEligibility";
-import { supportText } from "../supportText";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { User } from "firebase/auth";
 import type { FormEvent } from "react";
 import {
@@ -45,6 +47,9 @@ export default function AuthPanel({ language }: { language: Language }) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const actionLock = useRef(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const [step, setStep] = useState<"email" | "password" | "profile">("email");
+  const [visiblePassword, setVisiblePassword] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [sent, setSent] = useState(false);
   async function perform(action: () => Promise<unknown>) {
@@ -72,7 +77,23 @@ export default function AuthPanel({ language }: { language: Language }) {
       }
       return;
     }
-    if (register && (!name.trim() || !eligible)) return;
+    if (actionLock.current) return;
+    if (step === "email") {
+      setError(null);
+      setSent(false);
+      setStep("password");
+      return;
+    }
+    if (register && step === "password") {
+      setError(null);
+      setStep("profile");
+      return;
+    }
+    if (!email.trim() || !password) {
+      setStep("email");
+      return;
+    }
+    if (register && (!name.trim() || !eligible || password.length < 8)) return;
     if (actionLock.current) return;
     armEntryAudio();
     void perform(async () => {
@@ -95,7 +116,7 @@ export default function AuthPanel({ language }: { language: Language }) {
     });
   }
   function google() {
-    if (actionLock.current || (register && !eligible)) return;
+    if (actionLock.current) return;
     armEntryAudio();
     void perform(async () => {
       holdAuthEntry();
@@ -116,105 +137,234 @@ export default function AuthPanel({ language }: { language: Language }) {
     });
   }
   const creating = register || !!pendingGoogle;
+  const words = authJourneyText[language];
+  const currentStep = pendingGoogle ? "profile" : step;
+  const stepIndex =
+    currentStep === "email" ? 0 : currentStep === "password" ? 1 : 2;
+  const stepCount = creating ? 3 : 2;
+  useEffect(() => {
+    if (currentStep !== "email")
+      heading.current?.focus({ preventScroll: true });
+  }, [currentStep]);
+  function changeMode() {
+    setRegister(!register);
+    setStep("email");
+    setPassword("");
+    setName("");
+    setAgeBand("");
+    setVisiblePassword(false);
+    setError(null);
+    setSent(false);
+  }
+  function back() {
+    if (busy) return;
+    setError(null);
+    setSent(false);
+    setVisiblePassword(false);
+    if (step === "profile") setStep("password");
+    else {
+      setStep("email");
+      setPassword("");
+    }
+  }
 
   return (
-    <section className="auth-panel" aria-busy={busy}>
-      <div className="auth-intro">
-        <span aria-hidden="true">↗</span>
-        <h2>{t.intro}</h2>
-        <a href="/about.html">
-          {
-            {
-              en: "About Where I Left Off",
-              ar: "عن Where I Left Off",
-              he: "על Where I Left Off",
-            }[language]
-          }
-        </a>
+    <section
+      className="auth-panel auth-journey"
+      aria-busy={busy}
+      dir={language === "en" ? "ltr" : "rtl"}
+    >
+      <div className="auth-journey-welcome">
+        <span className="auth-journey-eyebrow" dir="ltr">
+          WILO
+        </span>
+        <h1>
+          {words.welcome}
+          <span dir="ltr">Where I Left Off</span>
+        </h1>
       </div>
-      <form onSubmit={submit} className="new-project-form auth-form">
-        <h2>{creating ? t.signUp : t.signIn}</h2>
-        <p className="legal-notice">
-          {supportText[language].notice}{" "}
-          <a
-            href={`/terms.html?lang=${language}`}
-            target="_blank"
-            rel="noopener noreferrer"
+      <form onSubmit={submit} className="auth-form auth-journey-form">
+        <div className="auth-journey-progress" aria-hidden="true">
+          {Array.from({ length: stepCount }, (_, index) => (
+            <span
+              key={index}
+              className={index <= stepIndex ? "is-complete" : ""}
+            />
+          ))}
+        </div>
+        <div className="auth-journey-step-heading">
+          {currentStep !== "email" && !pendingGoogle && (
+            <button
+              type="button"
+              className="auth-back"
+              onClick={back}
+              disabled={busy}
+              aria-label={words.back}
+            >
+              {language === "en" ? (
+                <ArrowLeft size={19} />
+              ) : (
+                <ArrowRight size={19} />
+              )}
+            </button>
+          )}
+          <span
+            role="status"
+            className="auth-step-count"
+            dir={pendingGoogle ? undefined : "ltr"}
           >
-            {supportText[language].terms}
-          </a>{" "}
-          ·{" "}
-          <a
-            href={`/privacy.html?lang=${language}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {supportText[language].privacy}
-          </a>
-        </p>
-        {creating && (
-          <fieldset disabled={busy} className="auth-age-group">
-            {pendingGoogle && <p>{eligibility.googleHint}</p>}
-            <ChoicePicker
-              label={eligibility.age}
-              value={ageBand}
-              options={[
-                { value: "", label: eligibility.choose },
-                { value: "under16", label: eligibility.younger },
-                { value: "16plus", label: eligibility.eligible },
-              ]}
-              onChange={(value) => {
-                if (value === "" || value === "under16" || value === "16plus")
-                  setAgeBand(value);
+            {pendingGoogle ? words.finish : `${stepIndex + 1} / ${stepCount}`}
+          </span>
+        </div>
+        <h2 ref={heading} tabIndex={-1}>
+          {pendingGoogle
+            ? words.profile
+            : currentStep === "email"
+              ? register
+                ? words.newAccount
+                : words.emailTitle
+              : currentStep === "password"
+                ? words.passwordTitle
+                : words.profile}
+        </h2>
+        {currentStep !== "email" && !pendingGoogle && (
+          <p className="auth-email-summary">
+            <bdi>{email}</bdi>
+            <button
+              type="button"
+              className="auth-inline-action"
+              disabled={busy}
+              onClick={() => {
+                setStep("email");
+                setPassword("");
+                setError(null);
               }}
-            />
-            <small>{eligibility.hint}</small>
-            {ageBand === "under16" && (
-              <p className="notice" role="status">
-                {eligibility.blocked}
-              </p>
-            )}
-          </fieldset>
+            >
+              {words.change}
+            </button>
+          </p>
         )}
-        {register && !pendingGoogle && eligible && (
-          <>
-            <label htmlFor="name">{pageText[language].name}</label>
-            <input
-              id="name"
-              autoComplete="name"
-              required
-              maxLength={100}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              dir="auto"
-            />
-          </>
-        )}
-        {!pendingGoogle && (!register || eligible) && (
-          <>
-            <label htmlFor="email">{t.email}</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              dir="ltr"
-            />
-            <label htmlFor="password">{t.password}</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={register ? "new-password" : "current-password"}
-              minLength={register ? 8 : undefined}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              dir="ltr"
-            />
-          </>
-        )}
+        <fieldset
+          className="auth-journey-fields"
+          disabled={busy}
+          key={currentStep}
+        >
+          {currentStep === "email" && (
+            <>
+              <label htmlFor="email">{t.email}</label>
+              <input
+                id="email"
+                name="username"
+                type="email"
+                autoComplete="username"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                dir="ltr"
+              />
+            </>
+          )}
+          {currentStep === "password" && (
+            <>
+              <input
+                type="hidden"
+                name="username"
+                autoComplete="username"
+                value={email}
+              />
+              <label htmlFor="password">{t.password}</label>
+              <div className="auth-password-field">
+                <input
+                  id="password"
+                  name="password"
+                  type={visiblePassword ? "text" : "password"}
+                  autoComplete={register ? "new-password" : "current-password"}
+                  minLength={register ? 8 : undefined}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  dir="ltr"
+                />
+                <button
+                  type="button"
+                  className="auth-password-visibility"
+                  aria-label={
+                    visiblePassword ? words.hidePassword : words.showPassword
+                  }
+                  aria-pressed={visiblePassword}
+                  onClick={() => setVisiblePassword(!visiblePassword)}
+                >
+                  {visiblePassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                </button>
+              </div>
+              {register && (
+                <small className="auth-field-hint">{words.passwordHint}</small>
+              )}
+              {!register && (
+                <button
+                  className="auth-inline-action auth-reset"
+                  type="button"
+                  onClick={() =>
+                    void perform(async () => {
+                      await sendPasswordResetEmail(auth!, email.trim());
+                      setSent(true);
+                    })
+                  }
+                >
+                  {t.reset}
+                </button>
+              )}
+            </>
+          )}
+          {currentStep === "profile" && (
+            <>
+              {!pendingGoogle && (
+                <>
+                  <label htmlFor="name">{pageText[language].name}</label>
+                  <input
+                    id="name"
+                    name="name"
+                    autoComplete="name"
+                    required
+                    maxLength={100}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    dir="auto"
+                  />
+                </>
+              )}
+              <div className="auth-age-group">
+                {pendingGoogle && <p>{eligibility.googleHint}</p>}
+                <ChoicePicker
+                  label={eligibility.age}
+                  value={ageBand}
+                  options={[
+                    { value: "", label: eligibility.choose },
+                    { value: "under16", label: eligibility.younger },
+                    { value: "16plus", label: eligibility.eligible },
+                  ]}
+                  onChange={(value) => {
+                    if (
+                      value === "" ||
+                      value === "under16" ||
+                      value === "16plus"
+                    )
+                      setAgeBand(value);
+                  }}
+                />
+                <small>{eligibility.hint}</small>
+                {ageBand === "under16" && (
+                  <p className="notice" role="status">
+                    {eligibility.blocked}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </fieldset>
         {error !== null && (
           <p className="notice error" role="alert">
             {errorText(error, language)}
@@ -226,73 +376,94 @@ export default function AuthPanel({ language }: { language: Language }) {
           </p>
         )}
         <button
-          className="primary-button"
+          type="submit"
+          className="primary-button auth-continue"
           disabled={
             busy ||
-            (pendingGoogle
-              ? !eligible
-              : register && (!name.trim() || !eligible))
+            (currentStep === "profile" &&
+              (!eligible || (!pendingGoogle && !name.trim())))
           }
         >
-          {creating ? t.signUp : t.signIn}
+          {busy
+            ? words.working
+            : currentStep === "email" ||
+                (register && currentStep === "password")
+              ? words.continue
+              : creating
+                ? t.signUp
+                : t.signIn}
         </button>
-        {!pendingGoogle && (
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={busy || (register && !eligible)}
-            onClick={google}
-          >
-            {t.google}
-          </button>
-        )}
-        <div className="form-actions">
-          <button
-            className="text-button"
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              if (pendingGoogle) {
-                void perform(async () => {
-                  cancelEntryAudio();
-                  await signOut(auth!);
-                  setPendingGoogle(null);
-                  releaseAuthEntry();
-                });
-                return;
-              }
-              setRegister(!register);
-              setError(null);
-              setSent(false);
-            }}
-          >
-            {pendingGoogle
-              ? language === "ar"
-                ? "إلغاء إنشاء الحساب"
-                : language === "he"
-                  ? "ביטול יצירת החשבון"
-                  : "Cancel account setup"
-              : register
-                ? t.signIn
-                : t.signUp}
-          </button>
-          {!register && !pendingGoogle && email.trim() && (
+        {currentStep === "email" && (
+          <>
+            <div className="auth-journey-divider">
+              <span>{words.or}</span>
+            </div>
             <button
-              className="text-button"
               type="button"
+              className="secondary-button auth-google"
               disabled={busy}
-              onClick={() =>
-                void perform(async () => {
-                  await sendPasswordResetEmail(auth!, email.trim());
-                  setSent(true);
-                })
-              }
+              onClick={google}
             >
-              {t.reset}
+              <svg
+                aria-hidden="true"
+                width="19"
+                height="19"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="#4285F4"
+                  d="M22.6 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h6a5.2 5.2 0 0 1-2.2 3.4v2.8h3.6c2.1-2 3.2-4.8 3.2-8.2Z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c3 0 5.6-1 7.4-2.7l-3.6-2.8c-1 .7-2.2 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2v2.9A11.2 11.2 0 0 0 12 23Z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.7 14a6.7 6.7 0 0 1 0-4V7H2a11 11 0 0 0 0 10l3.7-3Z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.4c1.7 0 3.1.6 4.3 1.7l3.2-3.2A10.6 10.6 0 0 0 12 1 11.2 11.2 0 0 0 2 7l3.7 3c.9-2.6 3.4-4.6 6.3-4.6Z"
+                />
+              </svg>
+              {t.google}
             </button>
-          )}
-        </div>
+          </>
+        )}
       </form>
+      <div className="auth-journey-switch">
+        <span>
+          {pendingGoogle
+            ? words.pending
+            : register
+              ? words.haveAccount
+              : words.noAccount}
+        </span>
+        <button
+          type="button"
+          className="auth-inline-action"
+          disabled={busy}
+          onClick={() => {
+            if (pendingGoogle) {
+              void perform(async () => {
+                cancelEntryAudio();
+                await signOut(auth!);
+                setPendingGoogle(null);
+                setRegister(false);
+                setStep("email");
+                setPassword("");
+                setAgeBand("");
+                releaseAuthEntry();
+              });
+              return;
+            }
+            changeMode();
+          }}
+        >
+          {pendingGoogle ? words.cancel : register ? t.signIn : t.signUp}
+        </button>
+      </div>
     </section>
   );
 }
