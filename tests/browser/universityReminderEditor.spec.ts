@@ -301,7 +301,9 @@ for (const phone of [false, true])
       .getByRole("button", { name: "Expand card: Group task", exact: true })
       .click();
     const panel = page.locator(".card-detail-panel");
-    await panel.locator(".card-reminder-control>summary").click();
+    await panel
+      .getByRole("button", { name: "Card reminder", exact: true })
+      .click();
     await expect(
       panel.getByLabel("How far before?", { exact: true }),
     ).toBeVisible();

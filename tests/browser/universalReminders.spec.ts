@@ -263,7 +263,9 @@ for (const phone of [false, true])
         exact: true,
       });
       await expect(detail).toBeVisible();
-      await detail.locator(".card-reminder-control>summary").click();
+      await detail
+        .getByRole("button", { name: "Card reminder", exact: true })
+        .click();
       await expect(
         detail.getByRole("checkbox", {
           name: "Disable reminders for this card",

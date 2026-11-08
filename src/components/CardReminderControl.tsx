@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { Bell, ChevronDown } from "lucide-react";
+import { useState, useCallback, useEffect, useRef, useId } from "react";
 import type { Language } from "../translations";
 import { pushCall } from "../lib/pushNotifications";
 import type { CardReminder, PushPreferences } from "../lib/pushNotifications";
@@ -38,6 +39,30 @@ type Props = {
 export default function CardReminderControl(props: Props) {
   const w = cardReminderWords[props.language],
     [open, setOpen] = useState(!!props.initialOpen);
+  const panelId = useId();
+  if (props.compact)
+    return (
+      <div className="card-reminder-control is-compact">
+        <button
+          type="button"
+          className="primary-button card-reminder-trigger"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <Bell size={18} aria-hidden="true" />
+          <span>{w.title}</span>
+          <ChevronDown
+            size={16}
+            className={open ? "is-open" : ""}
+            aria-hidden="true"
+          />
+        </button>
+        <div id={panelId} hidden={!open}>
+          {open && <ReminderForm {...props} />}
+        </div>
+      </div>
+    );
   return (
     <details
       className="push-card card-reminder-control"

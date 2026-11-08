@@ -86,3 +86,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+.card-reminder-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.card-reminder-trigger .is-open {
+  transform: rotate(180deg);
+}
+.card-reminder-trigger:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}

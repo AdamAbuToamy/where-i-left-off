@@ -31,3 +31,7 @@ D1 records the requesting key and per-event policy. Expiry/revocation/permission
 Apply guarded additive metadata migration before Worker rollout, preserve all bindings/variables, then publish matching production Hosting/OpenAPI. Use existing infrastructure and minute scheduler. Final runtime proof is `.wrangler/universal-reminders-production.json`, migration proof `.wrangler/quiet-override-migration-proof.json` (ignored operator artifacts). Production checks are public contract/asset hashes and unauthenticated denial, plus anonymous public UI availability. No real user's key, assignment, card, reminder or device is changed as a test. Physical phone delivery and an authenticated production override are not verified by emulator/provider tests.
 
 The requested university knowledge file remains absent; project/domain validators and existing authorization are retained. Recovery patch/bundle is stored under `/home/adam/wilo-recovery/20261109-reminders-quiet-override`; old development recovery copy remains untouched.
+
+## Card reminder button follow-up
+
+Compact personal/group card surfaces now use an actual green button with a bell icon, aria-expanded and aria-controls to open the same reminder editor. Settings lists retain their disclosure behavior. Four desktop/mobile browser journeys passed, including university and group reminders; lint and TypeScript passed. This is a UI-only change; no backend or schema deployment is required.
