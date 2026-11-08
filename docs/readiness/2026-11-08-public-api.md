@@ -4,6 +4,8 @@
 
 Owner authorized deployment and Git operations in the autonomous engineering request on 2026-11-08. **Worker and Hosting deployed.** No real user/account data writes or real user API key creation were performed. The release source is identified by Git history; remote delivery and the final commit hash are recorded in the session handoff.
 
+Implementation committed and pushed to existing `origin/codex/admin-auto-header-fix`: `5733fc8a3c726216d74d938a5a16811177ebca0f`; remote ref read-back matched. A subsequent documentation-only commit records the final audit evidence without changing deployed runtime.
+
 ## Production verification — current session
 
 - Existing Worker `wilo-free-push` version `c9208efb-9d79-4371-82b0-ad8fec30c261` deployed with remote variables, secret bindings, AI binding, D1, Queues and cron preserved. Metadata comparison after deployment passed. No provider inference or paid service was invoked.
@@ -37,6 +39,7 @@ Owner authorized deployment and Git operations in the autonomous engineering req
 | Architecture | Passed,34 checked modules; generated domain runtime freshness check passed. |
 | Worker Wrangler dry-run | Packaged successfully; no deployment. |
 | Credential/history checks | No findings; pattern-only limitations apply. History2635 blobs,18 binary,0 oversized skipped. |
+| Post-commit credential/history checks | No findings;2675 reachable blobs,18 binary,0 oversized skipped. Production and Worker npm audits:0 findings. Full frontend/development audit:23 moderate,0 high/critical. No dependency change or forced remediation. |
 | `git diff --check` | Passed. |
 
 ## Explicitly unperformed / limitations

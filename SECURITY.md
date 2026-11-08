@@ -6,7 +6,11 @@ This beta uses Firebase Authentication and server-enforced Firestore rules. Hidi
 
 Private UID isolation; anonymous access; verified-email-only admin metrics access; self-escalation and self-unsuspension; field whitelists; revision/timestamp checks; unsafe link protocols; group membership and ownership; task assignment; canCreate revocation; invitations; group tombstones and cleanup; offline account separation and conflict handling.
 
-## Known unresolved dependency findings — 2026-10-12
+## Current dependency verification — 2026-11-08
+
+Fresh npm audit after the Public API release: production dependencies0 findings; Worker dependencies0 findings; full frontend/development tree23 moderate entries,0 high/critical. No dependency versions were changed in this session. These are advisory counts, not proof of absence of vulnerabilities. The earlier report below is retained as historical context and does not describe current counts.
+
+## Historical dependency findings — 2026-10-12
 
 Full npm audit: 22 affected dependency entries (9 moderate, 12 high, 1 critical). These counts include transitive parents and are not 22 independent exploitable vulnerabilities. Production-dependency audit: 4 high entries in Firebase's Node gRPC dependency chain. The browser app does not expose a gRPC server; reachability has not been independently established. `tar` is the critical finding and is pulled through Firebase CLI tooling.
 
