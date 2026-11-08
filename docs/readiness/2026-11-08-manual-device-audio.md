@@ -1,0 +1,12 @@
+# Per-device manual interface sound — 2026-11-08
+
+User confirmed public welcome rollout and explicitly selected manual Wilo sound control after being informed that Android browsers cannot reliably expose ring/vibrate/silent state. Do not claim automatic hardware-mode detection or that the website has become a native app.
+
+- Public welcome release3cf6a42 was checked anonymously on desktop and touch phone; the signed-out AuthPanel is unconditional with respect to administrator identity. Public marker read back successfully during this task. No account gate was added.
+- Existing interface-sound preference is already account/device-local localStorage, not cloud-synchronized. Keep the behavior and add a concise localized explanation/accessibility description at the existing switch. All generated interaction/navigation/drop/entry/preview audio uses InteractionAudio. No HTML playback workaround, global audio-session override, user-agent guessing, ring-state polling or microphone change added.
+- Preview audio now closes on sound opt-out and settings unmount, not only its short timeout. Disposing repeated previews remains idempotent.
+- Existing role rollout of experimental interaction/motion controls is unchanged; this request does not broaden cinematic animation access. System notification channel sounds remain OS-controlled; the interface switch does not alter push scheduling/preferences.
+
+Verification:9 focused unit tests passed (audio lifecycle plus Google compatibility);3 browser emulator cases passed (desktop/phone and ordinary account exclusion), strengthened to check no oscillator creation from ordinary controls after disabling and no audio creation after reload with sound off. Muting remains persisted while unrelated motion is changed. One initial test needed reopening the real settings accordion before accessing its checkbox; no control was bypassed or security rule changed. ESLint and TypeScript passed. Hosting build/public asset verification are separate release evidence.
+
+Physical device audio, actual silent/vibrate hardware mode and real Google OAuth are not tested or claimed. No server/rules/schema/provider changes or real user-data writes. Reference constraints: https://w3c.github.io/audio-session/ (Web Audio defaults to ambient; microphone requires auto/play-and-record) and https://developer.android.com/reference/android/media/AudioManager (native ringer access). Manual control was chosen instead of forcing a global session type that could disrupt microphone capture.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Volume2, VolumeX, Clapperboard } from "lucide-react";
 import type { Language } from "../translations";
 import { readExperience, saveExperience, experienceEvent } from "./preferences";
@@ -11,27 +11,39 @@ export default function ExperienceSettings({
   language: Language;
 }) {
   const [value, setValue] = useState(() => readExperience(uid));
+  const soundHintId = useId();
+  const preview = useRef<InteractionAudio | null>(null);
+  useEffect(
+    () => () => {
+      preview.current?.dispose();
+      preview.current = null;
+    },
+    [value.sound],
+  );
   const words = {
     ar: {
       title: "الحركة والصوت",
       sound: "أصوات التفاعل",
+      phoneHint:
+        "أصوات الواجهة تتحكم بها يدويًا لكل جهاز. وضع الهاتف الصامت قد لا يكتم أصوات المتصفح. لا يؤثر هذا الخيار على الإشعارات.",
       motion: "الانتقالات السينمائية",
       test: "جرّب الصوت",
-      hint: "إعدادات تجربة الإدارة على هذا الجهاز. يمكنك إيقافها في أي وقت.",
     },
     en: {
       title: "Motion & sound",
       sound: "Interaction sounds",
+      phoneHint:
+        "Control interface sounds manually for each device. Your phone’s silent mode may not mute browser audio. This does not change notification sounds.",
       motion: "Cinematic transitions",
       test: "Preview sound",
-      hint: "Admin preview preferences on this device. Turn them off at any time.",
     },
     he: {
       title: "תנועה וצליל",
       sound: "צלילי ממשק",
+      phoneHint:
+        "שליטה ידנית בצלילי הממשק לכל מכשיר. מצב שקט בטלפון עשוי לא להשתיק את הדפדפן. ההגדרה אינה משנה צלילי התראות.",
       motion: "מעברים קולנועיים",
       test: "בדיקת צליל",
-      hint: "העדפות תצוגת המנהל במכשיר הזה. ניתן לכבות בכל עת.",
     },
   }[language];
   useEffect(() => {
@@ -61,6 +73,7 @@ export default function ExperienceSettings({
       <label>
         <input
           type="checkbox"
+          aria-describedby={soundHintId}
           checked={value.sound}
           onChange={(event) => change({ sound: event.target.checked })}
         />
@@ -75,15 +88,20 @@ export default function ExperienceSettings({
         />
         {words.motion}
       </label>
-      <p>{words.hint}</p>
+      <p id={soundHintId}>{words.phoneHint}</p>
       <button
         type="button"
         className="secondary-button"
         disabled={!value.sound}
         onClick={() => {
+          preview.current?.dispose();
           const audio = new InteractionAudio();
+          preview.current = audio;
           void audio.play("navigate");
-          setTimeout(() => audio.dispose(), 300);
+          setTimeout(() => {
+            audio.dispose();
+            if (preview.current === audio) preview.current = null;
+          }, 300);
         }}
       >
         {words.test}

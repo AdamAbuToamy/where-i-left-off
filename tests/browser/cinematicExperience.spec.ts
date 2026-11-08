@@ -28,7 +28,8 @@ for (const phone of [false, true])
     });
     await page.goto("/");
     await page.getByLabel("Email", { exact: true }).fill(c.email);
-    await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(c.password);
+    await page.locator(".auth-journey .auth-continue").click();
+    await page.getByLabel("Password", { exact: true }).fill(c.password);
     await page
       .locator("form")
       .getByRole("button", { name: "Sign in", exact: true })
@@ -89,11 +90,40 @@ for (const phone of [false, true])
     ).toHaveCount(0);
     await expect(page.locator(".brand-backdrop")).toHaveCount(0);
     await group.getByLabel("Interaction sounds", { exact: true }).uncheck();
+    await expect(
+      group.getByRole("button", { name: "Preview sound", exact: true }),
+    ).toBeDisabled();
+    const soundsBefore = await page.evaluate(
+      () =>
+        (window as unknown as { entryOscillators: number }).entryOscillators,
+    );
+    await page
+      .locator(".settings-group")
+      .filter({ hasNot: page.locator(".experience-settings") })
+      .first()
+      .locator(":scope>summary")
+      .click();
+    expect(
+      await page.evaluate(
+        () =>
+          (window as unknown as { entryOscillators: number }).entryOscillators,
+      ),
+    ).toBe(soundsBefore);
+    await group.locator(":scope>summary").click();
     await group.getByLabel("Cinematic transitions", { exact: true }).uncheck();
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-cinematic", "off");
     await expect(page.locator(".auth-arrival,.brand-backdrop")).toHaveCount(0);
     await group.locator(":scope>summary").click();
+    await expect(
+      group.getByLabel("Interaction sounds", { exact: true }),
+    ).not.toBeChecked();
+    expect(
+      await page.evaluate(
+        () =>
+          (window as unknown as { entryOscillators: number }).entryOscillators,
+      ),
+    ).toBe(0);
     await group.getByLabel("Cinematic transitions", { exact: true }).check();
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/#/personal");
@@ -116,7 +146,8 @@ test("ordinary accounts have no admin arrival or experimental background", async
   }, c.uid);
   await page.goto("/");
   await page.getByLabel("Email", { exact: true }).fill(c.email);
-  await page.locator(".auth-journey .auth-continue").click(); await page.getByLabel("Password", { exact: true }).fill(c.password);
+  await page.locator(".auth-journey .auth-continue").click();
+  await page.getByLabel("Password", { exact: true }).fill(c.password);
   await page
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })
