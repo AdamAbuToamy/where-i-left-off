@@ -19,7 +19,8 @@ export const registrationText: Record<
     hint: "لا نحفظ عمرك أو تاريخ ميلادك.",
     blocked:
       "إنشاء حساب جديد متاح لعمر 16 سنة فأكثر. يمكنك العودة لتسجيل الدخول إلى حساب قائم.",
-    googleHint: "قد ينشئ Google حسابًا جديدًا؛ اختر فئتك العمرية قبل المتابعة.",
+    googleHint:
+      "هذا أول تسجيل لك في WILO عبر Google. اختر فئتك العمرية لإكمال إنشاء الحساب.",
   },
   en: {
     age: "Age group",
@@ -30,7 +31,7 @@ export const registrationText: Record<
     blocked:
       "New accounts are available to people aged 16 or older. You can return to sign in to an existing account.",
     googleHint:
-      "Google can create a new account. Choose your age group before continuing.",
+      "This is your first Google sign-in to WILO. Choose your age group to finish creating your account.",
   },
   he: {
     age: "קבוצת גיל",
@@ -40,6 +41,7 @@ export const registrationText: Record<
     hint: "איננו שומרים גיל או תאריך לידה.",
     blocked:
       "חשבונות חדשים מיועדים לבני 16 ומעלה. אפשר לחזור להתחברות לחשבון קיים.",
-    googleHint: "Google עשוי ליצור חשבון חדש. בחרו קבוצת גיל לפני ההמשך.",
+    googleHint:
+      "זו הכניסה הראשונה שלכם ל-WILO דרך Google. בחרו קבוצת גיל להשלמת יצירת החשבון.",
   },
 };

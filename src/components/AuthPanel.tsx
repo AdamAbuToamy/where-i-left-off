@@ -1,14 +1,24 @@
+import {
+  holdAuthEntry,
+  finishAuthEntry,
+  releaseAuthEntry,
+  markGoogleRegistration,
+  pendingGoogleRegistration,
+} from "../lib/authEntry";
 import "./authPrivacy.css";
 import ChoicePicker from "./ChoicePicker";
 import { registrationText } from "./registrationText";
 import { registrationEligible } from "../lib/registrationEligibility";
 import type { RegistrationAgeBand } from "../lib/registrationEligibility";
 import { supportText } from "../supportText";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { User } from "firebase/auth";
 import type { FormEvent } from "react";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  getAdditionalUserInfo,
+  signOut,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -24,17 +34,21 @@ export default function AuthPanel({ language }: { language: Language }) {
   const t = cloudText[language],
     eligibility = registrationText[language];
   const [ageBand, setAgeBand] = useState<RegistrationAgeBand>("");
-  const [googleAgePrompt, setGoogleAgePrompt] = useState(false);
+  const [pendingGoogle, setPendingGoogle] = useState<User | null>(() =>
+    pendingGoogleRegistration(auth?.currentUser || null),
+  );
   const eligible = registrationEligible(ageBand);
   const [register, setRegister] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const actionLock = useRef(false);
   const [error, setError] = useState<unknown>(null);
   const [sent, setSent] = useState(false);
   async function perform(action: () => Promise<unknown>) {
-    if (busy) return;
+    if (actionLock.current) return;
+    actionLock.current = true;
     setBusy(true);
     setError(null);
     setSent(false);
@@ -43,33 +57,59 @@ export default function AuthPanel({ language }: { language: Language }) {
     } catch (e) {
       setError(e);
     } finally {
+      actionLock.current = false;
       setBusy(false);
     }
   }
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (pendingGoogle) {
+      if (eligible && auth?.currentUser?.uid === pendingGoogle.uid)
+        finishAuthEntry(pendingGoogle, true);
+      return;
+    }
     if (register && (!name.trim() || !eligible)) return;
     void perform(async () => {
-      if (register) {
-        const result = await createUserWithEmailAndPassword(
-          auth!,
-          email.trim(),
-          password,
-        );
-        await updateProfile(result.user, { displayName: name.trim() });
-        window.dispatchEvent(new Event("profile-updated"));
-      } else await signInWithEmailAndPassword(auth!, email.trim(), password);
+      holdAuthEntry();
+      try {
+        if (register) {
+          const result = await createUserWithEmailAndPassword(
+            auth!,
+            email.trim(),
+            password,
+          );
+          await updateProfile(result.user, { displayName: name.trim() });
+          window.dispatchEvent(new Event("profile-updated"));
+        } else await signInWithEmailAndPassword(auth!, email.trim(), password);
+        finishAuthEntry(auth!.currentUser, true);
+      } catch (error) {
+        releaseAuthEntry();
+        throw error;
+      }
     });
   }
   function google() {
-    // Firebase's Google sign-in can create accounts, even from the login screen.
-    // Screen before opening the provider so an ineligible visitor sends no profile.
-    if (!eligible) {
-      setGoogleAgePrompt(true);
-      return;
-    }
-    void perform(() => signInWithPopup(auth!, new GoogleAuthProvider()));
+    if (register && !eligible) return;
+    void perform(async () => {
+      holdAuthEntry();
+      try {
+        const result = await signInWithPopup(auth!, new GoogleAuthProvider());
+        if (
+          (getAdditionalUserInfo(result)?.isNewUser ||
+            pendingGoogleRegistration(result.user)) &&
+          !eligible
+        ) {
+          markGoogleRegistration(result.user);
+          setPendingGoogle(result.user);
+        } else finishAuthEntry(result.user, true);
+      } catch (error) {
+        releaseAuthEntry();
+        throw error;
+      }
+    });
   }
+  const creating = register || !!pendingGoogle;
+
   return (
     <section className="auth-panel" aria-busy={busy}>
       <div className="auth-intro">
@@ -86,7 +126,7 @@ export default function AuthPanel({ language }: { language: Language }) {
         </a>
       </div>
       <form onSubmit={submit} className="new-project-form auth-form">
-        <h2>{register ? t.signUp : t.signIn}</h2>
+        <h2>{creating ? t.signUp : t.signIn}</h2>
         <p className="legal-notice">
           {supportText[language].notice}{" "}
           <a
@@ -105,9 +145,9 @@ export default function AuthPanel({ language }: { language: Language }) {
             {supportText[language].privacy}
           </a>
         </p>
-        {(register || googleAgePrompt) && (
+        {creating && (
           <fieldset disabled={busy} className="auth-age-group">
-            {googleAgePrompt && !register && <p>{eligibility.googleHint}</p>}
+            {pendingGoogle && <p>{eligibility.googleHint}</p>}
             <ChoicePicker
               label={eligibility.age}
               value={ageBand}
@@ -129,7 +169,7 @@ export default function AuthPanel({ language }: { language: Language }) {
             )}
           </fieldset>
         )}
-        {register && eligible && (
+        {register && !pendingGoogle && eligible && (
           <>
             <label htmlFor="name">{pageText[language].name}</label>
             <input
@@ -143,7 +183,7 @@ export default function AuthPanel({ language }: { language: Language }) {
             />
           </>
         )}
-        {(!register || eligible) && (
+        {!pendingGoogle && (!register || eligible) && (
           <>
             <label htmlFor="email">{t.email}</label>
             <input
@@ -180,33 +220,55 @@ export default function AuthPanel({ language }: { language: Language }) {
         )}
         <button
           className="primary-button"
-          disabled={busy || (register && (!name.trim() || !eligible))}
+          disabled={
+            busy ||
+            (pendingGoogle
+              ? !eligible
+              : register && (!name.trim() || !eligible))
+          }
         >
-          {register ? t.signUp : t.signIn}
+          {creating ? t.signUp : t.signIn}
         </button>
-        <button
-          type="button"
-          className="secondary-button"
-          disabled={busy}
-          onClick={google}
-        >
-          {t.google}
-        </button>
+        {!pendingGoogle && (
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={busy || (register && !eligible)}
+            onClick={google}
+          >
+            {t.google}
+          </button>
+        )}
         <div className="form-actions">
           <button
             className="text-button"
             type="button"
             disabled={busy}
             onClick={() => {
+              if (pendingGoogle) {
+                void perform(async () => {
+                  await signOut(auth!);
+                  setPendingGoogle(null);
+                  releaseAuthEntry();
+                });
+                return;
+              }
               setRegister(!register);
-              setGoogleAgePrompt(false);
               setError(null);
               setSent(false);
             }}
           >
-            {register ? t.signIn : t.signUp}
+            {pendingGoogle
+              ? language === "ar"
+                ? "إلغاء إنشاء الحساب"
+                : language === "he"
+                  ? "ביטול יצירת החשבון"
+                  : "Cancel account setup"
+              : register
+                ? t.signIn
+                : t.signUp}
           </button>
-          {!register && email.trim() && (
+          {!register && !pendingGoogle && email.trim() && (
             <button
               className="text-button"
               type="button"

@@ -1,4 +1,3 @@
-import AdminExperiencePreview from "../experience/AdminExperiencePreview";
 import PreviewDetails from './PreviewDetails'
 import { FeedbackList } from './Support'
 import { supportText } from '../supportText'
@@ -54,7 +53,6 @@ export default function AdminDashboard({ db, language, user }: Props) {
   }
   return <section className="admin-dashboard">
     <h2>{t.adminTitle}</h2>
-    {section === "accounts" && <AdminExperiencePreview uid={user.uid} language={language}/>}
     <nav className="admin-sections" aria-label={t.adminTitle}><a className={section === 'accounts' ? 'is-current' : ''} aria-current={section === 'accounts' ? 'page' : undefined} href="#/admin">{p.adminAccounts}</a><a className={section === 'logs' ? 'is-current' : ''} aria-current={section === 'logs' ? 'page' : undefined} href="#/admin/logs">{p.logs}</a><a className={section === 'support' ? 'is-current' : ''} href="#/admin/support" aria-current={section === 'support' ? 'page' : undefined}>{supportText[language].admin}</a></nav>
     {section === 'support' ? <FeedbackList user={user} language={language} admin /> : section === 'logs' ? <LogViewer user={user} language={language} /> : loading ? <p role="status">…</p> : error ? <div role="alert"><p>{errorText(error,language)}</p><button className="secondary-button" onClick={() => { setError(null); setLoading(true); setAttempt(value => value + 1) }}>{c.retry}</button></div> : <>
       <div className="admin-stats">

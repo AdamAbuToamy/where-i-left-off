@@ -1,6 +1,10 @@
-/* Admin preview only. All effects use compositor-friendly opacity/transform. */
+/* Actual account surfaces only. The public design is unchanged until approval. */
+html[data-cinematic="on"] .workspace {
+  isolation: isolate;
+}
 html[data-cinematic="on"] .account-page-outlet {
-  animation: wilo-page-arrive 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: wilo-page-arrive 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: 50% 0;
 }
 html[data-cinematic="on"] :is(button, a, summary) {
   transition:
@@ -14,32 +18,6 @@ html[data-cinematic="on"] button:active:not(:disabled) {
 }
 html[data-cinematic="on"] .side-navigation a:hover {
   transform: translateX(-3px);
-}
-.admin-experience-preview {
-  margin: 24px 0;
-  padding: 22px;
-  border: 1px solid var(--site-border);
-  border-radius: 20px;
-  background: var(--site-surface);
-}
-.admin-experience-preview > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.admin-experience-preview > header small {
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: var(--site-muted);
-}
-.admin-experience-preview h3 {
-  margin: 8px 0;
-}
-.admin-experience-preview > header button {
-  display: flex;
-  gap: 10px;
-  align-items: center;
 }
 .experience-settings h3,
 .experience-settings label {
@@ -55,378 +33,232 @@ html[data-cinematic="on"] .side-navigation a:hover {
   height: 18px;
   accent-color: var(--site-primary);
 }
-.login-scene {
-  position: relative;
-  isolation: isolate;
-  min-height: 620px;
-  overflow: clip;
-  margin-top: 24px;
-  border-radius: 22px;
-  background: #d4e0d7;
-  color: #183e32;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 30px;
-  align-items: center;
-  padding: 100px 6% 78px;
-  box-shadow: inset 0 0 0 1px #ffffff60;
-}
-.scene-sky {
-  position: absolute;
+.brand-backdrop {
+  position: fixed;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(170deg, #c4d9d4, #edf0df 60%, #d4bda0);
+  pointer-events: none;
+  overflow: clip;
+  color: var(--site-primary);
+  opacity: 0.045;
+  user-select: none;
 }
-.scene-sun {
+.brand-backdrop span {
   position: absolute;
-  top: 10%;
-  left: 15%;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: #fcf5dc;
-  box-shadow: 0 0 80px 30px #fff8df70;
-  animation: scene-light 1.2s ease-out both;
+  font-size: clamp(70px, 10vw, 180px);
+  font-weight: 750;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
+  animation: brand-drift 36s ease-in-out infinite alternate;
+  transform: rotate(-9deg);
 }
-.scene-sky svg {
-  position: absolute;
-  inset: 25% 0 0;
-  width: 100%;
-  height: 75%;
-  fill: #55796838;
+.brand-backdrop span:nth-child(1) {
+  inset-block-start: 16%;
+  inset-inline-start: -3%;
 }
-.scene-sky svg path + path {
-  fill: #264f4040;
+.brand-backdrop span:nth-child(2) {
+  inset-block-start: 48%;
+  inset-inline-end: -12%;
+  font-size: clamp(40px, 6vw, 90px);
+  animation-delay: -11s;
 }
-.scene-horizon {
-  position: absolute;
-  inset: auto -20% -130px;
-  height: 220px;
-  border: 1px solid #fcf8e688;
-  border-radius: 50%;
-  transform: rotate(-7deg);
+.brand-backdrop span:nth-child(3) {
+  inset-block-end: 3%;
+  inset-inline-start: 20%;
+  animation-delay: -22s;
 }
-.scene-brand {
-  position: absolute;
-  inset-block-start: 32px;
-  inset-inline-start: 6%;
-  font-weight: 800;
-  font-size: 26px;
-  letter-spacing: -0.08em;
+.brand-backdrop span:nth-child(4) {
+  inset-block-start: 4%;
+  inset-inline-end: 4%;
+  font-size: 28px;
+  animation-delay: -7s;
 }
-.scene-brand span {
-  display: block;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.24em;
-  margin-top: 3px;
-}
-.scene-story {
-  max-width: 390px;
-  animation: scene-story-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.scene-story > span {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-}
-.scene-story h2 {
-  font-size: clamp(32px, 4vw, 56px);
-  line-height: 1.18;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  margin: 18px 0;
-}
-.scene-story p {
-  font-size: 14px;
-  line-height: 1.9;
-  max-width: 260px;
-  color: #36594c;
-}
-.scene-story svg {
-  width: 85%;
-  height: 90px;
-  fill: none;
-  stroke: #295845;
-  stroke-width: 1.5;
-  stroke-dasharray: 450;
-  animation: scene-path 1.5s ease-out both;
-}
-.scene-story circle {
-  fill: #295845;
-}
-.scene-panel {
-  width: 100%;
-  max-width: 350px;
-  justify-self: center;
-  padding: 24px;
-  border-radius: 24px;
-  background: #fffdf6;
-  box-shadow:
-    0 30px 70px -25px #213f3c60,
-    0 4px 12px #52716418,
-    inset 0 1px #fff;
-  animation: scene-panel-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.scene-mark {
-  width: 45px;
-  height: 58px;
-  border-radius: 24px;
-  border: 1px solid #c4d0bf;
+.auth-arrival {
+  position: fixed;
+  inset: 0;
+  z-index: 32000;
+  isolation: isolate;
+  overflow: clip;
   display: grid;
   place-items: center;
-  margin-bottom: 22px;
-  background: linear-gradient(155deg, #e0eadc, #faf5df);
-  box-shadow: inset 0 2px 5px #68847220;
+  pointer-events: auto;
+  color: #fffaf0;
 }
-.scene-panel h3 {
-  font-size: 22px;
-  margin: 0 0 24px;
-  letter-spacing: -0.03em;
-  line-height: 1.5;
+.entry-shutter {
+  position: absolute;
+  inset-block: 0;
+  width: 50.1%;
+  background: #16382e;
+  box-shadow: inset 0 0 140px #081f18;
 }
-.scene-panel form {
+.entry-left {
+  left: 0;
+  animation: shutter-left 1.9s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.entry-right {
+  right: 0;
+  animation: shutter-right 1.9s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.entry-brand {
+  position: relative;
   display: grid;
-  gap: 16px;
-}
-.scene-panel label {
-  display: grid;
-  gap: 7px;
-  font-size: 12px;
-}
-.scene-panel input {
-  width: 100%;
-  min-width: 0;
-  height: 46px;
-  border: 1px solid #d4dbce;
-  border-radius: 11px;
-  background: #f8f9f3;
-  padding: 10px 12px;
-  outline-offset: 3px;
-  color: #183e32;
-  font-size: 16px;
-}
-.scene-panel input:focus {
-  outline: 2px solid #486f5c;
-  background: white;
-}
-.scene-panel button {
-  border: 1px solid #294f3e;
-  border-radius: 12px;
-  padding: 13px 15px;
-  background: #294f3e;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-items: center;
   gap: 12px;
+  animation: brand-arrive 1.9s both;
+}
+.entry-brand strong {
+  font-size: clamp(90px, 17vw, 240px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.07em;
+}
+.entry-brand span {
+  font-size: clamp(9px, 1vw, 13px);
+  letter-spacing: 0.4em;
+  padding-inline-start: 0.4em;
+}
+.entry-rail {
+  position: absolute;
+  width: 1px;
+  height: 70vh;
+  background: #d8d1a7;
+  animation: entry-rail 1.9s both;
+  transform-origin: 50% 50%;
+}
+.auth-arrival > button {
+  position: absolute;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  inset-inline-end: 26px;
+  padding: 12px 18px;
+  border: 1px solid #f8f2df70;
+  border-radius: 8px;
+  background: #19382e;
+  color: #fffaf0;
+  font: inherit;
+  font-size: 12px;
   cursor: pointer;
-  font-size: 13px;
-  min-height: 46px;
 }
-.scene-panel button:hover {
-  background: #1c3e2e;
-  box-shadow: 0 5px 14px #294f3e25;
-}
-.scene-panel button:focus-visible {
-  outline: 2px solid #183e32;
+.auth-arrival > button:focus-visible {
+  outline: 2px solid #fffaf0;
   outline-offset: 4px;
 }
-.scene-caption {
-  position: absolute;
-  bottom: 24px;
-  inset-inline: 6%;
-  font-size: 10px;
-  color: #345748;
-  line-height: 1.7;
+@keyframes shutter-left {
+  0%,
+  48% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-101%);
+  }
 }
-.scene-arrival-card {
-  display: grid;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 13px;
-  background: #eef2e8;
-  border: 1px solid #dce2d5;
+@keyframes shutter-right {
+  0%,
+  48% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(101%);
+  }
 }
-.scene-arrival-card small {
-  font-size: 11px;
+@keyframes brand-arrive {
+  0% {
+    opacity: 0;
+    transform: scale(0.83);
+    clip-path: inset(50% 0 50% 0);
+  }
+  25%,
+  48% {
+    opacity: 1;
+    transform: scale(1);
+    clip-path: inset(0);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  90%,
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
 }
-.scene-arrival-card strong {
-  font-size: 22px;
-  line-height: 1.6;
-}
-.scene-arrival-card span {
-  font-size: 11px;
-  letter-spacing: 0.12em;
-}
-.scene-arrival-card i {
-  height: 3px;
-  background: linear-gradient(to right, #42654e 33%, #d1dccb 33%);
-  border-radius: 4px;
-}
-.scene-panel .scene-reset {
-  margin-top: 20px;
-  width: 100%;
-  background: none;
-  color: #365b47;
-  border: 0;
-  justify-content: center;
-  font-size: 12px;
+@keyframes entry-rail {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  22% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  36%,
+  100% {
+    opacity: 0;
+    transform: scaleY(1);
+  }
 }
 @keyframes wilo-page-arrive {
   from {
-    opacity: 0.3;
-    transform: translateY(9px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes scene-panel-in {
-  from {
-    opacity: 0;
-    transform: perspective(900px) translateY(24px) rotateX(7deg) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes scene-story-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes scene-light {
-  from {
     opacity: 0.2;
-    transform: scale(0.85);
+    transform: perspective(1200px) translateY(24px) rotateX(1deg);
+    clip-path: inset(0 0 6% 0);
   }
   to {
     opacity: 1;
     transform: none;
+    clip-path: inset(0);
   }
 }
-@keyframes scene-path {
-  from {
-    stroke-dashoffset: 450;
-  }
+@keyframes brand-drift {
   to {
-    stroke-dashoffset: 0;
+    transform: translate3d(28px, -25px, 0) rotate(-6deg);
   }
+}
+html[data-cinematic="off"] .brand-backdrop span {
+  animation: none;
 }
 @media (max-width: 700px) {
-  .admin-experience-preview {
-    padding: 14px;
+  .brand-backdrop {
+    opacity: 0.03;
   }
-  .admin-experience-preview > header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .login-scene {
-    min-height: 780px;
-    grid-template-columns: 1fr;
-    padding: 95px 22px 65px;
-    gap: 20px;
-  }
-  .scene-story {
-    max-width: 300px;
-  }
-  .scene-story h2 {
-    font-size: 35px;
-    max-width: 270px;
-  }
-  .scene-story p {
-    font-size: 12px;
-    max-width: 230px;
-  }
-  .scene-story svg {
+  .brand-backdrop span:nth-child(4) {
     display: none;
   }
-  .scene-panel {
-    max-width: 350px;
-    padding: 22px;
+  .brand-backdrop span:nth-child(2) {
+    font-size: 40px;
   }
-  .scene-sun {
-    left: -55px;
-    top: 15%;
-    width: 220px;
-    height: 220px;
-  }
-  .scene-caption {
-    font-size: 9px;
-  }
-  .scene-panel h3 {
-    font-size: 20px;
-  }
-}
-html[data-cinematic="off"] .login-scene * {
-  animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
   html[data-cinematic="on"] .account-page-outlet,
-  .login-scene * {
+  .brand-backdrop span {
     animation: none !important;
   }
   html[data-cinematic="on"] :is(button, a, summary) {
     transition: none !important;
   }
-}
-
-.login-scene .scene-sky {
-  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.login-scene[data-entered="true"] .scene-sky {
-  transform: scale(1.035);
-}
-.scene-panel:focus-within .scene-mark {
-  box-shadow:
-    inset 0 2px 5px #68847220,
-    0 0 0 5px #436c5010;
-  transform: translateY(-2px);
-  transition:
-    transform 0.25s,
-    box-shadow 0.25s;
-}
-@media (max-width: 700px) {
-  .login-scene {
-    min-height: 650px;
-    padding: 82px 18px 52px;
-    gap: 18px;
+  .entry-shutter,
+  .entry-brand,
+  .entry-rail {
+    animation: none !important;
   }
-  .scene-story h2 {
-    font-size: 28px;
-    margin: 12px 0;
-    max-width: 270px;
-  }
-  .scene-story p {
+  .auth-arrival {
     display: none;
   }
-  .scene-panel {
-    padding: 20px;
-  }
-  .scene-panel h3 {
-    font-size: 18px;
-    margin-bottom: 18px;
-  }
-  .scene-mark {
-    margin-bottom: 16px;
-  }
 }
-@media (prefers-reduced-motion: reduce) {
-  .login-scene .scene-sky,
-  .scene-panel:focus-within .scene-mark {
-    transition: none;
-    transform: none;
-  }
+
+.auth-arrival {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
-html[data-cinematic="off"] .login-scene .scene-sky,
-html[data-cinematic="off"] .scene-panel:focus-within .scene-mark {
-  transition: none;
-  transform: none;
+.auth-arrival::backdrop {
+  background: transparent;
+}
+.auth-arrival:not([open]) {
+  display: none;
 }

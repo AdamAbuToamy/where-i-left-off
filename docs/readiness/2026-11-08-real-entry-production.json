@@ -1,0 +1,313 @@
+{
+  "checks": [
+    {
+      "match": true,
+      "path": "index.html",
+      "sha256": "2fc3be516b4f2a2304dd3db1e06569c187335644ae21d9d7346ff813b1505a46"
+    },
+    {
+      "match": true,
+      "path": "sw.js",
+      "sha256": "c2604fe3d7ead751ab2bb9c6961fc2ae39d9a0fa7f68caeeb0cf1e9e4e11bb9e"
+    },
+    {
+      "match": true,
+      "path": "wilo-release.json",
+      "sha256": "b8ef0597ecd88ad799b226dfe571e0b5bd82cc028210783523834899af1e7257"
+    },
+    {
+      "match": true,
+      "path": "assistant-config.json",
+      "sha256": "10a7bb2868f73cda1cc54bc9c14065c517beb1a34790f73eca13a076f09d6135"
+    },
+    {
+      "match": true,
+      "path": "push-config.json",
+      "sha256": "cab6fb1bef86e4a93f0a1f22e08883a9c251585e053ca23b9ce3336aed4b53b6"
+    },
+    {
+      "match": true,
+      "path": "assets/AdminDashboard-Bo-vJrWQ.css",
+      "sha256": "20e91ad67c454ebc2b200b6bef71070fda703f58f9408ac943993353997c6ddb"
+    },
+    {
+      "match": true,
+      "path": "assets/AdminDashboard-DZ6Y4aJE.js",
+      "sha256": "0868afc882518abd5a5af1864731324c1c87c423edb16b10410a38bc10fbf971"
+    },
+    {
+      "match": true,
+      "path": "assets/AnalyticsPage-DW_fzBSm.js",
+      "sha256": "675d8448e16bbdc854a9db6fad875f42c854511c58c796c42e72c35dc36def25"
+    },
+    {
+      "match": true,
+      "path": "assets/appError-Cenb1nQ2.js",
+      "sha256": "b8269772354a7a3c6ec026f656da889fb3018912b07b024ff1743244a93755e9"
+    },
+    {
+      "match": true,
+      "path": "assets/AssistantWidget-DheBbIAI.css",
+      "sha256": "45567dee9f4b2e86d5622529c26258327e1fecbf6fd30e93bc13128f1242be78"
+    },
+    {
+      "match": true,
+      "path": "assets/AssistantWidget-DqF7wUEh.js",
+      "sha256": "e7cc3d0325e4ed4fae19a78f3caebce07723e3e0d0c2bebaf680842260c037bc"
+    },
+    {
+      "match": true,
+      "path": "assets/cardHistory-Z0kzIdJw.js",
+      "sha256": "5d29db0f4a672c5804e639868e8f49721244ba4c622dfa34f34a436dcab9f096"
+    },
+    {
+      "match": true,
+      "path": "assets/clock-6VTJmt17.js",
+      "sha256": "bb1119e7f31f559899720de638f83652f50f3183889f352a4d4671c013ade59e"
+    },
+    {
+      "match": true,
+      "path": "assets/ContinueNow-Des_f883.js",
+      "sha256": "53e7c6f642695b250b24410f1baa1db12f5f2bd5ffe70a07524f6fa0fba8c9ad"
+    },
+    {
+      "match": true,
+      "path": "assets/control-7SCYvM3S.js",
+      "sha256": "0a037a26476524efa38552ca7839f7bdfa8a49b630392a2e47c222b711cedb01"
+    },
+    {
+      "match": true,
+      "path": "assets/createLucideIcon-DhX7lKvy.js",
+      "sha256": "90334c96885f11100ebaaf83f38e7af836ce730d49a6c04c625944a6d629c8f4"
+    },
+    {
+      "match": true,
+      "path": "assets/domain-DI2oSVtF.js",
+      "sha256": "83aca8fb8661907452e77c1f6777aceffccb43c4e20d0d3708c714714d1f02fd"
+    },
+    {
+      "match": true,
+      "path": "assets/file-text-BcXd4jhT.js",
+      "sha256": "65b876cf3f28ba703d988d5e6c728c61a3163b4cf16cb4faf84d83b57d4eec7b"
+    },
+    {
+      "match": true,
+      "path": "assets/firebase-DLwD0Ido.js",
+      "sha256": "50790630dc19a4afb9284081ec6775bcc484754d99f112a1cc6362807b34a67b"
+    },
+    {
+      "match": true,
+      "path": "assets/GroupSpaces-1pH5Mw3Z.css",
+      "sha256": "9711911bda2772a5a8fd19d1cf559f331a81509733151b477ed4303beaecd59a"
+    },
+    {
+      "match": true,
+      "path": "assets/GroupSpaces-DJT-E5_e.js",
+      "sha256": "694000024e78c4d7678a7cef3df009a5ed5b73010b445a8358fdf32a9627467a"
+    },
+    {
+      "match": true,
+      "path": "assets/groupTranslations-DAra0kaG.js",
+      "sha256": "9780c26e7a39fad497e1882eda71a8fabb18c13dff894826bf54e9d5ebf8e661"
+    },
+    {
+      "match": true,
+      "path": "assets/html2canvas-RNS1Rx5I.js",
+      "sha256": "83601fd710177161c0d91650e13ba3a6cbaec53dd45b630eb87d1eb4c14f77ad"
+    },
+    {
+      "match": true,
+      "path": "assets/index-0IOaE4bJ.js",
+      "sha256": "b439b0a794d00e22000f21daf942cd7bafc48ddcab38d3b3e29249ea9c83f5c6"
+    },
+    {
+      "match": true,
+      "path": "assets/index-EGcWT1eH.css",
+      "sha256": "af7f922cb48a09d9b05907c25d9a14b58fd4e4054bff9ebab647a1ddec7c3450"
+    },
+    {
+      "match": true,
+      "path": "assets/index.es-BiXVoFeM.js",
+      "sha256": "2bdc0d93e99021821b8d60192caaf29442e44364ed8db144ab142dfc93ed6346"
+    },
+    {
+      "match": true,
+      "path": "assets/indexedDbWorkspaceStore-CzvXpRth.js",
+      "sha256": "629fa630eb3234ca373643acdb998ce1dd6811961a5dedf8cc22263f4ee37eb9"
+    },
+    {
+      "match": true,
+      "path": "assets/jspdf.es.min-BE6B3O_i.js",
+      "sha256": "3491c494b0e81fdab14b61aaac0891641189e25edf4910e77583af25fba0f93d"
+    },
+    {
+      "match": true,
+      "path": "assets/jsx-runtime-BNakU3Ej.js",
+      "sha256": "600d80338ace22d4dcc97a2788698c189811a8b54dad8cea58dfd8e7e4f35d34"
+    },
+    {
+      "match": true,
+      "path": "assets/LibraryPage-BiJz_ryC.js",
+      "sha256": "632d613e0a85b9aba30903aa65a4ddc669fa742d94983cd776a6a00e7cc27d1a"
+    },
+    {
+      "match": true,
+      "path": "assets/list-checks-ljTJCq2u.js",
+      "sha256": "eb37af10903187245308b6968a527302244af328b72d825f39dca0799ee366b6"
+    },
+    {
+      "match": true,
+      "path": "assets/MotionConfig-C0CmWN67.js",
+      "sha256": "20673f69a5a61b45b523c354710cd25c9d2c7941060ac5c5e1beb982246c2e23"
+    },
+    {
+      "match": true,
+      "path": "assets/NotificationSettings-CLL-Bs5V.js",
+      "sha256": "c1e9a70680265f28ddb1189348e3a79e76871199f74059a51d403ed3eb5d4d84"
+    },
+    {
+      "match": true,
+      "path": "assets/NotificationSettings-CQbY5FOs.css",
+      "sha256": "fd2b3bc2ab0fbca57005a89b4b842900898321ff423d2436a269bda92572dca1"
+    },
+    {
+      "match": true,
+      "path": "assets/pencil-KcKwYnLR.js",
+      "sha256": "88be60190136ed12ff88e3ab151c139f622b21eedeae7e951a24e39d56ba819f"
+    },
+    {
+      "match": true,
+      "path": "assets/planImport-IVS3LLN3.js",
+      "sha256": "bda0722225fa31790cf2e4dad938a383e8464d15650daf2e567690b5777d0bd5"
+    },
+    {
+      "match": true,
+      "path": "assets/PlanningBoardDialog-BgNKy80p.css",
+      "sha256": "e5b08efc42347b6d4af58bc1099ab01ee4d9829cf9ae54906804b5bfdb58ed46"
+    },
+    {
+      "match": true,
+      "path": "assets/PlanningBoardDialog-CDRpTZQJ.js",
+      "sha256": "6ba09844901a8f6ec7a3afae4fade4263a944dabee6e47ff1cde1e2058029f52"
+    },
+    {
+      "match": true,
+      "path": "assets/plus-BFY9N1t-.js",
+      "sha256": "68157bbdc791a00694098e3786848f36a32b15f3fa17018d45af3a388d94aa33"
+    },
+    {
+      "match": true,
+      "path": "assets/profile-BuEK7nDx.js",
+      "sha256": "157521610173e6779ee91fbc097274961948020041ce75aabe7cd3bc7ad1245c"
+    },
+    {
+      "match": true,
+      "path": "assets/ProfileSettings-D1agwa1B.js",
+      "sha256": "64f514974a3a4031072ec954bf5b9b324c729b6615138f03d366841a3510de53"
+    },
+    {
+      "match": true,
+      "path": "assets/projects-BR3F4Tbj.js",
+      "sha256": "5432aeb7bce790eb23f0a72f8bcfade6c0c2f1b0b6c45dbf6caf92bbf2e9aa70"
+    },
+    {
+      "match": true,
+      "path": "assets/purify.es-BZxk_wWO.js",
+      "sha256": "5d1c00f92327c168db6efeeb79646354e016fba2569edd3a0da33d72c3bec338"
+    },
+    {
+      "match": true,
+      "path": "assets/rolldown-runtime-hePW80VL.js",
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021"
+    },
+    {
+      "match": true,
+      "path": "assets/search-DzSfm9ei.js",
+      "sha256": "1a06c99f668d6c3cad781e3ffa4ccb3aad5e6ac852c72959a429e948db72db37"
+    },
+    {
+      "match": true,
+      "path": "assets/SessionVoicePanel-D0kiQM88.css",
+      "sha256": "1a9a60962dc47961fc91aba656b84cae76d685d9d89209c76b562df91e5ee75d"
+    },
+    {
+      "match": true,
+      "path": "assets/SessionVoicePanel-sscNsXTN.js",
+      "sha256": "1326e0d56283e7cd758d411740d8abc361cf4996b8fbbe8698a14713c78ac02a"
+    },
+    {
+      "match": true,
+      "path": "assets/store-BvhfY314.js",
+      "sha256": "57c5a2d291f6a1dfa69ff0a86c6b2bf5dd1db5a62857784dc50c46d565389e82"
+    },
+    {
+      "match": true,
+      "path": "assets/SummaryPdfButton-DuBFbFwP.js",
+      "sha256": "135e050860e2332ccec0ec08b6719e3478628a209b62a7b4b35796869be801db"
+    },
+    {
+      "match": true,
+      "path": "assets/tasksPdf-_1-pWtxS.js",
+      "sha256": "2846b7f904483152c65ae9604bbbbc87ddad34e6d773fbfbc6f616891959991b"
+    },
+    {
+      "match": true,
+      "path": "assets/trash-CwURyWXY.js",
+      "sha256": "78190692ad0fe2ac242314dc6356d26547e6516f6ffde7768eea27b3eb37a48f"
+    },
+    {
+      "match": true,
+      "path": "assets/university-BZ5Dn6Kd.js",
+      "sha256": "a089f9e5a34711d1fd45f03f1a61fa0820c44b6b57770719ac58851029929fa4"
+    },
+    {
+      "match": true,
+      "path": "assets/university-RdlbyK0g.css",
+      "sha256": "0bf15e38b5b1f7917ad6dc8318e7c5d349870df16c492b5b9ba931e91ed639b8"
+    },
+    {
+      "match": true,
+      "path": "assets/UniversityPage-CNoGrVur.css",
+      "sha256": "ea26ad02fc73855bfd563ca1dd8817daaf1dfaca33cca45a1bf2c05818d1b788"
+    },
+    {
+      "match": true,
+      "path": "assets/UniversityPage-q5GmG93I.js",
+      "sha256": "075b877130dd5dc5f3c782f32b96cf2926fc87292210654a97158dde3f91c0b2"
+    },
+    {
+      "match": true,
+      "path": "assets/UniversityTrial-BUco-87-.js",
+      "sha256": "e99116f7cf4c2550bae9e0f1c7a7828153ce08ce9ca9f9d4f23fc8d5e9cc3fb3"
+    },
+    {
+      "match": true,
+      "path": "assets/UniversityTrialSchedule-CCN5Sd_c.js",
+      "sha256": "0c2ce23e183a11a594c8f24e1a32f6dd51f505b6fee097a430f70579f2fa172e"
+    },
+    {
+      "match": true,
+      "path": "assets/UniversityTrialSchedule-NsCM2SLe.css",
+      "sha256": "8a27948f656a4d69e95d677a3e37ad4a473522eb4cba0b685731e3ea9a959069"
+    },
+    {
+      "match": true,
+      "path": "assets/words-PGc8cN2A.js",
+      "sha256": "0575fdedcde50faccd859683f74fca91640fbe590ce9734bd5cd4ab16ea674be"
+    },
+    {
+      "match": true,
+      "path": "assets/Workspace-CemvNzg7.js",
+      "sha256": "3c49fd9d8a49545da5c976658b32d9f4e20620a3ff9038727cb748cb35012cb1"
+    },
+    {
+      "match": true,
+      "path": "assets/Workspace-mBWUQSxc.css",
+      "sha256": "af5fdbffdf3f6068bbeb8a985db78ea471ebd17ec7a2aa502e14cd94fa695c2a"
+    }
+  ],
+  "release": "wilo-real-entry-search-20261108",
+  "backendUnchanged": true,
+  "verifiedAt": "2026-11-08T00:15:59.3251554Z",
+  "visualsAdminOnly": true
+}

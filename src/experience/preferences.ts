@@ -1,12 +1,20 @@
-export type ExperiencePreferences = { sound: boolean; motion: boolean };
+export type ExperiencePreferences = {
+  sound: boolean;
+  motion: boolean;
+  ambient: boolean;
+};
 export const experienceEvent = "wilo-experience-preferences";
 const key = (uid: string) => `wilo-experience:v1:${uid}`;
 export function readExperience(uid: string): ExperiencePreferences {
   try {
     const value = JSON.parse(localStorage.getItem(key(uid)) || "{}");
-    return { sound: value?.sound !== false, motion: value?.motion !== false };
+    return {
+      sound: value?.sound !== false,
+      motion: value?.motion !== false,
+      ambient: value?.ambient !== false,
+    };
   } catch {
-    return { sound: true, motion: true };
+    return { sound: true, motion: true, ambient: true };
   }
 }
 export function saveExperience(uid: string, value: ExperiencePreferences) {

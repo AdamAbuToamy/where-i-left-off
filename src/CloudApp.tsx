@@ -1,3 +1,4 @@
+import { authEntryHeld, subscribeAuthEntry } from "./lib/authEntry";
 import CinematicExperience from "./experience/CinematicExperience";
 import MobileNavigation from './components/MobileNavigation';
 import NotificationBell from './components/NotificationBell';
@@ -71,12 +72,15 @@ export default function App() {
   }, [language, t.appName])
   useEffect(() => {
     if (!auth) return
-    return onAuthStateChanged(auth, current => { setUser(current); setLoading(false); if (current) { void flushLogs(); if (new URLSearchParams(location.search).has('groupInvite')) navigate('groups') } }, e => { setAuthError(e); setLoading(false); logEvent('auth.subscription', e) })
+    const present = (current: User | null) => { if (authEntryHeld(current)) { setLoading(false); return; } setUser(current); setLoading(false); if (current) { void flushLogs(); if (new URLSearchParams(location.search).has('groupInvite')) navigate('groups') } };
+    const stopEntry = subscribeAuthEntry(() => present(auth!.currentUser));
+    const stopAuth = onAuthStateChanged(auth, present, e => { setAuthError(e); setLoading(false); logEvent('auth.subscription', e) });
+    return () => {stopEntry();stopAuth()}
   }, [])
   const logout=() => void traced('auth.signout', async () => { try { await preparePushSignOut() } catch { /* Local delivery gate is already cleared. */ } await signOut(auth!) }).catch(() => {});
   return <DesignPreviewProvider user={user}><StudyLocaleProvider value={language}><IdleSleep key={user?.uid || 'signed-out'} uid={user?.uid} user={user || undefined} language={language}><div className={`workspace language-${language}`}>
     <a className="skip-to-content" href="#wilo-main" onClick={event=>{event.preventDefault();const main=document.getElementById("wilo-main");main?.focus({preventScroll:true});main?.scrollIntoView({block:"start",behavior:"instant"});}}>{{ar:"انتقل إلى المحتوى",en:"Skip to content",he:"דלגו לתוכן"}[language]}</a>
-    <CinematicExperience key={user?.uid || "signed-out"} user={user} />
+    <CinematicExperience key={user?.uid || "signed-out"} user={user} language={language} />
     <PushLifecycle user={user} />
     {!loading && <header className="page-header"><div className="heading-copy"><HeaderSpotlight brand={t.appName} language={language} installed={installed}/></div><div className="header-account-actions">{user&&user.emailVerified&&<NotificationBell key={user.uid} user={user} language={language}/>}<LanguagePicker language={language} onChange={setLanguage} />{user && <button className="text-button header-signout" onClick={logout}>{c.logout}</button>}</div></header>}
     {emulatorMode && <p className="notice">{c.demo}</p>}

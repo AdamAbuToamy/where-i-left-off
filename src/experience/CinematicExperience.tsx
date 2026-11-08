@@ -1,3 +1,6 @@
+import ArrivalScene from "./ArrivalScene";
+import { takeAuthArrival } from "../lib/authEntry";
+import type { Language } from "../translations";
 import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { isAdmin } from "../lib/admin";
@@ -5,10 +8,25 @@ import { InteractionAudio } from "./interactionAudio";
 import { experienceEvent, readExperience } from "./preferences";
 import type { ExperiencePreferences } from "./preferences";
 import "./cinematic.css";
-export default function CinematicExperience({ user }: { user: User | null }) {
+export default function CinematicExperience({
+  user,
+  language,
+}: {
+  user: User | null;
+  language: Language;
+}) {
   const uid = user?.uid || "",
     allowed = !!user && isAdmin(user.email, user.emailVerified);
   const [preference, setPreference] = useState(() => readExperience(uid));
+  const [arrival, setArrival] = useState(() => {
+    const requested = takeAuthArrival(uid);
+    return (
+      requested &&
+      allowed &&
+      readExperience(uid).motion &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  });
   useEffect(() => {
     const changed = (event: Event) => {
       const detail = (
@@ -88,5 +106,22 @@ export default function CinematicExperience({ user }: { user: User | null }) {
       document.removeEventListener("pointercancel", cancel, true);
     };
   }, [allowed, preference.sound]);
-  return null;
+  return (
+    <>
+      {allowed && preference.ambient && (
+        <div className="brand-backdrop" aria-hidden="true">
+          <span>WILO</span>
+          <span>Where I Left Off</span>
+          <span>WILO</span>
+          <span>Where I Left Off</span>
+        </div>
+      )}
+      {allowed && arrival && preference.motion && (
+        <ArrivalScene
+          language={language}
+          onComplete={() => setArrival(false)}
+        />
+      )}
+    </>
+  );
 }

@@ -16,6 +16,7 @@ export default function ExperienceSettings({
       title: "الحركة والصوت",
       sound: "أصوات التفاعل",
       motion: "الانتقالات السينمائية",
+      ambient: "حركة خلفية WILO",
       test: "جرّب الصوت",
       hint: "إعدادات تجربة الإدارة على هذا الجهاز. يمكنك إيقافها في أي وقت.",
     },
@@ -23,6 +24,7 @@ export default function ExperienceSettings({
       title: "Motion & sound",
       sound: "Interaction sounds",
       motion: "Cinematic transitions",
+      ambient: "WILO background motion",
       test: "Preview sound",
       hint: "Admin preview preferences on this device. Turn them off at any time.",
     },
@@ -30,6 +32,7 @@ export default function ExperienceSettings({
       title: "תנועה וצליל",
       sound: "צלילי ממשק",
       motion: "מעברים קולנועיים",
+      ambient: "תנועת רקע WILO",
       test: "בדיקת צליל",
       hint: "העדפות תצוגת המנהל במכשיר הזה. ניתן לכבות בכל עת.",
     },
@@ -74,6 +77,14 @@ export default function ExperienceSettings({
           onChange={(event) => change({ motion: event.target.checked })}
         />
         {words.motion}
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.ambient}
+          onChange={(event) => change({ ambient: event.target.checked })}
+        />
+        {words.ambient}
       </label>
       <p>{words.hint}</p>
       <button

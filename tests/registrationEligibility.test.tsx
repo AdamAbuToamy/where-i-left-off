@@ -17,6 +17,8 @@ vi.mock("firebase/auth", () => ({
   updateProfile: api.profile,
   sendPasswordResetEmail: api.reset,
   GoogleAuthProvider: class {},
+  getAdditionalUserInfo: () => ({ isNewUser: true }),
+  signOut: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../src/lib/firebase", () => ({ auth: {} }));
 vi.mock("../src/lib/logging", () => ({
@@ -126,6 +128,7 @@ it("preserves existing email sign-in without age or DOB collection", async () =>
 });
 it("screens the Google account-creation path before any provider popup", async () => {
   await render();
+  await click(".form-actions button");
   await click(".secondary-button");
   expect(api.google).not.toHaveBeenCalled();
   await age("under16");

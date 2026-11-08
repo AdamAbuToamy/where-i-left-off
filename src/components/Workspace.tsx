@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import DesktopPlanningButton from "../planning/DesktopPlanningButton";
 import {
   Search,
+  X,
   CheckCheck,
   CloudOff,
   HardDrive,
@@ -12,7 +13,7 @@ import type { ReactNode } from "react";
 import ChoicePicker from "./ChoicePicker";
 import WorkspaceTools from "./WorkspaceTools";
 import { useDesignPreview } from "./designPreviewContext";
-import { workspaceView } from "../lib/navigation";
+import { workspaceView, consumeWorkspaceSearchLink } from "../lib/navigation";
 import { markCardViewed } from "../lib/pushNotifications";
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { User } from "firebase/auth";
@@ -99,14 +100,34 @@ export default function Workspace({
     () => parseTabCapture(window.location.search) !== null,
   );
   const [search, setSearch] = useState(() => workspaceView().search);
+  const searchDisclosure = useRef<HTMLDetailsElement>(null);
+  const clearSearchLabel = {
+    ar: "مسح البحث",
+    en: "Clear search",
+    he: "ניקוי החיפוש",
+  }[language];
+  const closeSearch = () => {
+    const node = searchDisclosure.current;
+    if (node) {
+      node.open = false;
+      node.querySelector("summary")?.focus({ preventScroll: true });
+    }
+  };
+  const clearSearch = () => {
+    setSearch("");
+    closeSearch();
+  };
+
   const [filter, setFilter] = useState(() => workspaceView().filter);
   const [view, setView] = useState<"board" | "week">(
     () => workspaceView().view,
   );
   const [weekOf, setWeekOf] = useState(() => workspaceView().weekOf);
   useEffect(() => {
+    consumeWorkspaceSearchLink();
     const changed = () => {
       const next = workspaceView();
+      consumeWorkspaceSearchLink();
       setWeekOf(next.weekOf);
       setView(next.view);
       setSearch(next.search);
@@ -116,6 +137,14 @@ export default function Workspace({
     };
     window.addEventListener("hashchange", changed);
     return () => window.removeEventListener("hashchange", changed);
+  }, []);
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      const node = searchDisclosure.current;
+      if (node?.open && !node.contains(event.target as Node)) node.open = false;
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
   }, []);
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const autoCaptured = useRef(false);
@@ -348,6 +377,12 @@ export default function Workspace({
       placeholder={c.search}
       value={search}
       onChange={(e) => setSearch(e.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === "Escape") {
+          event.preventDefault();
+          closeSearch();
+        }
+      }}
     />
   );
   const filterControl = (
@@ -599,9 +634,7 @@ export default function Workspace({
           <p>{t.accountSuspended}</p>
         </section>
       ) : (
-        !loaded && (
-          <ContentSkeleton language={language} />
-        )
+        !loaded && <ContentSkeleton language={language} />
       )}
       {!accountSuspended && loaded && (
         <>
@@ -694,15 +727,46 @@ export default function Workspace({
               </div>
             )}
             {kitchenStudy && projects.length > 0 && (
-              <details className="compact-workspace-search">
-                <summary aria-label={c.search} title={c.search}>
-                  <Search size={18} aria-hidden="true" />
-                  {search && (
-                    <span className="workspace-search-query">{search}</span>
-                  )}
-                </summary>
-                <div className="compact-search-panel">{searchInput}</div>
-              </details>
+              <div className="workspace-search-control">
+                <details
+                  className="compact-workspace-search"
+                  ref={searchDisclosure}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      closeSearch();
+                    }
+                  }}
+                >
+                  <summary aria-label={c.search} title={c.search}>
+                    <Search size={18} aria-hidden="true" />
+                    {search && (
+                      <span className="workspace-search-query">{search}</span>
+                    )}
+                  </summary>
+                  <div className="compact-search-panel">
+                    {searchInput}
+                    <button
+                      type="button"
+                      className="search-clear-button"
+                      aria-label={clearSearchLabel}
+                      onClick={clearSearch}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </details>
+                {search && (
+                  <button
+                    type="button"
+                    className="search-clear-button active-search-clear"
+                    aria-label={clearSearchLabel}
+                    onClick={clearSearch}
+                  >
+                    <X size={17} />
+                  </button>
+                )}
+              </div>
             )}
             <WorkspaceTools
               status={accountLine}
