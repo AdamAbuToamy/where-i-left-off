@@ -445,3 +445,33 @@
 .course-overview-cards>button>span{font-size:13px}.course-overview-cards strong{font-size:30px;line-height:1.3}.course-overview-cards strong.course-overview-title{font-size:18px;overflow-wrap:anywhere}.course-overview-cards small{font-size:12px;opacity:.7}.course-overview-cards progress{width:100%;height:5px;accent-color:var(--site-primary)}
 .course-overview-description{grid-column:1/-1;border:1px solid var(--study-border);border-radius:12px;padding:14px}.course-overview-description summary{cursor:pointer;font-size:14px}.course-overview-description p{font-size:14px;line-height:1.8;white-space:pre-wrap}
 @media(max-width:760px){.study-page .uni-map-button{font-size:12px;padding:10px}.uni-map-button span{display:none}.study-page .course-overview-cards>button{padding:15px;min-height:160px}.study-page .uni-header-actions{flex-wrap:wrap}}
+/* Phone-only course header and navigation: one title, one action row, no clipped tabs. */
+@media (max-width:760px) {
+  :root .study-page.study-dashboard-preview:has(.study-course-workspace) .uni-dashboard-header>div:first-child { display:none; }
+  :root .study-page.study-dashboard-preview .uni-dashboard-header { display:block; margin-bottom:14px; }
+  :root .study-page.study-dashboard-preview .uni-header-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; width:100%; }
+  :root .study-page.study-dashboard-preview .uni-header-actions>.uni-map-button,
+  :root .study-page.study-dashboard-preview .uni-header-actions>.uni-menu>summary { width:100%; box-sizing:border-box; min-height:44px; padding:10px 6px; font-size:12px; gap:5px; justify-content:center; }
+  :root .study-page.study-dashboard-preview .uni-map-button span { display:inline; }
+  :root .study-page.study-dashboard-preview .uni-map-button svg { width:15px; flex-shrink:0; }
+  :root .study-page.study-dashboard-preview .uni-tools>div { inset-inline-end:0; }
+  :root .study-page.study-dashboard-preview .uni-menu:not(.uni-tools)>div { inset-inline-end:50%; transform:translateX(-50%); }
+  :root .study-page.study-dashboard-preview .uni-navigation { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  :root .study-page.study-dashboard-preview .uni-navigation>span { display:none; }
+  :root .study-page.study-dashboard-preview .uni-navigation>button { justify-content:center; font-size:13px; padding:10px 0; gap:6px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .study-workspace-search { padding:3px 12px; border-radius:12px; gap:8px; min-height:46px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .study-workspace-search input { border:0; border-radius:0; box-shadow:none; outline-offset:0; background:transparent; padding:8px 0; font-size:14px; min-height:38px; width:100%; }
+  :root .study-page.study-dashboard-preview .study-course-workspace>.study-phone-course-navigation { width:100%; }
+  :root .study-page.study-dashboard-preview .study-course-workspace>.study-phone-course-navigation button { width:100%; min-height:44px; font-size:13px; padding:8px 12px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace>.study-trial-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; overflow:visible; padding:6px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace>.study-trial-tabs button { min-width:0; width:100%; white-space:normal; min-height:46px; padding:8px; font-size:12px; gap:6px; justify-content:flex-start; }
+  :root .study-page.study-dashboard-preview .study-course-workspace>.study-trial-tabs button svg { width:16px; flex-shrink:0; }
+  :root .study-page.study-dashboard-preview .study-course-workspace>.study-trial-panel { padding:16px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .study-trial-course-heading { border-inline-start:0; padding-inline-start:0; gap:12px; margin-bottom:16px; padding-bottom:12px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .study-trial-course-heading h3 { font-size:18px; line-height:1.5; overflow-wrap:anywhere; margin:0; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .study-trial-actions { width:100%; display:flex; flex-direction:row; justify-content:space-between; align-items:center; gap:10px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .study-trial-actions .study-link-button { min-height:40px; font-size:12px; padding:8px 12px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .course-overview-cards { gap:10px; }
+  :root .study-page.study-dashboard-preview .study-course-workspace .course-overview-cards>button { min-height:145px; padding:14px; gap:9px; }
+}
+@media(max-width:760px){:root .study-page.study-dashboard-preview .uni-header-actions>.uni-map-button,:root .study-page.study-dashboard-preview .uni-header-actions>.uni-menu>summary{height:50px;min-height:50px;line-height:1.25}}

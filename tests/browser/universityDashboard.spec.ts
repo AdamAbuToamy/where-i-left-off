@@ -33,7 +33,7 @@ for (const phone of [false, true])
     const courses = [
       {
         id: "dash-course",
-        name: "هندسة البرمجيات",
+        name: "High-Performance Systems Programming S1",
         notes: "",
         url: "",
         requires: [],
@@ -78,7 +78,7 @@ for (const phone of [false, true])
       .click();
     await expect(page.locator(".uni-course-card")).toHaveCount(1);
     await expect(page.locator(".uni-deadline")).toHaveCount(3);
-    await expect(page.locator(".uni-next-lesson h4")).toContainText("هندسة");
+    await expect(page.locator(".uni-next-lesson h4")).toContainText("Systems");
     await expect(page.locator(".study-hero")).toBeHidden();
     await expect(page.locator(".study-controls>.study-tabs")).toBeHidden();
     expect(
@@ -103,7 +103,15 @@ for (const phone of [false, true])
     await expect(page.locator(".study-trial-summary")).toBeVisible();
     await page.locator(".study-trial-tabs button").first().click();
     await expect(page.locator(".study-workspace-search input")).toBeVisible();
-    await page.locator(".study-workspace-search input").fill("هندسة");
+    if(phone){
+      await expect(page.locator('.uni-dashboard-header>div').first()).toBeHidden();
+      const tops=await page.locator('.uni-header-actions').evaluate(el=>[...el.children].map(child=>Math.round(child.getBoundingClientRect().top)));
+      expect(new Set(tops).size).toBe(1);
+      const tabs=page.locator('.study-course-workspace>.study-trial-tabs');
+      expect(await tabs.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+      expect(parseFloat(await page.locator('.study-trial-course-heading h3').evaluate(el=>getComputedStyle(el).fontSize))).toBeLessThanOrEqual(20);
+    }
+    await page.locator(".study-workspace-search input").fill("Systems");
     await expect(page.locator(".study-controls")).toBeEnabled({timeout:15000});
     await page.screenshot({animations:"disabled",path: `.wrangler/course-workspace-${phone ? "phone" : "desktop"}.png`,fullPage:true});
     await page.locator(".uni-navigation button").first().click();
