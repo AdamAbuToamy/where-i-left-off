@@ -1,11 +1,14 @@
+import { takeEntryAudio, cancelEntryAudio } from "./entryAudio";
 import { createPortal } from "react-dom";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { Language } from "../translations";
 export default function ArrivalScene({
   language,
+  sound,
   onComplete,
 }: {
   language: Language;
+  sound: boolean;
   onComplete: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
@@ -14,6 +17,15 @@ export default function ArrivalScene({
   useLayoutEffect(() => {
     done.current = onComplete;
   }, [onComplete]);
+  useEffect(() => {
+    if (!sound) {
+      cancelEntryAudio();
+      return;
+    }
+    const audio = takeEntryAudio();
+    void audio.play("entry");
+    return () => audio.dispose();
+  }, [sound]);
   const label = {
     ar: "دخول مساحة العمل",
     en: "Entering your workspace",

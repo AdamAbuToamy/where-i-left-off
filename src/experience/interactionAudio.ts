@@ -1,4 +1,4 @@
-export type InteractionTone = "press" | "navigate" | "drop";
+export type InteractionTone = "press" | "navigate" | "drop" | "entry";
 /** Browser boundary: synthesized short cues, no media downloads or microphone access. */
 export class InteractionAudio {
   private context: AudioContext | null = null;
@@ -8,28 +8,49 @@ export class InteractionAudio {
   constructor(create = () => new AudioContext()) {
     this.create = create;
   }
+  async unlock(): Promise<boolean> {
+    if (this.disposed) return false;
+    try {
+      const context = (this.context ||= this.create());
+      if (context.state === "suspended") await context.resume();
+      return !this.disposed && context.state === "running";
+    } catch {
+      return false;
+    }
+  }
   async play(kind: InteractionTone) {
     if (this.disposed || performance.now() - this.last < 85) return;
     this.last = performance.now();
     try {
-      const context = (this.context ||= this.create());
-      if (context.state === "suspended") await context.resume();
-      if (this.disposed || context.state !== "running") return;
-      const tones =
-        kind === "navigate" ? [440, 660] : kind === "drop" ? [330, 495] : [520];
+      if (!(await this.unlock()) || this.disposed || !this.context) return;
+      const context = this.context;
+      const entry = kind === "entry";
+      const tones = entry
+        ? [196, 293.66, 392]
+        : kind === "navigate"
+          ? [440, 660]
+          : kind === "drop"
+            ? [330, 495]
+            : [520];
       tones.forEach((frequency, index) => {
         const oscillator = context.createOscillator(),
           gain = context.createGain(),
-          start = context.currentTime + index * 0.035;
+          start = context.currentTime + index * (entry ? 0.11 : 0.035);
         oscillator.type = "sine";
         oscillator.frequency.setValueAtTime(frequency, start);
         oscillator.frequency.exponentialRampToValueAtTime(
-          frequency * 0.8,
-          start + 0.09,
+          frequency * (entry ? 1.015 : 0.8),
+          start + (entry ? 0.5 : 0.09),
         );
         gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(0.045, start + 0.008);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.11);
+        gain.gain.exponentialRampToValueAtTime(
+          entry ? 0.025 : 0.045,
+          start + (entry ? 0.035 : 0.008),
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          start + (entry ? 0.65 : 0.11),
+        );
         oscillator.connect(gain);
         gain.connect(context.destination);
         oscillator.onended = () => {
@@ -37,7 +58,7 @@ export class InteractionAudio {
           gain.disconnect();
         };
         oscillator.start(start);
-        oscillator.stop(start + 0.12);
+        oscillator.stop(start + (entry ? 0.68 : 0.12));
       });
     } catch {
       /* Unsupported/blocked audio must never block an app action. */

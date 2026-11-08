@@ -67,3 +67,14 @@ it("audio failure does not reject an app interaction", async () => {
   await expect(player.play("drop")).resolves.toBeUndefined();
   player.dispose();
 });
+
+it("silently unlocks from a gesture and plays a bounded three-note entry cue", async () => {
+  const audio = fakeAudio(),
+    player = new InteractionAudio(audio.create);
+  expect(await player.unlock()).toBe(true);
+  expect(audio.oscillator.start).not.toHaveBeenCalled();
+  await player.play("entry");
+  expect(audio.context.createOscillator).toHaveBeenCalledTimes(3);
+  expect(audio.oscillator.stop.mock.calls.at(-1)?.[0]).toBeCloseTo(0.9);
+  player.dispose();
+});

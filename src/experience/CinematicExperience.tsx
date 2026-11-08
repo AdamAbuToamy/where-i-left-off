@@ -1,3 +1,4 @@
+import { cancelEntryAudio } from "./entryAudio";
 import ArrivalScene from "./ArrivalScene";
 import { takeAuthArrival } from "../lib/authEntry";
 import type { Language } from "../translations";
@@ -27,6 +28,9 @@ export default function CinematicExperience({
       !matchMedia("(prefers-reduced-motion: reduce)").matches
     );
   });
+  useEffect(() => {
+    if (!allowed || !arrival || !preference.sound) cancelEntryAudio();
+  }, [allowed, arrival, preference.sound]);
   useEffect(() => {
     const changed = (event: Event) => {
       const detail = (
@@ -111,6 +115,7 @@ export default function CinematicExperience({
       {allowed && arrival && preference.motion && (
         <ArrivalScene
           language={language}
+          sound={preference.sound}
           onComplete={() => setArrival(false)}
         />
       )}

@@ -1,3 +1,4 @@
+import { armEntryAudio, cancelEntryAudio } from "../experience/entryAudio";
 import {
   holdAuthEntry,
   finishAuthEntry,
@@ -55,6 +56,7 @@ export default function AuthPanel({ language }: { language: Language }) {
     try {
       await traced("auth.action", action);
     } catch (e) {
+      cancelEntryAudio();
       setError(e);
     } finally {
       actionLock.current = false;
@@ -64,11 +66,15 @@ export default function AuthPanel({ language }: { language: Language }) {
   function submit(e: FormEvent) {
     e.preventDefault();
     if (pendingGoogle) {
-      if (eligible && auth?.currentUser?.uid === pendingGoogle.uid)
+      if (eligible && auth?.currentUser?.uid === pendingGoogle.uid) {
+        armEntryAudio();
         finishAuthEntry(pendingGoogle, true);
+      }
       return;
     }
     if (register && (!name.trim() || !eligible)) return;
+    if (actionLock.current) return;
+    armEntryAudio();
     void perform(async () => {
       holdAuthEntry();
       try {
@@ -89,7 +95,8 @@ export default function AuthPanel({ language }: { language: Language }) {
     });
   }
   function google() {
-    if (register && !eligible) return;
+    if (actionLock.current || (register && !eligible)) return;
+    armEntryAudio();
     void perform(async () => {
       holdAuthEntry();
       try {
@@ -247,6 +254,7 @@ export default function AuthPanel({ language }: { language: Language }) {
             onClick={() => {
               if (pendingGoogle) {
                 void perform(async () => {
+                  cancelEntryAudio();
                   await signOut(auth!);
                   setPendingGoogle(null);
                   releaseAuthEntry();

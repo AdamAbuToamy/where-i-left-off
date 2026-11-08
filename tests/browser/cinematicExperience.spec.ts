@@ -14,6 +14,18 @@ for (const phone of [false, true])
       localStorage.setItem("language", "en");
       localStorage.setItem("welcome-tour:v2:" + uid, "done");
     }, c.uid);
+    await page.addInitScript(() => {
+      const original = AudioContext.prototype.createOscillator;
+      Object.defineProperty(window, "entryOscillators", {
+        value: 0,
+        writable: true,
+      });
+      AudioContext.prototype.createOscillator = function () {
+        const state = window as unknown as { entryOscillators: number };
+        state.entryOscillators++;
+        return original.call(this);
+      };
+    });
     await page.goto("/");
     await page.getByLabel("Email", { exact: true }).fill(c.email);
     await page.getByLabel("Password", { exact: true }).fill(c.password);
@@ -23,9 +35,35 @@ for (const phone of [false, true])
       .click();
     const arrival = page.locator(".auth-arrival");
     await expect(arrival).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as unknown as { entryOscillators: number })
+              .entryOscillators,
+        ),
+      )
+      .toBeGreaterThanOrEqual(3);
     await expect(arrival.locator(".entry-brand strong")).toHaveText(
       /Where\s*I Left\s*Off/,
     );
+    const layout = await arrival
+      .locator(".entry-brand strong")
+      .evaluate((el) => ({
+        nowrap: getComputedStyle(el).whiteSpace,
+        width: el.getBoundingClientRect().width,
+        viewport: innerWidth,
+        displays: [...el.children].map(
+          (word) => getComputedStyle(word).display,
+        ),
+      }));
+    expect(layout.nowrap).toBe("nowrap");
+    expect(layout.width).toBeLessThanOrEqual(layout.viewport);
+    expect(layout.displays).toEqual([
+      "inline-block",
+      "inline-block",
+      "inline-block",
+    ]);
     await page.screenshot({
       path: `.wrangler/real-arrival-${phone ? "phone" : "desktop"}.png`,
     });

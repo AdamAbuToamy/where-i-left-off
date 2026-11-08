@@ -68,14 +68,15 @@ html[data-cinematic="on"] .side-navigation a:hover {
   animation: brand-arrive 3.4s both;
 }
 .entry-brand strong {
-  font-size: clamp(52px, 10vw, 140px);
+  font-size: clamp(25px, 7vw, 108px);
+  white-space: nowrap;
   text-align: center;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.055em;
 }
 .entry-brand .entry-word {
-  display: block;
+  display: inline-block;
   letter-spacing: inherit;
   font-size: inherit;
   padding: 0;
