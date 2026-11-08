@@ -339,6 +339,18 @@ export default function ApiDocumentation({ language }: { language: Language }) {
               <p>{t.agent}</p>
             </details>
           </section>
+          <section className="api-doc-quiet-policy">
+            <h2>
+              {language === "ar"
+                ? "إذن تجاوز ساعات الهدوء"
+                : "Per-key quiet-hours override"}
+            </h2>
+            <p>
+              {language === "ar"
+                ? "من الإعدادات ← API Keys فعّل السماح بتجاوز ساعات الهدوء للمفتاح المطلوب. يبقى مغلقًا للمفاتيح الأخرى. في طلب الإشعار الفوري استخدم bypassQuietHours: true مع الصلاحيات المعتادة؛ دون الإذن يعيد 403. التذكيرات المجدولة وإيقاف الإشعارات والاشتراكات لا يتجاوزها هذا الإذن. لترقية إشعار مؤجل، استخدم معرّف عملية جديدًا مع الطلب المصرح؛ يُستكمل الحدث نفسه دون إشعار ثانٍ. لا تغيّر الطلب تحت معرّفه القديم، ولا تعاود إرسال حدث اكتمل."
+                : "Enable the additional permission for the selected key in Settings → API Keys, then explicitly request bypassQuietHours: true on an immediate notification. Other keys and scheduled reminders remain unchanged. Missing permission returns 403. Account opt-out and device withdrawal are never bypassed. For a deferred event, use a new operation key with the authorized request: Wilo promotes the same pending event, never a second notification. Changing a body under its old key returns 409; completed events are never resent."}
+            </p>
+          </section>
           <section id="api-doc-workflow" tabIndex={-1}>
             <h2>{t.workflow}</h2>
             <p>{t.flowText}</p>

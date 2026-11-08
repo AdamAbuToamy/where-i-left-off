@@ -107,6 +107,12 @@ export function operationBody(op: ApiOperation) {
   const schema = op.requestBody?.content["application/json"]?.schema;
   if (!schema) return undefined;
   const body = sample(schema) as Record<string, unknown>;
+  if (
+    ["requestTaskNotification", "requestProjectNotification"].includes(
+      op.operationId,
+    )
+  )
+    body.bypassQuietHours = false;
   if (op.operationId === "setCardReminder")
     Object.assign(body, { disabled: false, weekly: false, time: "09:00" });
   if (

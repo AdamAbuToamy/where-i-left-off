@@ -1,8 +1,8 @@
-import {updateApiCardReminder} from "./apiCardReminder.mjs";
-import {readReminderView} from "./reminderView.mjs";
-import {createTaskNotificationService} from "./apiTaskNotification.mjs";
-import {createTaskNotificationStore} from "./apiTaskNotificationStore.mjs";
-import {sha256,stableJson} from "../../shared/apiHash.mjs";
+import { updateApiCardReminder } from "./apiCardReminder.mjs";
+import { readReminderView } from "./reminderView.mjs";
+import { createTaskNotificationService } from "./apiTaskNotification.mjs";
+import { createTaskNotificationStore } from "./apiTaskNotificationStore.mjs";
+import { sha256, stableJson } from "../../shared/apiHash.mjs";
 import { createTaskReminderService } from "./apiTaskReminder.mjs";
 import { createApiReminderStore } from "./apiReminderStore.mjs";
 import { ApiError, validId, object } from "../../shared/universityApiPlan.mjs";
@@ -15,18 +15,26 @@ import { auditApi } from "./apiKeys.mjs";
 import { assertApiAccount, createApiRepository } from "./apiFirestore.mjs";
 import { createApiStudyService } from "./apiStudyService.mjs";
 import { readBoundedJson, securityHeaders } from "./httpSecurity.mjs";
-import { cardKey, clock, preferences, reminderLead, reminderLeads, zonedTime } from "../policy.mjs";
+import {
+  cardKey,
+  clock,
+  preferences,
+  reminderLead,
+  reminderLeads,
+  zonedTime,
+} from "../policy.mjs";
 import * as store from "./store.mjs";
 const headers = {
   ...securityHeaders,
   "content-type": "application/json",
   "cache-control": "no-store",
   pragma: "no-cache",
-  "x-wilo-api-version":"1.3.0",
+  "x-wilo-api-version": "1.4.0",
 };
 const codes = {
   unauthenticated: 401,
   "insufficient-scope": 403,
+  "quiet-hours-override-forbidden": 403,
   "account-unavailable": 403,
   "api-disabled": 503,
   "integration-unconfigured": 503,
@@ -53,11 +61,11 @@ const codes = {
   "task-not-remindable": 409,
   "reminder-time-in-past": 409,
   "reminder-settings-conflict": 409,
-  "task-not-notifiable":409,
-  "notifications-disabled":409,
-  "notification-device-unavailable":409,
-  "invalid-reminder-schedule":422,
-  "timezone-offset-mismatch":422,
+  "task-not-notifiable": 409,
+  "notifications-disabled": 409,
+  "notification-device-unavailable": 409,
+  "invalid-reminder-schedule": 422,
+  "timezone-offset-mismatch": 422,
 };
 const resources = {
   courses: "courses",
@@ -152,23 +160,81 @@ export function createApiHandler(overrides = {}) {
           headers,
         });
       }
-      const taskNotification=url.pathname.match(/^\/api\/v1\/(tasks|projects)\/([A-Za-z0-9_-]{1,128})\/notification$/);
-      if(taskNotification){
-        const resource=taskNotification[1],read=request.method==="GET";operation="task-notification."+(read?"read":"request");
-        if(!["GET","POST"].includes(request.method)||url.search)throw new ApiError("not-found");
-        requireScopes(identity,...(resource==="projects"?(read?["projects:read","reminders:read"]:["projects:read","reminders:write"]):(read?["tasks:read","reminders:read"]:["courses:read","tasks:read","reminders:write"])));
-        await (overrides.assertAccount||assertApiAccount)(env,identity.uid);
-        const repository=(overrides.repository||createApiRepository)(env,identity.uid);
-        const notifications=(overrides.notifications||createTaskNotificationStore)(env,identity.uid,{resource});
-        const service=createTaskNotificationService({repository,notifications,ownerUid:identity.uid,resource,...overrides.serviceOptions});
-        let body,key;
-        if(!read){if(request.headers.get("content-type")?.split(";")[0].trim()!=="application/json")throw new ApiError("unsupported-media-type");key=request.headers.get("idempotency-key");if(!/^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$/.test(key||""))throw new ApiError("idempotency-key-required");body=await readBoundedJson(request,30000);}
-        await auditApi(env,identity.uid,identity.keyId,operation+".accepted",100);
-        const result=read?await service.status(taskNotification[2]):await service.request(taskNotification[2],body,key);
-        const status=!read&&["pending","queued","deferred","sending"].includes(result.status)?202:200;
-        await env.DB.prepare("UPDATE user_api_keys SET last_used_at=? WHERE id=? AND uid=?").bind(Date.now(),identity.keyId,identity.uid).run();
-        await auditApi(env,identity.uid,identity.keyId,operation,status);
-        return new Response(JSON.stringify({result,requestId}),{status,headers});
+      const taskNotification = url.pathname.match(
+        /^\/api\/v1\/(tasks|projects)\/([A-Za-z0-9_-]{1,128})\/notification$/,
+      );
+      if (taskNotification) {
+        const resource = taskNotification[1],
+          read = request.method === "GET";
+        operation = "task-notification." + (read ? "read" : "request");
+        if (!["GET", "POST"].includes(request.method) || url.search)
+          throw new ApiError("not-found");
+        requireScopes(
+          identity,
+          ...(resource === "projects"
+            ? read
+              ? ["projects:read", "reminders:read"]
+              : ["projects:read", "reminders:write"]
+            : read
+              ? ["tasks:read", "reminders:read"]
+              : ["courses:read", "tasks:read", "reminders:write"]),
+        );
+        await (overrides.assertAccount || assertApiAccount)(env, identity.uid);
+        const repository = (overrides.repository || createApiRepository)(
+          env,
+          identity.uid,
+        );
+        const notifications = (
+          overrides.notifications || createTaskNotificationStore
+        )(env, identity.uid, { resource });
+        const service = createTaskNotificationService({
+          repository,
+          notifications,
+          ownerUid: identity.uid,
+          resource,
+          ...overrides.serviceOptions,
+        });
+        let body, key;
+        if (!read) {
+          if (
+            request.headers.get("content-type")?.split(";")[0].trim() !==
+            "application/json"
+          )
+            throw new ApiError("unsupported-media-type");
+          key = request.headers.get("idempotency-key");
+          if (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$/.test(key || ""))
+            throw new ApiError("idempotency-key-required");
+          body = await readBoundedJson(request, 30000);
+        }
+        if (body?.bypassQuietHours === true) operation += ".quiet-override";
+        await auditApi(
+          env,
+          identity.uid,
+          identity.keyId,
+          operation + ".accepted",
+          100,
+        );
+        const result = read
+          ? await service.status(taskNotification[2])
+          : await service.request(taskNotification[2], body, key, {
+              keyId: identity.keyId,
+              quietHoursOverride: identity.quietHoursOverride,
+            });
+        const status =
+          !read &&
+          ["pending", "queued", "deferred", "sending"].includes(result.status)
+            ? 202
+            : 200;
+        await env.DB.prepare(
+          "UPDATE user_api_keys SET last_used_at=? WHERE id=? AND uid=?",
+        )
+          .bind(Date.now(), identity.keyId, identity.uid)
+          .run();
+        await auditApi(env, identity.uid, identity.keyId, operation, status);
+        return new Response(JSON.stringify({ result, requestId }), {
+          status,
+          headers,
+        });
       }
       const match = url.pathname.match(
         /^\/api\/v1\/(courses|tasks|schedule|projects|sections|boards|reminders)(?:\/([A-Za-z0-9_-]{1,128}))?$/,
@@ -229,15 +295,21 @@ export function createApiHandler(overrides = {}) {
       });
       let body;
       if (!read) {
-        if (method!=="DELETE" &&
+        if (
+          method !== "DELETE" &&
           request.headers.get("content-type")?.split(";")[0].trim() !==
-          "application/json"
+            "application/json"
         )
           throw new ApiError("unsupported-media-type");
-        body = method==="DELETE" ? {disabled:true,expectedSettingsVersion:(request.headers.get("if-match")||"").replace(/^"|"$/g,"")} : await readBoundedJson(
-          request,
-          kind === "board" ? 200000 : 30000,
-        );
+        body =
+          method === "DELETE"
+            ? {
+                disabled: true,
+                expectedSettingsVersion: (
+                  request.headers.get("if-match") || ""
+                ).replace(/^"|"$/g, ""),
+              }
+            : await readBoundedJson(request, kind === "board" ? 200000 : 30000);
       }
       // Audit acceptance before a write. A failed audit store fails closed.
       await auditApi(
@@ -252,7 +324,21 @@ export function createApiHandler(overrides = {}) {
         const project = await repository.transact((tx) => tx.getProject(id));
         if (!project || project.trashedAt || project.archivedAt)
           throw new ApiError("resource-not-found");
-        result=read?await readReminderView(env,identity.uid,{...project,id}):{id,updated:true,...await updateApiCardReminder(env,identity.uid,{...project,id},body,request.headers.get("idempotency-key"),url.pathname,method)};
+        result = read
+          ? await readReminderView(env, identity.uid, { ...project, id })
+          : {
+              id,
+              updated: true,
+              ...(await updateApiCardReminder(
+                env,
+                identity.uid,
+                { ...project, id },
+                body,
+                request.headers.get("idempotency-key"),
+                url.pathname,
+                method,
+              )),
+            };
       } else if (read) result = await service.read(kind, query);
       else {
         const key = request.headers.get("idempotency-key");

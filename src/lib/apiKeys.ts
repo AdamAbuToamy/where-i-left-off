@@ -6,6 +6,7 @@ export type ApiKeyMetadata = {
   id: string;
   name: string;
   scopes: string[];
+  quietHoursOverride?: boolean;
   createdAt: number;
   expiresAt: number | null;
   lastUsedAt: number | null;

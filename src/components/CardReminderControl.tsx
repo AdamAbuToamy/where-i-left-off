@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { Language } from "../translations";
 import { pushCall } from "../lib/pushNotifications";
 import type { CardReminder, PushPreferences } from "../lib/pushNotifications";
@@ -16,6 +16,8 @@ import {
 import { cardReminderWords } from "./cardReminderWords";
 import "./CardReminderControl.css";
 type View = CardReminder & {
+  dueDate?: string;
+  configured?: boolean;
   settingsVersion: string;
   preferences: PushPreferences;
   status: string;
@@ -30,13 +32,16 @@ type Props = {
   dueDate?: string;
   language: Language;
   compact?: boolean;
+  initialOpen?: boolean;
+  initialEnabled?: boolean;
 };
 export default function CardReminderControl(props: Props) {
   const w = cardReminderWords[props.language],
-    [open, setOpen] = useState(false);
+    [open, setOpen] = useState(!!props.initialOpen);
   return (
     <details
       className="push-card card-reminder-control"
+      open={open}
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary>
@@ -47,7 +52,13 @@ export default function CardReminderControl(props: Props) {
     </details>
   );
 }
-function ReminderForm({ id, groupId = "", dueDate, language }: Props) {
+function ReminderForm({
+  id,
+  groupId = "",
+  dueDate,
+  language,
+  initialEnabled = false,
+}: Props) {
   const w = cardReminderWords[language],
     [view, setView] = useState<View | null>(null),
     [busy, setBusy] = useState(true),
@@ -76,31 +87,50 @@ function ReminderForm({ id, groupId = "", dueDate, language }: Props) {
       setBusy(false);
     }
   }
-  const accept = useCallback((next: View) => {
-    if (!next.preferences) throw Error("invalid-reminder-response");
-    setView(next);
-    setDisabled(!!next.disabled);
-    setWeekly(!!next.weekly);
-    setDueTime(next.time || next.preferences.defaultTime);
-    const s = next.schedule;
-    setMode(s?.mode || (next.remindAt ? "absolute" : "automatic"));
-    setZone(s?.timeZone || next.preferences.timezone);
-    if (s?.mode === "relative") {
-      setAmount(s.amount);
-      setUnit(s.unit);
-      setOccurrence(s.disambiguation || "");
-      setTime(s.localTime || next.preferences.defaultTime);
-      setDueTime(s.dueTime);
-    }
-    if (s?.mode === "absolute" || next.remindAt)
-      setDate(
-        reminderInput(
-          s?.mode === "absolute" ? s.scheduledAt : next.remindAt,
-          s?.timeZone || next.preferences.timezone,
-        ),
+  const firstRead = useRef(true);
+  const accept = useCallback(
+    (next: View) => {
+      const draft =
+        firstRead.current &&
+        (initialEnabled || (!!groupId && !next.configured)) &&
+        !next.schedule &&
+        !next.remindAt;
+      firstRead.current = false;
+      if (!next.preferences) throw Error("invalid-reminder-response");
+      setView(next);
+      setDisabled(draft ? false : !!next.disabled);
+      setWeekly(!!next.weekly);
+      setDueTime(next.time || next.preferences.defaultTime);
+      const s = next.schedule;
+      setMode(
+        s?.mode ||
+          (next.remindAt
+            ? "absolute"
+            : draft
+              ? dueDate
+                ? "relative"
+                : "absolute"
+              : "automatic"),
       );
-    else setTime(next.preferences.defaultTime);
-  }, []);
+      setZone(s?.timeZone || next.preferences.timezone);
+      if (s?.mode === "relative") {
+        setAmount(s.amount);
+        setUnit(s.unit);
+        setOccurrence(s.disambiguation || "");
+        setTime(s.localTime || next.preferences.defaultTime);
+        setDueTime(s.dueTime);
+      }
+      if (s?.mode === "absolute" || next.remindAt)
+        setDate(
+          reminderInput(
+            s?.mode === "absolute" ? s.scheduledAt : next.remindAt,
+            s?.timeZone || next.preferences.timezone,
+          ),
+        );
+      else setTime(next.preferences.defaultTime);
+    },
+    [initialEnabled, dueDate, groupId],
+  );
   // A mounted editor reads fresh server state once. It never subscribes this browser to Push.
   useEffect(() => {
     let active = true;
@@ -118,6 +148,7 @@ function ReminderForm({ id, groupId = "", dueDate, language }: Props) {
       active = false;
     };
   }, [id, groupId, accept, w.failed]);
+  const cardDueDate = view?.dueDate ?? dueDate;
   let schedule: CardSchedule | null = null,
     preview: number | null = null;
   if (view)
@@ -142,10 +173,10 @@ function ReminderForm({ id, groupId = "", dueDate, language }: Props) {
           },
           view.preferences,
         );
-      if (schedule) preview = resolveCardSchedule(schedule, dueDate);
-      else if (dueDate) {
+      if (schedule) preview = resolveCardSchedule(schedule, cardDueDate);
+      else if (cardDueDate) {
         const at = zonedTime(
-          dueDate,
+          cardDueDate,
           dueTime || view.preferences.defaultTime,
           view.preferences.timezone,
         );
@@ -165,11 +196,11 @@ function ReminderForm({ id, groupId = "", dueDate, language }: Props) {
     else if (schedule?.mode === "relative") {
       const a = resolveCardSchedule(
           { ...schedule, disambiguation: "earlier" },
-          dueDate,
+          cardDueDate,
         ),
         b = resolveCardSchedule(
           { ...schedule, disambiguation: "later" },
-          dueDate,
+          cardDueDate,
         );
       ambiguous = a !== null && b !== null && a !== b;
     }
@@ -242,7 +273,7 @@ function ReminderForm({ id, groupId = "", dueDate, language }: Props) {
             onChange={(event) => setMode(event.target.value)}
           >
             <option value="automatic">{w.automatic}</option>
-            <option value="relative" disabled={!dueDate}>
+            <option value="relative" disabled={!cardDueDate}>
               {w.relative}
             </option>
             <option value="absolute">{w.absolute}</option>
@@ -314,7 +345,7 @@ function ReminderForm({ id, groupId = "", dueDate, language }: Props) {
             />
           </label>
         )}
-        {mode === "automatic" && dueDate && (
+        {mode === "automatic" && cardDueDate && (
           <>
             <label>
               {w.dueTime}

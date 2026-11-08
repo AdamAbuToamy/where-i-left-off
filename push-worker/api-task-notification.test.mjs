@@ -519,3 +519,205 @@ test("real native Web Push encryption and VAPID signing reach a synthetic provid
     s.DB.sqlite.close();
   }
 });
+
+test("quiet-hours override is owner-managed, per-key, explicit, auditable and promotes one deferred event without duplication", async (t) => {
+  t.mock.timers.enable({
+    apis: ["Date"],
+    now: Date.parse("2026-11-09T12:00:00Z"),
+  });
+  const s = await fixture();
+  try {
+    const p = {
+      ...s.prefs,
+      quiet: true,
+      quietStart: "00:00",
+      quietEnd: "23:59",
+    };
+    await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+      .bind(JSON.stringify(p), "alice")
+      .run();
+    const body = { expectedRevision: 0, bypassQuietHours: true };
+    const denied = await s.handler(s.request(s.key.key, "POST", body), s.env);
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error, "quiet-hours-override-forbidden");
+    assert.equal(s.queue.length, 0);
+    await manageApiKeys(s.env, "alice", {
+      action: "update",
+      id: s.key.metadata.id,
+      quietHoursOverride: true,
+    });
+    const listed = await manageApiKeys(s.env, "alice", { action: "list" });
+    assert.equal(listed.keys[0].quietHoursOverride, true);
+    assert.deepEqual(listed.keys[0].scopes, s.scopes);
+    await assert.rejects(
+      manageApiKeys(s.env, "bob", {
+        action: "update",
+        id: s.key.metadata.id,
+        quietHoursOverride: true,
+      }),
+      /key-not-found/,
+    );
+    const other = await manageApiKeys(s.env, "alice", {
+      action: "create",
+      name: "Unrelated",
+      scopes: s.scopes,
+    });
+    assert.equal(other.metadata.quietHoursOverride, false);
+    assert.equal(
+      (await s.handler(s.request(other.key, "POST", body), s.env)).status,
+      403,
+    );
+    const first = await (await s.handler(s.request(), s.env)).json();
+    assert.equal(first.result.status, "deferred");
+    await s.drain();
+    assert.equal(s.sent.length, 0);
+    assert.equal(
+      (await s.handler(s.request(s.key.key, "POST", body), s.env)).status,
+      409,
+    );
+    const promoted = await (
+      await s.handler(
+        s.request(s.key.key, "POST", body, "promote-deferred-operation-0001"),
+        s.env,
+      )
+    ).json();
+    assert.equal(promoted.result.eventId, first.result.eventId);
+    assert.equal(promoted.result.quietHoursOverrideEffective, true);
+    await s.drain();
+    assert.equal(s.sent.length, 1);
+    await s.handler(
+      s.request(s.key.key, "POST", body, "promote-deferred-operation-0001"),
+      s.env,
+    );
+    await s.drain();
+    assert.equal(s.sent.length, 1);
+    const audit = await s.DB.prepare(
+      "SELECT COUNT(*) AS n FROM api_audit WHERE uid='alice' AND operation LIKE '%quiet-override%'",
+    ).first();
+    assert.ok(audit.n > 0);
+    const rotated = await manageApiKeys(s.env, "alice", {
+      action: "rotate",
+      id: s.key.metadata.id,
+    });
+    assert.equal(rotated.metadata.quietHoursOverride, true);
+    assert.deepEqual(
+      JSON.parse(
+        (
+          await s.DB.prepare("SELECT prefs FROM accounts WHERE uid=?")
+            .bind("alice")
+            .first()
+        ).prefs,
+      ),
+      p,
+    );
+  } finally {
+    s.DB.sqlite.close();
+    t.mock.timers.reset();
+  }
+});
+test("revoking override before dispatch restores quiet hours; account opt-out and device withdrawal remain authoritative", async (t) => {
+  t.mock.timers.enable({
+    apis: ["Date"],
+    now: Date.parse("2026-11-09T12:00:00Z"),
+  });
+  for (const action of ["permission", "account", "device"]) {
+    const s = await fixture();
+    try {
+      await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+        .bind(
+          JSON.stringify({
+            ...s.prefs,
+            quiet: true,
+            quietStart: "00:00",
+            quietEnd: "23:59",
+          }),
+          "alice",
+        )
+        .run();
+      await manageApiKeys(s.env, "alice", {
+        action: "update",
+        id: s.key.metadata.id,
+        quietHoursOverride: true,
+      });
+      const body = { expectedRevision: 0, bypassQuietHours: true };
+      assert.equal(
+        (await s.handler(s.request(s.key.key, "POST", body), s.env)).status,
+        202,
+      );
+      if (action === "permission") {
+        await manageApiKeys(s.env, "alice", {
+          action: "update",
+          id: s.key.metadata.id,
+          quietHoursOverride: false,
+        });
+        assert.equal(
+          (
+            await s.handler(
+              s.request(
+                s.key.key,
+                "POST",
+                body,
+                "revoked-override-request-0002",
+              ),
+              s.env,
+            )
+          ).status,
+          403,
+        );
+      }
+      if (action === "account")
+        await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+          .bind(JSON.stringify({ ...s.prefs, enabled: false }), "alice")
+          .run();
+      if (action === "device")
+        await s.DB.prepare("DELETE FROM devices WHERE uid=?")
+          .bind("alice")
+          .run();
+      await s.drain();
+      assert.equal(s.sent.length, 0);
+      if (action === "permission") {
+        const replacement = await manageApiKeys(s.env, "alice", {
+          action: "rotate",
+          id: s.key.metadata.id,
+        });
+        await manageApiKeys(s.env, "alice", {
+          action: "update",
+          id: replacement.metadata.id,
+          quietHoursOverride: true,
+        });
+        const old = (
+          await (
+            await s.handler(s.request(replacement.key, "GET"), s.env)
+          ).json()
+        ).result.eventId;
+        assert.equal(
+          (
+            await s.handler(
+              s.request(
+                replacement.key,
+                "POST",
+                body,
+                "replacement-promote-key-0001",
+              ),
+              s.env,
+            )
+          ).status,
+          202,
+        );
+        await s.drain();
+        assert.equal(s.sent.length, 1);
+        assert.equal(
+          (
+            await (
+              await s.handler(s.request(replacement.key, "GET"), s.env)
+            ).json()
+          ).result.eventId,
+          old,
+        );
+      }
+    } finally {
+      s.DB.sqlite.close();
+    }
+  }
+  t.mock.timers.reset();
+});

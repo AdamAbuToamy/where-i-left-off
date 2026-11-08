@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS user_api_keys(
  id TEXT PRIMARY KEY, uid TEXT NOT NULL, name TEXT NOT NULL, digest TEXT NOT NULL,
  scopes TEXT NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER,
- revoked_at INTEGER, last_used_at INTEGER,
+ revoked_at INTEGER, last_used_at INTEGER, quiet_hours_override INTEGER NOT NULL DEFAULT 0 CHECK(quiet_hours_override IN(0,1)),
  FOREIGN KEY(uid) REFERENCES accounts(uid) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS user_api_keys_owner ON user_api_keys(uid,created_at);

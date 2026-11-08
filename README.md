@@ -173,3 +173,5 @@ Use `/home/adam/projects/where-i-left-off` (`main`). The former `/home/adam/wilo
 
 
 Notification settings are available on desktop and mobile. Eligible cards support explicit relative or exact-time reminders using the existing server-side Push scheduler; local Push permission remains device-specific. See [Public API](docs/PUBLIC_API.md#universal-card-reminders-v13) for universal reminder scheduling and idempotent immediate card/assignment notifications. Provider acceptance is not a handset delivery receipt.
+
+API Keys also expose an owner-managed, default-off permission for immediate Push quiet-hours override. The request must explicitly set `bypassQuietHours: true`; scheduled reminders and account/device opt-outs remain protected. See the Public API guide for safe promotion of a deferred event without duplication.

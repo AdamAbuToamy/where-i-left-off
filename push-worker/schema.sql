@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS api_task_notifications (
  uid TEXT NOT NULL, task_id TEXT NOT NULL, event_id TEXT NOT NULL, task_revision INTEGER NOT NULL,
  device_ids TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'pending', reason TEXT NOT NULL DEFAULT '',
  created_at INTEGER NOT NULL, next_at INTEGER NOT NULL, lease_until INTEGER NOT NULL DEFAULT 0,
- queued_at INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(uid,task_id),
+ queued_at INTEGER NOT NULL DEFAULT 0, bypass_quiet_hours INTEGER NOT NULL DEFAULT 0 CHECK(bypass_quiet_hours IN(0,1)), requesting_key_id TEXT NOT NULL DEFAULT '', PRIMARY KEY(uid,task_id),
  FOREIGN KEY(uid) REFERENCES accounts(uid) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS api_task_notifications_due ON api_task_notifications(state,next_at,lease_until);

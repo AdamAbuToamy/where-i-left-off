@@ -84,6 +84,15 @@ export async function readReminderView(
     }
   }
 
+  if (
+    groupId &&
+    project.assignedTo !== uid &&
+    !card.schedule &&
+    !card.remindAt
+  ) {
+    at = null;
+    event = null;
+  }
   const dispatches = event
     ? (
         await env.DB.prepare(
@@ -104,7 +113,9 @@ export async function readReminderView(
     (!card.schedule && !card.remindAt && (project.status === "done" || !p.due))
       ? "disabled"
       : at === null
-        ? !card.schedule && !project.dueDate
+        ? !card.schedule &&
+          !card.remindAt &&
+          (!project.dueDate || (groupId && project.assignedTo !== uid))
           ? "not-configured"
           : "invalid-schedule"
         : at < account.enabled_at || now - at >= 86400000
@@ -131,6 +142,7 @@ export async function readReminderView(
   }
   return {
     projectId: project.id,
+    dueDate: project.dueDate || "",
     disabled: !!card.disabled,
     weekly: !!card.weekly,
     time: card.time || "",

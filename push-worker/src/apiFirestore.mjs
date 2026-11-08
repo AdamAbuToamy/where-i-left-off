@@ -282,7 +282,10 @@ export function createApiRepository(
         const relative = path(collection, id);
         const fields = encodeFields(
           Object.fromEntries(
-            Object.entries(value).filter(([k]) => k !== "updatedAt"),
+            Object.entries(value).filter(
+              ([k]) =>
+                k !== "updatedAt" && !(collection === "projects" && k === "id"),
+            ),
           ),
         );
         writes.push({

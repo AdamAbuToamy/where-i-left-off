@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wilo Public API",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Generic personal automation. Ownership comes exclusively from the bearer key. No client-supplied account ID. API keys cannot issue keys or change account/security settings."
   },
   "servers": [
@@ -69,26 +69,17 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "items",
-                        "nextCursor"
-                      ],
+                      "required": ["items", "nextCursor"],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -223,16 +214,12 @@
                         "$ref": "#/components/schemas/CourseValues"
                       },
                       {
-                        "required": [
-                          "name"
-                        ]
+                        "required": ["name"]
                       }
                     ]
                   }
                 },
-                "required": [
-                  "values"
-                ],
+                "required": ["values"],
                 "additionalProperties": false
               }
             }
@@ -260,10 +247,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -290,10 +274,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -441,10 +422,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "values",
-                  "expectedRevision"
-                ],
+                "required": ["values", "expectedRevision"],
                 "additionalProperties": false
               }
             }
@@ -472,10 +450,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -645,26 +620,17 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "items",
-                        "nextCursor"
-                      ],
+                      "required": ["items", "nextCursor"],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -799,17 +765,12 @@
                         "$ref": "#/components/schemas/TaskValues"
                       },
                       {
-                        "required": [
-                          "courseId",
-                          "title"
-                        ]
+                        "required": ["courseId", "title"]
                       }
                     ]
                   }
                 },
-                "required": [
-                  "values"
-                ],
+                "required": ["values"],
                 "additionalProperties": false
               }
             }
@@ -837,10 +798,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -867,10 +825,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -1018,10 +973,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "values",
-                  "expectedRevision"
-                ],
+                "required": ["values", "expectedRevision"],
                 "additionalProperties": false
               }
             }
@@ -1049,10 +1001,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -1222,26 +1171,17 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "items",
-                        "nextCursor"
-                      ],
+                      "required": ["items", "nextCursor"],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -1376,19 +1316,12 @@
                         "$ref": "#/components/schemas/ClassValues"
                       },
                       {
-                        "required": [
-                          "courseId",
-                          "day",
-                          "start",
-                          "end"
-                        ]
+                        "required": ["courseId", "day", "start", "end"]
                       }
                     ]
                   }
                 },
-                "required": [
-                  "values"
-                ],
+                "required": ["values"],
                 "additionalProperties": false
               }
             }
@@ -1416,10 +1349,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -1446,10 +1376,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -1597,10 +1524,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "values",
-                  "expectedRevision"
-                ],
+                "required": ["values", "expectedRevision"],
                 "additionalProperties": false
               }
             }
@@ -1628,10 +1552,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -1792,26 +1713,17 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "items",
-                        "nextCursor"
-                      ],
+                      "required": ["items", "nextCursor"],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -1946,16 +1858,12 @@
                         "$ref": "#/components/schemas/ProjectValues"
                       },
                       {
-                        "required": [
-                          "name"
-                        ]
+                        "required": ["name"]
                       }
                     ]
                   }
                 },
-                "required": [
-                  "values"
-                ],
+                "required": ["values"],
                 "additionalProperties": false
               }
             }
@@ -1983,10 +1891,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -2013,10 +1918,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -2164,10 +2066,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "values",
-                  "expectedRevision"
-                ],
+                "required": ["values", "expectedRevision"],
                 "additionalProperties": false
               }
             }
@@ -2195,10 +2094,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -2359,26 +2255,17 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "items",
-                        "nextCursor"
-                      ],
+                      "required": ["items", "nextCursor"],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -2513,16 +2400,12 @@
                         "$ref": "#/components/schemas/SectionValues"
                       },
                       {
-                        "required": [
-                          "name"
-                        ]
+                        "required": ["name"]
                       }
                     ]
                   }
                 },
-                "required": [
-                  "values"
-                ],
+                "required": ["values"],
                 "additionalProperties": false
               }
             }
@@ -2550,10 +2433,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -2580,10 +2460,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -2731,10 +2608,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "values",
-                  "expectedRevision"
-                ],
+                "required": ["values", "expectedRevision"],
                 "additionalProperties": false
               }
             }
@@ -2762,10 +2636,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -2904,20 +2775,14 @@
                           "minimum": 0
                         }
                       },
-                      "required": [
-                        "state",
-                        "revision"
-                      ],
+                      "required": ["state", "revision"],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -3054,10 +2919,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "state",
-                  "expectedRevision"
-                ],
+                "required": ["state", "expectedRevision"],
                 "additionalProperties": false
               }
             }
@@ -3085,10 +2947,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -3115,10 +2974,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "additionalProperties": false
                 }
               }
@@ -3256,10 +3112,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/CardReminderState"
@@ -3401,10 +3254,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/CardReminderState"
@@ -3568,10 +3418,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/CardReminderState"
@@ -3754,10 +3601,7 @@
                     },
                     {
                       "type": "object",
-                      "required": [
-                        "result",
-                        "requestId"
-                      ],
+                      "required": ["result", "requestId"],
                       "properties": {
                         "result": {
                           "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3828,10 +3672,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3850,10 +3691,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3889,9 +3727,7 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [
-                  "expectedRevision"
-                ],
+                "required": ["expectedRevision"],
                 "properties": {
                   "expectedRevision": {
                     "type": "integer",
@@ -3962,10 +3798,7 @@
                     },
                     {
                       "type": "object",
-                      "required": [
-                        "result",
-                        "requestId"
-                      ],
+                      "required": ["result", "requestId"],
                       "properties": {
                         "result": {
                           "$ref": "#/components/schemas/TaskReminderStatus"
@@ -4036,10 +3869,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -4058,10 +3888,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -4199,10 +4026,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4221,10 +4045,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4241,7 +4062,7 @@
       },
       "post": {
         "operationId": "requestTaskNotification",
-        "description": "Requires courses:read, tasks:read and reminders:write. Request one task-added Push event per owner/task using trusted Wilo task content and only that owner’s registered devices. Respects notification opt-in, quiet hours and hideContent. No free-form message, UID, subscription or destination is accepted. Required Idempotency-Key is scoped to this operation/owner; the same key with different input returns409. A different key still cannot resend the same task event. Keep a stable key; at most32 keys per task. First request checks expectedRevision. Native queue/cron resume partial failures. Unknown provider/network outcomes are not retried automatically (at-most-once attempt/device), avoiding duplicate notifications. Provider acceptance is not proof of display. No new notification opt-in/device enrollment occurs.",
+        "description": "Requires courses:read, tasks:read and reminders:write. Request one task-added Push event per owner/task using trusted Wilo task content and only that owner’s registered devices. Respects notification opt-in, quiet hours and hideContent. No free-form message, UID, subscription or destination is accepted. Required Idempotency-Key is scoped to this operation/owner; the same key with different input returns409. A different key still cannot resend the same task event. Keep a stable key; at most32 keys per task. First request checks expectedRevision. Native queue/cron resume partial failures. Unknown provider/network outcomes are not retried automatically (at-most-once attempt/device), avoiding duplicate notifications. Provider acceptance is not proof of display. No new notification opt-in/device enrollment occurs. Optional bypassQuietHours=true requires that API key quiet-hours override permission; otherwise 403 quiet-hours-override-forbidden. False/omitted respects quiet hours. New keys default off. Owner can change the existing key via authenticated account Settings, never this API. Permission is checked again at dispatch; revocation/expiry/deletion restores quiet hours for pending work. To upgrade a deferred event, use an authorized key and a NEW Idempotency-Key with bypassQuietHours=true; the same pending logical event is promoted, not duplicated. Changing a body under an existing key remains 409. Completed events are never resent. Processing events are not promoted mid-dispatch; poll status before retry. Scheduled reminders are unaffected.",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -4260,13 +4081,30 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [
-                  "expectedRevision"
-                ],
+                "required": ["expectedRevision"],
                 "properties": {
                   "expectedRevision": {
                     "type": "integer",
                     "minimum": 0
+                  },
+                  "bypassQuietHours": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Explicit immediate-event quiet-hours bypass. Requires the additional owner-managed API key permission and all normal scopes. Does not bypass account opt-out, card exclusion or device withdrawal."
+                  }
+                }
+              },
+              "examples": {
+                "respectQuietHours": {
+                  "value": {
+                    "expectedRevision": 3,
+                    "bypassQuietHours": false
+                  }
+                },
+                "ownerGrantedOverride": {
+                  "value": {
+                    "expectedRevision": 3,
+                    "bypassQuietHours": true
                   }
                 }
               }
@@ -4295,7 +4133,7 @@
             }
           },
           "403": {
-            "description": "Missing scope or unavailable account",
+            "description": "Insufficient scope, or quiet-hours-override-forbidden when an explicit bypass lacks the owner-granted key permission. No notification dispatched.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4380,10 +4218,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4402,10 +4237,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4543,10 +4375,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4565,10 +4394,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4585,7 +4411,7 @@
       },
       "post": {
         "operationId": "requestProjectNotification",
-        "description": "Requires projects:read and reminders:write. Request one card notification Push event per owner/card using trusted Wilo card content and only that owner’s registered devices. Respects notification opt-in, quiet hours and hideContent. No free-form message, UID, subscription or destination is accepted. Required Idempotency-Key is scoped to this operation/owner; the same key with different input returns409. A different key still cannot resend the same card event. Keep a stable key; at most32 keys per card. First request checks expectedRevision. Native queue/cron resume partial failures. Unknown provider/network outcomes are not retried automatically (at-most-once attempt/device), avoiding duplicate notifications. Provider acceptance is not proof of display. No new notification opt-in/device enrollment occurs.",
+        "description": "Requires projects:read and reminders:write. Request one card notification Push event per owner/card using trusted Wilo card content and only that owner’s registered devices. Respects notification opt-in, quiet hours and hideContent. No free-form message, UID, subscription or destination is accepted. Required Idempotency-Key is scoped to this operation/owner; the same key with different input returns409. A different key still cannot resend the same card event. Keep a stable key; at most32 keys per card. First request checks expectedRevision. Native queue/cron resume partial failures. Unknown provider/network outcomes are not retried automatically (at-most-once attempt/device), avoiding duplicate notifications. Provider acceptance is not proof of display. No new notification opt-in/device enrollment occurs. Optional bypassQuietHours=true requires that API key quiet-hours override permission; otherwise 403 quiet-hours-override-forbidden. False/omitted respects quiet hours. New keys default off. Owner can change the existing key via authenticated account Settings, never this API. Permission is checked again at dispatch; revocation/expiry/deletion restores quiet hours for pending work. To upgrade a deferred event, use an authorized key and a NEW Idempotency-Key with bypassQuietHours=true; the same pending logical event is promoted, not duplicated. Changing a body under an existing key remains 409. Completed events are never resent. Processing events are not promoted mid-dispatch; poll status before retry. Scheduled reminders are unaffected.",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -4604,13 +4430,30 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [
-                  "expectedRevision"
-                ],
+                "required": ["expectedRevision"],
                 "properties": {
                   "expectedRevision": {
                     "type": "integer",
                     "minimum": 0
+                  },
+                  "bypassQuietHours": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Explicit immediate-event quiet-hours bypass. Requires the additional owner-managed API key permission and all normal scopes. Does not bypass account opt-out, card exclusion or device withdrawal."
+                  }
+                }
+              },
+              "examples": {
+                "respectQuietHours": {
+                  "value": {
+                    "expectedRevision": 3,
+                    "bypassQuietHours": false
+                  }
+                },
+                "ownerGrantedOverride": {
+                  "value": {
+                    "expectedRevision": 3,
+                    "bypassQuietHours": true
                   }
                 }
               }
@@ -4639,7 +4482,7 @@
             }
           },
           "403": {
-            "description": "Missing scope or unavailable account",
+            "description": "Insufficient scope, or quiet-hours-override-forbidden when an explicit bypass lacks the owner-granted key permission. No notification dispatched.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4724,10 +4567,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4746,10 +4586,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "result",
-                    "requestId"
-                  ],
+                  "required": ["result", "requestId"],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4785,10 +4622,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "error",
-          "requestId"
-        ],
+        "required": ["error", "requestId"],
         "additionalProperties": false
       },
       "MutationResult": {
@@ -4809,11 +4643,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "id",
-          "revision",
-          "created"
-        ],
+        "required": ["id", "revision", "created"],
         "additionalProperties": false
       },
       "CourseValues": {
@@ -4856,11 +4686,7 @@
                   "type": "boolean"
                 }
               },
-              "required": [
-                "id",
-                "title",
-                "done"
-              ],
+              "required": ["id", "title", "done"],
               "additionalProperties": false
             },
             "maxItems": 200
@@ -4919,11 +4745,7 @@
                   "type": "boolean"
                 }
               },
-              "required": [
-                "id",
-                "title",
-                "done"
-              ],
+              "required": ["id", "title", "done"],
               "additionalProperties": false
             },
             "maxItems": 200
@@ -4960,11 +4782,7 @@
             "maxLength": 500
           },
           "kind": {
-            "enum": [
-              "assignment",
-              "exam",
-              "task"
-            ]
+            "enum": ["assignment", "exam", "task"]
           },
           "due": {
             "type": "string",
@@ -4997,11 +4815,7 @@
             "maxLength": 500
           },
           "kind": {
-            "enum": [
-              "assignment",
-              "exam",
-              "task"
-            ]
+            "enum": ["assignment", "exam", "task"]
           },
           "due": {
             "type": "string",
@@ -5036,11 +4850,7 @@
             "pattern": "^[A-Za-z0-9_-]{1,128}$"
           },
           "sessionType": {
-            "enum": [
-              "lecture",
-              "tutorial",
-              "lab"
-            ]
+            "enum": ["lecture", "tutorial", "lab"]
           },
           "day": {
             "type": "integer",
@@ -5075,11 +4885,7 @@
             "pattern": "^[A-Za-z0-9_-]{1,128}$"
           },
           "sessionType": {
-            "enum": [
-              "lecture",
-              "tutorial",
-              "lab"
-            ]
+            "enum": ["lecture", "tutorial", "lab"]
           },
           "day": {
             "type": "integer",
@@ -5152,20 +4958,10 @@
             "maxLength": 3000
           },
           "status": {
-            "enum": [
-              "later",
-              "active",
-              "waiting",
-              "done"
-            ]
+            "enum": ["later", "active", "waiting", "done"]
           },
           "kind": {
-            "enum": [
-              "resume",
-              "waiting",
-              "deadline",
-              "list"
-            ]
+            "enum": ["resume", "waiting", "deadline", "list"]
           },
           "resourceType": {
             "enum": [
@@ -5265,20 +5061,10 @@
             "maxLength": 3000
           },
           "status": {
-            "enum": [
-              "later",
-              "active",
-              "waiting",
-              "done"
-            ]
+            "enum": ["later", "active", "waiting", "done"]
           },
           "kind": {
-            "enum": [
-              "resume",
-              "waiting",
-              "deadline",
-              "list"
-            ]
+            "enum": ["resume", "waiting", "deadline", "list"]
           },
           "resourceType": {
             "enum": [
@@ -5407,13 +5193,7 @@
                       "pattern": "^[A-Za-z0-9_-]{1,128}$"
                     }
                   },
-                  "required": [
-                    "id",
-                    "kind",
-                    "x",
-                    "y",
-                    "projectId"
-                  ],
+                  "required": ["id", "kind", "x", "y", "projectId"],
                   "additionalProperties": false
                 },
                 {
@@ -5441,13 +5221,7 @@
                       "maxLength": 2000
                     }
                   },
-                  "required": [
-                    "id",
-                    "kind",
-                    "x",
-                    "y",
-                    "text"
-                  ],
+                  "required": ["id", "kind", "x", "y", "text"],
                   "additionalProperties": false
                 },
                 {
@@ -5518,22 +5292,14 @@
                   "pattern": "^[A-Za-z0-9_-]{1,128}$"
                 },
                 "kind": {
-                  "enum": [
-                    "related",
-                    "part",
-                    "depends"
-                  ]
+                  "enum": ["related", "part", "depends"]
                 },
                 "label": {
                   "type": "string",
                   "maxLength": 100
                 }
               },
-              "required": [
-                "id",
-                "source",
-                "target"
-              ],
+              "required": ["id", "source", "target"],
               "additionalProperties": false
             },
             "maxItems": 400
@@ -5568,24 +5334,13 @@
                   "maximum": 4000
                 }
               },
-              "required": [
-                "id",
-                "x",
-                "y",
-                "width",
-                "height"
-              ],
+              "required": ["id", "x", "y", "width", "height"],
               "additionalProperties": false
             },
             "maxItems": 120
           }
         },
-        "required": [
-          "version",
-          "items",
-          "threads",
-          "circles"
-        ],
+        "required": ["version", "items", "threads", "circles"],
         "additionalProperties": false
       },
       "Reminder": {
@@ -5602,10 +5357,7 @@
             "pattern": "^$|^([01][0-9]|2[0-3]):[0-5][0-9]$"
           },
           "leadMinutes": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "minimum": 0,
             "maximum": 150119987578
           },
@@ -5624,10 +5376,7 @@
             ]
           },
           "remindAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           }
         },
@@ -5636,12 +5385,7 @@
       },
       "TaskReminderStatus": {
         "type": "object",
-        "required": [
-          "taskId",
-          "status",
-          "verified",
-          "scheduled"
-        ],
+        "required": ["taskId", "status", "verified", "scheduled"],
         "properties": {
           "taskId": {
             "type": "string"
@@ -5651,10 +5395,7 @@
             "minimum": 0
           },
           "projectId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "status": {
             "enum": [
@@ -5689,16 +5430,10 @@
             "type": "string"
           },
           "reminderAt": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": ["integer", "null"]
           },
           "nextCheckAt": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": ["integer", "null"]
           },
           "timezone": {
             "type": "string"
@@ -5719,10 +5454,7 @@
             ]
           },
           "settingsVersion": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "pattern": "^[a-f0-9]{64}$"
           },
           "schedule": {
@@ -5775,10 +5507,7 @@
             "type": "string"
           },
           "queuedAt": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": ["integer", "null"]
           },
           "providerAccepted": {
             "type": "integer",
@@ -5803,23 +5532,25 @@
             "type": "integer"
           },
           "nextAttemptAt": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": ["integer", "null"]
           },
           "resourceType": {
             "type": "string",
-            "enum": [
-              "tasks",
-              "projects"
-            ]
+            "enum": ["tasks", "projects"]
           },
           "resourceId": {
             "type": "string"
           },
           "projectId": {
             "type": "string"
+          },
+          "bypassQuietHours": {
+            "type": "boolean",
+            "description": "The stored immediate-event policy. Never applies to scheduled reminders."
+          },
+          "quietHoursOverrideEffective": {
+            "type": "boolean",
+            "description": "Whether the originating owner key still grants the override at this read."
           }
         }
       },
@@ -5828,10 +5559,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "mode",
-              "scheduledAt"
-            ],
+            "required": ["mode", "scheduledAt"],
             "properties": {
               "mode": {
                 "const": "absolute",
@@ -5852,11 +5580,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "mode",
-              "amount",
-              "unit"
-            ],
+            "required": ["mode", "amount", "unit"],
             "properties": {
               "mode": {
                 "type": "string",
@@ -5869,12 +5593,7 @@
               },
               "unit": {
                 "type": "string",
-                "enum": [
-                  "minutes",
-                  "hours",
-                  "days",
-                  "weeks"
-                ]
+                "enum": ["minutes", "hours", "days", "weeks"]
               },
               "localTime": {
                 "type": "string",
@@ -5893,10 +5612,7 @@
               },
               "disambiguation": {
                 "type": "string",
-                "enum": [
-                  "earlier",
-                  "later"
-                ],
+                "enum": ["earlier", "later"],
                 "description": "For repeated local times during a daylight saving transition. Omit to reject ambiguous times."
               }
             }
@@ -5941,10 +5657,7 @@
             ]
           },
           "remindAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "settingsVersion": {
             "type": "string",
@@ -5977,17 +5690,11 @@
             "type": "boolean"
           },
           "scheduledAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "effectiveAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "timeZone": {
@@ -5996,10 +5703,7 @@
             "description": "Valid IANA time zone; defaults to account zone when configuring, then stored explicitly."
           },
           "nextCheckAt": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": ["integer", "null"]
           },
           "providerAccepted": {
             "type": "integer",
@@ -6024,6 +5728,10 @@
           },
           "preferences": {
             "type": "object"
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "The current card deadline calendar date, or empty when unset."
           }
         }
       }

@@ -656,20 +656,18 @@ export default function ProjectCard({
               className="card-detail-page card-detail-actions"
               hidden={fullscreen && detailPage !== "overview"}
             >
-              {fullscreen &&
-                canManage &&
-                (!groupId || project.assignedTo === auth?.currentUser?.uid) && (
-                  <Suspense fallback={null}>
-                    <CardReminderControl
-                      compact
-                      id={project.id}
-                      groupId={groupId}
-                      name={project.name}
-                      dueDate={project.dueDate}
-                      language={language}
-                    />
-                  </Suspense>
-                )}
+              {fullscreen && (
+                <Suspense fallback={null}>
+                  <CardReminderControl
+                    compact
+                    id={project.id}
+                    groupId={groupId}
+                    name={project.name}
+                    dueDate={project.dueDate}
+                    language={language}
+                  />
+                </Suspense>
+              )}
               {canEdit && (
                 <button
                   type="button"

@@ -40,6 +40,7 @@ const publicRow = (row, now = Date.now()) => ({
   id: row.id,
   name: row.name,
   scopes: JSON.parse(row.scopes),
+  quietHoursOverride: row.quiet_hours_override === 1,
   createdAt: row.created_at,
   expiresAt: row.expires_at,
   lastUsedAt: row.last_used_at,
@@ -62,7 +63,14 @@ export async function auditApi(env, uid, keyId, operation, status) {
 }
 export async function manageApiKeys(env, uid, data) {
   if (env.PUBLIC_API_ENABLED !== "true") throw new ApiError("api-disabled");
-  input(data, ["action", "id", "name", "scopes", "expiresAt"]);
+  input(data, [
+    "action",
+    "id",
+    "name",
+    "scopes",
+    "expiresAt",
+    "quietHoursOverride",
+  ]);
   await ensureAccount(env, uid, defaults);
   const now = Date.now();
   const rate =
@@ -76,7 +84,7 @@ export async function manageApiKeys(env, uid, data) {
   if (!rate) throw new ApiError("rate-limited");
   if (data.action === "list") {
     const rows = await env.DB.prepare(
-      "SELECT id,name,scopes,created_at,expires_at,revoked_at,last_used_at FROM user_api_keys WHERE uid=? AND revoked_at IS NULL ORDER BY (expires_at IS NULL OR expires_at > ?) DESC, created_at DESC LIMIT 100",
+      "SELECT id,name,scopes,created_at,expires_at,revoked_at,last_used_at,quiet_hours_override FROM user_api_keys WHERE uid=? AND revoked_at IS NULL ORDER BY (expires_at IS NULL OR expires_at > ?) DESC, created_at DESC LIMIT 100",
     )
       .bind(uid, now)
       .all();
@@ -85,13 +93,39 @@ export async function manageApiKeys(env, uid, data) {
       availableScopes: API_SCOPES,
     };
   }
-  if (!["create", "rotate", "revoke"].includes(data.action))
+  if (!["create", "rotate", "revoke", "update"].includes(data.action))
     throw new ApiError("invalid-input");
   if (
     data.action !== "create" &&
     (typeof data.id !== "string" || !/^[A-Za-z0-9_-]{12}$/.test(data.id))
   )
     throw new ApiError("invalid-input");
+  if (data.action === "update") {
+    input(data, ["action", "id", "quietHoursOverride"]);
+    if (typeof data.quietHoursOverride !== "boolean")
+      throw new ApiError("invalid-input");
+    const results = await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE user_api_keys SET quiet_hours_override=? WHERE uid=? AND id=? AND revoked_at IS NULL",
+      ).bind(data.quietHoursOverride ? 1 : 0, uid, data.id),
+      env.DB.prepare(
+        "INSERT INTO api_audit(id,uid,key_id,operation,status,created_at) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM user_api_keys WHERE uid=? AND id=?)",
+      ).bind(
+        crypto.randomUUID(),
+        uid,
+        data.id,
+        data.quietHoursOverride
+          ? "key.quiet-override.enable"
+          : "key.quiet-override.disable",
+        200,
+        now,
+        uid,
+        data.id,
+      ),
+    ]);
+    if (!results[0].meta.changes) throw new ApiError("key-not-found");
+    return { ok: true };
+  }
   if (data.action === "revoke") {
     const rows = await env.DB.batch([
       env.DB.prepare(
@@ -114,6 +148,9 @@ export async function manageApiKeys(env, uid, data) {
     if (!rows[1].meta.changes) throw new ApiError("key-not-found");
     return { ok: true };
   }
+  let quietHoursOverride = data.quietHoursOverride ?? false;
+  if (typeof quietHoursOverride !== "boolean")
+    throw new ApiError("invalid-input");
   let name = data.name,
     scopes = data.scopes,
     expiresAt = data.expiresAt ?? null;
@@ -124,6 +161,7 @@ export async function manageApiKeys(env, uid, data) {
       .bind(uid, data.id)
       .first();
     if (!old) throw new ApiError("key-not-found");
+    quietHoursOverride = old.quiet_hours_override === 1;
     name = old.name;
     scopes = JSON.parse(old.scopes);
     expiresAt = data.expiresAt === undefined ? old.expires_at : data.expiresAt;
@@ -159,8 +197,8 @@ export async function manageApiKeys(env, uid, data) {
     digest = await sha256(secret),
     scopeJson = JSON.stringify(scopes);
   const insert = env.DB.prepare(
-    `INSERT INTO user_api_keys(id,uid,name,digest,scopes,created_at,expires_at)
- SELECT ?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM user_api_keys WHERE uid=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>?) AND id<>?)<?
+    `INSERT INTO user_api_keys(id,uid,name,digest,scopes,created_at,expires_at,quiet_hours_override)
+ SELECT ?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM user_api_keys WHERE uid=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>?) AND id<>?)<?
  ${data.action === "rotate" ? "AND EXISTS(SELECT 1 FROM user_api_keys WHERE uid=? AND id=? AND revoked_at IS NULL)" : ""}`,
   ).bind(
     id,
@@ -170,6 +208,7 @@ export async function manageApiKeys(env, uid, data) {
     scopeJson,
     now,
     expiresAt,
+    quietHoursOverride ? 1 : 0,
     uid,
     now,
     data.action === "rotate" ? data.id : "",
@@ -206,6 +245,7 @@ export async function manageApiKeys(env, uid, data) {
       id,
       name: name.trim(),
       scopes,
+      quietHoursOverride,
       createdAt: now,
       expiresAt,
       lastUsedAt: null,

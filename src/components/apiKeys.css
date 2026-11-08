@@ -164,3 +164,21 @@
   border-radius: 12px;
   margin-bottom: 1.2rem;
 }
+
+.api-quiet-override {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 0;
+  line-height: 1.7;
+}
+.api-quiet-override input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.api-quiet-override strong {
+  font-size: 0.8rem;
+  color: var(--site-muted, #607267);
+}

@@ -18,6 +18,23 @@ export function createTaskNotificationStore(
       .first();
   return {
     job,
+    async bypassAllowed(id) {
+      const item = await job(id);
+      if (!item?.bypass_quiet_hours || !item.requesting_key_id) return false;
+      const key = await db
+        .prepare(
+          "SELECT quiet_hours_override,revoked_at,expires_at,scopes FROM user_api_keys WHERE uid=? AND id=?",
+        )
+        .bind(uid, item.requesting_key_id)
+        .first();
+      return (
+        !!key &&
+        key.quiet_hours_override === 1 &&
+        key.revoked_at === null &&
+        (key.expires_at === null || key.expires_at > now()) &&
+        JSON.parse(key.scopes).includes("reminders:write")
+      );
+    },
     async included(projectId) {
       return (
         !projectId ||
@@ -40,6 +57,8 @@ export function createTaskNotificationStore(
       fingerprint,
       eventId,
       revision,
+      bypassQuietHours = false,
+      requestingKeyId = "",
       deviceIds,
       at,
     }) {
@@ -72,7 +91,7 @@ export function createTaskNotificationStore(
           .bind(uid, keyHash, fingerprint, id, uid, id),
         db
           .prepare(
-            "INSERT INTO api_task_notifications(uid,task_id,event_id,task_revision,device_ids,created_at,next_at) SELECT ?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM api_task_notification_requests WHERE uid=? AND key_hash=? AND fingerprint=? AND task_id=?) ON CONFLICT(uid,task_id) DO NOTHING",
+            "INSERT INTO api_task_notifications(uid,task_id,event_id,task_revision,device_ids,created_at,next_at,bypass_quiet_hours,requesting_key_id) SELECT ?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM api_task_notification_requests WHERE uid=? AND key_hash=? AND fingerprint=? AND task_id=?) ON CONFLICT(uid,task_id) DO NOTHING",
           )
           .bind(
             uid,
@@ -82,6 +101,8 @@ export function createTaskNotificationStore(
             JSON.stringify(deviceIds),
             at,
             at,
+            bypassQuietHours ? 1 : 0,
+            requestingKeyId,
             uid,
             keyHash,
             fingerprint,
@@ -97,6 +118,23 @@ export function createTaskNotificationStore(
       if (!receipt) throw new ApiError("rate-limited");
       if (receipt.fingerprint !== fingerprint || receipt.task_id !== id)
         throw new ApiError("idempotency-key-reused");
+      // Upgrade the same pending event, never create a second logical notification.
+      if (bypassQuietHours)
+        await db
+          .prepare(
+            "UPDATE api_task_notifications SET bypass_quiet_hours=1,requesting_key_id=?,next_at=?,lease_until=0,reason='' WHERE uid=? AND task_id=? AND state='pending' AND (bypass_quiet_hours=0 OR requesting_key_id<>? OR reason='quiet-hours') AND EXISTS(SELECT 1 FROM user_api_keys WHERE uid=? AND id=? AND quiet_hours_override=1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>?))",
+          )
+          .bind(
+            requestingKeyId,
+            now(),
+            uid,
+            id,
+            requestingKeyId,
+            uid,
+            requestingKeyId,
+            now(),
+          )
+          .run();
     },
     async enqueue(id) {
       id = internal(id);
@@ -230,6 +268,7 @@ export function createTaskNotificationStore(
         rows.results.map((r) => [r.state, r.n]),
       );
       const p = await this.preferences();
+      const bypass = await this.bypassAllowed(id);
       let state =
         item.state === "complete"
           ? item.reason ||
@@ -241,7 +280,7 @@ export function createTaskNotificationStore(
                   ? "provider-accepted"
                   : "partially-accepted"
                 : "failed")
-          : quietNow(p, now())
+          : quietNow(p, now()) && !bypass
             ? "deferred"
             : item.state === "processing"
               ? "sending"
@@ -253,6 +292,8 @@ export function createTaskNotificationStore(
         resourceId: id,
         ...(resource === "tasks" ? { taskId: id } : { projectId: id }),
         eventId: item.event_id,
+        bypassQuietHours: !!item.bypass_quiet_hours,
+        quietHoursOverrideEffective: bypass,
         status: state,
         accepted: true,
         queuedAt: item.queued_at || null,
@@ -264,7 +305,7 @@ export function createTaskNotificationStore(
         nextAttemptAt:
           item.state === "complete"
             ? null
-            : quietNow(p, now())
+            : quietNow(p, now()) && !bypass
               ? afterQuiet(p, now())
               : item.next_at,
       };

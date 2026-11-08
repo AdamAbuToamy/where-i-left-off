@@ -127,6 +127,12 @@ try {
     }
     forcedStatus = 0;
   }
+  for (const [path, item] of Object.entries(JSON.parse(source).paths))
+    for (const op of Object.values(item))
+      for (const example of Object.values(
+        op.requestBody?.content?.["application/json"]?.examples || {},
+      ))
+        captured.push({ operationId: op.operationId, body: example.value });
   // Python jsonschema/requests are existing local verification tools, not application dependencies.
   const validation = String.raw`import json,sys,jsonschema
 payload=json.loads(sys.argv[1]);contract=payload['contract']

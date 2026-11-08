@@ -333,6 +333,34 @@ export default function ApiKeySettings({
             <p>
               {t.expiry}: {k.expiresAt ? date(k.expiresAt) : t.none}
             </p>
+            <label className="api-quiet-override">
+              <input
+                type="checkbox"
+                checked={!!k.quietHoursOverride}
+                disabled={busy || k.status === "revoked"}
+                onChange={(event) =>
+                  void perform({
+                    action: "update",
+                    id: k.id,
+                    quietHoursOverride: event.target.checked,
+                  })
+                }
+              />
+              {language === "ar"
+                ? "السماح بتجاوز ساعات الهدوء للإشعارات الفورية"
+                : language === "he"
+                  ? "לאפשר עקיפת שעות שקט בהתראות מיידיות"
+                  : "Allow quiet-hours override for immediate notifications"}
+              <strong>
+                {k.quietHoursOverride
+                  ? language === "ar"
+                    ? "مفعّل"
+                    : "Enabled"
+                  : language === "ar"
+                    ? "معطّل"
+                    : "Disabled"}
+              </strong>
+            </label>
             <div className="api-scope-tags">
               {k.scopes.map((s) => (
                 <code key={s}>{s}</code>

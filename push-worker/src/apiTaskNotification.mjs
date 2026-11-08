@@ -41,8 +41,22 @@ export function createTaskNotificationService({
     await ownedNotificationTask(repository, id, resource);
     return notifications.status(id);
   }
-  async function request(id, body, key) {
-    object(body, ["expectedRevision"], ["expectedRevision"]);
+  async function request(id, body, key, authorization = {}) {
+    object(
+      body,
+      ["expectedRevision", "bypassQuietHours"],
+      ["expectedRevision"],
+    );
+    if (
+      body.bypassQuietHours !== undefined &&
+      typeof body.bypassQuietHours !== "boolean"
+    )
+      throw new ApiError("invalid-input");
+    if (
+      body.bypassQuietHours === true &&
+      authorization.quietHoursOverride !== true
+    )
+      throw new ApiError("quiet-hours-override-forbidden");
     if (
       !Number.isSafeInteger(body.expectedRevision) ||
       body.expectedRevision < 0
@@ -83,6 +97,8 @@ export function createTaskNotificationService({
         32,
       ),
       revision,
+      bypassQuietHours: body.bypassQuietHours === true,
+      requestingKeyId: authorization.keyId || "",
       deviceIds: pref.deviceIds,
       at: now(),
     });
@@ -121,7 +137,7 @@ export function createTaskNotificationService({
       await notifications.finish(id, "expired");
       return;
     }
-    if (quietNow(p, now())) {
+    if (quietNow(p, now()) && !(await notifications.bypassAllowed(id))) {
       await notifications.defer(id, afterQuiet(p, now()));
       return;
     }
@@ -152,7 +168,10 @@ export function createTaskNotificationService({
         await notifications.finish(id, "disabled");
         return;
       }
-      if (quietNow(current, now())) {
+      if (
+        quietNow(current, now()) &&
+        !(await notifications.bypassAllowed(id))
+      ) {
         await notifications.defer(id, afterQuiet(current, now()));
         return;
       }

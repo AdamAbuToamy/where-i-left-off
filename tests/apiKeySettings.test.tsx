@@ -148,3 +148,42 @@ it("keeps creation options hidden until Add is pressed and clears them on cancel
     true,
   );
 });
+
+it("updates an existing key quiet-hours permission without creating or revealing a new secret", async () => {
+  const key = {
+    id: "existing-key",
+    name: "My automation",
+    scopes: ["reminders:write"],
+    createdAt: 1,
+    expiresAt: null,
+    lastUsedAt: null,
+    status: "active",
+    quietHoursOverride: false,
+  };
+  call.mockImplementation(
+    async (_user: User, data: Record<string, unknown>) => {
+      if (data.action === "update")
+        key.quietHoursOverride = Boolean(data.quietHoursOverride);
+      return { keys: [{ ...key }] };
+    },
+  );
+  await render();
+  const checkbox = container.querySelector<HTMLInputElement>(
+    'input[type="checkbox"]',
+  )!;
+  expect(checkbox.checked).toBe(false);
+  await act(async () => checkbox.click());
+  expect(call).toHaveBeenCalledWith(user, {
+    action: "update",
+    id: key.id,
+    quietHoursOverride: true,
+  });
+  expect(
+    container.querySelector<HTMLInputElement>('input[type="checkbox"]')!
+      .checked,
+  ).toBe(true);
+  expect(container.querySelector("textarea")).toBeNull();
+  expect(call.mock.calls.some(([, data]) => data.action === "create")).toBe(
+    false,
+  );
+});

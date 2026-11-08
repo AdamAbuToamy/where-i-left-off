@@ -11,7 +11,7 @@ import {
 import { auth, db } from "../lib/firebase";
 import { pushCall } from "../lib/pushNotifications";
 import type { PushState } from "../lib/pushNotifications";
-import { toLocalInput } from "./model";
+import { reminderInput } from "../../shared/reminderTime.mjs";
 import type { StudyTask } from "./model";
 /** University records stay local; only explicitly linked reminder cards enter the user's workspace. */
 export function prepareReminder(task: StudyTask): StudyTask {
@@ -29,28 +29,28 @@ export async function syncReminder(
   uid: string,
   task: StudyTask,
   create = false,
+  options: { configure?: boolean } = {},
 ): Promise<StudyTask> {
   if (!db || auth?.currentUser?.uid !== uid)
     throw new Error("سجّل الدخول أولًا");
   if (!task.reminderProjectId && !create) return task;
-  if (!task.due || !Number.isFinite(Date.parse(task.due)))
+  if (task.due && !Number.isFinite(Date.parse(task.due)))
     throw new Error("أضف موعدًا صحيحًا أولًا");
   const state = await pushCall<PushState>({ action: "get" });
   if (
-    state.preferences.timezone !==
-    Intl.DateTimeFormat().resolvedOptions().timeZone
+    create &&
+    !options.configure &&
+    (!state.preferences.enabled || !state.preferences.due)
   )
-    throw new Error(
-      "توقيت جهازك مختلف عن توقيت التذكيرات؛ وحّد المنطقة الزمنية في إعدادات الإشعارات أولًا",
-    );
-  if (create && (!state.preferences.enabled || !state.preferences.due))
-    throw new Error(
-      "فعّل تذكيرات مواعيد المهام من إعدادات الإشعارات على الهاتف أولًا",
-    );
+    throw new Error("فعّل تذكيرات مواعيد المهام من إعدادات الإشعارات أولًا");
   const reference = task.reminderProjectId
     ? doc(db, "users", uid, "projects", task.reminderProjectId)
     : doc(collection(db, "users", uid, "projects"));
-  const local = toLocalInput(task.due);
+  const local = task.due
+    ? reminderInput(task.due, state.preferences.timezone)
+    : "";
+  const settings = state.cards?.["personal__" + reference.id];
+  const explicit = !!(settings?.schedule || settings?.remindAt);
   // Pause delivery while updating the linked card, then publish its exact local date after preferences succeed.
   let missing = false;
   const firstMutation = createClientId(),
@@ -63,7 +63,12 @@ export async function syncReminder(
       missing = true;
       return;
     }
-    const previous = current.data();
+    const raw = current.data();
+    // Older server-created cards persisted their path ID as a document field.
+    // It is not a permitted project field: normalize it at the write boundary.
+    const previous =
+      raw &&
+      Object.fromEntries(Object.entries(raw).filter(([key]) => key !== "id"));
     transaction.set(reference, {
       ...(previous || {}),
       ...reminderCardFields(task, previous, Date.now()),
@@ -84,14 +89,21 @@ export async function syncReminder(
     delete unlinked.reminderProjectId;
     return unlinked;
   }
-  await pushCall({
-    action: "card",
-    projectId: reference.id,
-    groupId: "",
-    disabled: task.done,
-    weekly: false,
-    time: local.slice(11),
-  });
+  if (!explicit && !(options.configure && settings))
+    await pushCall({
+      action: "card",
+      projectId: reference.id,
+      groupId: "",
+      disabled: options.configure ? true : task.done,
+      weekly: settings?.weekly ?? false,
+      time: local.slice(11),
+      ...(state.settingsVersions?.["personal__" + reference.id]
+        ? {
+            settingsVersion:
+              state.settingsVersions["personal__" + reference.id],
+          }
+        : {}),
+    });
   await runTransaction(db, async (transaction) => {
     if (auth?.currentUser?.uid !== uid) throw new Error("انتهت جلسة الدخول");
     const current = await transaction.get(reference);
@@ -111,6 +123,7 @@ export async function syncReminder(
       updatedAt: serverTimestamp(),
     });
   });
+  if (explicit) await pushCall({ action: "sync" });
   window.dispatchEvent(new Event("push-preferences-changed"));
   return { ...task, reminderProjectId: reference.id };
 }

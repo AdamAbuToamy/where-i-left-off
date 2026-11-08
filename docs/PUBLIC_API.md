@@ -148,7 +148,7 @@ These operations use the existing Wilo Push queue, subscriptions and minute sche
 | `POST /projects/{id}/notification` | `projects:read reminders:write` | Request one immediate notification for an owned personal card. |
 | `GET /projects/{id}/notification` | `projects:read reminders:read` | Inspect immediate card dispatch state. |
 
-Confirm scopes in the downloadable OpenAPI contract. API keys cannot access group resources or another account's subscriptions. The UI preserves existing access to assigned group cards.
+Confirm scopes in the downloadable OpenAPI contract. API keys cannot access group resources or another account's subscriptions. The UI also supports personal explicit reminders for readable group cards; automatic defaults remain assignment-scoped.
 
 ### Exact and relative schedules
 
@@ -181,3 +181,18 @@ The cron runs once per minute; queue load and provider latency add delay. This i
 Create the assignment using the existing task API, then POST its notification route with `{"expectedRevision": CURRENT_REVISION}` and a stable Idempotency-Key. Wilo reads the title and course from owned data; clients cannot specify recipients, subscriptions or arbitrary text. One logical immediate event is allowed per resource, including retries with new keys. GET never sends. Next link the assignment using POST task reminder with a schedule, then GET reminder state to verify setup. Notifications require enabled account preferences and an enrolled device. Disabled preferences and quiet hours are respected.
 
 202 means durable pending/queued/deferred work, not phone delivery. Read status after a timeout. Queue-acknowledgement loss is recovered by the existing cron. An uncertain provider send is recorded as unknown and is not blindly resent; at-most-once dispatch avoids duplicate handset alerts but cannot guarantee delivery after a provider/network ambiguity. Immediate jobs expire after 24 hours. Do not issue a new logical notification to compensate without checking current state.
+
+
+## Per-key quiet-hours override (v1.4)
+
+In Settings → API Keys, the account owner can toggle **Allow quiet-hours override for immediate notifications** on an existing key without replacing its secret or changing scopes. Off by default for every key; rotation retains the old key's chosen policy. Authenticated account management only; Public API keys cannot update this permission. The UI shows the persisted policy alongside each key. Account notification preferences do not change.
+
+`POST /tasks/{id}/notification` and `POST /projects/{id}/notification` accept `bypassQuietHours` (boolean, default false). All existing scopes remain mandatory. With true, the key must have the additional permission; otherwise HTTP 403 `quiet-hours-override-forbidden`, without dispatch. Example body from OpenAPI:
+
+```json
+{"expectedRevision":3,"bypassQuietHours":true}
+```
+
+Use the normal Authorization and Idempotency-Key headers. Key permission is checked again during dispatch, including expiry/revocation; withdrawing it returns pending work to quiet-hours deferral. Neither account opt-out, card exclusion, subscription withdrawal nor phone OS restrictions can be bypassed. Scheduled reminders always retain quiet hours. Audit rows contain owner/key/operation/status, never message contents or the secret.
+
+For an already deferred event: GET its status first. An authorized request with true and a **new** Idempotency-Key can promote the same pending event immediately; its eventId and per-device duplicate ledger are retained. Do not modify a body under its old operation key (409). Processing events are not promoted mid-dispatch: poll and, if still deferred, retry the same promotion request. Completed/accepted events are never resent. A revoked/deleted key cannot authorize a future bypass. The API response exposes bypassQuietHours (stored event policy) and quietHoursOverrideEffective (currently valid permission); provider acceptance still does not prove phone arrival.

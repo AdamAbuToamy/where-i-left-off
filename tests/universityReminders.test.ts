@@ -116,3 +116,30 @@ it("does not resurrect a reminder card that the user deleted", async () => {
   expect(m.records.size).toBe(0);
   expect(m.push.mock.calls.some(([d]) => d.action === "card")).toBe(false);
 });
+
+it("synchronizing task edits preserves an explicit reminder and the account timezone", async () => {
+  m.records.set(task.reminderProjectId!, {
+    id: task.reminderProjectId,
+    name: "Imported task",
+    nextStep: "",
+    rank: 1,
+    revision: 0,
+  });
+  const schedule = {
+    mode: "absolute",
+    scheduledAt: "2026-11-15T09:00:00+02:00",
+    timeZone: "Asia/Jerusalem",
+  };
+  m.push.mockResolvedValue({
+    preferences: { enabled: true, due: false, timezone: "Asia/Jerusalem" },
+    cards: {
+      ["personal__" + task.reminderProjectId]: { schedule, disabled: false },
+    },
+  });
+  await syncReminder("alice", task);
+  expect(m.records.get(task.reminderProjectId!)?.id).toBeUndefined();
+  expect(m.records.get(task.reminderProjectId!)?.dueDate).toBe("2026-11-10");
+  expect(
+    m.push.mock.calls.filter(([data]) => data.action === "card"),
+  ).toHaveLength(0);
+});

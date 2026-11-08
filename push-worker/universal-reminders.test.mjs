@@ -515,3 +515,68 @@ test("concurrent reuse of an operation key cannot mutate two different cards", a
     t.mock.timers.reset();
   }
 });
+
+test("group reminders are personal to a member even for another assignee; automatic defaults stay assignment-scoped", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    const group = "g".repeat(20);
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      assignedTo: "bob",
+      dueDate: "2026-11-08",
+    });
+    await s.DB.prepare("INSERT INTO scopes(uid,scope,next_at) VALUES(?,?,?)")
+      .bind("alice", group, NOW)
+      .run();
+    await s.worker.scheduled({}, s.env);
+    await s.drain();
+    assert.equal(s.sent.length, 0);
+    const request = (data) =>
+      s.worker.fetch(
+        new Request("https://worker.example/", {
+          method: "POST",
+          headers: {
+            origin: "https://app.example",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }),
+        s.env,
+      );
+    const before = await (
+      await request({ action: "card-status", projectId: ID, groupId: group })
+    ).json();
+    const response = await request({
+      action: "card",
+      projectId: ID,
+      groupId: group,
+      disabled: false,
+      weekly: false,
+      time: "09:00",
+      schedule: {
+        mode: "absolute",
+        scheduledAt: new Date(NOW + 120000).toISOString(),
+      },
+      settingsVersion: before.result.settingsVersion,
+    });
+    assert.equal(response.status, 200);
+    t.mock.timers.setTime(NOW + 120000);
+    await s.worker.scheduled({}, s.env);
+    await s.drain();
+    assert.equal(s.sent.length, 1);
+    assert.equal(s.sent[0].uid, "alice");
+    assert.equal(
+      (
+        await s.DB.prepare("SELECT COUNT(*) AS n FROM cards WHERE uid=?")
+          .bind("bob")
+          .first()
+      ).n,
+      0,
+    );
+  } finally {
+    s.DB.sqlite.close();
+    t.mock.timers.reset();
+  }
+});

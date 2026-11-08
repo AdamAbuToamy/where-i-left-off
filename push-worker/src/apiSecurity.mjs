@@ -51,7 +51,12 @@ export async function authenticateApi(request, env, now = Date.now()) {
   }
   if (!Array.isArray(scopes) || scopes.some((s) => !API_SCOPES.includes(s)))
     throw new ApiError("unauthenticated");
-  return { uid: row.uid, keyId: row.id, scopes: new Set(scopes) };
+  return {
+    uid: row.uid,
+    keyId: row.id,
+    quietHoursOverride: row.quiet_hours_override === 1,
+    scopes: new Set(scopes),
+  };
 }
 export function requireScopes(identity, ...scopes) {
   if (scopes.some((s) => !identity.scopes.has(s)))

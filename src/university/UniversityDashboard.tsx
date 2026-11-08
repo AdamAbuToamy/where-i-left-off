@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import StudyLocalized from "./StudyLocale";
 import {
-  GitBranch, BookOpen,
+  GitBranch,
+  BookOpen,
   CalendarDays,
   ChevronDown,
   Plus,
@@ -32,6 +33,7 @@ type Props = {
   buildSchedule: () => void;
   restore: (file: File) => void;
   editTask: (task: StudyTask) => void;
+  remindTask: (task: StudyTask) => void;
   editLesson: (lesson: Lesson) => void;
 };
 /** Read-only dashboard composition. Edits continue through the existing validated workspace. */
@@ -85,16 +87,26 @@ export default function UniversityDashboard(p: Props) {
           <div>
             <span className="uni-kicker">مساحتي الدراسية</span>
             <h2>
-              {landing
-                ? "الجامعة"
-                : p.tab === "schedule"
-                  ? "الجدول الأسبوعي"
-                  : p.tab === "map"
-                    ? "خريطة الكورسات"
-                    : <span dir="auto">{courseName(p.filter)}</span>}
+              {landing ? (
+                "الجامعة"
+              ) : p.tab === "schedule" ? (
+                "الجدول الأسبوعي"
+              ) : p.tab === "map" ? (
+                "خريطة الكورسات"
+              ) : (
+                <span dir="auto">{courseName(p.filter)}</span>
+              )}
             </h2>
           </div>
-          <div className="uni-header-actions"><button className="uni-map-button" aria-label="خريطة الكورسات" onClick={()=>p.navigate("map", "")}><GitBranch size={17}/><span>خريطة الكورسات</span></button>
+          <div className="uni-header-actions">
+            <button
+              className="uni-map-button"
+              aria-label="خريطة الكورسات"
+              onClick={() => p.navigate("map", "")}
+            >
+              <GitBranch size={17} />
+              <span>خريطة الكورسات</span>
+            </button>
             <details className="uni-menu" onClick={tools}>
               <summary>
                 <Plus size={18} />
@@ -216,25 +228,37 @@ export default function UniversityDashboard(p: Props) {
                 {tasks.length ? (
                   <div className="uni-deadline-list">
                     {tasks.slice(0, 3).map((task) => (
-                      <button
-                        className="uni-deadline"
-                        key={task.id}
-                        onClick={() => p.editTask(task)}
-                      >
-                        <span>
-                          <strong dir="auto">{task.title}</strong>
-                          <small dir="auto">{courseName(task.courseId)}</small>
-                        </span>
-                        <time
-                          className={
-                            task.due && Date.parse(task.due) < p.now
-                              ? "is-overdue"
-                              : ""
-                          }
+                      <div key={task.id} className="uni-deadline-row">
+                        <button
+                          className="uni-deadline"
+                          onClick={() => p.editTask(task)}
                         >
-                          {task.due ? date(Date.parse(task.due)) : "بدون موعد"}
-                        </time>
-                      </button>
+                          <span>
+                            <strong dir="auto">{task.title}</strong>
+                            <small dir="auto">
+                              {courseName(task.courseId)}
+                            </small>
+                          </span>
+                          <time
+                            className={
+                              task.due && Date.parse(task.due) < p.now
+                                ? "is-overdue"
+                                : ""
+                            }
+                          >
+                            {task.due
+                              ? date(Date.parse(task.due))
+                              : "بدون موعد"}
+                          </time>
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => p.remindTask(task)}
+                        >
+                          تعيين تذكير
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ) : (

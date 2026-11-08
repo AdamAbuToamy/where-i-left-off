@@ -21,7 +21,7 @@ import "./NotificationSettings.css";
 function Settings({ user, language }: { user: User; language: Language }) {
   const installed = useInstalledApp();
   const t = pushText[language],
-    { entries, ready } = useTaskOverview(user, "Personal");
+    { entries, ready } = useTaskOverview(user, "Personal", true);
   const [state, setState] = useState<PushState | null>(null),
     [busy, setBusy] = useState(false),
     [connected, setConnected] = useState(false),
