@@ -29,7 +29,7 @@ export default function ArrivalScene({
       if (reduced.matches) done.current();
     };
     reduced.addEventListener("change", reduce);
-    const timer = setTimeout(() => done.current(), 1900);
+    const timer = setTimeout(() => done.current(), 3400);
     return () => {
       clearTimeout(timer);
       reduced.removeEventListener("change", reduce);
@@ -68,8 +68,11 @@ export default function ArrivalScene({
       <div className="entry-shutter entry-right" aria-hidden="true" />
       <div className="entry-rail" aria-hidden="true" />
       <div className="entry-brand" aria-hidden="true">
-        <strong>WILO</strong>
-        <span>WHERE I LEFT OFF</span>
+        <strong dir="ltr">
+          <span className="entry-word">Where</span>{" "}
+          <span className="entry-word">I Left</span>{" "}
+          <span className="entry-word">Off</span>
+        </strong>
       </div>
       <button ref={skip} type="button" onClick={() => done.current()}>
         {language === "ar"

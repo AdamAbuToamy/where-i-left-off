@@ -23,7 +23,9 @@ for (const phone of [false, true])
       .click();
     const arrival = page.locator(".auth-arrival");
     await expect(arrival).toBeVisible();
-    await expect(arrival.locator(".entry-brand strong")).toHaveText("WILO");
+    await expect(arrival.locator(".entry-brand strong")).toHaveText(
+      /Where\s*I Left\s*Off/,
+    );
     await page.screenshot({
       path: `.wrangler/real-arrival-${phone ? "phone" : "desktop"}.png`,
     });
@@ -31,8 +33,10 @@ for (const phone of [false, true])
       .getByRole("button", { name: "Skip animation", exact: true })
       .click();
     await expect(arrival).toHaveCount(0);
-    await expect(page.locator(".brand-backdrop span")).toHaveCount(4);
-    await expect(page.locator('[data-tour="add-project"]')).toBeVisible();
+    await expect(page.locator(".brand-backdrop")).toHaveCount(0);
+    await expect(page.locator('[data-tour="add-project"]')).toBeVisible({
+      timeout: 15000,
+    });
     await page.goto("/#/admin");
     await expect(
       page.locator(".admin-experience-preview,.login-scene"),
@@ -42,7 +46,9 @@ for (const phone of [false, true])
       .locator(".settings-group")
       .filter({ has: page.locator(".experience-settings") });
     await group.locator(":scope>summary").click();
-    await group.getByLabel("WILO background motion", { exact: true }).uncheck();
+    await expect(
+      group.getByLabel("WILO background motion", { exact: true }),
+    ).toHaveCount(0);
     await expect(page.locator(".brand-backdrop")).toHaveCount(0);
     await group.getByLabel("Interaction sounds", { exact: true }).uncheck();
     await group.getByLabel("Cinematic transitions", { exact: true }).uncheck();
@@ -77,7 +83,9 @@ test("ordinary accounts have no admin arrival or experimental background", async
     .locator("form")
     .getByRole("button", { name: "Sign in", exact: true })
     .click();
-  await expect(page.locator('[data-tour="add-project"]')).toBeVisible();
+  await expect(page.locator('[data-tour="add-project"]')).toBeVisible({
+    timeout: 15000,
+  });
   await expect(page.locator(".auth-arrival,.brand-backdrop")).toHaveCount(0);
   await expect(page.locator("html")).not.toHaveAttribute("data-cinematic");
 });

@@ -108,14 +108,6 @@ export default function CinematicExperience({
   }, [allowed, preference.sound]);
   return (
     <>
-      {allowed && preference.ambient && (
-        <div className="brand-backdrop" aria-hidden="true">
-          <span>WILO</span>
-          <span>Where I Left Off</span>
-          <span>WILO</span>
-          <span>Where I Left Off</span>
-        </div>
-      )}
       {allowed && arrival && preference.motion && (
         <ArrivalScene
           language={language}

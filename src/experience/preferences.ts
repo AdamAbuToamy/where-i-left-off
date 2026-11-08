@@ -1,7 +1,6 @@
 export type ExperiencePreferences = {
   sound: boolean;
   motion: boolean;
-  ambient: boolean;
 };
 export const experienceEvent = "wilo-experience-preferences";
 const key = (uid: string) => `wilo-experience:v1:${uid}`;
@@ -11,10 +10,9 @@ export function readExperience(uid: string): ExperiencePreferences {
     return {
       sound: value?.sound !== false,
       motion: value?.motion !== false,
-      ambient: value?.ambient !== false,
     };
   } catch {
-    return { sound: true, motion: true, ambient: true };
+    return { sound: true, motion: true };
   }
 }
 export function saveExperience(uid: string, value: ExperiencePreferences) {
