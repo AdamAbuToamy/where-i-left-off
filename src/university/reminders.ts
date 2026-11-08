@@ -1,6 +1,7 @@
-import {cardHistoryFields} from "../productivity/cardHistory";
-import {normalizedProject} from "../lib/workspaceModel";
-import {createClientId} from "../lib/clientId";
+import { reminderCardFields } from "../../shared/universityReminder.mjs";
+import { cardHistoryFields } from "../productivity/cardHistory";
+import { normalizedProject } from "../lib/workspaceModel";
+import { createClientId } from "../lib/clientId";
 import {
   collection,
   doc,
@@ -52,7 +53,8 @@ export async function syncReminder(
   const local = toLocalInput(task.due);
   // Pause delivery while updating the linked card, then publish its exact local date after preferences succeed.
   let missing = false;
-  const firstMutation=createClientId(),finalMutation=createClientId();
+  const firstMutation = createClientId(),
+    finalMutation = createClientId();
   await runTransaction(db, async (transaction) => {
     missing = false;
     if (auth?.currentUser?.uid !== uid) throw new Error("انتهت جلسة الدخول");
@@ -64,17 +66,16 @@ export async function syncReminder(
     const previous = current.data();
     transaction.set(reference, {
       ...(previous || {}),
-      name: task.title.slice(0, 100),
-      nextStep: task.notes.slice(0, 1000),
-      projectUrl: task.url,
-      dueDate: "",
-      status: task.done ? "done" : "active",
-      kind: "deadline",
-      resourceType: "course",
-      rank: previous?.rank ?? Date.now(),
-      revision: current.exists() ? Number(previous?.revision || 0) + 1 : 0,
-      mutationId:firstMutation,
-      ...cardHistoryFields(previous,previous?normalizedProject(reference.id,previous):null,firstMutation,current.exists()?Number(previous?.revision||0)+1:0,'workspace',uid),
+      ...reminderCardFields(task, previous, Date.now()),
+      mutationId: firstMutation,
+      ...cardHistoryFields(
+        previous,
+        previous ? normalizedProject(reference.id, previous) : null,
+        firstMutation,
+        current.exists() ? Number(previous?.revision || 0) + 1 : 0,
+        "workspace",
+        uid,
+      ),
       updatedAt: serverTimestamp(),
     });
   });
@@ -96,8 +97,15 @@ export async function syncReminder(
     const current = await transaction.get(reference);
     if (!current.exists()) throw new Error("بطاقة التذكير حُذفت");
     transaction.update(reference, {
-      mutationId:finalMutation,
-      ...cardHistoryFields(current.data(),normalizedProject(reference.id,current.data()),finalMutation,Number(current.data().revision)+1,'workspace',uid),
+      mutationId: finalMutation,
+      ...cardHistoryFields(
+        current.data(),
+        normalizedProject(reference.id, current.data()),
+        finalMutation,
+        Number(current.data().revision) + 1,
+        "workspace",
+        uid,
+      ),
       dueDate: local.slice(0, 10),
       revision: Number(current.data().revision) + 1,
       updatedAt: serverTimestamp(),

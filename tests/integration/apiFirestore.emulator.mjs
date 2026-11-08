@@ -1,3 +1,4 @@
+import { createTaskReminderService } from "../../push-worker/src/apiTaskReminder.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createApiRepository } from "../../push-worker/src/apiFirestore.mjs";
@@ -133,4 +134,70 @@ test("concurrent create replays same receipt rather than duplicating writes", as
   ]);
   assert.equal(results[0].id, results[1].id);
   assert.equal((await s.read("courses")).items.length, 1);
+});
+
+test("real Firestore linking publishes exactly one native card and revision-safe task relation", async () => {
+  const uid = "link-" + crypto.randomUUID(),
+    s = service(uid),
+    course = await create(
+      s,
+      "courses",
+      { name: "Synthetic reminder course" },
+      "rest-reminder-course-001",
+    ),
+    task = await create(
+      s,
+      "tasks",
+      {
+        courseId: course.id,
+        title: "Synthetic linked assignment",
+        kind: "assignment",
+        due: "2026-12-01T12:00:00Z",
+      },
+      "rest-reminder-task-0001",
+    );
+  const settings = new Map(),
+    work = new Set(),
+    reminders = {
+      preferences: async () => ({
+        value: {
+          enabled: true,
+          due: true,
+          timezone: "Asia/Jerusalem",
+          leadMinutes: 15,
+          defaultTime: "09:00",
+          quiet: false,
+        },
+        enabledAt: 0,
+      }),
+      read: async (id) => settings.get(id) || null,
+      claim: async (id, value) => {
+        if (!settings.has(id)) settings.set(id, value);
+        return settings.get(id);
+      },
+      enqueue: async (id) => work.add(id),
+      complete: async (id) => work.delete(id),
+      wake: async () => {},
+      schedule: async (id) => ({
+        hasDevice: true,
+        nextCheckAt: Date.now(),
+        recoveryPending: work.has(id),
+      }),
+    };
+  const links = createTaskReminderService({
+      repository: repository(uid),
+      reminders,
+      ownerUid: uid,
+    }),
+    body = { expectedRevision: 0 };
+  const first = await links.link(task.id, body, "rest-link-reminder-0001");
+  assert.equal(first.scheduled, true);
+  const again = await links.link(task.id, body, "rest-link-reminder-0001");
+  assert.equal(again.projectId, first.projectId);
+  assert.equal((await s.read("projects")).items.length, 1);
+  assert.equal(
+    (await s.read("tasks")).items[0].reminderProjectId,
+    first.projectId,
+  );
+  assert.equal((await s.read("tasks")).items[0].revision, 1);
 });

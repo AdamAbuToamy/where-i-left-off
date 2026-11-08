@@ -1,3 +1,4 @@
+import {recoverApiReminderLinks} from './apiReminderRecovery.mjs';
 import {manageApiKeys} from "./apiKeys.mjs";
 import {ApiError} from "../../shared/universityApiPlan.mjs";
 import {createApiHandler} from "./apiEndpoint.mjs";
@@ -189,6 +190,8 @@ export function createWorker(overrides={}){
    }catch(error){if(isAssistant){const failure=assistantFailure(error,stage,requestId);console.warn('assistant.http.failed',{status:failure.status,...failure.body.diagnostic,code:failure.body.error});return new Response(JSON.stringify(failure.body),{status:failure.status,headers})}const status=error.message==='unauthenticated'?401:error.message==='account-unavailable'?403:400;console.warn('push.http.failed',{action:requestedAction,status,...diagnostic(error)});return new Response(JSON.stringify({error:status===401?'unauthenticated':/^ai-[a-z-]+$/.test(error.message)?error.message:'request-failed',...(error.message==='ai-incomplete-proposal'?{details:error.details}:{} )}),{status,headers})}
   },
   async scheduled(_controller,env){
+   if(env.PUBLIC_API_ENABLED==='true')try{await recoverApiReminderLinks(env)}catch{console.warn('api.reminder.recovery-pending')}
+
    if(env.PUBLIC_API_ENABLED==='true')try{await env.DB.prepare('DELETE FROM api_audit WHERE id IN (SELECT id FROM api_audit WHERE created_at<? ORDER BY created_at LIMIT 1000)').bind(Date.now()-30*DAY).run()}catch{console.warn('api.audit.cleanup-failed')}
 
    if(env.ASSISTANT_FREE_ONLY==='true')try{const cutoff=new Date(Date.now()-7*DAY).toISOString().slice(0,10);await env.DB.prepare('DELETE FROM ai_usage WHERE day<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM ai_budget WHERE day<?').bind(cutoff).run()}catch{console.warn('assistant.maintenance.failed')}

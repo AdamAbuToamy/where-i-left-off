@@ -7,7 +7,7 @@ const require = createRequire(
 const { build } = require("esbuild");
 const result = await build({
   stdin: {
-    contents: `export {planAssistantChanges,blankAssistantData} from './src/assistant/actions'; export {parsePlanBackup} from './src/university/planImport'; export {parsePlanningState} from './src/planning/domain';`,
+    contents: `export {planAssistantChanges,blankAssistantData} from './src/assistant/actions'; export {parsePlanBackup} from './src/university/planImport'; export {parsePlanningState} from './src/planning/domain'; export {ProjectEntity} from './src/lib/projectEntity';`,
     resolveDir: fileURLToPath(new URL("..", import.meta.url)),
   },
   bundle: true,

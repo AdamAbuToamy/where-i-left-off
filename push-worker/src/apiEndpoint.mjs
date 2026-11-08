@@ -1,3 +1,5 @@
+import { createTaskReminderService } from "./apiTaskReminder.mjs";
+import { createApiReminderStore } from "./apiReminderStore.mjs";
 import { ApiError, validId, object } from "../../shared/universityApiPlan.mjs";
 import {
   authenticateApi,
@@ -40,6 +42,9 @@ const codes = {
   "duplicate-resource": 409,
   "unsupported-media-type": 415,
   "https-required": 400,
+  "reminder-link-conflict": 409,
+  "reminder-preferences-disabled": 409,
+  "task-not-remindable": 409,
 };
 const resources = {
   courses: "courses",
@@ -60,6 +65,80 @@ export function createApiHandler(overrides = {}) {
       if (url.protocol !== "https:") throw new ApiError("https-required");
       identity = await authenticateApi(request, env);
       await allowApiRequest(env, identity.uid);
+      const taskReminder = url.pathname.match(
+        /^\/api\/v1\/tasks\/([A-Za-z0-9_-]{1,128})\/reminder$/,
+      );
+      if (taskReminder) {
+        const read = request.method === "GET";
+        operation = "task-reminder." + (read ? "read" : "link");
+        if (!["GET", "POST"].includes(request.method) || url.search)
+          throw new ApiError("not-found");
+        requireScopes(
+          identity,
+          ...(read
+            ? ["tasks:read", "reminders:read"]
+            : [
+                "courses:read",
+                "tasks:read",
+                "tasks:write",
+                "reminders:read",
+                "reminders:write",
+              ]),
+        );
+        await (overrides.assertAccount || assertApiAccount)(env, identity.uid);
+        const repository = (overrides.repository || createApiRepository)(
+          env,
+          identity.uid,
+        );
+        const reminders = (overrides.reminders || createApiReminderStore)(
+          env,
+          identity.uid,
+        );
+        const service = createTaskReminderService({
+          repository,
+          reminders,
+          ownerUid: identity.uid,
+          ...overrides.serviceOptions,
+        });
+        let body, key;
+        if (!read) {
+          if (
+            request.headers.get("content-type")?.split(";")[0].trim() !==
+            "application/json"
+          )
+            throw new ApiError("unsupported-media-type");
+          key = request.headers.get("idempotency-key");
+          if (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$/.test(key || ""))
+            throw new ApiError("idempotency-key-required");
+          body = await readBoundedJson(request, 30000);
+        }
+        await auditApi(
+          env,
+          identity.uid,
+          identity.keyId,
+          operation + ".accepted",
+          100,
+        );
+        const result = read
+          ? await service.status(taskReminder[1])
+          : await service.link(taskReminder[1], body, key);
+        const status =
+          result.status === "pending"
+            ? 202
+            : result.status === "blocked"
+              ? 409
+              : 200;
+        await env.DB.prepare(
+          "UPDATE user_api_keys SET last_used_at=? WHERE id=? AND uid=?",
+        )
+          .bind(Date.now(), identity.keyId, identity.uid)
+          .run();
+        await auditApi(env, identity.uid, identity.keyId, operation, status);
+        return new Response(JSON.stringify({ result, requestId }), {
+          status,
+          headers,
+        });
+      }
       const match = url.pathname.match(
         /^\/api\/v1\/(courses|tasks|schedule|projects|sections|boards|reminders)(?:\/([A-Za-z0-9_-]{1,128}))?$/,
       );

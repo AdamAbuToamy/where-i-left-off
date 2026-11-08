@@ -468,6 +468,7 @@ function parsePlanningState(value) {
   return state;
 }
 export {
+  ProjectEntity,
   blankAssistantData,
   parsePlanBackup,
   parsePlanningState,
