@@ -3,13 +3,15 @@ import type { Course, StudyTask } from './model';
 import StudyLocalized from './StudyLocale';
 
 const PAGE_SIZE = 6;
-export default function CourseNavigator({courses, tasks, selectedId, filter, onSelect, courseColor, onAdd}: {
+export default function CourseNavigator({courses, tasks, selectedId, filter, onSelect, courseColor, onAdd, searchQuery, hideSearch}: {
+    searchQuery?: string; hideSearch?: boolean;
     courses: Course[]; tasks: StudyTask[]; selectedId: string; filter: string;
     onSelect: (id: string) => void; courseColor: (id: string) => string; onAdd: () => void;
 }) {
     // Firestore snapshots can reorder records; keep page membership stable as sync completes.
     const ordered = [...courses].sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}) || a.id.localeCompare(b.id));
-    const [search, setSearch] = useState('');
+    const [internalSearch, setSearch] = useState('');
+    const search=searchQuery??internalSearch;
     const [page, setPage] = useState(() => Math.floor(Math.max(0, ordered.findIndex(c => c.id === selectedId)) / PAGE_SIZE));
     const matches = ordered.filter(c => c.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
     const pages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
@@ -17,8 +19,8 @@ export default function CourseNavigator({courses, tasks, selectedId, filter, onS
     return <StudyLocalized><aside className="study-course-browser">
         <h3>كورساتي</h3>
         {!courses.length ? <div className="study-empty"><strong>كورساتك تبدأ هنا</strong><p>أضف كورسًا، أو الصق أسماء كورسات الفصل دفعة واحدة.</p><button className="secondary-button" onClick={onAdd}>لصق قائمة كورسات</button></div> : <>
-            <label className="study-course-search">بحث عن كورس<input type="search" value={search} onChange={e => {setSearch(e.target.value); setPage(0);}}/></label>
-            <button className="study-all-courses" aria-pressed={!filter} onClick={() => onSelect('')}>كل الكورسات</button>
+            {!hideSearch&&<label className="study-course-search">بحث عن كورس<input type="search" value={search} onChange={e => {setSearch(e.target.value); setPage(0);}}/></label>}
+            <button className="study-all-courses" aria-pressed={!filter} onClick={() => onSelect('')}>{hideSearch?"العودة للكورسات":"كل الكورسات"}</button>
             <div className="study-course-choices">
                 {matches.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE).map(c => <button key={c.id} className="study-course-choice" aria-pressed={selectedId === c.id} onClick={() => onSelect(c.id)} style={{borderInlineStartColor: courseColor(c.id)}}>
                     <span className="study-course-choice-title"><strong dir="auto">{c.name}</strong>{selectedId === c.id && <span className="study-current-course">الكورس المفتوح</span>}</span>

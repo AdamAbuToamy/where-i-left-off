@@ -96,6 +96,11 @@ for (const phone of [false, true])
     await page.locator(".study-dialog header button").click();
     await page.locator(".uni-course-card").click();
     await expect(page.locator(".study-trial-panel")).toBeVisible();
+    await expect(page.locator(".study-trial-next")).toHaveCount(0);
+    await expect(page.locator(".study-workspace-search input")).toBeVisible();
+    await page.locator(".study-workspace-search input").fill("هندسة");
+    await expect(page.locator(".study-controls")).toBeEnabled({timeout:15000});
+    await page.screenshot({animations:"disabled",path: `.wrangler/course-workspace-${phone ? "phone" : "desktop"}.png`,fullPage:true});
     await page.locator(".uni-navigation button").first().click();
     await expect(page.locator(".uni-dashboard-focus")).toBeVisible();
     await page.locator(".uni-navigation button").nth(1).click();

@@ -49,6 +49,7 @@ function setPanel(panel: Panel) {
   location.hash = "/university?" + params.toString();
 }
 type Props = {
+  focused?: boolean;
   state: UniversityState;
   selected?: Course;
   filter: string;
@@ -82,6 +83,8 @@ export default function UniversityTrial(props: Props) {
     toggleTopic,
     renderTasks,
   } = props;
+  const focused = props.focused === true;
+  const [courseQuery,setCourseQuery] = useState("");
   const phone = usePhoneLayout(),
     { kitchenStudy } = useDesignPreview(),
     mobileStudy = phone && kitchenStudy;
@@ -120,10 +123,33 @@ export default function UniversityTrial(props: Props) {
   const coursesById = useMemo(() => new Map(state.courses.map(course => [course.id, course])), [state.courses]);
   const name = (id: string) =>
     coursesById.get(id)?.name || "";
+  const navigation = (              <nav
+                className="study-trial-tabs"
+                aria-label={translateStudyText("تفاصيل الكورس", language)}
+              >
+                {(Object.keys(panels) as Panel[]).map((key) => {
+                  const Icon = icons[key];
+                  return (
+                    <button
+                      key={key}
+                      aria-pressed={panel === key}
+                      onClick={() => {
+                        setPage(0);
+                        setPanel(key);
+                      }}
+                    >
+                      <Icon size={16} />
+                      <span>{panels[key]}</span>
+                    </button>
+                  );
+                })}
+              </nav>);
   return (
     <StudyLocalized>
       <MotionConfig reducedMotion={reduced ? "always" : "user"}>
-        <div className="study-layout study-trial-layout">
+        <div className={"study-layout study-trial-layout"+(focused?" study-course-workspace":"")}>
+          {focused && <label className="study-workspace-search"><Search size={19}/><input type="search" aria-label={translateStudyText("بحث عن كورس",language)} placeholder={translateStudyText("بحث عن كورس",language)} value={courseQuery} onChange={e=>setCourseQuery(e.target.value)}/></label>}
+          {focused && navigation}
           {mobileStudy && (
             <div className="study-phone-course-navigation">
               {selected || allTasks ? (
@@ -164,7 +190,9 @@ export default function UniversityTrial(props: Props) {
           {(!mobileStudy || (!selected && !allTasks)) && (
             <>
               <CourseNavigator
-                key={filter}
+                key={filter+(focused?courseQuery:"")}
+                searchQuery={focused?courseQuery:undefined}
+                hideSearch={focused}
                 courses={state.courses}
                 tasks={state.tasks}
                 selectedId={selected?.id || ""}
@@ -222,27 +250,7 @@ export default function UniversityTrial(props: Props) {
                   </div>
                 )}
               </header>
-              <nav
-                className="study-trial-tabs"
-                aria-label={translateStudyText("تفاصيل الكورس", language)}
-              >
-                {(Object.keys(panels) as Panel[]).map((key) => {
-                  const Icon = icons[key];
-                  return (
-                    <button
-                      key={key}
-                      aria-pressed={panel === key}
-                      onClick={() => {
-                        setPage(0);
-                        setPanel(key);
-                      }}
-                    >
-                      <Icon size={16} />
-                      <span>{panels[key]}</span>
-                    </button>
-                  );
-                })}
-              </nav>
+              {!focused && navigation}
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={panel + "/" + filter}
@@ -277,7 +285,7 @@ export default function UniversityTrial(props: Props) {
                           <strong>{late.length}</strong>مهام متأخرة
                         </button>
                       </div>
-                      {next && (
+                      {!focused && next && (
                         <section className="study-trial-next">
                           <CalendarDays size={18} />
                           <div>
@@ -298,7 +306,7 @@ export default function UniversityTrial(props: Props) {
                           </div>
                         </section>
                       )}
-                      {selected?.notes && (
+                      {!focused && selected?.notes && (
                         <details
                           className="study-trial-notes"
                           open={selected.notes.length < 500}
