@@ -1,0 +1,9 @@
+# University dashboard — 2026-11-08
+
+Verified-admin presentation trial: replaces the University landing page with the next class, three priority open tasks and course cards. Additional tasks are disclosed on demand; course search and progressive six-card display avoid an unbounded initial grid. Add actions share one menu; import, backup, map and schedule-building actions share a Tools menu. Existing course panels, editors, validation, synchronization, reminders and import confirmation remain the mutation boundaries. Ordinary accounts retain the prior presentation.
+
+The duplicated legacy hero, summary and navigation are not rendered for the admin dashboard. Desktop and phone layouts use the same priority order; tasks retain distinct dark outlines. Menus dismiss outside or on Escape. No provider/backend/schema changes and no new dependencies.
+
+Evidence: 19 focused tests passed (University persistence/editor behavior, translated admin dashboard and existing priority selectors). Two Chromium Firebase-emulator journeys passed in 9.7 seconds, covering empty state, confirmed import, next class/tasks, viewport overflow, task editor, course details and schedule navigation on 1440px and 390px widths. Both screenshots were inspected. Initial checks exposed duplicate phone legacy content and a browser assertion expecting the desktop course navigator on phone; these were corrected. Existing legacy presentation tests now run as an ordinary user, while the admin dashboard has dedicated journeys.
+
+TypeScript, lint excluding transient Playwright artifacts, architecture, production build and credential checks accompany this release. Existing bundle-size warning remains. Full rules/backend/full-unit suites, live Google/provider checks and physical device tests were not performed. The requested university knowledge file is absent; no claim was made to reading it. Release wilo-university-dashboard-20261108; Hosting only, verified-admin visual trial.

@@ -20,7 +20,7 @@ import UniversityPage from "../src/university/UniversityPage";
 import { ADMIN_EMAIL } from "../src/lib/admin";
 const user = {
     uid: "pilot",
-    email: ADMIN_EMAIL,
+    email: "ordinary@example.test",
     emailVerified: true,
 } as User;
 let root: Root, container: HTMLDivElement;
@@ -177,7 +177,7 @@ it('shows no Arabic interface text on an empty English or Hebrew University page
 it('paginates courses, finds the last course and marks its open details without translating notes', async () => {
     const courses = Array.from({length:14}, (_,i) => ({id:`course-${i}`, name:`Course ${i + 1}`, notes:`Notes ${i + 1} https://example.test/course/${i + 1}`, url:'', requires:[], x:0, y:0}));
     localStorage.setItem('wilo-university-v1/demo/pilot',JSON.stringify({version:1,courses,tasks:[],lessons:[],importedAt:""}));
-    await act(async () => root.unmount());root=createRoot(container);await render();
+    await act(async () => root.unmount());root=createRoot(container);await render({...user,email:"ordinary@example.test"});
     expect(container.querySelectorAll('.study-course-choice')).toHaveLength(6);
     await click('التالي');expect(container.querySelector('.study-course-pages')?.textContent).toContain('2 / 3');
     await click('التالي');expect(container.querySelectorAll('.study-course-choice')).toHaveLength(2);
@@ -240,3 +240,5 @@ it('keeps course context in the heading and accessible task label without repeat
  expect(container.querySelector('.study-task-top')?.textContent).not.toContain('Networks');
  expect(container.querySelector('.study-task')?.getAttribute('aria-label')).toContain('Networks');
 });
+
+it("localizes the admin dashboard without Arabic interface leakage",async()=>{await render({...user,email:ADMIN_EMAIL},"en");expect(container.querySelector(".uni-dashboard")).toBeTruthy();expect(container.textContent).not.toMatch(/[\u0600-\u06ff]/);});

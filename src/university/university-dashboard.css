@@ -1,0 +1,417 @@
+.study-dashboard-preview .study-hero,
+.study-dashboard-preview .study-controls > .study-overview-disclosure,
+.study-dashboard-preview .study-controls > .study-tabs,
+.study-dashboard-preview .study-controls > .study-extra-settings {
+  display: none;
+}
+.study-dashboard-preview .study-controls > .study-schedule-options {
+  margin: 20px 0;
+}
+.study-dashboard-preview:has(.uni-dashboard-focus)
+  .study-controls
+  > .study-schedule-options {
+  display: none;
+}
+.study-page .uni-dashboard {
+  color: var(--site-text, #25332e);
+  text-align: start;
+}
+.study-page .uni-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.study-page .uni-dashboard-header h2 {
+  font-size: clamp(26px, 3vw, 38px);
+  margin: 5px 0 0;
+  line-height: 1.3;
+}
+.study-page .uni-kicker {
+  font-size: 12px;
+  color: var(--site-muted, #63716a);
+}
+.study-page .uni-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.study-page .uni-menu {
+  position: relative;
+}
+.study-page .uni-menu > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: var(--site-primary, #385c4b);
+  color: white;
+  border-radius: 11px;
+  padding: 12px 18px;
+  cursor: pointer;
+  min-height: 44px;
+}
+.study-page .uni-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.study-page .uni-tools > summary {
+  color: inherit;
+  background: var(--site-surface, #fffef9);
+  border: 1px solid #71837340;
+}
+.study-page .uni-menu > div {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  width: 240px;
+  max-width: calc(100vw - 40px);
+  padding: 8px;
+  display: grid;
+  gap: 3px;
+  background: var(--site-surface, #fffef9);
+  border: 1px solid #71837340;
+  border-radius: 14px;
+  box-shadow: 0 12px 36px #25332e20;
+  z-index: 30;
+}
+.study-page .uni-menu:not([open]) > div {
+  display: none;
+}
+.study-page .uni-menu > div > :is(button, label, a) {
+  display: block;
+  width: 100%;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  font: inherit;
+  font-size: 14px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 44px;
+}
+.study-page .uni-menu > div > :hover {
+  background: #71837313;
+}
+.study-page .uni-menu input[type="file"] {
+  max-width: 100%;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.study-page .uni-navigation {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  border-bottom: 1px solid #71837335;
+  margin-bottom: 28px;
+  overflow: auto;
+}
+.study-page .uni-navigation > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 13px 0;
+  color: inherit;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  min-height: 44px;
+  font: inherit;
+}
+.study-page .uni-navigation > button[aria-pressed="true"] {
+  border-bottom-color: var(--site-primary, #385c4b);
+  font-weight: 700;
+}
+.study-page .uni-navigation > span {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.study-page .uni-dashboard-focus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+  gap: 24px;
+  margin-bottom: 36px;
+}
+.study-page .uni-next-lesson,
+.study-page .uni-deadlines {
+  border: 1px solid #71837335;
+  border-radius: 20px;
+  padding: 26px;
+  min-width: 0;
+  background: var(--site-surface, #fffef9);
+}
+.study-page .uni-next-lesson {
+  background:
+    linear-gradient(140deg, #385c4b12, transparent),
+    var(--site-surface, #fffef9);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.study-page .uni-section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.study-page .uni-dashboard h3 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 650;
+}
+.study-page .uni-next-lesson h4 {
+  font-size: clamp(21px, 2vw, 28px);
+  line-height: 1.5;
+  margin: 22px 0 8px;
+  overflow-wrap: anywhere;
+}
+.study-page .uni-next-lesson p {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.study-page .uni-lesson-time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  margin: 6px 0 24px;
+  font-size: 14px;
+}
+.study-page .uni-lesson-time b {
+  font-size: 21px;
+  letter-spacing: -0.5px;
+}
+.study-page .uni-next-lesson > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 10px 0;
+  background: none;
+  border: 0;
+  color: var(--site-primary, #385c4b);
+  font-weight: 650;
+  min-height: 44px;
+}
+.study-page .uni-deadlines > header,
+.study-page .uni-courses > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.study-page .uni-deadlines > header > span,
+.study-page .uni-courses header span {
+  font-size: 12px;
+  color: var(--site-muted, #63716a);
+}
+.study-page .uni-deadline-list {
+  display: grid;
+  gap: 10px;
+}
+.study-page .uni-deadline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: transparent;
+  color: inherit;
+  border: 1.5px solid #25332e;
+  border-radius: 12px;
+  padding: 14px;
+  text-align: start;
+  min-height: 78px;
+}
+.study-page .uni-deadline > span {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.study-page .uni-deadline strong {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.study-page .uni-deadline small {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.study-page .uni-deadline time {
+  font-size: 12px;
+  flex-shrink: 0;
+  max-width: 38%;
+}
+.study-page .uni-deadline .is-overdue {
+  color: #aa4c2a;
+  font-weight: 700;
+}
+.study-page .uni-other-tasks {
+  margin-top: 15px;
+  font-size: 13px;
+}
+.study-page .uni-other-tasks summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.study-page .uni-other-tasks button {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  text-align: start;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #71837335;
+  color: inherit;
+  padding: 12px 0;
+  min-height: 44px;
+}
+.study-page .uni-courses > header > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.study-page .uni-course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.study-page .uni-course-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  min-height: 176px;
+  border: 1px solid #71837335;
+  border-inline-start: 4px solid;
+  border-radius: 14px;
+  background: var(--site-surface, #fffef9);
+  color: inherit;
+  text-align: start;
+  padding: 22px;
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+.study-page .uni-course-card h4 {
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.study-page .uni-course-card > span,
+.study-page .uni-course-card > small {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.study-page .uni-course-arrow {
+  position: absolute;
+  inset-inline-end: 20px;
+  bottom: 20px;
+  opacity: 0.6;
+}
+@media (hover: hover) {
+  .study-page .uni-course-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px #25332e0c;
+  }
+}
+.study-page .uni-course-empty {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--site-surface, #fffef9);
+  border: 1px dashed #71837355;
+  border-radius: 16px;
+}
+.study-page .uni-empty {
+  font-size: 14px;
+  padding: 25px 0;
+  color: var(--site-muted, #63716a);
+}
+@media (max-width: 760px) {
+  .study-page .uni-dashboard-header {
+    gap: 14px;
+    margin-bottom: 16px;
+    align-items: flex-end;
+  }
+  .study-page .uni-header-actions {
+    gap: 7px;
+  }
+  .study-page .uni-menu > summary {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .study-page .uni-tools > summary {
+    padding: 10px;
+  }
+  .study-page .uni-dashboard-focus {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 26px;
+  }
+  .study-page .uni-navigation {
+    gap: 22px;
+    margin-bottom: 20px;
+  }
+  .study-page .uni-navigation > button {
+    font-size: 14px;
+  }
+  .study-page .uni-next-lesson,
+  .study-page .uni-deadlines {
+    padding: 20px;
+    border-radius: 16px;
+  }
+  .study-page .uni-next-lesson h4 {
+    margin-top: 16px;
+    font-size: 23px;
+  }
+  .study-page .uni-lesson-time {
+    margin-bottom: 12px;
+  }
+  .study-page .uni-course-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .study-page .uni-course-card {
+    padding: 16px;
+    min-height: 170px;
+  }
+  .study-page .uni-course-card h4 {
+    font-size: 16px;
+  }
+  .study-page .uni-course-card > small {
+    padding-bottom: 16px;
+  }
+  .study-page .uni-course-arrow {
+    bottom: 12px;
+    inset-inline-end: 12px;
+  }
+  .study-page .uni-deadline {
+    gap: 10px;
+    padding: 12px;
+  }
+  .study-page .uni-deadlines > header {
+    gap: 8px;
+  }
+  .study-page .uni-deadlines > header > span {
+    font-size: 11px;
+  }
+  .study-page .uni-dashboard-header h2 {
+    font-size: 25px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .study-page .uni-course-card {
+    transition: none;
+  }
+}
+
+.study-page .uni-course-search{width:100%;margin-bottom:16px;min-height:44px;border:1px solid #71837340;border-radius:10px;background:var(--site-surface,#fffef9);padding:10px 14px;font:inherit}
+.study-page .uni-show-more{margin:16px auto;display:flex;background:transparent;min-height:44px}

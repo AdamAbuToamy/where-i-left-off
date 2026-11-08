@@ -1,3 +1,5 @@
+import UniversityDashboard from "./UniversityDashboard";
+import { isAdmin } from "../lib/admin";
 import {usePhoneLayout} from "../components/usePhoneSurface";
 import {useDesignPreview} from "../components/designPreviewContext";
 import {readPlanBackup} from './readPlanBackup';
@@ -85,6 +87,7 @@ function Workspace({ user }: {
 }) {
     const language=useStudyLanguage();
     const phone=usePhoneLayout(), {kitchenStudy}=useDesignPreview(), mobileStudy=phone&&kitchenStudy;
+    const dashboard = isAdmin(user.email, user.emailVerified);
     const planTools=useRef<HTMLDetailsElement>(null);
     const [capture, setCapture] = useState(() => parseStudyCapture(location.hash));
     useEffect(() => {
@@ -312,9 +315,10 @@ function Workspace({ user }: {
                     </button>
                   </footer>
                 </article>))}</>}
-    return <StudyLocalized>{(<section className={"study-page study-university-trial"+(mobileStudy?" study-phone-pages":"")} dir="rtl" aria-label="صفحة الجامعة">
+    return <StudyLocalized>{(<section className={"study-page study-university-trial"+(mobileStudy?" study-phone-pages":"")+(dashboard?" study-dashboard-preview":"")} dir="rtl" aria-label="صفحة الجامعة">
       <fieldset className="study-controls" disabled={busy}>
-        <header className="study-hero">
+        {dashboard && <UniversityDashboard state={state} now={now} tab={tab} filter={filter} busy={busy} navigate={updateUniversityRoute} addCourse={newCourse} addTask={newTask} addLesson={newLesson} importPlan={()=>setBatchOpen(true)} exportPlan={()=>download("wilo-study-plan.json",planBackup(state))} editTask={task=>setEditing({kind:"task",value:task})} editLesson={lesson=>setEditing({kind:"lesson",value:lesson})} buildSchedule={()=>setScheduleEdit(latest.current)} restore={file=>void run(async()=>setPreview(await readPlanBackup(file)))}/> }
+        {!dashboard&&<><header className="study-hero">
           <div>
             <span className="study-eyebrow">مساحتي الدراسية</span>
             <h2>خطة الفصل</h2>
@@ -381,6 +385,7 @@ function Workspace({ user }: {
           </article>
         </div></details>
 </>}
+        </>}
         <div className="study-storage" role="status" hidden={!cloud.status.error&&!cloud.status.pending} data-sync-state={cloud.status.error?'error':!cloud.status.ready?'connecting':cloud.status.pending?'pending':'ready'}>
           {cloud.status.error || (cloud.status.pending ? `محفوظة على الجهاز · ${cloud.status.pending} تغييرات تنتظر المزامنة` : null)}
           {!!cloud.status.error&&<button onClick={cloud.retry}>إعادة المزامنة</button>}
@@ -393,7 +398,7 @@ function Workspace({ user }: {
             {mobileStudy?<details className="study-phone-notice"><summary>تم الحفظ — التفاصيل</summary><span role="status">{message}</span></details>:<span role="status">{message}</span>}
             <button type="button" aria-label="إغلاق الرسالة" onClick={() => setMessage("")}>×</button>
           </div>)}
-        <nav className="study-tabs" aria-label="عرض مساحة الجامعة">
+        {!dashboard&&<nav className="study-tabs" aria-label="عرض مساحة الجامعة">
           {([
             ["overview", "الكورسات والمهام"],
             ["schedule", "الجدول الأسبوعي"],
@@ -401,8 +406,8 @@ function Workspace({ user }: {
         ] as const).filter(([id])=>!mobileStudy||id!=="map").map(([id, title]) => (<button key={id} aria-label={title} aria-pressed={tab === id} onClick={() => updateUniversityRoute(id,filter)}>
               {id==='map'?<GitBranch size={17}/>:id==='schedule'?<CalendarDays size={17}/>:<GraduationCap size={17}/>}{mobileStudy?(id==='overview'?'كورساتي':id==='schedule'?'الجدول':'الخريطة'):title}{id==='map'&&<small>UML</small>}
             </button>))}
-        </nav>
-        <details className="study-schedule-options" open={!mobileStudy}><summary>خيارات الجامعة</summary>        <div className={"study-toolbar"+(mobileStudy&&tab==='overview'?" study-phone-overview-actions":"")}>
+        </nav>}
+        <details className="study-schedule-options" open={!mobileStudy&&!dashboard}><summary>خيارات الجامعة</summary>        <div className={"study-toolbar"+(mobileStudy&&tab==='overview'?" study-phone-overview-actions":"")}>
           {(tab!=='overview')&&<label>
             الكورس
             <ChoicePicker label={translateStudyText('الكورس',language)} value={filter} onChange={value=>updateUniversityRoute(tab,value)} options={[{value:'',label:translateStudyText('كل الكورسات',language)},...state.courses.map(course=>({value:course.id,label:course.name}))]}/>
@@ -418,7 +423,7 @@ function Workspace({ user }: {
           </div>
         </div>
         </details>
-        {tab==='overview'&&<Suspense fallback={<p role="status">…</p>}><UniversityTrial state={state} selected={selectedCourse} filter={filter} now={now} busy={busy} language={language} courseColor={courseColor} select={id=>updateUniversityRoute('overview',id)} addCourse={()=>setBatchOpen(true)} addTask={newTask} editCourse={course=>setEditing({kind:'course',value:course})} template={course=>setEditing({kind:'course',value:courseTemplate(course,state.courses.length,translateStudyText('— فصل جديد',language))})} toggleTopic={(course,id)=>void run(()=>commit({...latest.current,courses:latest.current.courses.map(item=>item.id===course.id?{...item,topics:(item.topics||[]).map(topic=>topic.id===id?{...topic,done:!topic.done}:topic)}:item)}))} renderTasks={renderTasks}/></Suspense>}
+        {tab==='overview'&&(!dashboard||!!filter)&&<Suspense fallback={<p role="status">…</p>}><UniversityTrial state={state} selected={selectedCourse} filter={filter} now={now} busy={busy} language={language} courseColor={courseColor} select={id=>updateUniversityRoute('overview',id)} addCourse={()=>setBatchOpen(true)} addTask={newTask} editCourse={course=>setEditing({kind:'course',value:course})} template={course=>setEditing({kind:'course',value:courseTemplate(course,state.courses.length,translateStudyText('— فصل جديد',language))})} toggleTopic={(course,id)=>void run(()=>commit({...latest.current,courses:latest.current.courses.map(item=>item.id===course.id?{...item,topics:(item.topics||[]).map(topic=>topic.id===id?{...topic,done:!topic.done}:topic)}:item)}))} renderTasks={renderTasks}/></Suspense>}
         {tab === "schedule" && conflicts.size > 0 && <p className="study-overdue" role="status">يوجد تداخل في مواعيد {conflicts.size} محاضرات. افتح المحاضرة لتعديل وقتها.</p>}
         {tab === "schedule" && (<>
             <Suspense fallback={<p role="status">…</p>}><UniversityTrialSchedule lessons={state.lessons} courses={state.courses} filter={filter} conflicts={conflicts} language={language} courseColor={courseColor} edit={lesson=>setEditing({kind:"lesson",value:lesson})}/></Suspense>
@@ -500,7 +505,7 @@ function Workspace({ user }: {
           if(undo.kind==='tasks'){const task=next.tasks.find(t=>t.id===undo.id)!;if(task.reminderProjectId)await syncReminder(user.uid,task);}
           commit(next);setUndo(null);setMessage('تمت استعادة العنصر.');
         })}>تراجع عن الحذف</button><button aria-label="إغلاق التراجع" onClick={()=>setUndo(null)}>×</button></section>}
-        <details className="study-extra-settings" open={!mobileStudy}><summary>التصدير والتنبيهات</summary><footer className="study-bottom">
+        <details className="study-extra-settings" open={!mobileStudy&&!dashboard}><summary>التصدير والتنبيهات</summary><footer className="study-bottom">
           <p>
             لتلقي التذكيرات، فعّل إشعارات
             المواعيد على هاتفك ثم اختر «تذكير على الهاتف» للمهمة المطلوبة.
