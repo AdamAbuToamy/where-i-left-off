@@ -1,5 +1,4 @@
 import UniversityDashboard from "./UniversityDashboard";
-import { isAdmin } from "../lib/admin";
 import {usePhoneLayout} from "../components/usePhoneSurface";
 import {useDesignPreview} from "../components/designPreviewContext";
 import {readPlanBackup} from './readPlanBackup';
@@ -87,7 +86,7 @@ function Workspace({ user }: {
 }) {
     const language=useStudyLanguage();
     const phone=usePhoneLayout(), {kitchenStudy}=useDesignPreview(), mobileStudy=phone&&kitchenStudy;
-    const dashboard = isAdmin(user.email, user.emailVerified);
+    const dashboard = true;
     const planTools=useRef<HTMLDetailsElement>(null);
     const [capture, setCapture] = useState(() => parseStudyCapture(location.hash));
     useEffect(() => {

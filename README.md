@@ -8,6 +8,10 @@ A multilingual project and study organizer for personal cards, shared work, univ
 
 **[Open the app](https://where-i-left-off.web.app/)** · **[العربية](README_AR.md)** · **[Readiness checklist](docs/READINESS_AR.md)** · **[Security](SECURITY.md)**
 
+## University dashboard (November 2026)
+
+The University dashboard and compact phone course workspace are available to all verified accounts: upcoming classes, priority deadlines, course cards, a separate course-section rail, summary tiles and a dedicated course-map action. Import/restore still previews changes before saving. Phone titles and controls use compact layouts; the desktop layout remains separate.
+
 ## Current status
 
 The public assistant is available to signed-in users with a verified email. Each user connects their own Pollinations account through the consent flow in the app. The configured model is DeepSeek V4.1 Flash. Provider free credits, rate limits and availability apply.

@@ -8,7 +8,7 @@ for (const phone of [false, true])
     await page.setViewportSize(
       phone ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
     );
-    const c = await prepareUniversityPilot(request);
+    const c = await prepareUniversityPilot(request,"public-dashboard@example.test");
     // Each viewport starts with its own empty emulator plan, even after prior sync completes.
     const records=await request.get(`http://127.0.0.1:8080/v1/projects/demo-where-i-left-off/databases/(default)/documents/users/${c.uid}/studyRecords`,{headers:{Authorization:'Bearer owner'}});
     for(const doc of (await records.json()).documents||[]) await request.delete(`http://127.0.0.1:8080/v1/${doc.name}`,{headers:{Authorization:'Bearer owner'}});

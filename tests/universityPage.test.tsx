@@ -78,6 +78,7 @@ it("creates and edits real course and task records, persists them, and never ena
         url: "",
     });
     expect(container.textContent).toContain("Exercise 1");
+    await click("المهام والمواعيد");
     const check = container.querySelector(".study-task input[type=checkbox]") as HTMLInputElement;
     await act(async () => check.click());
     await click("المهام والمواعيد");
@@ -153,11 +154,11 @@ it('requires confirmation for an extension capture and cancellation leaves the p
 });
 it('localizes University and the full timetable editor without translating user course names',async()=>{
  await click('إضافة كورس');await submit({name:'وظيفة',notes:'',url:''});
- await render(user,'en');expect(container.textContent).toContain('Semester plan');expect(container.textContent).toContain('وظيفة');
+ await render(user,'en');expect(container.textContent).toContain('My study space');expect(container.textContent).toContain('وظيفة');
  await click('Weekly timetable');await click('Build weekly timetable');
  expect(container.querySelector('dialog')?.textContent).toContain('Session type');expect(container.querySelector('dialog')?.textContent).toContain('Tutorial / exercise');expect(container.querySelector('dialog')?.textContent).toContain('Sunday');
  const room=container.querySelector('.study-week-row input[placeholder]') as HTMLInputElement;expect(room.placeholder).toBe('Example: building 90, room 204');
- await act(async()=>(container.querySelector('[aria-label="Close"]') as HTMLButtonElement).click());await render(user,'he');expect(container.textContent).toContain('תוכנית הסמסטר');expect(container.textContent).toContain('בניית מערכת שעות');
+ await act(async()=>(container.querySelector('[aria-label="Close"]') as HTMLButtonElement).click());await render(user,'he');expect(container.textContent).toContain('מערכת שעות');expect(container.textContent).toContain('בניית מערכת שעות');
 });
 it('builds lectures and tutorials on several days and displays their rooms',async()=>{
  await click('إضافة كورس');await submit({name:'Algorithms',notes:'',url:''});await click('الجدول الأسبوعي');await click('بناء جدول الأسبوع');
@@ -178,26 +179,27 @@ it('paginates courses, finds the last course and marks its open details without 
     const courses = Array.from({length:14}, (_,i) => ({id:`course-${i}`, name:`Course ${i + 1}`, notes:`Notes ${i + 1} https://example.test/course/${i + 1}`, url:'', requires:[], x:0, y:0}));
     localStorage.setItem('wilo-university-v1/demo/pilot',JSON.stringify({version:1,courses,tasks:[],lessons:[],importedAt:""}));
     await act(async () => root.unmount());root=createRoot(container);await render({...user,email:"ordinary@example.test"});
-    expect(container.querySelectorAll('.study-course-choice')).toHaveLength(6);
-    await click('التالي');expect(container.querySelector('.study-course-pages')?.textContent).toContain('2 / 3');
-    await click('التالي');expect(container.querySelectorAll('.study-course-choice')).toHaveLength(2);
+    expect(container.querySelectorAll('.uni-course-card')).toHaveLength(6);
+    await click('عرض المزيد');expect(container.querySelectorAll('.uni-course-card')).toHaveLength(12);
+    await click('عرض المزيد');expect(container.querySelectorAll('.uni-course-card')).toHaveLength(14);
     const search=container.querySelector('input[type=search]') as HTMLInputElement;
     await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(search,'Course 14');search.dispatchEvent(new Event('input',{bubbles:true}));});
-    expect(container.querySelectorAll('.study-course-choice')).toHaveLength(1);
-    await act(async()=>(container.querySelector('.study-course-choice') as HTMLButtonElement).click());
+    expect(container.querySelectorAll('.uni-course-card')).toHaveLength(1);
+    await act(async()=>(container.querySelector('.uni-course-card') as HTMLButtonElement).click());
     expect(container.querySelector('.study-course-choice[aria-pressed=true]')?.textContent).toContain('Course 14');
     expect(container.querySelector('.study-current-course')?.textContent).toBe('الكورس المفتوح');
     expect(container.querySelector('[data-study-course="course-13"]')).not.toBeNull();
-    expect(container.querySelector('.study-trial-notes a')?.getAttribute('href')).toBe('https://example.test/course/14');
+    expect(container.querySelector('.course-overview-description a')?.getAttribute('href')).toBe('https://example.test/course/14');
     await render(user,'en');expect(container.querySelector('.study-current-course')?.textContent).toBe('Current course');
     expect(container.querySelector('.study-course-pages')?.textContent).toContain('Previous');
-    await click('All courses');expect(container.querySelectorAll('.study-course-choice[aria-pressed=true]')).toHaveLength(0);
+    await click('Back to courses');expect(container.querySelectorAll('.study-course-choice[aria-pressed=true]')).toHaveLength(0);
     expect(container.querySelector('[data-study-course]')).toBeNull();
 });
 it('labels the next deadline with its course and supports dismissing and expiring reminder notices', async () => {
     await click('إضافة كورس');await submit({name:'Networks',notes:'',url:''});
     await click('إضافة مهمة');await submit({title:'Lab report',due:'2099-11-10T14:30',notes:'',url:''});
-    expect(container.querySelector('.study-next-course')?.textContent).toBe('Networks');
+    expect(container.querySelector('.study-trial-course-heading h3')?.textContent).toBe('Networks');
+    await click('المهام والمواعيد');
     reminder.prepare.mockImplementation(t=>t);
     // Adapter is injected here: no production account or push settings are changed.
     reminder.sync.mockImplementation(async (_uid,t)=>({...t,reminderProjectId:'linked'}));
@@ -237,6 +239,7 @@ it('keeps course context in the heading and accessible task label without repeat
  await click('إضافة كورس');await submit({name:'Networks',notes:'',url:''});
  await click('إضافة مهمة');await submit({title:'Assignment 1',due:'',notes:'',url:''});
  expect(container.querySelector('.study-trial-course-heading h3')?.textContent).toBe('Networks');
+ await click('المهام والمواعيد');
  expect(container.querySelector('.study-task-top')?.textContent).not.toContain('Networks');
  expect(container.querySelector('.study-task')?.getAttribute('aria-label')).toContain('Networks');
 });
