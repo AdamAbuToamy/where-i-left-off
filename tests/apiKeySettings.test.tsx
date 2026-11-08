@@ -39,8 +39,19 @@ async function render() {
   await act(async () =>
     root.render(<ApiKeySettings user={user} language="en" />),
   );
+  expect(
+    container.querySelector('a[href="#/api-docs"]')?.textContent,
+  ).toContain("API Documentation");
 }
 async function issue() {
+  if (!container.querySelector("form"))
+    act(() =>
+      container
+        .querySelector<HTMLButtonElement>(
+          'button[aria-controls="api-key-create-form"]',
+        )!
+        .click(),
+    );
   await act(async () => {
     container
       .querySelector("form")!
@@ -95,11 +106,16 @@ it("discards a creation response arriving after the tab was hidden", async () =>
   await render();
   call.mockImplementation(async (_user: User, data: { action: string }) =>
     data.action === "create"
-      ? new Promise<{ key: string }>((done) => { resolve = done; })
+      ? new Promise<{ key: string }>((done) => {
+          resolve = done;
+        })
       : { keys: [] },
   );
   await issue();
-  Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+  Object.defineProperty(document, "visibilityState", {
+    configurable: true,
+    value: "hidden",
+  });
   try {
     act(() => document.dispatchEvent(new Event("visibilitychange")));
     await act(async () => resolve({ key: secret }));
@@ -107,6 +123,28 @@ it("discards a creation response arriving after the tab was hidden", async () =>
     expect(container.textContent).not.toContain(secret);
     expect(container.querySelector("[role=alert]")).not.toBeNull();
   } finally {
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "visible",
+    });
   }
+});
+
+it("keeps creation options hidden until Add is pressed and clears them on cancel", async () => {
+  await render();
+  expect(container.querySelector("form")).toBeNull();
+  expect(container.querySelector("input[type=checkbox]")).toBeNull();
+  const button = container.querySelector<HTMLButtonElement>(
+    'button[aria-controls="api-key-create-form"]',
+  )!;
+  expect(button.getAttribute("aria-expanded")).toBe("false");
+  act(() => button.click());
+  expect(container.querySelector("form")).not.toBeNull();
+  expect(button.getAttribute("aria-expanded")).toBe("true");
+  expect(document.activeElement).toBe(container.querySelector("form input"));
+  act(() => button.click());
+  expect(container.querySelector("form")).toBeNull();
+  expect(call.mock.calls.every(([, data]) => data.action === "list")).toBe(
+    true,
+  );
 });

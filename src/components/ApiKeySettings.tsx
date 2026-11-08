@@ -138,6 +138,11 @@ export default function ApiKeySettings({
   const t = text[language],
     dialog = useRef<HTMLDialogElement>(null),
     mounted = useRef(true);
+  const [creating, setCreating] = useState(false);
+  const nameInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (creating) nameInput.current?.focus();
+  }, [creating]);
   const [keys, setKeys] = useState<ApiKeyMetadata[]>([]),
     [name, setName] = useState(""),
     [expiry, setExpiry] = useState(""),
@@ -193,6 +198,9 @@ export default function ApiKeySettings({
         if (document.visibilityState === "hidden") setError(true);
         else setSecret(r.key);
         setCopied(false);
+        setCreating(false);
+        setScopes([]);
+        setExpiry("");
         setName("");
       }
       const list = await accountApiKeys(user, { action: "list" });
@@ -207,77 +215,109 @@ export default function ApiKeySettings({
     value ? new Date(value).toLocaleString(language) : t.never;
   return (
     <section className="settings-section api-keys">
-      <h3>API Keys</h3>
+      <div className="api-key-heading">
+        <h3>API Keys</h3>
+        <a className="secondary-button" href="#/api-docs">
+          API Documentation ↗
+        </a>
+      </div>
       <p>{t.intro}</p>
-      <p className="api-key-warning">{t.warning}</p>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void perform({
-            action: "create",
-            name,
-            scopes,
-            expiresAt: expiry ? new Date(expiry + "T23:59:59").getTime() : null,
-          });
+      <button
+        type="button"
+        className={creating ? "secondary-button" : "primary-button"}
+        disabled={busy}
+        aria-expanded={creating}
+        aria-controls="api-key-create-form"
+        onClick={() => {
+          setCreating(!creating);
+          if (creating) {
+            setName("");
+            setScopes([]);
+            setExpiry("");
+          }
         }}
       >
-        <label>
-          {t.name}
-          <input
-            required
-            maxLength={60}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="off"
-          />
-        </label>
-        <label>
-          {t.expiry}
-          <input
-            type="date"
-            value={expiry}
-            min={limits.min}
-            max={limits.max}
-            onChange={(e) => setExpiry(e.target.value)}
-          />
-        </label>
-        <fieldset>
-          <legend>
-            {language === "ar"
-              ? "الصلاحيات (Scopes)"
-              : language === "he"
-                ? "הרשאות (Scopes)"
-                : "Scopes"}
-          </legend>
-          {categories.map((c, i) => (
-            <div className="api-scope-row" key={c}>
-              <span>{names[language][i]}</span>
-              {["read", "write"].map((mode) => (
-                <label key={mode}>
-                  <input
-                    type="checkbox"
-                    checked={scopes.includes(c + ":" + mode)}
-                    onChange={(e) =>
-                      setScopes((s) =>
-                        e.target.checked
-                          ? [...s, c + ":" + mode]
-                          : s.filter((v) => v !== c + ":" + mode),
-                      )
-                    }
-                  />
-                  {mode === "read" ? t.read : t.write}
-                </label>
-              ))}
-            </div>
-          ))}
-        </fieldset>
-        <button
-          className="primary-button"
-          disabled={busy || !name.trim() || !scopes.length}
+        {creating
+          ? { ar: "إلغاء الإضافة", en: "Cancel", he: "ביטול הוספה" }[language]
+          : { ar: "إضافة مفتاح", en: "Add API Key", he: "הוספת מפתח" }[
+              language
+            ]}
+      </button>
+      {creating && (
+        <form
+          id="api-key-create-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void perform({
+              action: "create",
+              name,
+              scopes,
+              expiresAt: expiry
+                ? new Date(expiry + "T23:59:59").getTime()
+                : null,
+            });
+          }}
         >
-          {t.create}
-        </button>
-      </form>
+          <p className="api-key-warning">{t.warning}</p>
+          <label>
+            {t.name}
+            <input
+              ref={nameInput}
+              required
+              maxLength={60}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+          <label>
+            {t.expiry}
+            <input
+              type="date"
+              value={expiry}
+              min={limits.min}
+              max={limits.max}
+              onChange={(e) => setExpiry(e.target.value)}
+            />
+          </label>
+          <fieldset>
+            <legend>
+              {language === "ar"
+                ? "الصلاحيات (Scopes)"
+                : language === "he"
+                  ? "הרשאות (Scopes)"
+                  : "Scopes"}
+            </legend>
+            {categories.map((c, i) => (
+              <div className="api-scope-row" key={c}>
+                <span>{names[language][i]}</span>
+                {["read", "write"].map((mode) => (
+                  <label key={mode}>
+                    <input
+                      type="checkbox"
+                      checked={scopes.includes(c + ":" + mode)}
+                      onChange={(e) =>
+                        setScopes((s) =>
+                          e.target.checked
+                            ? [...s, c + ":" + mode]
+                            : s.filter((v) => v !== c + ":" + mode),
+                        )
+                      }
+                    />
+                    {mode === "read" ? t.read : t.write}
+                  </label>
+                ))}
+              </div>
+            ))}
+          </fieldset>
+          <button
+            className="primary-button"
+            disabled={busy || !name.trim() || !scopes.length}
+          >
+            {t.create}
+          </button>
+        </form>
+      )}
       {error && <p role="alert">{t.error}</p>}
       {!keys.length && <p>{t.empty}</p>}
       <ul className="api-key-list">

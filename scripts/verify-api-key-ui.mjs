@@ -68,6 +68,11 @@ try {
       )
     )
       throw Error("Horizontal overflow at " + width);
+    if (await page.locator("form").count())
+      throw Error("Creation form visible by default");
+    await page
+      .getByRole("button", { name: "إضافة مفتاح", exact: true })
+      .click();
     await page.getByLabel("اسم المفتاح", { exact: true }).fill("Synthetic");
     await page.locator("input[type=checkbox]").first().check();
     await page.getByRole("button", { name: "إنشاء API Key" }).click();

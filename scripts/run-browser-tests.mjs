@@ -5,6 +5,7 @@ process.chdir(resolve(dirname(fileURLToPath(import.meta.url)),'..'));
 const env={...process.env,VITE_USE_EMULATORS:'true',VITE_TEST_OFFLINE:'true',VITE_ASSISTANT_ENABLED:'true',VITE_REQUIRE_APP_CHECK:'false',VITE_REQUIRE_FIREBASE_CONFIG:'false'};
 const run=(file,args=[])=>execFileSync(process.execPath,[resolve(file),...args],{stdio:'inherit',env});
 run('node_modules/vite/bin/vite.js',['build']);
+run('scripts/publish-api-contract.mjs');
 // Fixtures override these config responses. Never contact production from emulator tests.
 writeFileSync('dist/push-config.json',JSON.stringify({endpoint:'https://emulator.invalid/'}));
 writeFileSync('dist/assistant-config.json',JSON.stringify({endpoint:'https://emulator.invalid/assistant'}));

@@ -1,6 +1,7 @@
 import { validDate } from "./projects";
 import { useEffect, useState } from "react";
 export type PageName =
+  | "api-docs"
   | "university"
   | "notifications"
   | "personal"
@@ -22,6 +23,7 @@ export function route(hash = location.hash): {
     .split("/");
   return {
     page: [
+      "api-docs",
       "university",
       "notifications",
       "resume",

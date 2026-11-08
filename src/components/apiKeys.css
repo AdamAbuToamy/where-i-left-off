@@ -143,3 +143,24 @@
 .api-secret-dialog {
   box-shadow: 0 18px 70px #172a2433;
 }
+
+.api-key-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.api-key-heading a {
+  font-size: 0.9rem;
+}
+
+.api-keys > button[aria-expanded] {
+  margin-block: 0.4rem 1rem;
+}
+.api-keys #api-key-create-form {
+  padding: 1rem;
+  border: 1px solid var(--site-border, #cdd5cd);
+  border-radius: 12px;
+  margin-bottom: 1.2rem;
+}
