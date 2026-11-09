@@ -76,3 +76,10 @@ for (const entry of manifest.icons) {
   await writeFile(root + "public" + entry.src, bytes);
 }
 await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+
+// Chrome extension toolbar and management icons share the exact supplied symbol.
+for (const size of [16, 32, 48, 128])
+  await writeFile(
+    root + `browser-extension/icons/icon-${size}.png`,
+    icon(size),
+  );
