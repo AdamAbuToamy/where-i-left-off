@@ -1,3 +1,7 @@
+import {
+  readReminderCollection,
+  mutateReminderCollection,
+} from "./cardReminderCollection.mjs";
 import { updateApiCardReminder } from "./apiCardReminder.mjs";
 import { readReminderView } from "./reminderView.mjs";
 import { createTaskNotificationService } from "./apiTaskNotification.mjs";
@@ -29,7 +33,7 @@ const headers = {
   "content-type": "application/json",
   "cache-control": "no-store",
   pragma: "no-cache",
-  "x-wilo-api-version": "1.4.0",
+  "x-wilo-api-version": "1.5.0",
 };
 const codes = {
   unauthenticated: 401,
@@ -61,6 +65,7 @@ const codes = {
   "task-not-remindable": 409,
   "reminder-time-in-past": 409,
   "reminder-settings-conflict": 409,
+  "reminder-limit": 429,
   "task-not-notifiable": 409,
   "notifications-disabled": 409,
   "notification-device-unavailable": 409,
@@ -86,6 +91,75 @@ export function createApiHandler(overrides = {}) {
       if (url.protocol !== "https:") throw new ApiError("https-required");
       identity = await authenticateApi(request, env);
       await allowApiRequest(env, identity.uid);
+      const collection = url.pathname.match(
+        /^\/api\/v1\/projects\/([A-Za-z0-9_-]{1,128})\/reminders(?:\/([A-Za-z0-9_-]{1,128}))?$/,
+      );
+      if (collection) {
+        const read = request.method === "GET",
+          method = request.method,
+          id = collection[2];
+        operation = "card-reminder." + (read ? "read" : method.toLowerCase());
+        if (
+          url.search ||
+          !(
+            read ||
+            (!id && method === "POST") ||
+            (id && ["PATCH", "DELETE"].includes(method))
+          )
+        )
+          throw new ApiError("not-found");
+        requireScopes(identity, read ? "reminders:read" : "reminders:write");
+        await (overrides.assertAccount || assertApiAccount)(env, identity.uid);
+        const repository = (overrides.repository || createApiRepository)(
+            env,
+            identity.uid,
+          ),
+          project = await repository.transact((tx) =>
+            tx.getProject(collection[1]),
+          );
+        if (!project || project.archivedAt || project.trashedAt)
+          throw new ApiError("resource-not-found");
+        const owned = { ...project, id: collection[1] };
+        let body;
+        if (!read) {
+          if (
+            request.headers.get("content-type")?.split(";")[0].trim() !==
+            "application/json"
+          )
+            throw new ApiError("unsupported-media-type");
+          body = await readBoundedJson(request, 30000);
+        }
+        await auditApi(
+          env,
+          identity.uid,
+          identity.keyId,
+          operation + ".accepted",
+          100,
+        );
+        const result = read
+          ? await readReminderCollection(env, identity.uid, owned, "", id)
+          : await mutateReminderCollection(
+              env,
+              identity.uid,
+              owned,
+              "",
+              method,
+              id,
+              body,
+              request.headers.get("idempotency-key"),
+            );
+        const status = method === "POST" ? 201 : 200;
+        await env.DB.prepare(
+          "UPDATE user_api_keys SET last_used_at=? WHERE uid=? AND id=?",
+        )
+          .bind(Date.now(), identity.uid, identity.keyId)
+          .run();
+        await auditApi(env, identity.uid, identity.keyId, operation, status);
+        return new Response(JSON.stringify({ result, requestId }), {
+          status,
+          headers,
+        });
+      }
       const taskReminder = url.pathname.match(
         /^\/api\/v1\/tasks\/([A-Za-z0-9_-]{1,128})\/reminder$/,
       );

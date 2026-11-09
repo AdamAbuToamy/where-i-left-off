@@ -137,7 +137,7 @@ try {
   const validation = String.raw`import json,sys,jsonschema
 payload=json.loads(sys.argv[1]);contract=payload['contract']
 for item in payload['captured']:
-    op=next(op for path in contract['paths'].values() for method,op in path.items() if method in ['post','patch','put'] and op['operationId']==item['operationId'])
+    op=next(op for path in contract['paths'].values() for method,op in path.items() if method in ['post','patch','put','delete'] and op['operationId']==item['operationId'])
     schema=op['requestBody']['content']['application/json']['schema']
     jsonschema.Draft202012Validator(dict(schema,components=contract['components'])).validate(item['body'])
 print(len(payload['captured']))`;

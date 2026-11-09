@@ -57,6 +57,8 @@ export function cardReminderUpdate(old, body, project, p, now) {
       next.weekly = false;
     }
   }
+  if (body.schedule !== undefined || body.remindAt !== undefined)
+    delete next.legacyCancelled;
   if (next.schedule) {
     const at = resolveCardSchedule(next.schedule, project.dueDate);
     if (at === null) throw Error("invalid-reminder-schedule");

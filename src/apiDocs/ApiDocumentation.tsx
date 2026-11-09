@@ -351,6 +351,11 @@ export default function ApiDocumentation({ language }: { language: Language }) {
                 : "Enable the additional permission for the selected key in Settings → API Keys, then explicitly request bypassQuietHours: true on an immediate notification. Other keys and scheduled reminders remain unchanged. Missing permission returns 403. Account opt-out and device withdrawal are never bypassed. For a deferred event, use a new operation key with the authorized request: Wilo promotes the same pending event, never a second notification. Changing a body under its old key returns 409; completed events are never resent."}
             </p>
           </section>
+          <p>
+            {language === "ar"
+              ? "لكل بطاقة قائمة تذكيرات مستقلة: GET وPOST /projects/{projectId}/reminders، وGET/PATCH/DELETE /projects/{projectId}/reminders/{reminderId}. الإضافة لا تستبدل تذكيرًا آخر. للتعديل والإلغاء أرسل expectedRevision؛ السجل القديم legacy يستخدم expectedSettingsVersion. الصلاحيات reminders:read وreminders:write. السجلات الملغاة تبقى واضحة، وإعادة المحاولة بنفس المفتاح لا تكرر الإشعار. الواجهة القديمة /reminders/{projectId} متوافقة؛ حذفها يوقف البطاقة كلها."
+              : "Each card has independent reminders: GET/POST /projects/{projectId}/reminders and GET/PATCH/DELETE /projects/{projectId}/reminders/{reminderId}. POST adds; it never replaces another reminder. PATCH/DELETE require expectedRevision; the legacy record uses expectedSettingsVersion. Scopes: reminders:read / reminders:write. Cancelled records remain visible; retry with the same operation key/body. The old /reminders/{projectId} endpoint remains compatible; its DELETE disables the entire card."}
+          </p>
           <section id="api-doc-workflow" tabIndex={-1}>
             <h2>{t.workflow}</h2>
             <p>{t.flowText}</p>
@@ -362,7 +367,7 @@ export default function ApiDocumentation({ language }: { language: Language }) {
             <h3>
               {language === "ar"
                 ? "تذكير بطاقة قبل الموعد بثلاثة أيام"
-                : "Card reminder: three days before at a local time"}
+                : "Independent reminders: four and two days before"}
             </h3>
             <Code
               key={"reminder-" + codeLanguage}

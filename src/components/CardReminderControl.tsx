@@ -59,7 +59,7 @@ export default function CardReminderControl(props: Props) {
           />
         </button>
         <div id={panelId} hidden={!open}>
-          {open && <ReminderForm {...props} />}
+          {open && <ReminderList {...props} />}
         </div>
       </div>
     );
@@ -73,8 +73,206 @@ export default function CardReminderControl(props: Props) {
         <strong dir="auto">{props.compact ? w.title : props.name}</strong>
         <span>{props.compact ? "" : props.dueDate || "—"}</span>
       </summary>
-      {open && <ReminderForm {...props} />}
+      {open && <ReminderList {...props} />}
     </details>
+  );
+}
+type ReminderItem = Partial<View> & {
+  timeZone?: string;
+  id: string;
+  revision: number | null;
+  status: string;
+  schedule?: CardSchedule;
+  legacy?: boolean;
+  settingsVersion?: string;
+  state: string;
+};
+type ReminderCollection = {
+  items: ReminderItem[];
+  preferences: PushPreferences;
+  cardDisabled: boolean;
+  settingsVersion: string;
+};
+function ReminderList(props: Props) {
+  const w = cardReminderWords[props.language];
+  const [data, setData] = useState<ReminderCollection | null>(null);
+  const [error, setError] = useState("");
+  const [editing, setEditing] = useState<ReminderItem | "new" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [deletion, setDeletion] = useState<{
+    id: string;
+    requestId: string;
+  } | null>(null);
+  const reload = useCallback(async () => {
+    try {
+      const next = await pushCall<ReminderCollection>({
+        action: "reminders-list",
+        projectId: props.id,
+        groupId: props.groupId || "",
+      });
+      setData(next);
+      setError("");
+    } catch {
+      setError(w.failed);
+    }
+  }, [props.id, props.groupId, w.failed]);
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+  async function toggleCard(disabled: boolean) {
+    if (!data) return;
+    setBusy(true);
+    setError("");
+    try {
+      await pushCall({
+        action: "card",
+        projectId: props.id,
+        groupId: props.groupId || "",
+        disabled,
+        settingsVersion: data.settingsVersion,
+      });
+      await reload();
+    } catch {
+      setError(w.failed);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function cancel(item: ReminderItem) {
+    const requestId =
+      deletion?.id === item.id ? deletion.requestId : crypto.randomUUID();
+    setDeletion({ id: item.id, requestId });
+    setBusy(true);
+    setError("");
+    try {
+      setData(
+        await pushCall<ReminderCollection>({
+          action: "reminder-delete",
+          projectId: props.id,
+          groupId: props.groupId || "",
+          reminderId: item.id,
+          requestId,
+          body: item.legacy
+            ? { expectedSettingsVersion: item.settingsVersion }
+            : { expectedRevision: item.revision },
+        }),
+      );
+      setDeletion(null);
+    } catch {
+      setError(w.failed);
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (editing)
+    return (
+      <div>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => {
+            setEditing(null);
+            void reload();
+          }}
+        >
+          {w.back}
+        </button>
+        <ReminderForm
+          {...props}
+          record={editing}
+          onSaved={() => {
+            setEditing(null);
+            void reload();
+          }}
+        />
+      </div>
+    );
+  return (
+    <section className="card-reminder-list" aria-label={w.list}>
+      <strong>{w.list}</strong>
+      {data && (
+        <label className="push-toggle">
+          <input
+            type="checkbox"
+            checked={data.cardDisabled}
+            disabled={busy}
+            onChange={(event) => void toggleCard(event.target.checked)}
+          />
+          {w.off}
+        </label>
+      )}
+      {!data && !error && <p role="status">{w.loading}</p>}
+      {data?.cardDisabled && <p role="status">{w.states.disabled}</p>}
+      {data && !data.items.length && <p>{w.states["not-configured"]}</p>}
+      {data?.items.map((item) => (
+        <article className="card-reminder-item" key={item.id}>
+          <strong>
+            {item.schedule?.mode === "relative"
+              ? w.relative
+              : item.schedule?.mode === "absolute"
+                ? w.absolute
+                : w.automatic}
+          </strong>
+          {item.scheduledAt && (
+            <time dateTime={item.scheduledAt}>
+              {new Date(item.scheduledAt).toLocaleString(props.language, {
+                timeZone: item.timeZone || data.preferences.timezone,
+              })}
+            </time>
+          )}
+          <small dir="ltr">{item.timeZone || data.preferences.timezone}</small>
+          {item.effectiveAt && item.effectiveAt !== item.scheduledAt && (
+            <small>
+              {w.afterQuiet}:{" "}
+              {new Date(item.effectiveAt).toLocaleString(props.language, {
+                timeZone: item.timeZone || data.preferences.timezone,
+              })}
+            </small>
+          )}
+          <p className="card-reminder-state">
+            {(w.states as Record<string, string>)[item.status] || item.status}
+          </p>
+          <div className="card-reminder-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={busy}
+              onClick={() => setEditing(item)}
+            >
+              {w.edit}
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={busy || item.status === "cancelled"}
+              onClick={() => void cancel(item)}
+            >
+              {w.cancel}
+            </button>
+          </div>
+        </article>
+      ))}
+      <div className="card-reminder-actions">
+        <button
+          className="primary-button"
+          type="button"
+          disabled={!data || busy}
+          onClick={() => setEditing("new")}
+        >
+          {w.add}
+        </button>
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={busy}
+          onClick={() => void reload()}
+        >
+          {w.refresh}
+        </button>
+      </div>
+      <small>{w.hint}</small>
+      {error && <p role="alert">{error}</p>}
+    </section>
   );
 }
 function ReminderForm({
@@ -83,7 +281,10 @@ function ReminderForm({
   dueDate,
   language,
   initialEnabled = false,
-}: Props) {
+  record,
+  onSaved,
+}: Props & { record: ReminderItem | "new"; onSaved: () => void }) {
+  const requestId = useRef(crypto.randomUUID());
   const w = cardReminderWords[language],
     [view, setView] = useState<View | null>(null),
     [busy, setBusy] = useState(true),
@@ -116,26 +317,29 @@ function ReminderForm({
   const accept = useCallback(
     (next: View) => {
       const draft =
-        firstRead.current &&
-        (initialEnabled || (!!groupId && !next.configured)) &&
-        !next.schedule &&
-        !next.remindAt;
+        record === "new" ||
+        (firstRead.current &&
+          (initialEnabled || (!!groupId && !next.configured)) &&
+          !next.schedule &&
+          !next.remindAt);
       firstRead.current = false;
       if (!next.preferences) throw Error("invalid-reminder-response");
       setView(next);
-      setDisabled(draft ? false : !!next.disabled);
+      setDisabled(record === "new" || initialEnabled ? false : !!next.disabled);
       setWeekly(!!next.weekly);
       setDueTime(next.time || next.preferences.defaultTime);
-      const s = next.schedule;
+      const s = record === "new" ? undefined : record.schedule || next.schedule;
       setMode(
         s?.mode ||
-          (next.remindAt
+          (record !== "new" && next.remindAt
             ? "absolute"
             : draft
               ? dueDate
                 ? "relative"
                 : "absolute"
-              : "automatic"),
+              : dueDate
+                ? "relative"
+                : "absolute"),
       );
       setZone(s?.timeZone || next.preferences.timezone);
       if (s?.mode === "relative") {
@@ -145,16 +349,16 @@ function ReminderForm({
         setTime(s.localTime || next.preferences.defaultTime);
         setDueTime(s.dueTime);
       }
-      if (s?.mode === "absolute" || next.remindAt)
+      if (s?.mode === "absolute" || (record !== "new" && next.remindAt))
         setDate(
           reminderInput(
             s?.mode === "absolute" ? s.scheduledAt : next.remindAt,
             s?.timeZone || next.preferences.timezone,
           ),
         );
-      else setTime(next.preferences.defaultTime);
+      else if (s?.mode !== "relative") setTime(next.preferences.defaultTime);
     },
-    [initialEnabled, dueDate, groupId],
+    [initialEnabled, dueDate, groupId, record],
   );
   // A mounted editor reads fresh server state once. It never subscribes this browser to Push.
   useEffect(() => {
@@ -235,27 +439,34 @@ function ReminderForm({
   const [now] = useState(() => Date.now());
   const invalid =
     !disabled && mode !== "automatic" && (preview === null || preview <= now);
-  async function save(cancel = false) {
-    if (!view || busy || (!cancel && invalid)) return;
+  async function save() {
+    if (!view || busy || invalid) return;
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      const result = await pushCall<View>({
-        action: "card",
+      if (!schedule) throw Error("schedule-required");
+      await pushCall<ReminderCollection>({
+        action: record === "new" ? "reminder-create" : "reminder-update",
         projectId: id,
         groupId,
-        disabled: cancel ? true : disabled,
-        weekly: cancel
-          ? view.weekly || false
-          : mode === "automatic"
-            ? weekly
-            : false,
-        time: cancel ? view.time || "" : dueTime || "",
-        settingsVersion: view.settingsVersion,
-        ...(!cancel ? { schedule, leadMinutes: null, remindAt: null } : {}),
+        reminderId: record === "new" ? undefined : record.id,
+        requestId: requestId.current,
+        body: {
+          schedule,
+          ...(record === "new"
+            ? initialEnabled || view.disabled
+              ? {
+                  enableCard: true,
+                  expectedSettingsVersion: view.settingsVersion,
+                }
+              : {}
+            : record.legacy
+              ? { expectedSettingsVersion: record.settingsVersion }
+              : { expectedRevision: record.revision }),
+        },
       });
-      accept(result);
+      onSaved();
       setMessage(w.saved);
     } catch {
       setError(w.failed);
@@ -283,21 +494,12 @@ function ReminderForm({
       }}
     >
       <fieldset disabled={busy}>
-        <label className="push-toggle">
-          <input
-            type="checkbox"
-            checked={disabled}
-            onChange={(event) => setDisabled(event.target.checked)}
-          />
-          {w.off}
-        </label>
         <label>
           {w.mode}
           <select
             value={mode}
             onChange={(event) => setMode(event.target.value)}
           >
-            <option value="automatic">{w.automatic}</option>
             <option value="relative" disabled={!cardDueDate}>
               {w.relative}
             </option>
@@ -452,12 +654,8 @@ function ReminderForm({
           <button type="submit" className="primary-button" disabled={invalid}>
             {w.save}
           </button>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => void save(true)}
-          >
-            {w.cancel}
+          <button type="button" className="secondary-button" onClick={onSaved}>
+            {w.back}
           </button>
         </div>
       </fieldset>

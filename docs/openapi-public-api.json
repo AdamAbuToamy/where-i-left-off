@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wilo Public API",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "Generic personal automation. Ownership comes exclusively from the bearer key. No client-supplied account ID. API keys cannot issue keys or change account/security settings."
   },
   "servers": [
@@ -69,17 +69,26 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": ["string", "null"]
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
-                      "required": ["items", "nextCursor"],
+                      "required": [
+                        "items",
+                        "nextCursor"
+                      ],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -214,12 +223,16 @@
                         "$ref": "#/components/schemas/CourseValues"
                       },
                       {
-                        "required": ["name"]
+                        "required": [
+                          "name"
+                        ]
                       }
                     ]
                   }
                 },
-                "required": ["values"],
+                "required": [
+                  "values"
+                ],
                 "additionalProperties": false
               }
             }
@@ -247,7 +260,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -274,7 +290,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -422,7 +441,10 @@
                     "minimum": 0
                   }
                 },
-                "required": ["values", "expectedRevision"],
+                "required": [
+                  "values",
+                  "expectedRevision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -450,7 +472,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -620,17 +645,26 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": ["string", "null"]
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
-                      "required": ["items", "nextCursor"],
+                      "required": [
+                        "items",
+                        "nextCursor"
+                      ],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -765,12 +799,17 @@
                         "$ref": "#/components/schemas/TaskValues"
                       },
                       {
-                        "required": ["courseId", "title"]
+                        "required": [
+                          "courseId",
+                          "title"
+                        ]
                       }
                     ]
                   }
                 },
-                "required": ["values"],
+                "required": [
+                  "values"
+                ],
                 "additionalProperties": false
               }
             }
@@ -798,7 +837,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -825,7 +867,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -973,7 +1018,10 @@
                     "minimum": 0
                   }
                 },
-                "required": ["values", "expectedRevision"],
+                "required": [
+                  "values",
+                  "expectedRevision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1001,7 +1049,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1171,17 +1222,26 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": ["string", "null"]
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
-                      "required": ["items", "nextCursor"],
+                      "required": [
+                        "items",
+                        "nextCursor"
+                      ],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1316,12 +1376,19 @@
                         "$ref": "#/components/schemas/ClassValues"
                       },
                       {
-                        "required": ["courseId", "day", "start", "end"]
+                        "required": [
+                          "courseId",
+                          "day",
+                          "start",
+                          "end"
+                        ]
                       }
                     ]
                   }
                 },
-                "required": ["values"],
+                "required": [
+                  "values"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1349,7 +1416,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1376,7 +1446,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1524,7 +1597,10 @@
                     "minimum": 0
                   }
                 },
-                "required": ["values", "expectedRevision"],
+                "required": [
+                  "values",
+                  "expectedRevision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1552,7 +1628,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1713,17 +1792,26 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": ["string", "null"]
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
-                      "required": ["items", "nextCursor"],
+                      "required": [
+                        "items",
+                        "nextCursor"
+                      ],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1858,12 +1946,16 @@
                         "$ref": "#/components/schemas/ProjectValues"
                       },
                       {
-                        "required": ["name"]
+                        "required": [
+                          "name"
+                        ]
                       }
                     ]
                   }
                 },
-                "required": ["values"],
+                "required": [
+                  "values"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1891,7 +1983,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1918,7 +2013,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2066,7 +2164,10 @@
                     "minimum": 0
                   }
                 },
-                "required": ["values", "expectedRevision"],
+                "required": [
+                  "values",
+                  "expectedRevision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -2094,7 +2195,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2255,17 +2359,26 @@
                           "maxItems": 100
                         },
                         "nextCursor": {
-                          "type": ["string", "null"]
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
-                      "required": ["items", "nextCursor"],
+                      "required": [
+                        "items",
+                        "nextCursor"
+                      ],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2400,12 +2513,16 @@
                         "$ref": "#/components/schemas/SectionValues"
                       },
                       {
-                        "required": ["name"]
+                        "required": [
+                          "name"
+                        ]
                       }
                     ]
                   }
                 },
-                "required": ["values"],
+                "required": [
+                  "values"
+                ],
                 "additionalProperties": false
               }
             }
@@ -2433,7 +2550,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2460,7 +2580,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2608,7 +2731,10 @@
                     "minimum": 0
                   }
                 },
-                "required": ["values", "expectedRevision"],
+                "required": [
+                  "values",
+                  "expectedRevision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -2636,7 +2762,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2775,14 +2904,20 @@
                           "minimum": 0
                         }
                       },
-                      "required": ["state", "revision"],
+                      "required": [
+                        "state",
+                        "revision"
+                      ],
                       "additionalProperties": false
                     },
                     "requestId": {
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2919,7 +3054,10 @@
                     "minimum": 0
                   }
                 },
-                "required": ["state", "expectedRevision"],
+                "required": [
+                  "state",
+                  "expectedRevision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -2947,7 +3085,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -2974,7 +3115,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -3112,7 +3256,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/CardReminderState"
@@ -3229,7 +3376,7 @@
       },
       "put": {
         "operationId": "setCardReminder",
-        "description": "Requires reminders:write. Create or update a reminder on any eligible owned personal card. schedule supports relative calendar days/weeks at localTime, precise minute/hour offsets, or an absolute RFC3339 instant, with IANA timeZone. Exact-time reminders need no card due date. Explicit schedules override automatic/global timing and freeze defaults, but respect account enabled, per-card disabled and account quiet hours. Supply expectedSettingsVersion from GET and Idempotency-Key for schedule, leadMinutes, remindAt changes; stale versions return409. Repeat the same key/body safely; replay returns current state without overwriting later manual edits. schedule:null returns to account defaults. The legacy disabled/weekly/time body remains compatible and preserves explicit settings if omitted. Cancelling prevents future dispatch but cannot recall an already accepted Push. Resolution is the existing minute cron plus provider/device delay, not exact-to-second.",
+        "description": "Requires reminders:write. Create or update a reminder on any eligible owned personal card. schedule supports relative calendar days/weeks at localTime, precise minute/hour offsets, or an absolute RFC3339 instant, with IANA timeZone. Exact-time reminders need no card due date. Explicit schedules override automatic/global timing and freeze defaults, but respect account enabled, per-card disabled and account quiet hours. Supply expectedSettingsVersion from GET and Idempotency-Key for schedule, leadMinutes, remindAt changes; stale versions return409. Repeat the same key/body safely; replay returns current state without overwriting later manual edits. schedule:null returns to account defaults. The legacy disabled/weekly/time body remains compatible and preserves explicit settings if omitted. Cancelling prevents future dispatch but cannot recall an already accepted Push. Resolution is the existing minute cron plus provider/device delay, not exact-to-second. Compatibility endpoint: modifies only the legacy reminder settings, not independent records. disabled is still the card-wide switch. Prefer POST /projects/{projectId}/reminders to add another reminder.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3254,7 +3401,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/CardReminderState"
@@ -3383,7 +3533,7 @@
       },
       "delete": {
         "operationId": "cancelCardReminder",
-        "description": "Requires reminders:write. Cancel an owned card reminder with If-Match=settingsVersion from GET and a stable Idempotency-Key. Retains schedule/history for display but sets disabled:true; queued workers recheck it. Cannot recall a previously accepted notification.",
+        "description": "Requires reminders:write. Cancel an owned card reminder with If-Match=settingsVersion from GET and a stable Idempotency-Key. Retains schedule/history for display but sets disabled:true; queued workers recheck it. Cannot recall a previously accepted notification. Compatibility endpoint: disables reminders for the entire card. To cancel only the legacy reminder use DELETE /projects/{projectId}/reminders/legacy with expectedSettingsVersion.",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -3418,7 +3568,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/CardReminderState"
@@ -3601,7 +3754,10 @@
                     },
                     {
                       "type": "object",
-                      "required": ["result", "requestId"],
+                      "required": [
+                        "result",
+                        "requestId"
+                      ],
                       "properties": {
                         "result": {
                           "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3672,7 +3828,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3691,7 +3850,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3727,7 +3889,9 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["expectedRevision"],
+                "required": [
+                  "expectedRevision"
+                ],
                 "properties": {
                   "expectedRevision": {
                     "type": "integer",
@@ -3798,7 +3962,10 @@
                     },
                     {
                       "type": "object",
-                      "required": ["result", "requestId"],
+                      "required": [
+                        "result",
+                        "requestId"
+                      ],
                       "properties": {
                         "result": {
                           "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3869,7 +4036,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -3888,7 +4058,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskReminderStatus"
@@ -4026,7 +4199,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4045,7 +4221,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4081,7 +4260,9 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["expectedRevision"],
+                "required": [
+                  "expectedRevision"
+                ],
                 "properties": {
                   "expectedRevision": {
                     "type": "integer",
@@ -4218,7 +4399,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4237,7 +4421,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4375,7 +4562,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4394,7 +4584,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4430,7 +4623,9 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["expectedRevision"],
+                "required": [
+                  "expectedRevision"
+                ],
                 "properties": {
                   "expectedRevision": {
                     "type": "integer",
@@ -4567,7 +4762,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4586,7 +4784,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["result", "requestId"],
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
                   "properties": {
                     "result": {
                       "$ref": "#/components/schemas/TaskNotificationStatus"
@@ -4596,6 +4797,808 @@
                     }
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/reminders": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{20}$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "listCardReminders",
+        "description": "Requires reminders:read. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "x-required-scopes": [
+          "reminders:read"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision/idempotency conflict or linked-reminder-use-ui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute (Retry-After:60), or reminder-limit: at most100 independent records per card including cancelled records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/ReminderCollection"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCardReminder",
+        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "x-required-scopes": [
+          "reminders:write"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision/idempotency conflict or linked-reminder-use-ui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute (Retry-After:60), or reminder-limit: at most100 independent records per card including cancelled records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/IndependentReminder"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIndependentReminder"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/reminders/{reminderId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{20}$"
+          }
+        },
+        {
+          "in": "path",
+          "name": "reminderId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^(legacy|r_[a-f0-9]{24})$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getIndependentReminder",
+        "description": "Requires reminders:read. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "x-required-scopes": [
+          "reminders:read"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision/idempotency conflict or linked-reminder-use-ui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute (Retry-After:60), or reminder-limit: at most100 independent records per card including cancelled records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/IndependentReminder"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateIndependentReminder",
+        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "x-required-scopes": [
+          "reminders:write"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision/idempotency conflict or linked-reminder-use-ui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute (Retry-After:60), or reminder-limit: at most100 independent records per card including cancelled records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/IndependentReminder"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/UpdateIndependentReminder"
+                  },
+                  {
+                    "$ref": "#/components/schemas/UpdateLegacyReminder"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "cancelIndependentReminder",
+        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "x-required-scopes": [
+          "reminders:write"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision/idempotency conflict or linked-reminder-use-ui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute (Retry-After:60), or reminder-limit: at most100 independent records per card including cancelled records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/IndependentReminder"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/CancelIndependentReminder"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CancelLegacyReminder"
+                  }
+                ]
               }
             }
           }
@@ -4622,7 +5625,10 @@
             "type": "string"
           }
         },
-        "required": ["error", "requestId"],
+        "required": [
+          "error",
+          "requestId"
+        ],
         "additionalProperties": false
       },
       "MutationResult": {
@@ -4643,7 +5649,11 @@
             "type": "boolean"
           }
         },
-        "required": ["id", "revision", "created"],
+        "required": [
+          "id",
+          "revision",
+          "created"
+        ],
         "additionalProperties": false
       },
       "CourseValues": {
@@ -4686,7 +5696,11 @@
                   "type": "boolean"
                 }
               },
-              "required": ["id", "title", "done"],
+              "required": [
+                "id",
+                "title",
+                "done"
+              ],
               "additionalProperties": false
             },
             "maxItems": 200
@@ -4745,7 +5759,11 @@
                   "type": "boolean"
                 }
               },
-              "required": ["id", "title", "done"],
+              "required": [
+                "id",
+                "title",
+                "done"
+              ],
               "additionalProperties": false
             },
             "maxItems": 200
@@ -4782,7 +5800,11 @@
             "maxLength": 500
           },
           "kind": {
-            "enum": ["assignment", "exam", "task"]
+            "enum": [
+              "assignment",
+              "exam",
+              "task"
+            ]
           },
           "due": {
             "type": "string",
@@ -4815,7 +5837,11 @@
             "maxLength": 500
           },
           "kind": {
-            "enum": ["assignment", "exam", "task"]
+            "enum": [
+              "assignment",
+              "exam",
+              "task"
+            ]
           },
           "due": {
             "type": "string",
@@ -4850,7 +5876,11 @@
             "pattern": "^[A-Za-z0-9_-]{1,128}$"
           },
           "sessionType": {
-            "enum": ["lecture", "tutorial", "lab"]
+            "enum": [
+              "lecture",
+              "tutorial",
+              "lab"
+            ]
           },
           "day": {
             "type": "integer",
@@ -4885,7 +5915,11 @@
             "pattern": "^[A-Za-z0-9_-]{1,128}$"
           },
           "sessionType": {
-            "enum": ["lecture", "tutorial", "lab"]
+            "enum": [
+              "lecture",
+              "tutorial",
+              "lab"
+            ]
           },
           "day": {
             "type": "integer",
@@ -4958,10 +5992,20 @@
             "maxLength": 3000
           },
           "status": {
-            "enum": ["later", "active", "waiting", "done"]
+            "enum": [
+              "later",
+              "active",
+              "waiting",
+              "done"
+            ]
           },
           "kind": {
-            "enum": ["resume", "waiting", "deadline", "list"]
+            "enum": [
+              "resume",
+              "waiting",
+              "deadline",
+              "list"
+            ]
           },
           "resourceType": {
             "enum": [
@@ -5061,10 +6105,20 @@
             "maxLength": 3000
           },
           "status": {
-            "enum": ["later", "active", "waiting", "done"]
+            "enum": [
+              "later",
+              "active",
+              "waiting",
+              "done"
+            ]
           },
           "kind": {
-            "enum": ["resume", "waiting", "deadline", "list"]
+            "enum": [
+              "resume",
+              "waiting",
+              "deadline",
+              "list"
+            ]
           },
           "resourceType": {
             "enum": [
@@ -5193,7 +6247,13 @@
                       "pattern": "^[A-Za-z0-9_-]{1,128}$"
                     }
                   },
-                  "required": ["id", "kind", "x", "y", "projectId"],
+                  "required": [
+                    "id",
+                    "kind",
+                    "x",
+                    "y",
+                    "projectId"
+                  ],
                   "additionalProperties": false
                 },
                 {
@@ -5221,7 +6281,13 @@
                       "maxLength": 2000
                     }
                   },
-                  "required": ["id", "kind", "x", "y", "text"],
+                  "required": [
+                    "id",
+                    "kind",
+                    "x",
+                    "y",
+                    "text"
+                  ],
                   "additionalProperties": false
                 },
                 {
@@ -5292,14 +6358,22 @@
                   "pattern": "^[A-Za-z0-9_-]{1,128}$"
                 },
                 "kind": {
-                  "enum": ["related", "part", "depends"]
+                  "enum": [
+                    "related",
+                    "part",
+                    "depends"
+                  ]
                 },
                 "label": {
                   "type": "string",
                   "maxLength": 100
                 }
               },
-              "required": ["id", "source", "target"],
+              "required": [
+                "id",
+                "source",
+                "target"
+              ],
               "additionalProperties": false
             },
             "maxItems": 400
@@ -5334,13 +6408,24 @@
                   "maximum": 4000
                 }
               },
-              "required": ["id", "x", "y", "width", "height"],
+              "required": [
+                "id",
+                "x",
+                "y",
+                "width",
+                "height"
+              ],
               "additionalProperties": false
             },
             "maxItems": 120
           }
         },
-        "required": ["version", "items", "threads", "circles"],
+        "required": [
+          "version",
+          "items",
+          "threads",
+          "circles"
+        ],
         "additionalProperties": false
       },
       "Reminder": {
@@ -5357,7 +6442,10 @@
             "pattern": "^$|^([01][0-9]|2[0-3]):[0-5][0-9]$"
           },
           "leadMinutes": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "maximum": 150119987578
           },
@@ -5376,7 +6464,10 @@
             ]
           },
           "remindAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -5385,7 +6476,12 @@
       },
       "TaskReminderStatus": {
         "type": "object",
-        "required": ["taskId", "status", "verified", "scheduled"],
+        "required": [
+          "taskId",
+          "status",
+          "verified",
+          "scheduled"
+        ],
         "properties": {
           "taskId": {
             "type": "string"
@@ -5395,7 +6491,10 @@
             "minimum": 0
           },
           "projectId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "enum": [
@@ -5430,10 +6529,16 @@
             "type": "string"
           },
           "reminderAt": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "nextCheckAt": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "timezone": {
             "type": "string"
@@ -5454,7 +6559,10 @@
             ]
           },
           "settingsVersion": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "pattern": "^[a-f0-9]{64}$"
           },
           "schedule": {
@@ -5507,7 +6615,10 @@
             "type": "string"
           },
           "queuedAt": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "providerAccepted": {
             "type": "integer",
@@ -5532,11 +6643,17 @@
             "type": "integer"
           },
           "nextAttemptAt": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "resourceType": {
             "type": "string",
-            "enum": ["tasks", "projects"]
+            "enum": [
+              "tasks",
+              "projects"
+            ]
           },
           "resourceId": {
             "type": "string"
@@ -5559,7 +6676,10 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["mode", "scheduledAt"],
+            "required": [
+              "mode",
+              "scheduledAt"
+            ],
             "properties": {
               "mode": {
                 "const": "absolute",
@@ -5580,7 +6700,11 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["mode", "amount", "unit"],
+            "required": [
+              "mode",
+              "amount",
+              "unit"
+            ],
             "properties": {
               "mode": {
                 "type": "string",
@@ -5593,7 +6717,12 @@
               },
               "unit": {
                 "type": "string",
-                "enum": ["minutes", "hours", "days", "weeks"]
+                "enum": [
+                  "minutes",
+                  "hours",
+                  "days",
+                  "weeks"
+                ]
               },
               "localTime": {
                 "type": "string",
@@ -5612,7 +6741,10 @@
               },
               "disambiguation": {
                 "type": "string",
-                "enum": ["earlier", "later"],
+                "enum": [
+                  "earlier",
+                  "later"
+                ],
                 "description": "For repeated local times during a daylight saving transition. Omit to reject ambiguous times."
               }
             }
@@ -5657,7 +6789,10 @@
             ]
           },
           "remindAt": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "settingsVersion": {
             "type": "string",
@@ -5690,11 +6825,17 @@
             "type": "boolean"
           },
           "scheduledAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "effectiveAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "timeZone": {
@@ -5703,7 +6844,10 @@
             "description": "Valid IANA time zone; defaults to account zone when configuring, then stored explicitly."
           },
           "nextCheckAt": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "providerAccepted": {
             "type": "integer",
@@ -5732,6 +6876,198 @@
           "dueDate": {
             "type": "string",
             "description": "The current card deadline calendar date, or empty when unset."
+          }
+        }
+      },
+      "IndependentReminder": {
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "state",
+          "status",
+          "scheduledAt",
+          "handsetDelivery"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "settingsVersion": {
+            "type": "string"
+          },
+          "legacy": {
+            "type": "boolean"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/CardSchedule"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "cancelled",
+              "legacy"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "scheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nextScheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "effectiveAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "integer"
+          },
+          "providerAccepted": {
+            "type": "integer"
+          },
+          "deliveryCounts": {
+            "type": "object"
+          },
+          "handsetDelivery": {
+            "const": "not-confirmed"
+          }
+        }
+      },
+      "ReminderCollection": {
+        "type": "object",
+        "required": [
+          "projectId",
+          "items",
+          "settingsVersion",
+          "cardDisabled",
+          "limit"
+        ],
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "cardDisabled": {
+            "type": "boolean"
+          },
+          "preferences": {
+            "type": "object"
+          },
+          "settingsVersion": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IndependentReminder"
+            }
+          },
+          "limit": {
+            "const": 100
+          }
+        }
+      },
+      "CreateIndependentReminder": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schedule"
+        ],
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/CardSchedule"
+          },
+          "enableCard": {
+            "type": "boolean",
+            "description": "Explicitly enable a disabled card. Requires expectedSettingsVersion; account notifications remain unchanged."
+          },
+          "expectedSettingsVersion": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateIndependentReminder": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schedule",
+          "expectedRevision"
+        ],
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/CardSchedule"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CancelIndependentReminder": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedRevision"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "UpdateLegacyReminder": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schedule",
+          "expectedSettingsVersion"
+        ],
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/CardSchedule"
+          },
+          "expectedSettingsVersion": {
+            "type": "string"
+          }
+        }
+      },
+      "CancelLegacyReminder": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedSettingsVersion"
+        ],
+        "properties": {
+          "expectedSettingsVersion": {
+            "type": "string"
           }
         }
       }

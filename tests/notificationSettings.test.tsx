@@ -73,16 +73,23 @@ beforeEach(async () => {
   mock.call.mockImplementation(async (data) =>
     data.action === "get"
       ? { preferences: { ...p }, publicKey: "public-key", cards: {} }
-      : data.action === "card-status" || data.action === "card"
+      : data.action === "reminders-list"
         ? {
+            items: [],
+            cardDisabled: false,
             preferences: { ...p },
             settingsVersion: "0".repeat(64),
-            disabled: data.disabled ?? false,
-            weekly: false,
-            time: "",
-            status: "disabled",
           }
-        : { ok: true },
+        : data.action === "card-status" || data.action === "card"
+          ? {
+              preferences: { ...p },
+              settingsVersion: "0".repeat(64),
+              disabled: data.disabled ?? false,
+              weekly: false,
+              time: "",
+              status: "disabled",
+            }
+          : { ok: true },
   );
   container = document.createElement("div");
   document.body.append(container);
@@ -162,7 +169,7 @@ it("per-card opt-out does not alter task data or other cards", async () => {
   await act(async () => {
     (label.querySelector("input") as HTMLInputElement).click();
   });
-  await click("Save reminder");
+
   expect(mock.call).toHaveBeenCalledWith(
     expect.objectContaining({
       action: "card",

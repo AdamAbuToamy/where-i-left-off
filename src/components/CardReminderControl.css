@@ -106,3 +106,26 @@
   outline: 3px solid currentColor;
   outline-offset: 4px;
 }
+
+.card-reminder-list {
+  display: grid;
+  gap: 14px;
+  padding-block: 18px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.card-reminder-item {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--site-border, #d7dacb);
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 0;
+}
+.card-reminder-item p {
+  margin: 0;
+}
+.card-reminder-list small {
+  line-height: 1.7;
+  color: var(--site-muted, #647369);
+}

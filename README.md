@@ -175,3 +175,6 @@ Use `/home/adam/projects/where-i-left-off` (`main`). The former `/home/adam/wilo
 Notification settings are available on desktop and mobile. Eligible cards support explicit relative or exact-time reminders using the existing server-side Push scheduler; local Push permission remains device-specific. See [Public API](docs/PUBLIC_API.md#universal-card-reminders-v13) for universal reminder scheduling and idempotent immediate card/assignment notifications. Provider acceptance is not a handset delivery receipt.
 
 API Keys also expose an owner-managed, default-off permission for immediate Push quiet-hours override. The request must explicitly set `bypassQuietHours: true`; scheduled reminders and account/device opt-outs remain protected. See the Public API guide for safe promotion of a deferred event without duplication.
+
+### Public API v1.5 — independent card reminders
+Cards now expose an independent reminder list in their existing reminder section. Exact and relative schedules use the existing Push pipeline. See [API contract](docs/openapi-public-api.json), [usage](docs/PUBLIC_API.md), and [safe rollout](docs/OPERATIONS_RUNBOOK.md). The old single-reminder API remains compatible. Chrome extension0.4.1 uses the supplied official Wilo icon; store distribution remains a separate Chrome Web Store release.

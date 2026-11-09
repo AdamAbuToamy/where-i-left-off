@@ -335,3 +335,13 @@
 .api-doc-errors > div {
   grid-template-columns: 3rem minmax(0, 1fr);
 }
+
+.api-docs p {
+  overflow-wrap: anywhere;
+}
+
+.api-doc-operation summary code {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}

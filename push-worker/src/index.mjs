@@ -1,3 +1,19 @@
+import { explicitReminderEvent } from "../../shared/cardReminderSchedule.mjs";
+import {
+  readReminderCollection,
+  mutateReminderCollection,
+} from "./cardReminderCollection.mjs";
+import {
+  reminderRows,
+  reminderRow,
+  recordEvent,
+  recordView,
+  beginRecord,
+  markRecordQueued,
+  startRecordDispatch,
+  legacyTerminal,
+  freezeLegacy,
+} from "./cardReminderRecords.mjs";
 import { stableJson } from "../../shared/apiHash.mjs";
 import { cardReminderUpdate } from "../../shared/cardReminderUpdate.mjs";
 import { readReminderView } from "./reminderView.mjs";
@@ -152,6 +168,46 @@ export function createWorker(overrides = {}) {
       return readNotifications(env, identity);
     if (data.action === "notifications-read")
       return readThrough(env, identity, data.through);
+    if (
+      [
+        "reminders-list",
+        "reminder-create",
+        "reminder-update",
+        "reminder-delete",
+      ].includes(data.action)
+    ) {
+      const group = data.groupId || "",
+        project = {
+          ...(await f.cardDocument(
+            env,
+            uid,
+            data.projectId,
+            group,
+            identity.token,
+          )),
+          id: data.projectId,
+        };
+      if (project.archivedAt || project.trashedAt)
+        throw new ApiError("resource-not-found");
+      if (data.action === "reminders-list")
+        return readReminderCollection(env, uid, project, group);
+      const method = {
+        "reminder-create": "POST",
+        "reminder-update": "PATCH",
+        "reminder-delete": "DELETE",
+      }[data.action];
+      await mutateReminderCollection(
+        env,
+        uid,
+        project,
+        group,
+        method,
+        data.reminderId,
+        data.body || {},
+        data.requestId,
+      );
+      return readReminderCollection(env, uid, project, group);
+    }
     if (data.action === "get") {
       const cards = await env.DB.prepare(
         "SELECT id,settings FROM cards WHERE uid=?",
@@ -375,6 +431,86 @@ export function createWorker(overrides = {}) {
     for (const project of projects) {
       const id = cardKey(project.id, scope),
         card = cards.get(id) || {};
+      const independent = await reminderRows(env, uid, id);
+      for (const reminder of independent) {
+        if (
+          reminder.state !== "active" ||
+          card.disabled ||
+          project.archivedAt ||
+          project.trashedAt
+        )
+          continue;
+        const plan = recordEvent(reminder, project);
+        if (!plan) continue;
+        const view = await recordView(
+          env,
+          uid,
+          id,
+          reminder,
+          project,
+          p,
+          card,
+          now,
+        );
+        if (
+          [
+            "provider-accepted",
+            "partially-accepted",
+            "failed",
+            "unknown",
+            "expired",
+            "cancelled",
+          ].includes(view.status)
+        )
+          continue;
+        if (plan.at > now) {
+          next = Math.min(next, afterQuiet(p, plan.at));
+          continue;
+        }
+        if (now - plan.at >= DAY) continue;
+        next = Math.min(next, now + 60000);
+        if (queued >= 8 || now - reminder.queued_at < 120000) continue;
+        const target = reminder.queued_at
+          ? JSON.parse(reminder.device_ids)
+          : devices.map((d) => d.id);
+        if (
+          !(await beginRecord(
+            env,
+            uid,
+            id,
+            reminder.id,
+            reminder.revision,
+            plan.event,
+            plan.at,
+            target,
+          ))
+        )
+          continue;
+        await env.PUSH_QUEUE.sendBatch(
+          target.map((deviceId) => ({
+            body: {
+              type: "deliver",
+              uid,
+              scope,
+              projectId: project.id,
+              deviceId,
+              event: plan.event,
+              reminderId: reminder.id,
+              reminderRevision: reminder.revision,
+              createdAt: now,
+            },
+          })),
+        );
+        await markRecordQueued(env, uid, id, reminder.id, reminder.revision);
+        queued++;
+      }
+      const terminal = await legacyTerminal(env, uid, id, card);
+      if (
+        terminal ||
+        card.legacyCancelled ||
+        (independent.length && !card.schedule && !card.remindAt && !card.weekly)
+      )
+        continue;
       if (
         scope &&
         project.assignedTo !== uid &&
@@ -461,6 +597,30 @@ export function createWorker(overrides = {}) {
       .bind(message.deviceId, message.uid)
       .first();
     if (!device) {
+      if (message.reminderId) {
+        const ck = cardKey(message.projectId, message.scope),
+          r = await reminderRow(env, message.uid, ck, message.reminderId);
+        if (
+          r?.state === "active" &&
+          r.revision === message.reminderRevision &&
+          r.event_key === message.event.key
+        ) {
+          const did = await hash(
+            `${message.deviceId}/${ck}/${message.event.key}`,
+          );
+          if (
+            await store.claimReminderDispatch(
+              env,
+              did,
+              message.uid,
+              ck,
+              message.event.key,
+              message.deviceId,
+            )
+          )
+            await store.finishReminderDispatch(env, did, "skipped");
+        }
+      }
       console.info("push.delivery.skipped", {
         reason: "device-not-registered",
       });
@@ -512,6 +672,31 @@ export function createWorker(overrides = {}) {
     );
     const key = cardKey(message.projectId, message.scope),
       card = await store.card(env, message.uid, key);
+    let selected = null;
+    if (message.reminderId) {
+      selected = await reminderRow(env, message.uid, key, message.reminderId);
+      const event = selected && recordEvent(selected, project);
+      if (
+        !selected ||
+        selected.state !== "active" ||
+        selected.revision !== message.reminderRevision ||
+        event?.event.key !== message.event.key ||
+        Date.now() < event.at ||
+        Date.now() - event.at >= DAY
+      )
+        return;
+    } else {
+      if (card.legacyCancelled) return;
+      const terminal = await legacyTerminal(env, message.uid, key, card);
+      if (terminal && terminal.event_key !== message.event.key) return;
+      if (
+        !card.schedule &&
+        !card.remindAt &&
+        !card.weekly &&
+        (await reminderRows(env, message.uid, key)).length
+      )
+        return;
+    }
     if (quietNow(p, Date.now())) {
       await env.PUSH_QUEUE.send(message, {
         delaySeconds: Math.max(
@@ -534,6 +719,7 @@ export function createWorker(overrides = {}) {
     )
       return;
     if (
+      !message.reminderId &&
       ["due", "scheduled"].includes(message.event.type) &&
       candidate(project, card, p, Date.now(), row.enabled_at)?.key !==
         message.event.key
@@ -549,6 +735,18 @@ export function createWorker(overrides = {}) {
       );
       if (Date.now() - last < p.staleDays * DAY) return;
     }
+    if (
+      selected &&
+      !(await startRecordDispatch(
+        env,
+        message.uid,
+        key,
+        selected.id,
+        selected.revision,
+        message.event,
+      ))
+    )
+      return;
     const deliveryId = await hash(
       `${message.deviceId}/${key}/${message.event.key}`,
     );
@@ -563,6 +761,15 @@ export function createWorker(overrides = {}) {
       ))
     )
       return;
+    if (!selected)
+      await freezeLegacy(
+        env,
+        message.uid,
+        key,
+        card,
+        message.event,
+        explicitReminderEvent(project, card)?.at || Date.now(),
+      );
     const t = messages[p.language];
     const payload = {
       uid: message.uid,
@@ -571,7 +778,7 @@ export function createWorker(overrides = {}) {
       url: message.scope
         ? `#/groups/${message.scope}/${message.projectId}`
         : `#/personal/${message.projectId}`,
-      tag: `wilo-${key}-${message.event.type}`,
+      tag: `wilo-${key}-${message.reminderId || message.event.type}`,
     };
     try {
       await send(env, JSON.parse(device.subscription), payload);
@@ -659,6 +866,10 @@ export function createWorker(overrides = {}) {
             "sync",
             "card",
             "card-status",
+            "reminders-list",
+            "reminder-create",
+            "reminder-update",
+            "reminder-delete",
             "viewed",
             "erase",
             "notifications",
@@ -752,7 +963,11 @@ export function createWorker(overrides = {}) {
             ? 401
             : error.message === "account-unavailable"
               ? 403
-              : error.message === "reminder-settings-conflict"
+              : [
+                    "reminder-settings-conflict",
+                    "revision-conflict",
+                    "idempotency-key-reused",
+                  ].includes(error.message)
                 ? 409
                 : 400;
         console.warn("push.http.failed", {

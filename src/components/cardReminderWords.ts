@@ -1,5 +1,11 @@
 export const cardReminderWords = {
   ar: {
+    list: "تذكيرات البطاقة",
+    add: "إضافة تذكير",
+    edit: "تعديل",
+    back: "العودة للقائمة",
+    afterQuiet: "بعد ساعات الهدوء",
+
     title: "تذكير البطاقة",
     mode: "موعد التذكير",
     automatic: "حسب الإعدادات العامة",
@@ -26,6 +32,8 @@ export const cardReminderWords = {
     saved: "تم حفظ التذكير.",
     hint: "يمكنك ضبطه من الحاسوب؛ يصل إلى أجهزتك المشتركة دون بقاء الموقع مفتوحًا. الهدوء وإيقاف الإشعارات للحساب يظلان نافذين.",
     states: {
+      cancelled: "ملغى",
+      "partially-accepted": "قبله بعض الأجهزة فقط؛ وصول الهاتف غير مؤكد",
       scheduled: "مجدول على الخادم",
       disabled: "الإشعارات أو هذه البطاقة موقوفة",
       pending: "بانتظار تحقق الجدولة",
@@ -41,6 +49,12 @@ export const cardReminderWords = {
     },
   },
   en: {
+    list: "Card reminders",
+    add: "Add reminder",
+    edit: "Edit",
+    back: "Back to reminders",
+    afterQuiet: "After quiet hours",
+
     title: "Card reminder",
     mode: "Reminder schedule",
     automatic: "Use account defaults",
@@ -68,6 +82,9 @@ export const cardReminderWords = {
     saved: "Reminder saved.",
     hint: "Configure on desktop; subscribed devices receive it without keeping the website open. Quiet hours and the account notification switch still apply.",
     states: {
+      cancelled: "Cancelled",
+      "partially-accepted":
+        "Accepted for some devices; phone arrival not confirmed",
       scheduled: "Scheduled on the server",
       disabled: "Notifications or this card are disabled",
       pending: "Schedule verification pending",
@@ -85,6 +102,12 @@ export const cardReminderWords = {
     },
   },
   he: {
+    list: "תזכורות לכרטיס",
+    add: "הוספת תזכורת",
+    edit: "עריכה",
+    back: "חזרה לרשימה",
+    afterQuiet: "אחרי שעות השקט",
+
     title: "תזכורת לכרטיס",
     mode: "מועד התזכורת",
     automatic: "ברירות המחדל של החשבון",
@@ -111,6 +134,8 @@ export const cardReminderWords = {
     saved: "התזכורת נשמרה.",
     hint: "אפשר להגדיר מהמחשב ולקבל במכשירים הרשומים כשהאתר סגור. שעות שקטות וכיבוי התראות בחשבון עדיין חלים.",
     states: {
+      cancelled: "בוטל",
+      "partially-accepted": "התקבל לחלק מהמכשירים; ההגעה לא אומתה",
       scheduled: "מתוזמן בשרת",
       disabled: "ההתראות או הכרטיס כבויים",
       pending: "ממתין לאימות התזמון",

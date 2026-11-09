@@ -196,3 +196,26 @@ In Settings → API Keys, the account owner can toggle **Allow quiet-hours overr
 Use the normal Authorization and Idempotency-Key headers. Key permission is checked again during dispatch, including expiry/revocation; withdrawing it returns pending work to quiet-hours deferral. Neither account opt-out, card exclusion, subscription withdrawal nor phone OS restrictions can be bypassed. Scheduled reminders always retain quiet hours. Audit rows contain owner/key/operation/status, never message contents or the secret.
 
 For an already deferred event: GET its status first. An authorized request with true and a **new** Idempotency-Key can promote the same pending event immediately; its eventId and per-device duplicate ledger are retained. Do not modify a body under its old operation key (409). Processing events are not promoted mid-dispatch: poll and, if still deferred, retry the same promotion request. Completed/accepted events are never resent. A revoked/deleted key cannot authorize a future bypass. The API response exposes bypassQuietHours (stored event policy) and quietHoursOverrideEffective (currently valid permission); provider acceptance still does not prove phone arrival.
+
+
+## Multiple independent card reminders (v1.5)
+
+All eligible owned personal cards support a collection of independent reminders. The same records appear inside Wilo's card reminder section on desktop/mobile. Group members manage their own reminders through the authenticated Wilo UI; group data is not exposed by Public API.
+
+| Method | Path (under `/api/v1`) | Scope |
+|---|---|---|
+| GET | `/projects/{projectId}/reminders` | `reminders:read` |
+| POST | `/projects/{projectId}/reminders` | `reminders:write` |
+| GET | `/projects/{projectId}/reminders/{reminderId}` | `reminders:read` |
+| PATCH | `/projects/{projectId}/reminders/{reminderId}` | `reminders:write` |
+| DELETE | `/projects/{projectId}/reminders/{reminderId}` | `reminders:write` |
+
+POST takes `{"schedule":{"mode":"relative","amount":4,"unit":"days","localTime":"09:00","timeZone":"Asia/Jerusalem"}}`. Repeat POST with amount2 and a **different** Idempotency-Key to add the second reminder. Keep each key/body for retries. Absolute schedule example: `{"schedule":{"mode":"absolute","scheduledAt":"2099-11-15T09:00:00+02:00","timeZone":"Asia/Jerusalem"}}`; exact dates require no deadline. The example future year is illustrative; choose your actual desired future date.
+
+Responses contain stable `id`, numeric `revision`, normalized `schedule`, `scheduledAt`, `effectiveAt` (quiet-hours adjustment), `nextScheduledAt`, `state`, `status`, timestamps and provider counts. PATCH takes schedule plus `expectedRevision` from GET; DELETE takes `{"expectedRevision":0}`. Both require JSON and a stable Idempotency-Key.409 means reread/review; never blindly overwrite. Cancelled records remain visible and do not send. At most100 independent records including cancelled records are retained per card; the bounded list needs no pagination.429 reminder-limit differs from the normal account rate limit.
+
+Existing explicit reminders remain visible with id `legacy`, without copying/migrating user data. They use `expectedSettingsVersion` rather than numeric revision for PATCH/DELETE. The old GET/PUT/DELETE `/reminders/{projectId}` remains compatible; old DELETE is the **card-wide opt-out**, while new DELETE `/projects/{projectId}/reminders/legacy` cancels only that legacy reminder. Adding independent reminders suppresses automatic default reminders for that card (including after cancellation), avoiding overlapping automatic dispatch; existing explicit legacy/weekly schedules remain configured separately. Account defaults never rewrite explicit schedules.
+
+Relative reminders follow deadline edits until dispatch starts. Absolute times are unchanged. After dispatch starts, the event instant is frozen; sent/failed/uncertain events are not automatically resent on deadline edits. Explicit edit rearms only the selected record with a new revision. Cancel/edit invalidates queued old revisions, but cannot recall a provider request already in flight. Unknown provider outcomes are not retried automatically. The existing minute cron and queue deliver with no open browser; quiet hours and account/card switches apply, with a24-hour catch-up window. Physical phone delivery remains unconfirmed by the server. Same-time records have distinct notification tags and delivery claims.
+
+If a card is disabled, a client can explicitly send `enableCard:true` and `expectedSettingsVersion` from the collection GET when creating a reminder. This changes only the card opt-out and is conflict-checked atomically; it never enables an account or grants device permission. Otherwise created records truthfully show disabled/awaiting-device as appropriate.

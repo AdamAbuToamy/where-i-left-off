@@ -58,7 +58,7 @@ export function cardKey(id, groupId = "") {
   return `${groupId || "personal"}__${id}`;
 }
 export function candidate(project, card, p, now, enabledAt) {
-  if (project.archivedAt || project.trashedAt || card.disabled) return null;
+  if (project.archivedAt || project.trashedAt || card.disabled || card.legacyCancelled) return null;
   if (card.schedule || card.remindAt) {
     const plan = explicitReminderEvent(project, card);
     return plan &&

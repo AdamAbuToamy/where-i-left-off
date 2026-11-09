@@ -30,7 +30,7 @@ export function nextCheck(
   consumed = false,
   lastStaleDate = "",
 ) {
-  if (project.archivedAt || project.trashedAt || card.disabled)
+  if (project.archivedAt || project.trashedAt || card.disabled || card.legacyCancelled)
     return now + DAY;
   if (card.schedule || card.remindAt) {
     const plan = explicitReminderEvent(project, card),

@@ -94,8 +94,8 @@ it("generates meaningful updates and declares idempotency only where contract re
     const body = operationBody(op) as
       | { values?: Record<string, unknown>; expectedRevision?: number }
       | undefined;
-    if (op.method === "PATCH")
-      expect(Object.keys(body!.values!).length).toBeGreaterThan(0);
+    if (op.method === "PATCH" && body?.values)
+      expect(Object.keys(body.values).length).toBeGreaterThan(0);
     for (const language of ["curl", "python", "javascript"] as const) {
       const code = requestCode(op, language);
       expect(code).toContain(apiBase);

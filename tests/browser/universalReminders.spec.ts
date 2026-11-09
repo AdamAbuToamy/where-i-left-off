@@ -1,3 +1,4 @@
+import { reminderCollectionFixture } from "./reminderCollectionFixture";
 import { test, expect } from "@playwright/test";
 import { prepareUniversityPilot } from "./universityFixture";
 import {
@@ -67,6 +68,12 @@ for (const phone of [false, true])
       const cards: Record<string, Record<string, unknown>> = {},
         versions: Record<string, string> = {};
 
+      const collection = reminderCollectionFixture(prefs, (key, schedule) => {
+        cards[key.split("__")[1]] = {
+          ...(cards[key.split("__")[1]] || {}),
+          schedule,
+        };
+      });
       const actions: string[] = [];
       await page.addInitScript((uid) => {
         localStorage.setItem("language", "en");
@@ -141,6 +148,7 @@ for (const phone of [false, true])
             ).repeat(64);
             result = view(data.projectId);
           }
+          result = collection(data, view(data.projectId)) ?? result;
           await route.fulfill({
             headers: {
               "access-control-allow-origin": "*",
@@ -177,6 +185,9 @@ for (const phone of [false, true])
       });
       await bookControl.locator("summary").click();
       await bookControl
+        .getByRole("button", { name: "Add reminder", exact: true })
+        .click();
+      await bookControl
         .getByRole("combobox", { name: "Reminder schedule", exact: true })
         .selectOption("absolute");
       await bookControl
@@ -187,16 +198,51 @@ for (const phone of [false, true])
         .getByRole("button", { name: "Save reminder", exact: true })
         .click();
       await expect(
-        bookControl.getByText("Reminder saved.", { exact: true }),
+        bookControl.getByText("Scheduled on the server", { exact: true }),
       ).toBeVisible();
       expect(cards[book].schedule).toMatchObject({
         mode: "absolute",
         timeZone: "Asia/Jerusalem",
       });
+      for (const when of ["2099-11-16T09:00", "2099-11-17T18:00"]) {
+        await bookControl
+          .getByRole("button", { name: "Add reminder", exact: true })
+          .click();
+        await bookControl
+          .getByLabel("Date and time", { exact: true })
+          .fill(when);
+        await bookControl
+          .getByRole("button", { name: "Save reminder", exact: true })
+          .click();
+        await expect(
+          bookControl.getByRole("button", {
+            name: "Add reminder",
+            exact: true,
+          }),
+        ).toBeVisible();
+      }
+      await expect(bookControl.locator(".card-reminder-item")).toHaveCount(3);
+      await bookControl
+        .locator(".card-reminder-item")
+        .nth(1)
+        .getByRole("button", { name: "Edit", exact: true })
+        .click();
+      await bookControl
+        .getByLabel("Date and time", { exact: true })
+        .fill("2099-11-16T10:00");
+      await bookControl
+        .getByRole("button", { name: "Save reminder", exact: true })
+        .click();
+      await expect(
+        bookControl.locator(".card-reminder-item").nth(1),
+      ).toContainText("10:00");
       const courseControl = page.locator(".card-reminder-control").filter({
         has: page.locator("summary strong", { hasText: "Course reminder" }),
       });
       await courseControl.locator("summary").click();
+      await courseControl
+        .getByRole("button", { name: "Add reminder", exact: true })
+        .click();
       await courseControl
         .getByRole("combobox", { name: "Reminder schedule", exact: true })
         .selectOption("relative");
@@ -213,7 +259,7 @@ for (const phone of [false, true])
         .getByRole("button", { name: "Save reminder", exact: true })
         .click();
       await expect(
-        courseControl.getByText("Reminder saved.", { exact: true }),
+        courseControl.getByText("Scheduled on the server", { exact: true }),
       ).toBeVisible();
       expect(cards[course].schedule).toMatchObject({
         mode: "relative",
@@ -222,14 +268,16 @@ for (const phone of [false, true])
         localTime: "09:00",
       });
       await bookControl
+        .locator(".card-reminder-item")
+        .first()
         .getByRole("button", { name: "Cancel reminder", exact: true })
         .click();
       await expect(
-        bookControl.getByText("Notifications or this card are disabled", {
+        bookControl.getByText("Cancelled", {
           exact: true,
         }),
       ).toBeVisible();
-      expect(cards[book].disabled).toBe(true);
+      await expect(bookControl.locator(".card-reminder-item")).toHaveCount(3);
       expect(actions).not.toContain("subscribe");
       const permissionRequests = await page.evaluate(
         () =>
@@ -267,10 +315,7 @@ for (const phone of [false, true])
         .getByRole("button", { name: "Card reminder", exact: true })
         .click();
       await expect(
-        detail.getByRole("checkbox", {
-          name: "Disable reminders for this card",
-          exact: true,
-        }),
-      ).toBeChecked();
+        detail.getByText("Cancelled", { exact: true }),
+      ).toBeVisible();
     });
   });

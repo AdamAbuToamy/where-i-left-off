@@ -1,3 +1,4 @@
+import { legacyTerminal } from "./cardReminderRecords.mjs";
 import {
   preferences,
   cardKey,
@@ -93,6 +94,11 @@ export async function readReminderView(
     at = null;
     event = null;
   }
+  const terminal = await legacyTerminal(env, uid, key, card);
+  if (terminal) {
+    at = terminal.scheduled_at;
+    event = { type: "scheduled", key: terminal.event_key };
+  }
   const dispatches = event
     ? (
         await env.DB.prepare(
@@ -125,7 +131,7 @@ export async function readReminderView(
             : !scopes
               ? "pending"
               : "scheduled";
-  if (status !== "disabled" && event) {
+  if ((status !== "disabled" || terminal) && event) {
     if (counts["provider-accepted"]) status = "provider-accepted";
     else if (counts.unknown) status = "unknown";
     else if (counts.failed) status = "failed";
@@ -140,6 +146,7 @@ export async function readReminderView(
         status = now - at > 120000 ? "unknown" : "push-queued";
     }
   }
+  if (card.legacyCancelled) status = "cancelled";
   return {
     projectId: project.id,
     dueDate: project.dueDate || "",
@@ -157,7 +164,9 @@ export async function readReminderView(
     scheduledAt: at === null ? null : new Date(at).toISOString(),
     effectiveAt:
       at === null ||
-      ["expired", "not-configured", "invalid-schedule"].includes(status)
+      ["expired", "not-configured", "invalid-schedule", "cancelled"].includes(
+        status,
+      )
         ? null
         : new Date(afterQuiet(p, at)).toISOString(),
     timeZone: card.schedule?.timeZone || p.timezone,

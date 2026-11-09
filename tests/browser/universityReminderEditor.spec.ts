@@ -1,3 +1,4 @@
+import { reminderCollectionFixture } from "./reminderCollectionFixture";
 import { test, expect } from "@playwright/test";
 import { prepareUniversityPilot } from "./universityFixture";
 import {
@@ -143,6 +144,9 @@ for (const phone of [false, true])
     };
     const settings: Record<string, Record<string, unknown>> = {},
       versions: Record<string, string> = {};
+    const collection = reminderCollectionFixture(prefs, (key, schedule) => {
+      settings[key] = { ...(settings[key] || {}), schedule };
+    });
     await page.addInitScript((uid) => {
       localStorage.setItem("language", "en");
       localStorage.setItem("welcome-tour:v2:" + uid, "done");
@@ -211,6 +215,10 @@ for (const phone of [false, true])
             effectiveAt: at ? new Date(at).toISOString() : null,
           };
         }
+        result =
+          collection(data, {
+            settingsVersion: versions[key] || "0".repeat(64),
+          }) ?? result;
         await route.fulfill({
           headers: {
             "access-control-allow-origin": "*",
@@ -256,6 +264,9 @@ for (const phone of [false, true])
       .click();
     const editor = page.locator("dialog[open] .card-reminder-control");
     await editor
+      .getByRole("button", { name: "Add reminder", exact: true })
+      .click();
+    await editor
       .getByRole("combobox", { name: "Reminder schedule", exact: true })
       .selectOption("relative");
     await editor
@@ -269,7 +280,7 @@ for (const phone of [false, true])
       .getByRole("button", { name: "Save reminder", exact: true })
       .click();
     await expect(
-      editor.getByText("Reminder saved.", { exact: true }),
+      editor.getByText("Scheduled on the server", { exact: true }),
     ).toBeVisible();
     expect(settings["personal__" + project].schedule).toMatchObject({
       amount: 3,
@@ -281,6 +292,9 @@ for (const phone of [false, true])
       .filter({ hasText: "No date task" })
       .getByRole("button", { name: "Set reminder", exact: true })
       .click();
+    await editor
+      .getByRole("button", { name: "Add reminder", exact: true })
+      .click();
     await expect(
       editor.getByLabel("Date and time", { exact: true }),
     ).toBeVisible();
@@ -291,7 +305,7 @@ for (const phone of [false, true])
       .getByRole("button", { name: "Save reminder", exact: true })
       .click();
     await expect(
-      editor.getByText("Reminder saved.", { exact: true }),
+      editor.getByText("Scheduled on the server", { exact: true }),
     ).toBeVisible();
     await page.locator("dialog[open]>header button").click();
     await page.goto("/#/groups/" + group);
@@ -304,6 +318,9 @@ for (const phone of [false, true])
     await panel
       .getByRole("button", { name: "Card reminder", exact: true })
       .click();
+    await panel
+      .getByRole("button", { name: "Add reminder", exact: true })
+      .click();
     await expect(
       panel.getByLabel("How far before?", { exact: true }),
     ).toBeVisible();
@@ -311,7 +328,7 @@ for (const phone of [false, true])
       .getByRole("button", { name: "Save reminder", exact: true })
       .click();
     await expect(
-      panel.getByText("Reminder saved.", { exact: true }),
+      panel.getByText("Scheduled on the server", { exact: true }),
     ).toBeVisible();
     expect(settings[group + "__" + groupProject].schedule).toMatchObject({
       mode: "relative",
