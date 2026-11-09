@@ -1,3 +1,4 @@
+import { isExplicitLegacyReminder } from "../../shared/legacyReminder.mjs";
 import { ApiError, object } from "../../shared/universityApiPlan.mjs";
 import { sha256, stableJson } from "../../shared/apiHash.mjs";
 import { cardReminderUpdate } from "../../shared/cardReminderUpdate.mjs";
@@ -22,17 +23,15 @@ export async function readReminderCollection(
     p = preferences(JSON.parse((await store.account(env, uid)).prefs));
   const legacy = await readReminderView(env, uid, project, groupId),
     rows = await reminderRows(env, uid, ck);
-  const explicit = !!(
-    card.schedule ||
-    card.remindAt ||
-    card.weekly ||
-    card.leadMinutes !== undefined ||
-    card.legacyCancelled
-  );
+  const explicit = isExplicitLegacyReminder(card);
   const items = await Promise.all(
     rows.map((row) => recordView(env, uid, ck, row, project, p, card)),
   );
-  if (explicit || (!rows.length && legacy.scheduledAt))
+  if (
+    explicit ||
+    card.legacyCancelled ||
+    ((p.due || Object.keys(legacy.deliveryCounts).length) && legacy.scheduledAt)
+  )
     items.unshift({
       ...legacy,
       id: "legacy",

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wilo Public API",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "description": "Generic personal automation. Ownership comes exclusively from the bearer key. No client-supplied account ID. API keys cannot issue keys or change account/security settings."
   },
   "servers": [
@@ -3241,7 +3241,7 @@
       ],
       "get": {
         "operationId": "getCardReminder",
-        "description": "Requires reminders:read. Read an eligible owned personal card’s settings, effective schedule, version, account delivery switch and native queue/provider state. Works for all resource types, including completed cards when explicitly scheduled; archived/trashed cards are unavailable. No device subscriptions are returned. Provider acceptance never verifies phone arrival.",
+        "description": "Requires reminders:read. Read an eligible owned personal card’s settings, effective schedule, version, account delivery switch and native queue/provider state. Works for all resource types, including completed cards when explicitly scheduled; archived/trashed cards are unavailable. No device subscriptions are returned. Provider acceptance never verifies phone arrival. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "responses": {
           "200": {
             "description": "Success",
@@ -3376,7 +3376,7 @@
       },
       "put": {
         "operationId": "setCardReminder",
-        "description": "Requires reminders:write. Create or update a reminder on any eligible owned personal card. schedule supports relative calendar days/weeks at localTime, precise minute/hour offsets, or an absolute RFC3339 instant, with IANA timeZone. Exact-time reminders need no card due date. Explicit schedules override automatic/global timing and freeze defaults, but respect account enabled, per-card disabled and account quiet hours. Supply expectedSettingsVersion from GET and Idempotency-Key for schedule, leadMinutes, remindAt changes; stale versions return409. Repeat the same key/body safely; replay returns current state without overwriting later manual edits. schedule:null returns to account defaults. The legacy disabled/weekly/time body remains compatible and preserves explicit settings if omitted. Cancelling prevents future dispatch but cannot recall an already accepted Push. Resolution is the existing minute cron plus provider/device delay, not exact-to-second. Compatibility endpoint: modifies only the legacy reminder settings, not independent records. disabled is still the card-wide switch. Prefer POST /projects/{projectId}/reminders to add another reminder.",
+        "description": "Requires reminders:write. Create or update a reminder on any eligible owned personal card. schedule supports relative calendar days/weeks at localTime, precise minute/hour offsets, or an absolute RFC3339 instant, with IANA timeZone. Exact-time reminders need no card due date. Explicit schedules override automatic/global timing and freeze defaults, but respect account enabled, per-card disabled and account quiet hours. Supply expectedSettingsVersion from GET and Idempotency-Key for schedule, leadMinutes, remindAt changes; stale versions return409. Repeat the same key/body safely; replay returns current state without overwriting later manual edits. schedule:null returns to account defaults. The legacy disabled/weekly/time body remains compatible and preserves explicit settings if omitted. Cancelling prevents future dispatch but cannot recall an already accepted Push. Resolution is the existing minute cron plus provider/device delay, not exact-to-second. Compatibility endpoint: modifies only the legacy reminder settings, not independent records. disabled is still the card-wide switch. Prefer POST /projects/{projectId}/reminders to add another reminder. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3533,7 +3533,7 @@
       },
       "delete": {
         "operationId": "cancelCardReminder",
-        "description": "Requires reminders:write. Cancel an owned card reminder with If-Match=settingsVersion from GET and a stable Idempotency-Key. Retains schedule/history for display but sets disabled:true; queued workers recheck it. Cannot recall a previously accepted notification. Compatibility endpoint: disables reminders for the entire card. To cancel only the legacy reminder use DELETE /projects/{projectId}/reminders/legacy with expectedSettingsVersion.",
+        "description": "Requires reminders:write. Cancel an owned card reminder with If-Match=settingsVersion from GET and a stable Idempotency-Key. Retains schedule/history for display but sets disabled:true; queued workers recheck it. Cannot recall a previously accepted notification. Compatibility endpoint: disables reminders for the entire card. To cancel only the legacy reminder use DELETE /projects/{projectId}/reminders/legacy with expectedSettingsVersion. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -4817,7 +4817,7 @@
       ],
       "get": {
         "operationId": "listCardReminders",
-        "description": "Requires reminders:read. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "description": "Requires reminders:read. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "x-required-scopes": [
           "reminders:read"
         ],
@@ -4955,7 +4955,7 @@
       },
       "post": {
         "operationId": "createCardReminder",
-        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "x-required-scopes": [
           "reminders:write"
         ],
@@ -5136,7 +5136,7 @@
       ],
       "get": {
         "operationId": "getIndependentReminder",
-        "description": "Requires reminders:read. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "description": "Requires reminders:read. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "x-required-scopes": [
           "reminders:read"
         ],
@@ -5274,7 +5274,7 @@
       },
       "patch": {
         "operationId": "updateIndependentReminder",
-        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "x-required-scopes": [
           "reminders:write"
         ],
@@ -5440,7 +5440,7 @@
       },
       "delete": {
         "operationId": "cancelIndependentReminder",
-        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card.",
+        "description": "Requires reminders:write. Own personal card only; all eligible card types. Each independent reminder has a stable ID and numeric revision. Quiet hours, account and card opt-out apply. Provider acceptance is not phone delivery. Relative schedules follow deadline edits until dispatch starts; absolute times remain fixed. Cancelled/sent records are not rearmed automatically. Explicit editing creates a new revision. Repeated Idempotency-Key/body returns current persisted state without duplicate writes. Legacy record id=legacy uses expectedSettingsVersion instead of expectedRevision. Cancellation cannot recall an in-flight or accepted Push. List includes cancelled records; no pagination, maximum100 independent records per card. Since1.5.1, source distinguishes account-default, legacy-explicit and independent. The virtual legacy entry includes old time-only/lead/weekly/import settings even with independent records. Account fallback remains visible as superseded when not scheduled. scheduledAt is the requested instant; effectiveAt applies quiet hours, and nextScheduledAt is null when cancelled, superseded or terminal. Existing event identity and delivery claims prevent legacy projection from duplicating dispatch.",
         "x-required-scopes": [
           "reminders:write"
         ],
@@ -6514,7 +6514,9 @@
               "dispatching",
               "provider-accepted",
               "failed",
-              "unknown"
+              "unknown",
+              "cancelled",
+              "superseded"
             ]
           },
           "verified": {
@@ -6574,6 +6576,19 @@
                 "type": "null"
               }
             ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "account-default",
+              "legacy-explicit",
+              "independent"
+            ],
+            "description": "Account fallback, existing explicit native settings (including time-only/lead/weekly/API linkage), or independent reminder record. No copy or migration on read."
+          },
+          "suppressed": {
+            "type": "boolean",
+            "description": "True for account-default when independent records replace automatic defaults. Historical dispatch results remain visible; no new default dispatch is scheduled."
           }
         }
       },
@@ -6818,7 +6833,9 @@
               "dispatching",
               "provider-accepted",
               "failed",
-              "unknown"
+              "unknown",
+              "superseded",
+              "cancelled"
             ]
           },
           "scheduled": {
@@ -6876,6 +6893,19 @@
           "dueDate": {
             "type": "string",
             "description": "The current card deadline calendar date, or empty when unset."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "account-default",
+              "legacy-explicit",
+              "independent"
+            ],
+            "description": "Account fallback, existing explicit native settings (including time-only/lead/weekly/API linkage), or independent reminder record. No copy or migration on read."
+          },
+          "suppressed": {
+            "type": "boolean",
+            "description": "True for account-default when independent records replace automatic defaults. Historical dispatch results remain visible; no new default dispatch is scheduled."
           }
         }
       },
@@ -6907,7 +6937,15 @@
             "type": "boolean"
           },
           "schedule": {
-            "$ref": "#/components/schemas/CardSchedule"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardSchedule"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Legacy time/lead/default settings may have no normalized schedule object; use scheduledAt/effectiveAt and source."
           },
           "state": {
             "type": "string",
@@ -6955,6 +6993,19 @@
           },
           "handsetDelivery": {
             "const": "not-confirmed"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "account-default",
+              "legacy-explicit",
+              "independent"
+            ],
+            "description": "Account fallback, existing explicit native settings (including time-only/lead/weekly/API linkage), or independent reminder record. No copy or migration on read."
+          },
+          "suppressed": {
+            "type": "boolean",
+            "description": "True for account-default when independent records replace automatic defaults. Historical dispatch results remain visible; no new default dispatch is scheduled."
           }
         }
       },

@@ -62,6 +62,9 @@ async function setup(push) {
   await DB.prepare("INSERT INTO devices(id,uid,subscription) VALUES(?,?,?)")
     .bind("phone", "alice", "{}")
     .run();
+  await DB.prepare("INSERT INTO scopes(uid,scope,next_at) VALUES(?,?,?)")
+    .bind("alice", "", NOW)
+    .run();
   const handler = createApiHandler({
     assertAccount: async () => {},
     repository: (_, uid) => repos[uid],
@@ -718,6 +721,520 @@ test("authenticated UI and Public API share persisted records and individual rev
       await result(await native({ action: "reminders-list" })),
       persisted,
     );
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+
+test("legacy time-only API reminder remains visible and dispatches alongside two independent records", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    const due = "2026-11-09",
+      at = Date.parse("2026-11-09T07:00:00Z");
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      dueDate: due,
+    });
+    await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+      .bind(JSON.stringify({ ...s.p, due: true }), "alice")
+      .run();
+    const legacyUrl = "https://api.example/api/v1/reminders/" + ID;
+    const request = (method, body) =>
+      s.handler(
+        new Request(legacyUrl, {
+          method,
+          headers: {
+            authorization: "Bearer " + s.key.key,
+            "content-type": "application/json",
+          },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        }),
+        s.env,
+      );
+    await result(
+      await request("PUT", { disabled: false, weekly: false, time: "09:00" }),
+    );
+    const before = await result(await request("GET"));
+    assert.equal(before.status, "scheduled");
+    assert.equal((await s.read()).items.length, 1);
+    assert.equal((await s.read()).items[0].source, "legacy-explicit");
+    await result(await add(s, 1, absolute(at)), 201);
+    await result(await add(s, 2, absolute(at + 60000)), 201);
+    const items = (await s.read()).items;
+    const native = await s.worker.fetch(
+      new Request("https://worker.example/", {
+        method: "POST",
+        headers: {
+          origin: "https://app.example",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ action: "reminders-list", projectId: ID }),
+      }),
+      s.env,
+    );
+    assert.deepEqual((await native.json()).result.items, items);
+    assert.equal(items.length, 3);
+    const legacy = items.find((x) => x.id === "legacy");
+    assert.equal(legacy.scheduledAt, before.scheduledAt);
+    assert.equal(legacy.status, "scheduled");
+    assert.equal(legacy.source, "legacy-explicit");
+    assert.equal(items.filter((x) => x.source === "independent").length, 2);
+    t.mock.timers.setTime(at);
+    await plan(s);
+    assert.equal(s.sent.length, 2);
+    t.mock.timers.setTime(at + 180000);
+    await plan(s);
+    assert.equal(s.sent.length, 3);
+    await plan(s);
+    assert.equal(s.sent.length, 3);
+    assert.equal(
+      (await s.read()).items.find((x) => x.id === "legacy").status,
+      "provider-accepted",
+    );
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      dueDate: "2026-11-10",
+    });
+    t.mock.timers.setTime(at + 86400000);
+    await plan(s);
+    assert.equal(s.sent.length, 3);
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+test("account default is distinguished and truthfully suppressed, not silently hidden, beside independent reminders", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      dueDate: "2026-11-09",
+    });
+    await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+      .bind(JSON.stringify({ ...s.p, due: true }), "alice")
+      .run();
+    await s.DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+      .bind(
+        "alice",
+        cardKey(ID),
+        JSON.stringify({
+          disabled: false,
+          time: "",
+          weekly: false,
+          leadMinutes: null,
+          remindAt: null,
+          schedule: null,
+        }),
+      )
+      .run();
+    let legacy = (await s.read()).items.find((x) => x.id === "legacy");
+    assert.equal(legacy.source, "account-default");
+    assert.equal(legacy.status, "scheduled");
+    assert.equal(legacy.suppressed, false);
+    await result(
+      await add(s, 1, absolute(Date.parse("2026-11-09T07:00:00Z"))),
+      201,
+    );
+    legacy = (await s.read()).items.find((x) => x.id === "legacy");
+    assert.equal(legacy.status, "superseded");
+    assert.equal(legacy.suppressed, true);
+    assert.equal(legacy.nextScheduledAt, null);
+    t.mock.timers.setTime(Date.parse("2026-11-09T07:00:00Z"));
+    await plan(s);
+    assert.equal(s.sent.length, 1);
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+test("cancelling the legacy time-only reminder changes only that entry and preserves preferences/siblings", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      dueDate: "2026-11-09",
+    });
+    const p = { ...s.p, due: true };
+    await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+      .bind(JSON.stringify(p), "alice")
+      .run();
+    await s.DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+      .bind(
+        "alice",
+        cardKey(ID),
+        JSON.stringify({
+          disabled: false,
+          weekly: false,
+          time: "09:00",
+          leadMinutes: 30,
+        }),
+      )
+      .run();
+    const at = Date.parse("2026-11-09T06:30:00Z");
+    await result(await add(s, 1, absolute(at)), 201);
+    const legacy = (await s.read()).items.find((x) => x.id === "legacy");
+    await result(
+      await s.call(
+        "DELETE",
+        { expectedSettingsVersion: legacy.settingsVersion },
+        "legacy-time-cancel-0001",
+        s.key.key,
+        "/legacy",
+      ),
+    );
+    const list = await s.read();
+    assert.equal(list.items.find((x) => x.id === "legacy").status, "cancelled");
+    assert.equal(list.items.filter((x) => x.state === "active").length, 1);
+    assert.equal(list.cardDisabled, false);
+    assert.deepEqual(
+      JSON.parse(
+        (
+          await s.DB.prepare("SELECT prefs FROM accounts WHERE uid=?")
+            .bind("alice")
+            .first()
+        ).prefs,
+      ),
+      p,
+    );
+    t.mock.timers.setTime(at);
+    await plan(s);
+    assert.equal(s.sent.length, 1);
+    await plan(s);
+    assert.equal(s.sent.length, 1);
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+test("legacy quiet-hours effective time agrees with actual dispatch and API, without migration writes on reads", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      dueDate: "2026-11-09",
+    });
+    const p = {
+      ...s.p,
+      due: true,
+      quiet: true,
+      quietStart: "22:00",
+      quietEnd: "08:00",
+    };
+    await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+      .bind(JSON.stringify(p), "alice")
+      .run();
+    const settings = JSON.stringify({
+      disabled: false,
+      weekly: false,
+      time: "07:00",
+    });
+    await s.DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+      .bind("alice", cardKey(ID), settings)
+      .run();
+    const old = (await s.read()).items[0];
+    assert.equal(old.scheduledAt, "2026-11-09T05:00:00.000Z");
+    assert.equal(old.effectiveAt, "2026-11-09T06:00:00.000Z");
+    assert.equal(
+      (
+        await s.DB.prepare(
+          "SELECT COUNT(*) AS n FROM card_reminders WHERE uid=?",
+        )
+          .bind("alice")
+          .first()
+      ).n,
+      0,
+    );
+    assert.equal(
+      (
+        await s.DB.prepare("SELECT settings FROM cards WHERE uid=?")
+          .bind("alice")
+          .first()
+      ).settings,
+      settings,
+    );
+    t.mock.timers.setTime(Date.parse(old.scheduledAt));
+    await plan(s);
+    assert.equal(s.sent.length, 0);
+    t.mock.timers.setTime(Date.parse(old.effectiveAt));
+    await plan(s);
+    assert.equal(s.sent.length, 1);
+    assert.equal((await s.read()).items[0].status, "provider-accepted");
+    await plan(s);
+    assert.equal(s.sent.length, 1);
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+
+test("pre-existing accepted legacy delivery remains visible with new reminders after account opt-out, without copying it", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      dueDate: "2026-11-08",
+    });
+    await s.DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+      .bind(
+        "alice",
+        cardKey(ID),
+        JSON.stringify({ disabled: false, time: "09:00", weekly: false }),
+      )
+      .run();
+    const event = "due:2026-11-08:09:00:0";
+    await s.DB.prepare(
+      "INSERT INTO events(uid,id,type,event_key) VALUES(?,?,?,?)",
+    )
+      .bind("alice", cardKey(ID), "due", event)
+      .run();
+    await s.DB.prepare(
+      "INSERT INTO reminder_dispatches(delivery_id,uid,card_key,event_key,device_id,state,updated_at) VALUES(?,?,?,?,?,?,?)",
+    )
+      .bind(
+        "synthetic-historical",
+        "alice",
+        cardKey(ID),
+        event,
+        "phone",
+        "provider-accepted",
+        NOW - 3600000,
+      )
+      .run();
+    await result(await add(s, 1), 201);
+    await result(await add(s, 2), 201);
+    await s.DB.prepare("UPDATE accounts SET prefs=?,enabled=0 WHERE uid=?")
+      .bind(JSON.stringify({ ...s.p, enabled: false }), "alice")
+      .run();
+    const items = (await s.read()).items;
+    assert.equal(items.length, 3);
+    assert.equal(
+      items.find((x) => x.id === "legacy").status,
+      "provider-accepted",
+    );
+    assert.equal(items.find((x) => x.id === "legacy").providerAccepted, 1);
+    assert.equal(
+      items
+        .filter((x) => x.source === "independent")
+        .every((x) => x.status === "disabled"),
+      true,
+    );
+    assert.equal(
+      (
+        await s.DB.prepare(
+          "SELECT COUNT(*) AS n FROM card_reminders WHERE uid=? AND id='legacy'",
+        )
+          .bind("alice")
+          .first()
+      ).n,
+      0,
+    );
+    await plan(s);
+    assert.equal(s.sent.length, 0);
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+test("all native legacy override shapes share source classification alongside independent records", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  for (const settings of [
+    { time: "09:00" },
+    { leadMinutes: 30 },
+    { weekly: true },
+    { apiReminderIntent: "synthetic-intent" },
+  ]) {
+    const s = await setup();
+    try {
+      s.repository.seed("projects", ID, {
+        ...s.repository.get("projects", ID),
+        status: "active",
+        dueDate: "2026-11-09",
+      });
+      await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+        .bind(JSON.stringify({ ...s.p, due: true }), "alice")
+        .run();
+      await s.DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+        .bind(
+          "alice",
+          cardKey(ID),
+          JSON.stringify({
+            disabled: false,
+            weekly: false,
+            time: "",
+            ...settings,
+          }),
+        )
+        .run();
+      await result(await add(s, 1), 201);
+      const items = (await s.read()).items;
+      assert.equal(items.length, 2);
+      assert.equal(
+        items.find((x) => x.id === "legacy").source,
+        "legacy-explicit",
+      );
+      assert.equal(items.find((x) => x.id === "legacy").suppressed, false);
+    } finally {
+      s.DB.sqlite.close();
+    }
+  }
+});
+
+test("actual mixed response agrees with contract sources and nullable legacy schedule", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      dueDate: "2026-11-09",
+    });
+    await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+      .bind(JSON.stringify({ ...s.p, due: true }), "alice")
+      .run();
+    await s.DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+      .bind(
+        "alice",
+        cardKey(ID),
+        JSON.stringify({ time: "09:00", disabled: false, weekly: false }),
+      )
+      .run();
+    await result(await add(s, 1), 201);
+    const contract = JSON.parse(
+        readFileSync(
+          new URL("../docs/openapi-public-api.json", import.meta.url),
+          "utf8",
+        ),
+      ),
+      view = await s.read();
+    const itemSchema = contract.components.schemas.IndependentReminder;
+    for (const item of view.items) {
+      for (const required of itemSchema.required)
+        assert.ok(Object.hasOwn(item, required), required);
+      assert.ok(itemSchema.properties.source.enum.includes(item.source));
+      if (item.schedule === null)
+        assert.ok(
+          itemSchema.properties.schedule.anyOf.some(
+            (schema) => schema.type === "null",
+          ),
+        );
+      assert.ok(Number.isFinite(Date.parse(item.scheduledAt)));
+    }
+    assert.equal(
+      view.items.find((item) => item.source === "legacy-explicit").schedule,
+      null,
+    );
+    assert.equal(contract.info.version, "1.5.1");
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+
+test("native card-wide switch accepts a partial update and preserves all independent schedules", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    await result(await add(s, 1), 201);
+    await result(await add(s, 2), 201);
+    const original = await s.read();
+    const native = (body) =>
+      s.worker.fetch(
+        new Request("https://worker.example/", {
+          method: "POST",
+          headers: {
+            origin: "https://app.example",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ action: "card", projectId: ID, ...body }),
+        }),
+        s.env,
+      );
+    await result(
+      await native({
+        disabled: true,
+        settingsVersion: original.settingsVersion,
+      }),
+    );
+    let view = await s.read();
+    assert.equal(
+      view.items.every((x) => x.status === "disabled"),
+      true,
+    );
+    assert.deepEqual(
+      view.items.map((x) => x.schedule),
+      original.items.map((x) => x.schedule),
+    );
+    await result(
+      await native({ disabled: false, settingsVersion: view.settingsVersion }),
+    );
+    view = await s.read();
+    assert.equal(
+      view.items.every((x) => x.status === "scheduled"),
+      true,
+    );
+    assert.deepEqual(
+      view.items.map((x) => x.id),
+      original.items.map((x) => x.id),
+    );
+  } finally {
+    s.DB.sqlite.close();
+  }
+});
+test("native deadline time synchronization cannot reactivate a cancelled legacy reminder", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
+  const s = await setup();
+  try {
+    s.repository.seed("projects", ID, {
+      ...s.repository.get("projects", ID),
+      status: "active",
+      dueDate: "2026-11-09",
+    });
+    await s.DB.prepare("UPDATE accounts SET prefs=? WHERE uid=?")
+      .bind(JSON.stringify({ ...s.p, due: true }), "alice")
+      .run();
+    await s.DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+      .bind(
+        "alice",
+        cardKey(ID),
+        JSON.stringify({ time: "09:00", disabled: false, weekly: false }),
+      )
+      .run();
+    const before = await s.read();
+    await result(
+      await s.call(
+        "DELETE",
+        { expectedSettingsVersion: before.settingsVersion },
+        "legacy-sync-cancel-0001",
+        s.key.key,
+        "/legacy",
+      ),
+    );
+    const cancelled = await s.read();
+    await result(
+      await s.worker.fetch(
+        new Request("https://worker.example/", {
+          method: "POST",
+          headers: {
+            origin: "https://app.example",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "card",
+            projectId: ID,
+            disabled: false,
+            weekly: false,
+            time: "10:00",
+            settingsVersion: cancelled.settingsVersion,
+          }),
+        }),
+        s.env,
+      ),
+    );
+    assert.equal((await s.read()).items[0].status, "cancelled");
   } finally {
     s.DB.sqlite.close();
   }

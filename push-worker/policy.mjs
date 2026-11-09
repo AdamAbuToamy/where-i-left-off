@@ -57,8 +57,20 @@ export function quietNow(p, now) {
 export function cardKey(id, groupId = "") {
   return `${groupId || "personal"}__${id}`;
 }
+/** Stable native event identity shared by read models and delivery decisions. */
+export const dueEvent = (date, time, lead) => ({
+  type: "due",
+  key: `due:${date}:${time}:${lead}`,
+  date,
+});
 export function candidate(project, card, p, now, enabledAt) {
-  if (project.archivedAt || project.trashedAt || card.disabled || card.legacyCancelled) return null;
+  if (
+    project.archivedAt ||
+    project.trashedAt ||
+    card.disabled ||
+    card.legacyCancelled
+  )
+    return null;
   if (card.schedule || card.remindAt) {
     const plan = explicitReminderEvent(project, card);
     return plan &&
@@ -94,7 +106,7 @@ export function candidate(project, card, p, now, enabledAt) {
       now >= remind &&
       now - remind < 24 * 3600000
     )
-      return { type: "due", key: `due:${date}:${dueTime}:${lead}`, date };
+      return dueEvent(date, dueTime, lead);
   }
   const last = Math.max(
     project.activityAt || project.updatedAt?.toMillis?.() || enabledAt,

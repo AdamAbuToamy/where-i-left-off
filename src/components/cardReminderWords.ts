@@ -1,5 +1,10 @@
 export const cardReminderWords = {
   ar: {
+    requestedTime: "الموعد الأصلي قبل ساعات الهدوء",
+    defaultSource: "افتراضي حسب إعدادات الحساب",
+    legacySource: "تذكير صريح سابق للبطاقة",
+    explicitSource: "تذكير مستقل",
+
     list: "تذكيرات البطاقة",
     add: "إضافة تذكير",
     edit: "تعديل",
@@ -32,6 +37,7 @@ export const cardReminderWords = {
     saved: "تم حفظ التذكير.",
     hint: "يمكنك ضبطه من الحاسوب؛ يصل إلى أجهزتك المشتركة دون بقاء الموقع مفتوحًا. الهدوء وإيقاف الإشعارات للحساب يظلان نافذين.",
     states: {
+      superseded: "الافتراضي غير مفعّل لهذه البطاقة لوجود تذكيرات مستقلة",
       cancelled: "ملغى",
       "partially-accepted": "قبله بعض الأجهزة فقط؛ وصول الهاتف غير مؤكد",
       scheduled: "مجدول على الخادم",
@@ -49,6 +55,11 @@ export const cardReminderWords = {
     },
   },
   en: {
+    requestedTime: "Original time before quiet hours",
+    defaultSource: "Account default",
+    legacySource: "Existing explicit card reminder",
+    explicitSource: "Independent reminder",
+
     list: "Card reminders",
     add: "Add reminder",
     edit: "Edit",
@@ -82,6 +93,8 @@ export const cardReminderWords = {
     saved: "Reminder saved.",
     hint: "Configure on desktop; subscribed devices receive it without keeping the website open. Quiet hours and the account notification switch still apply.",
     states: {
+      superseded:
+        "Account default is superseded by independent reminders for this card",
       cancelled: "Cancelled",
       "partially-accepted":
         "Accepted for some devices; phone arrival not confirmed",
@@ -102,6 +115,11 @@ export const cardReminderWords = {
     },
   },
   he: {
+    requestedTime: "המועד המקורי לפני שעות השקט",
+    defaultSource: "ברירת מחדל של החשבון",
+    legacySource: "תזכורת מפורשת קודמת לכרטיס",
+    explicitSource: "תזכורת עצמאית",
+
     list: "תזכורות לכרטיס",
     add: "הוספת תזכורת",
     edit: "עריכה",
@@ -134,6 +152,7 @@ export const cardReminderWords = {
     saved: "התזכורת נשמרה.",
     hint: "אפשר להגדיר מהמחשב ולקבל במכשירים הרשומים כשהאתר סגור. שעות שקטות וכיבוי התראות בחשבון עדיין חלים.",
     states: {
+      superseded: "ברירת המחדל מוחלפת בתזכורות עצמאיות לכרטיס",
       cancelled: "בוטל",
       "partially-accepted": "התקבל לחלק מהמכשירים; ההגעה לא אומתה",
       scheduled: "מתוזמן בשרת",

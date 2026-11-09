@@ -1,10 +1,15 @@
-import { legacyTerminal } from "./cardReminderRecords.mjs";
+import {
+  isExplicitLegacyReminder,
+  legacyDefaultSuppressed,
+  legacyReminderSource,
+} from "../../shared/legacyReminder.mjs";
+import { legacyTerminal, reminderRows } from "./cardReminderRecords.mjs";
 import {
   preferences,
   cardKey,
   reminderLead,
   zonedTime,
-  candidate,
+  dueEvent,
   localParts,
 } from "../policy.mjs";
 import { explicitReminderEvent } from "../../shared/cardReminderSchedule.mjs";
@@ -52,15 +57,7 @@ export async function readReminderView(
       const due = zonedTime(date, card.time || p.defaultTime, p.timezone);
       at = due === null ? null : due - lead * 60000;
       event =
-        at === null
-          ? null
-          : candidate(
-              { ...project, dueDate: project.dueDate },
-              card,
-              { ...p, enabled: true },
-              at,
-              0,
-            );
+        at === null ? null : dueEvent(date, card.time || p.defaultTime, lead);
     };
     resolve();
     if (card.weekly) {
@@ -88,8 +85,7 @@ export async function readReminderView(
   if (
     groupId &&
     project.assignedTo !== uid &&
-    !card.schedule &&
-    !card.remindAt
+    !isExplicitLegacyReminder(card)
   ) {
     at = null;
     event = null;
@@ -97,7 +93,10 @@ export async function readReminderView(
   const terminal = await legacyTerminal(env, uid, key, card);
   if (terminal) {
     at = terminal.scheduled_at;
-    event = { type: "scheduled", key: terminal.event_key };
+    event = {
+      type: terminal.event_key.startsWith("due:") ? "due" : "scheduled",
+      key: terminal.event_key,
+    };
   }
   const dispatches = event
     ? (
@@ -131,7 +130,7 @@ export async function readReminderView(
             : !scopes
               ? "pending"
               : "scheduled";
-  if ((status !== "disabled" || terminal) && event) {
+  if (event) {
     if (counts["provider-accepted"]) status = "provider-accepted";
     else if (counts.unknown) status = "unknown";
     else if (counts.failed) status = "failed";
@@ -142,12 +141,28 @@ export async function readReminderView(
       )
         .bind(uid, key, event.type)
         .first();
-      if (claimed?.event_key === event.key && status !== "expired")
+      if (
+        claimed?.event_key === event.key &&
+        !["expired", "disabled"].includes(status)
+      )
         status = now - at > 120000 ? "unknown" : "push-queued";
     }
   }
+  const source = legacyReminderSource(card);
+  const suppressed = legacyDefaultSuppressed(
+    card,
+    (await reminderRows(env, uid, key)).length,
+  );
+  // Historical dispatch evidence remains truthful even when defaults are suppressed.
+  if (
+    suppressed &&
+    ["scheduled", "pending", "awaiting-device", "push-queued"].includes(status)
+  )
+    status = "superseded";
   if (card.legacyCancelled) status = "cancelled";
   return {
+    source,
+    suppressed,
     projectId: project.id,
     dueDate: project.dueDate || "",
     disabled: !!card.disabled,

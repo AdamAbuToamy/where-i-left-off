@@ -356,6 +356,11 @@ export default function ApiDocumentation({ language }: { language: Language }) {
               ? "لكل بطاقة قائمة تذكيرات مستقلة: GET وPOST /projects/{projectId}/reminders، وGET/PATCH/DELETE /projects/{projectId}/reminders/{reminderId}. الإضافة لا تستبدل تذكيرًا آخر. للتعديل والإلغاء أرسل expectedRevision؛ السجل القديم legacy يستخدم expectedSettingsVersion. الصلاحيات reminders:read وreminders:write. السجلات الملغاة تبقى واضحة، وإعادة المحاولة بنفس المفتاح لا تكرر الإشعار. الواجهة القديمة /reminders/{projectId} متوافقة؛ حذفها يوقف البطاقة كلها."
               : "Each card has independent reminders: GET/POST /projects/{projectId}/reminders and GET/PATCH/DELETE /projects/{projectId}/reminders/{reminderId}. POST adds; it never replaces another reminder. PATCH/DELETE require expectedRevision; the legacy record uses expectedSettingsVersion. Scopes: reminders:read / reminders:write. Cancelled records remain visible; retry with the same operation key/body. The old /reminders/{projectId} endpoint remains compatible; its DELETE disables the entire card."}
           </p>
+          <p>
+            {language === "ar"
+              ? "توحيد التذكيرات القديمة: source يوضح account-default أو legacy-explicit أو independent. التذكير القديم legacy يظهر حتى لو كان محفوظًا بساعة فقط. الافتراضي المستبدل يظهر بحالة superseded ولا يرسل إشعارًا إضافيًا. effectiveAt هو الموعد بعد ساعات الهدوء. حذف legacy من مسار المجموعة يلغي القديم وحده ولا يوقف بقية التذكيرات."
+              : "Unified reminders: source is account-default, legacy-explicit or independent. The legacy entry includes old time-only settings even alongside independent records. Superseded defaults remain visible and do not dispatch an extra notification. effectiveAt applies quiet hours. Deleting the legacy collection item cancels that entry only, preserving other reminders."}
+          </p>
           <section id="api-doc-workflow" tabIndex={-1}>
             <h2>{t.workflow}</h2>
             <p>{t.flowText}</p>

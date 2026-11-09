@@ -79,6 +79,8 @@ export default function CardReminderControl(props: Props) {
 }
 type ReminderItem = Partial<View> & {
   timeZone?: string;
+  source?: "account-default" | "legacy-explicit" | "independent";
+  suppressed?: boolean;
   id: string;
   revision: number | null;
   status: string;
@@ -224,25 +226,37 @@ function ReminderList(props: Props) {
       {data && !data.items.length && <p>{w.states["not-configured"]}</p>}
       {data?.items.map((item) => (
         <article className="card-reminder-item" key={item.id}>
+          <small>
+            {item.source === "account-default"
+              ? w.defaultSource
+              : item.source === "legacy-explicit"
+                ? w.legacySource
+                : w.explicitSource}
+          </small>
           <strong>
             {item.schedule?.mode === "relative"
               ? w.relative
               : item.schedule?.mode === "absolute"
                 ? w.absolute
-                : w.automatic}
+                : item.source === "legacy-explicit"
+                  ? w.relative
+                  : w.automatic}
           </strong>
-          {item.scheduledAt && (
-            <time dateTime={item.scheduledAt}>
-              {new Date(item.scheduledAt).toLocaleString(props.language, {
-                timeZone: item.timeZone || data.preferences.timezone,
-              })}
+          {(item.effectiveAt || item.scheduledAt) && (
+            <time dateTime={item.effectiveAt || item.scheduledAt || undefined}>
+              {new Date((item.effectiveAt || item.scheduledAt)!).toLocaleString(
+                props.language,
+                {
+                  timeZone: item.timeZone || data.preferences.timezone,
+                },
+              )}
             </time>
           )}
           <small dir="ltr">{item.timeZone || data.preferences.timezone}</small>
           {item.effectiveAt && item.effectiveAt !== item.scheduledAt && (
             <small>
-              {w.afterQuiet}:{" "}
-              {new Date(item.effectiveAt).toLocaleString(props.language, {
+              {w.requestedTime}:{" "}
+              {new Date(item.scheduledAt!).toLocaleString(props.language, {
                 timeZone: item.timeZone || data.preferences.timezone,
               })}
             </small>
@@ -360,6 +374,11 @@ function ReminderForm({
                 : "absolute"),
       );
       setZone(s?.timeZone || next.preferences.timezone);
+      if (record !== "new" && record.legacy && !s && !next.remindAt) {
+        setMode("relative");
+        setAmount(next.leadMinutes ?? next.preferences.leadMinutes);
+        setUnit("minutes");
+      }
       if (s?.mode === "relative") {
         setAmount(s.amount);
         setUnit(s.unit);

@@ -33,7 +33,7 @@ const headers = {
   "content-type": "application/json",
   "cache-control": "no-store",
   pragma: "no-cache",
-  "x-wilo-api-version": "1.5.0",
+  "x-wilo-api-version": "1.5.1",
 };
 const codes = {
   unauthenticated: 401,

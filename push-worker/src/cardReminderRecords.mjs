@@ -1,3 +1,4 @@
+import { isExplicitLegacyReminder } from "../../shared/legacyReminder.mjs";
 import { ApiError, object } from "../../shared/universityApiPlan.mjs";
 import {
   normalizeCardSchedule,
@@ -8,7 +9,17 @@ import { cardKey, preferences } from "../policy.mjs";
 import { afterQuiet } from "../schedule.mjs";
 import * as store from "./store.mjs";
 export const legacyConfig = (card) =>
-  card.schedule ? stableJson(card.schedule) : card.remindAt || "";
+  card.schedule
+    ? stableJson(card.schedule)
+    : card.remindAt ||
+      (isExplicitLegacyReminder(card) && !card.weekly
+        ? stableJson({
+            type: "due",
+            time: card.time || "",
+            leadMinutes: card.leadMinutes ?? null,
+            intent: card.apiReminderIntent || null,
+          })
+        : "");
 export async function reminderRows(env, uid, key) {
   return (
     await env.DB.prepare(
@@ -114,6 +125,8 @@ export async function recordView(
     .first();
   if (status === "scheduled" && !devices.n) status = "awaiting-device";
   return {
+    source: "independent",
+    suppressed: false,
     id: row.id,
     revision: row.revision,
     schedule: JSON.parse(row.schedule),
@@ -363,7 +376,7 @@ export async function startRecordDispatch(env, uid, ck, id, revision, event) {
 }
 export async function freezeLegacy(env, uid, ck, card, event, at) {
   const config = legacyConfig(card);
-  if (!config) return;
+  if (!config || !["due", "scheduled"].includes(event.type)) return;
   const now = Date.now();
   await env.DB.prepare(
     "INSERT INTO card_reminders(uid,card_key,id,schedule,state,created_at,updated_at,scheduled_at,started_at,event_key,legacy_config) VALUES(?,?,'legacy',?,'active',?,?,?,?,?,?) ON CONFLICT(uid,card_key,id) DO UPDATE SET schedule=excluded.schedule,scheduled_at=excluded.scheduled_at,started_at=excluded.started_at,event_key=excluded.event_key,legacy_config=excluded.legacy_config WHERE legacy_config<>excluded.legacy_config",
@@ -374,7 +387,7 @@ export async function freezeLegacy(env, uid, ck, card, event, at) {
       JSON.stringify(
         card.schedule || {
           mode: "absolute",
-          scheduledAt: card.remindAt,
+          scheduledAt: card.remindAt || new Date(at).toISOString(),
           timeZone: "UTC",
         },
       ),

@@ -1,3 +1,7 @@
+import {
+  isExplicitLegacyReminder,
+  legacyDefaultSuppressed,
+} from "../../shared/legacyReminder.mjs";
 import { explicitReminderEvent } from "../../shared/cardReminderSchedule.mjs";
 import {
   readReminderCollection,
@@ -322,9 +326,17 @@ export function createWorker(overrides = {}) {
         }
       } else {
         if (
-          typeof data.disabled !== "boolean" ||
-          typeof data.weekly !== "boolean" ||
-          (data.time !== "" && !clock(data.time))
+          ![
+            "disabled",
+            "weekly",
+            "time",
+            "schedule",
+            "leadMinutes",
+            "remindAt",
+          ].some((key) => data[key] !== undefined) ||
+          (data.disabled !== undefined && typeof data.disabled !== "boolean") ||
+          (data.weekly !== undefined && typeof data.weekly !== "boolean") ||
+          (data.time !== undefined && data.time !== "" && !clock(data.time))
         )
           throw new Error("invalid-reminder");
         const next = cardReminderUpdate(
@@ -506,19 +518,25 @@ export function createWorker(overrides = {}) {
       }
       const terminal = await legacyTerminal(env, uid, id, card);
       if (
-        terminal ||
+        (terminal && (card.schedule || card.remindAt)) ||
         card.legacyCancelled ||
-        (independent.length && !card.schedule && !card.remindAt && !card.weekly)
+        legacyDefaultSuppressed(card, independent.length)
       )
         continue;
       if (
         scope &&
         project.assignedTo !== uid &&
-        !card.schedule &&
-        !card.remindAt
+        !isExplicitLegacyReminder(card)
       )
         continue;
-      const event = candidate(project, card, p, now, row.enabled_at);
+      const legacyPreferences = terminal ? { ...p, due: false } : p;
+      const event = candidate(
+        project,
+        card,
+        legacyPreferences,
+        now,
+        row.enabled_at,
+      );
       let consumed =
         !!event && previous.get(id + "/" + event.type) === event.key;
       if (event && !consumed && queued >= 8) {
@@ -571,7 +589,7 @@ export function createWorker(overrides = {}) {
         nextCheck(
           project,
           card,
-          p,
+          legacyPreferences,
           now,
           row.enabled_at,
           consumed,
@@ -688,12 +706,17 @@ export function createWorker(overrides = {}) {
     } else {
       if (card.legacyCancelled) return;
       const terminal = await legacyTerminal(env, message.uid, key, card);
-      if (terminal && terminal.event_key !== message.event.key) return;
       if (
-        !card.schedule &&
-        !card.remindAt &&
-        !card.weekly &&
-        (await reminderRows(env, message.uid, key)).length
+        terminal &&
+        message.event.type !== "stale" &&
+        terminal.event_key !== message.event.key
+      )
+        return;
+      if (
+        legacyDefaultSuppressed(
+          card,
+          (await reminderRows(env, message.uid, key)).length,
+        )
       )
         return;
     }
@@ -768,7 +791,15 @@ export function createWorker(overrides = {}) {
         key,
         card,
         message.event,
-        explicitReminderEvent(project, card)?.at || Date.now(),
+        explicitReminderEvent(project, card)?.at ??
+          (message.event.type === "due"
+            ? zonedTime(
+                message.event.date,
+                card.time || p.defaultTime,
+                p.timezone,
+              ) -
+              (card.leadMinutes ?? p.leadMinutes) * 60000
+            : Date.now()),
       );
     const t = messages[p.language];
     const payload = {
