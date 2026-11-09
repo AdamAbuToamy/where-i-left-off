@@ -4,7 +4,6 @@ import { takeAuthArrival } from "../lib/authEntry";
 import type { Language } from "../translations";
 import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
-import { isAdmin } from "../lib/admin";
 import { InteractionAudio } from "./interactionAudio";
 import { experienceEvent, readExperience } from "./preferences";
 import type { ExperiencePreferences } from "./preferences";
@@ -17,7 +16,7 @@ export default function CinematicExperience({
   language: Language;
 }) {
   const uid = user?.uid || "",
-    allowed = !!user && isAdmin(user.email, user.emailVerified);
+    allowed = !!user;
   const [preference, setPreference] = useState(() => readExperience(uid));
   const [arrival, setArrival] = useState(() => {
     const requested = takeAuthArrival(uid);

@@ -103,22 +103,40 @@ function ReminderList(props: Props) {
     id: string;
     requestId: string;
   } | null>(null);
-  const reload = useCallback(async () => {
-    try {
-      const next = await pushCall<ReminderCollection>({
+  const read = useCallback(
+    () =>
+      pushCall<ReminderCollection>({
         action: "reminders-list",
         projectId: props.id,
         groupId: props.groupId || "",
-      });
+      }),
+    [props.id, props.groupId],
+  );
+  const reload = useCallback(async () => {
+    try {
+      const next = await read();
       setData(next);
       setError("");
     } catch {
       setError(w.failed);
     }
-  }, [props.id, props.groupId, w.failed]);
+  }, [read, w.failed]);
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    let active = true;
+    void read()
+      .then((next) => {
+        if (active) {
+          setData(next);
+          setError("");
+        }
+      })
+      .catch(() => {
+        if (active) setError(w.failed);
+      });
+    return () => {
+      active = false;
+    };
+  }, [read, w.failed]);
   async function toggleCard(disabled: boolean) {
     if (!data) return;
     setBusy(true);

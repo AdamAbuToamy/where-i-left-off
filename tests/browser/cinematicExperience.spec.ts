@@ -132,29 +132,81 @@ for (const phone of [false, true])
       "none",
     );
   });
-test("ordinary accounts have no admin arrival or experimental background", async ({
-  page,
-  request,
-}) => {
-  const c = await prepareUniversityPilot(
+for (const phone of [false, true])
+  test(`ordinary email account receives published arrival and motion settings — ${phone ? "phone" : "desktop"}`, async ({
+    page,
     request,
-    "real-cinematic-regular@example.test",
-  );
-  await page.addInitScript((uid) => {
-    localStorage.setItem("language", "en");
-    localStorage.setItem("welcome-tour:v2:" + uid, "done");
-  }, c.uid);
-  await page.goto("/");
-  await page.getByLabel("Email", { exact: true }).fill(c.email);
-  await page.locator(".auth-journey .auth-continue").click();
-  await page.getByLabel("Password", { exact: true }).fill(c.password);
-  await page
-    .locator("form")
-    .getByRole("button", { name: "Sign in", exact: true })
-    .click();
-  await expect(page.locator('[data-tour="add-project"]')).toBeVisible({
-    timeout: 15000,
+  }) => {
+    await page.setViewportSize(
+      phone ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
+    );
+    const c = await prepareUniversityPilot(
+      request,
+      "public-arrival-" + (phone ? "phone" : "desktop") + "@example.test",
+    );
+    await page.addInitScript((uid) => {
+      localStorage.setItem("language", "en");
+      localStorage.setItem("welcome-tour:v2:" + uid, "done");
+    }, c.uid);
+    async function signin() {
+      await page.getByLabel("Email", { exact: true }).fill(c.email);
+      await page.locator(".auth-journey .auth-continue").click();
+      await page.getByLabel("Password", { exact: true }).fill(c.password);
+      await page
+        .locator("form")
+        .getByRole("button", { name: "Sign in", exact: true })
+        .click();
+    }
+    await page.goto("/");
+    await signin();
+    const arrival = page.getByRole("dialog", {
+      name: "Entering your workspace",
+      exact: true,
+    });
+    await expect(arrival).toBeVisible();
+    await expect(arrival.locator(".entry-brand")).toContainText(
+      "Where I Left Off",
+    );
+    await page.screenshot({
+      path: `.wrangler/public-arrival-${phone ? "phone" : "desktop"}.png`,
+    });
+    await arrival
+      .getByRole("button", { name: "Skip animation", exact: true })
+      .click();
+    await expect(page.locator("html")).toHaveAttribute("data-cinematic", "on");
+    await page.reload();
+    await expect(page.locator('[data-tour="add-project"]')).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(arrival).toHaveCount(0);
+    await page.goto("/#/settings");
+    const group = page
+      .locator(".settings-group")
+      .filter({ has: page.locator(".experience-settings") });
+    await group.locator(":scope>summary").click();
+    await group.getByLabel("Interaction sounds", { exact: true }).uncheck();
+    await group.getByLabel("Cinematic transitions", { exact: true }).uncheck();
+    if (phone) {
+      await page.getByRole("button", { name: "More", exact: true }).click();
+      await page
+        .locator(".page-navigation")
+        .getByRole("button", { name: "Sign out", exact: true })
+        .click();
+    } else await page.locator(".header-signout").click();
+    await signin();
+    await expect(page.locator("html")).toHaveAttribute("data-cinematic", "off");
+    await expect(arrival).toHaveCount(0);
+    await page.reload();
+    await group.locator(":scope>summary").click();
+    await expect(
+      group.getByLabel("Interaction sounds", { exact: true }),
+    ).not.toBeChecked();
+    await expect(
+      group.getByLabel("Cinematic transitions", { exact: true }),
+    ).not.toBeChecked();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
   });
-  await expect(page.locator(".auth-arrival,.brand-backdrop")).toHaveCount(0);
-  await expect(page.locator("html")).not.toHaveAttribute("data-cinematic");
-});
