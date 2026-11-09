@@ -89,6 +89,7 @@ async function accessToken(env) {
     .sign(signingKey);
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
+    signal: AbortSignal.timeout(10000),
     body: new URLSearchParams({
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion: jwt,
@@ -120,10 +121,14 @@ function fields(value = {}) {
     Object.entries(value).map(([key, v]) => [key, decode(v)]),
   );
 }
-async function request(env, path, token) {
+async function request(env, path, token, deadline) {
+  deadline?.throwIfAborted();
   const response = await fetch(
     `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`,
     {
+      signal: deadline
+        ? AbortSignal.any([deadline, AbortSignal.timeout(15000)])
+        : AbortSignal.timeout(15000),
       headers: {
         Authorization: `Bearer ${token?.auth || (await accessToken(env))}`,
         ...(token?.appcheck ? { "X-Firebase-AppCheck": token.appcheck } : {}),
@@ -143,12 +148,14 @@ export async function readDocument(env, path, token) {
 }
 export async function readCollection(env, path, token) {
   const entries = [];
+  const deadline = AbortSignal.timeout(30000);
   let page = "";
   for (let i = 0; i < 20; i++) {
     const data = await request(
       env,
       `${path}?pageSize=200${page ? "&pageToken=" + encodeURIComponent(page) : ""}`,
       token,
+      deadline,
     );
     for (const d of data?.documents || [])
       entries.push({ id: d.name.split("/").pop(), ...fields(d.fields) });
@@ -169,6 +176,7 @@ export async function accountAvailable(env, uid, token) {
       `https://identitytoolkit.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:lookup`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(10000),
         headers: {
           Authorization: `Bearer ${await accessToken(env)}`,
           "content-type": "application/json",

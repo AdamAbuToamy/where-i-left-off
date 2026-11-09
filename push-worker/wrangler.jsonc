@@ -30,7 +30,8 @@
         "queue": "wilo-push",
         "max_batch_size": 1,
         "max_retries": 2,
-        "max_concurrency": 1
+        "dead_letter_queue": "wilo-push-failed",
+        "max_concurrency": 2
       }
     ]
   },

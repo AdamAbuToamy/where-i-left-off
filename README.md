@@ -178,3 +178,6 @@ API Keys also expose an owner-managed, default-off permission for immediate Push
 
 ### Public API v1.5 — independent card reminders
 Cards now expose an independent reminder list in their existing reminder section. Exact and relative schedules use the existing Push pipeline. See [API contract](docs/openapi-public-api.json), [usage](docs/PUBLIC_API.md), and [safe rollout](docs/OPERATIONS_RUNBOOK.md). The old single-reminder API remains compatible. Chrome extension0.4.1 uses the supplied official Wilo icon; store distribution remains a separate Chrome Web Store release.
+
+### Runtime readiness and safe scaling
+The existing Worker exposes read-only `/healthz` and `/readyz` operational probes. Run `node scripts/verify-runtime-health.mjs` for the production smoke gate. Queue concurrency is conservatively capped at2; exhausted jobs route to a24-hour dead-letter queue. Native read requests have bounded timeouts. See [operations and release procedure](docs/OPERATIONS_RUNBOOK.md) for exact guarantees, recovery and limitations.

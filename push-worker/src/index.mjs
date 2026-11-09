@@ -1,3 +1,4 @@
+import { createRuntimeHealth } from "./runtimeHealth.mjs";
 import {
   isExplicitLegacyReminder,
   legacyDefaultSuppressed,
@@ -120,6 +121,7 @@ const messages = {
   },
 };
 export function createWorker(overrides = {}) {
+  const runtimeHealth = createRuntimeHealth();
   const f = { ...firebase, ...overrides },
     send = overrides.sendPush || sendPush;
   const publicApi = createApiHandler(overrides.publicApi || {});
@@ -839,8 +841,10 @@ export function createWorker(overrides = {}) {
   }
   return {
     async fetch(request, env) {
-      if (new URL(request.url).pathname.startsWith("/api/v1/"))
-        return publicApi(request, env);
+      const path = new URL(request.url).pathname;
+      if (["/healthz", "/readyz"].includes(path))
+        return runtimeHealth(request, env);
+      if (path.startsWith("/api/v1/")) return publicApi(request, env);
       const isAssistant = new URL(request.url).pathname === "/assistant",
         requestId = crypto.randomUUID();
       let stage = "request";

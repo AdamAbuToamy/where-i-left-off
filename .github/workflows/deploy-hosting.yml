@@ -111,6 +111,8 @@ jobs:
           # Hosting-only compatibility pin: 15.34 requires additional Service Usage IAM access.
           # Keep the existing least-privilege Hosting account; development CLI stays current.
           firebaseToolsVersion: 15.33.0
+      - name: Verify deployed hosting, storage readiness and API authentication
+        run: node scripts/verify-runtime-health.mjs
       - name: Remove temporary public configuration
         if: always()
         run: rm -f .env.production.local

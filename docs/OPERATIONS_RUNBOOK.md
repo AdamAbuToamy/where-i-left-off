@@ -59,3 +59,36 @@ Apply `push-worker/multiple-reminders-schema.sql` once before deploying the new 
 No eager user migration: existing settings are exposed as virtual id `legacy`. Independent rows use stable IDs, numeric revisions and hashed idempotency receipts. Queue messages carry reminder ID/revision; delivery rechecks current ownership, card/account switches and record revision before claiming the existing dispatch ledger. First dispatch freezes the event instant, preventing sent relative reminders from rearming after deadline changes. Unknown provider outcomes are retained, never blindly resent. Cancellation cannot recall an in-flight provider request. Cancelled records remain visible, with a bounded100-record collection per card.
 
 Recovery: retain both additive tables and existing dispatch ledgers if reverting application code. Do not drop tables or restore the entire D1 database over new records. Old code can ignore the new tables but does not deliver independent rows; assess paused reminders before any rollback. No new secret, service, scheduler or paid dependency is required. Validate production anonymously via contract/version/invalid-key denial and release hashes; this does not prove authenticated writes or phone delivery. Never send real users a test Push as a release probe.
+
+
+## Managed runtime resilience (2026-11-09)
+
+Wilo keeps Firebase Hosting/Firestore and Cloudflare Workers/D1/Queues. The supplied Kubernetes video is a conceptual reference, not a deployment manifest: CDN serving and stateless Worker replicas remain provider-managed. No cluster, VM, additional database, paid plan or second scheduler is introduced.
+
+The existing `wilo-push` consumer may scale between one and **two concurrent invocations** (batch1, existing two retries). This conservative ceiling avoids unlimited pressure on Firebase/D1. It is not a certified user-capacity or throughput claim. Native provider sends retain atomic D1 claims; an overlapping40-request real-workerd/D1 test across two synthetic accounts verifies one simulated provider attempt per event/account.
+
+`wilo-push-failed` is a dead-letter route within the same Cloudflare Queues infrastructure for messages that exhaust retries. Keep its retention at86400 seconds (24 hours), compatible with the Free plan and the reminder catch-up window. It has no production consumer or automatic replay loop. Operator procedure: inspect the failure in the Cloudflare dashboard, fix the dependency, review original event age and persisted delivery state before a targeted retry. Never bulk replay unknown provider outcomes, mint new event IDs for retry, purge real messages as a test, or promise delivery from queue presence. Expired messages are removed by the provider after retention; this is not permanent archival or a backup.
+
+Operational probes (outside authenticated `/api/v1`):
+
+- `GET/HEAD /healthz`: process liveness only, no database query.
+- `GET/HEAD /readyz`: read-only D1 schema connectivity and queue binding presence.1500ms response deadline; best-effort per-isolate/environment5-second cache coalesces requests.200 means these checks passed;503 means unavailable. Only generic status is public, never identities, subscriptions, account counts, credentials or error stacks. Other methods return405. These probes do not prove Firebase/Google/provider availability, cron punctuality or device arrival.
+
+Native Firebase OAuth/Auth lookups have10-second request budgets, Firestore reads15 seconds, and paginated collection reads a shared30-second deadline. Failed collection snapshots are rejected in full. Existing permission/revision/atomic-write boundaries remain intact.
+
+### Reviewed Worker release from the official workspace
+
+Use existing authenticated Wrangler credentials. `.wrangler/production-worker.json` is ignored operator metadata for the existing Worker/account/D1/queue IDs, not a new secret or an API-consumer setup requirement. Do not copy whole workspaces or deploy from the recovery directory.
+
+```sh
+node scripts/prepare-worker-release.mjs
+node push-worker/node_modules/wrangler/bin/wrangler.js deploy --config .wrangler/reviewed-worker.json
+node push-worker/node_modules/wrangler/bin/wrangler.js queues update wilo-push-failed --message-retention-period-secs 86400 --config .wrangler/reviewed-worker.json
+node scripts/verify-runtime-health.mjs
+```
+
+Preparation rejects mismatched Worker/D1/queue identity, preserves existing resource metadata/other producers and uses reviewed source for queue policy and the official entry point. Old local vars are omitted and `keep_vars:true` preserves existing protected remote configuration. Verify live binding fingerprints before/after. Cloudflare creates a missing DLQ in the source queue's jurisdiction when the reviewed consumer is deployed; verify actual consumer settings and retention afterward. Never approve a billing upgrade or broaden IAM to make rollout pass.
+
+Hosting's existing GitHub deployment now runs the same read-only smoke gate afterward: liveness, readiness, HTML entry asset, published OpenAPI and the normal unauthenticated401 with matching API version. A failed smoke check fails the workflow; it does not blindly roll back code or user data. This is a deployment check, not a new24/7 alerting service. Keep provider quota/backlog dashboards and budget limits under owner control; no new external paid monitoring was enabled.
+
+Official references reviewed: [Firebase global CDN](https://firebase.google.com/docs/hosting/quickstart), [Queue concurrency](https://developers.cloudflare.com/queues/configuration/consumer-concurrency/), [dead-letter queues](https://developers.cloudflare.com/queues/configuration/dead-letter-queues/), [current queue pricing/retention](https://developers.cloudflare.com/queues/platform/pricing/). Provider plans/limits must be checked again before increasing workload. Backup/PITR restoration and a measured capacity/SLA remain separate unverified exercises described above.
