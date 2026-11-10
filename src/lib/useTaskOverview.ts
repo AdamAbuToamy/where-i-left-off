@@ -1,3 +1,5 @@
+import { isUniversityReminderProject } from "../../shared/universityCardVisibility.mjs";
+import { useUniversityReminderLinks } from "../university/useUniversityReminderLinks";
 import { currentCard } from "./workflow";
 import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
@@ -14,7 +16,12 @@ export function useTaskOverview(
   personalLabel: string,
   includeAllGroupCards = false,
   includeGroups = true,
+  includeUniversityReminders = false,
 ) {
+  const reminderLinks = useUniversityReminderLinks(
+    user,
+    !includeUniversityReminders,
+  );
   const [entries, setEntries] = useState<TaskEntry[]>([]),
     [allEntries, setAllEntries] = useState<TaskEntry[]>([]),
     [ready, setReady] = useState(false),
@@ -144,5 +151,15 @@ export function useTaskOverview(
       stops.forEach((stop) => stop());
     };
   }, [user.uid, personalLabel, includeAllGroupCards, includeGroups]);
-  return { entries, allEntries, ready, cached, suspended };
+  const visible = (entry: TaskEntry) =>
+    includeUniversityReminders ||
+    !!entry.groupId ||
+    !isUniversityReminderProject(entry.project, reminderLinks.ids);
+  return {
+    entries: reminderLinks.ready ? entries.filter(visible) : [],
+    allEntries: reminderLinks.ready ? allEntries.filter(visible) : [],
+    ready: ready && reminderLinks.ready,
+    cached,
+    suspended,
+  };
 }

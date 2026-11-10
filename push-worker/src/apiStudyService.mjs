@@ -1,3 +1,7 @@
+import {
+  isUniversityReminderProject,
+  universityReminderProjectIdsFromRecords,
+} from "../../shared/universityCardVisibility.mjs";
 import { ApiError, object } from "../../shared/universityApiPlan.mjs";
 import {
   planAssistantChanges,
@@ -95,9 +99,17 @@ export function createApiStudyService({
         data.scopes[0][kind] = (
           await (kind === "projects" ? tx.listProjects() : tx.listSections())
         ).map((r) => ({ ...r.value, id: r.key }));
+      const helperIds =
+        kind === "projects"
+          ? universityReminderProjectIdsFromRecords(
+              (await tx.listStudy()).map((row) => row.value),
+            )
+          : new Set();
       const selected = rows(data, kind)
           .filter(
             (r) =>
+              (kind !== "projects" ||
+                !isUniversityReminderProject(r, helperIds)) &&
               (!cursor || r.id > cursor) &&
               (!courseId || r.courseId === courseId),
           )

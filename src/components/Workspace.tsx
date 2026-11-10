@@ -1,3 +1,5 @@
+import { isUniversityReminderProject } from "../../shared/universityCardVisibility.mjs";
+import { useUniversityReminderLinks } from "../university/useUniversityReminderLinks";
 import ContentSkeleton from "./ContentSkeleton";
 import { createPortal } from "react-dom";
 import DesktopPlanningButton from "../planning/DesktopPlanningButton";
@@ -79,7 +81,16 @@ export default function Workspace({
   const [sectionFilter, setSectionFilter] = useState(
     () => workspaceView().section,
   );
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [workspaceProjects, setProjects] = useState<Project[]>([]);
+  const reminderLinks = useUniversityReminderLinks(user, !group);
+  const projects = useMemo(
+    () =>
+      workspaceProjects.filter(
+        (project) =>
+          !!group || !isUniversityReminderProject(project, reminderLinks.ids),
+      ),
+    [workspaceProjects, group, reminderLinks.ids],
+  );
   const [accountSuspended, setAccountSuspended] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [cached, setCached] = useState(true);
@@ -641,15 +652,26 @@ export default function Workspace({
           </dialog>,
           document.body,
         )}
+      {reminderLinks.failed && (
+        <p role="alert">
+          {language === "ar"
+            ? "تعذر التحقق من روابط تذكيرات الجامعة. أعد تحميل الصفحة؛ لم تتغير بياناتك."
+            : language === "he"
+              ? "לא ניתן לבדוק קישורי תזכורות. יש לטעון מחדש; הנתונים לא שונו."
+              : "Could not verify university reminder links. Reload the page; your data has not changed."}
+        </p>
+      )}
       {accountSuspended ? (
         <section className="empty-state account-suspended" role="alert">
           <h2>{t.accountStatus}</h2>
           <p>{t.accountSuspended}</p>
         </section>
       ) : (
-        !loaded && <ContentSkeleton language={language} />
+        (!loaded || !reminderLinks.ready) && (
+          <ContentSkeleton language={language} />
+        )
       )}
-      {!accountSuspended && loaded && (
+      {!accountSuspended && loaded && reminderLinks.ready && (
         <>
           <CommandFrame compact={!!kitchenStudy}>
             {view === "board" && (

@@ -26,7 +26,7 @@ const clean = (v: unknown) =>
     .replace(/[\u200e\u200f]/g, "")
     .trim();
 const labels = {
-  code: /^(course\s*(code|number|no\.?)|code|number|رقم\s*(المادة|الكورس|المساق)|رمز|מספר\s*קורס|מס[\"׳']?\s*קורס|קוד)$/i,
+  code: /^(course\s*(code|number|no\.?)|code|number|رقم\s*(المادة|الكورس|المساق)|رمز|מספר\s*קורס|מס["׳']?\s*קורס|קוד)$/i,
   name: /^(course\s*(name|title)|name|اسم\s*(المادة|الكورس|المساق)|שם\s*ה?קורס|מקצוע)$/i,
   year: /^(year|academic year|السنة|سنة|שנה|שנת לימוד)$/i,
   semester: /^(semester|term|السمستر|الفصل|فصل|סמסטר)$/i,

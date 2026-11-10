@@ -1743,7 +1743,7 @@
     "/projects": {
       "get": {
         "operationId": "listProjects",
-        "description": "Requires projects:read. ID-sorted cursor pagination.",
+        "description": "Requires projects:read. ID-sorted cursor pagination. Personal cards only: internal university reminder backing records linked by task.reminderProjectId are excluded. University assignments remain available through the task/course operations; their reminder backing records and schedules are preserved.",
         "parameters": [
           {
             "name": "limit",

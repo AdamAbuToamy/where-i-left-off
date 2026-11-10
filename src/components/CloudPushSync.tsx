@@ -4,7 +4,7 @@ import {useTaskOverview} from '../lib/useTaskOverview'
 import {pushCall} from '../lib/pushNotifications'
 import type {PushState} from '../lib/pushNotifications'
 export default function CloudPushSync({user}:{user:User}) {
- const {allEntries,ready,suspended}=useTaskOverview(user,'Personal',true)
+ const {allEntries,ready,suspended}=useTaskOverview(user,'Personal',true,true,true)
  const last=useRef('')
  useEffect(()=>{
   if(!ready||suspended)return

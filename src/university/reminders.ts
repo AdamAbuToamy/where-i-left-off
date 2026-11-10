@@ -13,7 +13,7 @@ import { pushCall } from "../lib/pushNotifications";
 import type { PushState } from "../lib/pushNotifications";
 import { reminderInput } from "../../shared/reminderTime.mjs";
 import type { StudyTask } from "./model";
-/** University records stay local; only explicitly linked reminder cards enter the user's workspace. */
+/** University tasks remain study records. Native reminder backing cards stay out of personal-card views. */
 export function prepareReminder(task: StudyTask): StudyTask {
   if (!db) throw new Error("سجّل الدخول أولًا");
   return task.reminderProjectId
