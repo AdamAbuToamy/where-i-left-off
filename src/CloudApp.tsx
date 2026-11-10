@@ -29,7 +29,7 @@ import AnnouncementInbox from './components/AnnouncementInbox'
 import WelcomeTour from './components/WelcomeTour'
 import { AccountLifecycle } from './components/AccountDeletion'
 import { pageText } from './pageText'
-import { navigate, usePage } from './lib/navigation'
+import { navigate, usePage, signedInLanding } from './lib/navigation'
 import { flushLogs, logEvent, traced } from './lib/logging'
 import { translations } from './translations'
 import type { Language } from './translations'
@@ -73,7 +73,7 @@ export default function App() {
   }, [language, t.appName])
   useEffect(() => {
     if (!auth) return
-    const present = (current: User | null) => { if (authEntryHeld(current)) { setLoading(false); return; } setUser(current); setLoading(false); if (current) { void flushLogs(); if (new URLSearchParams(location.search).has('groupInvite')) navigate('groups') } };
+    const present = (current: User | null) => { if (authEntryHeld(current)) { setLoading(false); return; } setUser(current); setLoading(false); if (current) { void flushLogs(); const landing=signedInLanding(isAdmin(current.email,current.emailVerified)); if(landing) navigate(landing) } };
     const stopEntry = subscribeAuthEntry(() => present(auth!.currentUser));
     const stopAuth = onAuthStateChanged(auth, present, e => { setAuthError(e); setLoading(false); logEvent('auth.subscription', e) });
     return () => {stopEntry();stopAuth()}

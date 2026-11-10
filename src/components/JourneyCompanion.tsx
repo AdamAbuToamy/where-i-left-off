@@ -78,7 +78,7 @@ export default function JourneyCompanion({
           className="companion-brows"
           d={
             mood === "thinking"
-              ? "M49 53L62 50M80 50L94 54"
+              ? "M49 52Q56 47 63 52M80 53Q87 49 94 53"
               : "M49 53Q56 48 62 53M80 53Q87 48 94 53"
           }
           stroke="#365b49"
@@ -90,7 +90,7 @@ export default function JourneyCompanion({
             celebrate || mood === "happy"
               ? "M60 81Q72 100 84 81Z"
               : mood === "thinking"
-                ? "M66 87Q73 83 80 87"
+                ? "M64 82Q73 94 82 82"
                 : "M62 83Q72 93 82 83"
           }
           stroke="#365b49"

@@ -371,3 +371,21 @@
 .journey-coach[data-compact="true"] .journey-speech h2 {
   font-size: 12px;
 }
+
+.journey-coach .journey-actions[hidden] {
+  display: none;
+}
+
+/* Guidance is portalled into phone forms; keep form-heading styles out of its speech. */
+:root .journey-layer .journey-coach .journey-speech h2 {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.65;
+  margin: 0;
+  text-align: inherit;
+}
+@media (max-width: 600px) {
+  :root .journey-layer .journey-coach .journey-speech h2 {
+    font-size: 14px;
+  }
+}

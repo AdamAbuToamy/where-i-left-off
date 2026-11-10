@@ -85,6 +85,15 @@ for (const phone of [false, true])
       "data-tour-step",
       "create",
     );
+    // The collapsed form is mounted but inert: it must not steal the guide target.
+    await expect(page.locator(".journey-layer")).toHaveAttribute(
+      "data-cue",
+      "create",
+    );
+    await expect(page.locator('[data-tour="add-project"]')).toHaveAttribute(
+      "data-journey-target",
+      "true",
+    );
     await page.locator('[data-tour="add-project"]').click();
     await expect(page.locator(".journey-layer")).toHaveAttribute(
       "data-cue",
@@ -92,7 +101,21 @@ for (const phone of [false, true])
     );
     await expect(guide).toBeVisible();
     expect(await guide.evaluate((node) => !node.closest("[inert]"))).toBe(true);
+    await page.screenshot({
+      path: `/tmp/wilo-guide-form-${phone ? "phone" : "desktop"}.png`,
+      animations: "disabled",
+    });
     await page.locator("#project-name").fill("My real journey card");
+    await guide.getByRole("button", { name: t.hide, exact: true }).click();
+    await guide.getByRole("button", { name: t.show, exact: true }).click();
+    await expect(page.locator(".journey-layer")).toHaveAttribute(
+      "data-tour-step",
+      "create",
+    );
+    await expect(page.locator("#project-name")).toHaveValue(
+      "My real journey card",
+    );
+
     await page.locator("#project-next-step").fill("Try one small step");
     await page.locator('[data-tour="save-project"]').click();
     await expect(page.locator(".journey-layer")).toHaveAttribute(

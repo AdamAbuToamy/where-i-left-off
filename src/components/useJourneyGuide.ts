@@ -45,7 +45,9 @@ export function useJourneyGuide(
       setHost((current) => (current === nextHost ? current : nextHost));
       let node: HTMLElement | null = null,
         nextCue: JourneyCue = "create";
-      const form = document.querySelector<HTMLFormElement>(".new-project-form");
+      const form = document.querySelector<HTMLFormElement>(
+        "#new-project-panel.is-open .new-project-form,form.phone-form-fullscreen",
+      );
       if (step === "create" && form) {
         const name = form.querySelector<HTMLInputElement>("#project-name"),
           next = form.querySelector<HTMLTextAreaElement>("#project-next-step"),
@@ -116,7 +118,7 @@ export function useJourneyGuide(
       );
       const size = coach.current?.getBoundingClientRect();
       const cardRect = node
-        ?.closest(".project-card:not(.card-detail-panel)")
+        ?.closest(".project-card:not(.card-detail-panel),.new-project-form")
         ?.getBoundingClientRect();
       const nextPosition = journeyCompanionPosition(
         clipped,
@@ -160,6 +162,7 @@ export function useJourneyGuide(
     document.addEventListener("focusin", schedule);
     document.addEventListener("input", schedule);
     document.addEventListener("change", schedule);
+    document.addEventListener("transitionend", schedule, true);
     window.addEventListener("resize", schedule);
     window.addEventListener("scroll", schedule, true);
     window.visualViewport?.addEventListener("resize", schedule);
@@ -173,6 +176,7 @@ export function useJourneyGuide(
       document.removeEventListener("focusin", schedule);
       document.removeEventListener("input", schedule);
       document.removeEventListener("change", schedule);
+      document.removeEventListener("transitionend", schedule, true);
       window.removeEventListener("resize", schedule);
       window.removeEventListener("scroll", schedule, true);
       window.visualViewport?.removeEventListener("resize", schedule);

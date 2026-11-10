@@ -258,11 +258,17 @@ export default function WelcomeTour({
         </p>
       )}
       <div className="journey-actions">
-        <button className="primary-button" disabled={busy} onClick={finish}>
+        <button
+          type="button"
+          className="primary-button"
+          disabled={busy}
+          onClick={finish}
+        >
           {createdIds.length ? t.keep : t.done}
         </button>
         {createdIds.length > 0 && (
           <button
+            type="button"
             className="journey-remove"
             disabled={busy || !ready}
             onClick={() => void remove()}
@@ -296,11 +302,19 @@ export default function WelcomeTour({
             <>
               <p>{t.intro}</p>
               <div className="journey-actions">
-                <button className="primary-button" onClick={() => go("create")}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => go("create")}
+                >
                   {t.start}
                   <ArrowRight size={17} />
                 </button>
-                <button className="secondary-button guide-skip" onClick={stop}>
+                <button
+                  type="button"
+                  className="secondary-button guide-skip"
+                  onClick={stop}
+                >
                   {t.skip}
                 </button>
               </div>
@@ -367,6 +381,7 @@ export default function WelcomeTour({
                     <h2 aria-live="polite">{cueBody}</h2>
                   </div>
                   <button
+                    type="button"
                     className="journey-minimize"
                     aria-label={minimized ? t.show : t.hide}
                     onClick={() => setMinimized((v) => !v)}
@@ -386,7 +401,7 @@ export default function WelcomeTour({
                     >
                       <i style={{ width: `${stepIndex * 25}%` }} />
                     </div>
-                    <div className="journey-actions">
+                    <div className="journey-actions" hidden={step === "create"}>
                       {step === "create" ? (
                         <>
                           <a className="secondary-button" href="#/personal">
@@ -397,12 +412,14 @@ export default function WelcomeTour({
                       ) : step === "card" ? (
                         <>
                           <button
+                            type="button"
                             className="secondary-button"
                             onClick={openCard}
                           >
                             {t.openCard}
                           </button>
                           <button
+                            type="button"
                             className="primary-button"
                             disabled={!openedCard}
                             onClick={() => go("university")}
@@ -425,6 +442,7 @@ export default function WelcomeTour({
                               : t.goGroups}
                           </a>
                           <button
+                            type="button"
                             className="primary-button"
                             onClick={() =>
                               go(step === "university" ? "groups" : "finish")
@@ -435,7 +453,11 @@ export default function WelcomeTour({
                         </>
                       )}
                     </div>
-                    <button className="journey-stop" onClick={stop}>
+                    <button
+                      type="button"
+                      className="journey-stop"
+                      onClick={stop}
+                    >
                       <X size={13} />
                       {t.stop}
                     </button>

@@ -115,3 +115,21 @@ export function consumeWorkspaceSearchLink() {
   url.hash = path + (params.size ? "?" + params.toString() : "");
   history.replaceState(history.state, "", url);
 }
+
+/** Keep deliberate deep links, but never leave a signed-in account on a forbidden admin outlet. */
+export function signedInLanding(
+  admin: boolean,
+  hash = location.hash,
+  search = location.search,
+): "personal" | "groups" | null {
+  if (new URLSearchParams(search).has("groupInvite")) return "groups";
+  const page = route(hash).page;
+  if (
+    !hash ||
+    hash === "#" ||
+    hash === "#/" ||
+    (!admin && (page === "admin" || page === "logs"))
+  )
+    return "personal";
+  return null;
+}
