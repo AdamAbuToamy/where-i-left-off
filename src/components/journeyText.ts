@@ -1,10 +1,16 @@
 export const journeyText = {
   ar: {
     name: "رفيق ويلو",
+    optionalDetails:
+      "الاسم يكفي للبداية. احفظ بطاقتك الآن، أو أضف خطوة قادمة إذا أحببت.",
+    saveName: "احفظ بالاسم فقط",
+    addDetails: "أضف تفاصيل اختيارية",
     writeName: "اكتب اسم الشيء الذي تريد متابعته هنا.",
-    writeNext: "ما أول خطوة ستعمل عليها؟ اكتبها هنا.",
+    writeNext:
+      "يمكنك كتابة خطوة صغيرة لتعرف من أين تتابع لاحقًا. هذا اختياري؛ تستطيع الحفظ بالاسم فقط.",
     saveNow: "جاهز؟ اضغط هنا لحفظ بطاقتك.",
-    tryReminder: "من هذا الزر تختار متى نذكّرك ببطاقتك. جرّبه أو تابع معي.",
+    tryReminder:
+      "داخل البطاقة تجد المهام والملاحظات لتكمل من حيث توقفت. من هذا الزر تختار موعد تذكير؛ جرّبه، أو تابع الجولة.",
     tagline: "خطوة صغيرة، وبداية واضحة",
     welcome: "أهلًا بك في Where I Left Off",
     intro: "أهلًا! أنا رفيق ويلو. تعال نجرّب الموقع معًا، خطوة بخطوة.",
@@ -20,13 +26,16 @@ export const journeyText = {
     createBody: "اضغط هنا لنحفظ أول شيء تريد الرجوع إليه.",
     waiting: "بانتظار إنشاء بطاقتك…",
     card: "بطاقتك أصبحت أمامك!",
-    cardBody: "أحسنت! اضغط هنا لفتح بطاقتك.",
+    cardBody:
+      "أحسنت! هذه بطاقتك، تحفظ لك ما تريد العودة إليه. افتحها لنرى كيف تتابع العمل عليها.",
     openCard: "افتح البطاقة",
     tried: "جرّبت البطاقة، نكمل",
     university: "مكان دراستك",
-    universityBody: "هذا مكان دراستك: أضف مقررًا لتجمع واجباته ومواعيده هنا.",
+    universityBody:
+      "هذا مكان دراستك. لكل مقرر مساحة تجمع واجباته ومواعيده ومواده، فتجد ما عليك تسليمه بسهولة. يمكنك إضافة مقرر عندما تحتاج.",
     groups: "العمل مع الآخرين",
-    groupsBody: "تريد العمل مع أصدقاء؟ من هنا تنشئ مجموعة أو تنضم إلى واحدة.",
+    groupsBody:
+      "تريد العمل مع أصدقاء؟ أنشئ مجموعة أو انضم بدعوة. داخلها تشاركون البطاقات والمهام، وتبقى بطاقاتك الشخصية منفصلة.",
     finish: "أصبحت البداية لك",
     finishBody:
       "عرفت الأساسيات. تقدر الآن تكمل وتكتشف الموقع على راحتك، وتعيد الجولة من الإعدادات في أي وقت.",
@@ -50,11 +59,16 @@ export const journeyText = {
   },
   en: {
     name: "Wilo Companion",
+    optionalDetails:
+      "A name is enough to start. Save your card now, or add a next step if you like.",
+    saveName: "Save with just a name",
+    addDetails: "Add optional details",
     writeName: "Give your card a name here.",
-    writeNext: "What's your first small step? Write it here.",
+    writeNext:
+      "Add a small next step so you know where to continue later. It's optional: you can save with just a name.",
     saveNow: "Ready? Press here to save your card.",
     tryReminder:
-      "Choose when to be reminded with this button. Try it, or continue with me.",
+      "Inside your card, tasks and notes help you pick up where you left off. This button lets you choose a reminder time. Try it, or continue the tour.",
     tagline: "A little step. A clear beginning.",
     welcome: "Welcome to Where I Left Off",
     intro:
@@ -71,14 +85,16 @@ export const journeyText = {
     createBody: "Press here to save the first thing you want to come back to.",
     waiting: "Waiting for your first card…",
     card: "Your card is here!",
-    cardBody: "Nice work! Press here to open your card.",
+    cardBody:
+      "Nice work! This card keeps something you want to return to. Open it to see how to continue working on it.",
     openCard: "Open your card",
     tried: "I've tried it, let's continue",
     university: "A home for your studies",
     universityBody:
-      "This is your study space. Add a course to keep its assignments and dates together.",
+      "This is your study space. Each course keeps its assignments, dates and materials together, so you can find what is due. Add a course whenever you need one.",
     groups: "Work together",
-    groupsBody: "Working with friends? Create a group or join one here.",
+    groupsBody:
+      "Working with friends? Create a group or join with an invitation. Share cards and tasks inside it while keeping your personal cards separate.",
     finish: "The next step is yours",
     finishBody:
       "You know the essentials. Keep exploring at your own pace. You can replay this tour from Settings anytime.",
@@ -102,10 +118,16 @@ export const journeyText = {
   },
   he: {
     name: "החבר של Wilo",
+    optionalDetails:
+      "שם מספיק כדי להתחיל. שמרו עכשיו, או הוסיפו צעד הבא אם תרצו.",
+    saveName: "שמירה עם שם בלבד",
+    addDetails: "הוספת פרטים לבחירה",
     writeName: "כתבו כאן שם לכרטיס שלכם.",
-    writeNext: "מה הצעד הראשון? כתבו אותו כאן.",
+    writeNext:
+      "אפשר לכתוב צעד קטן כדי לדעת מאיפה להמשיך בהמשך. זה לא חובה; אפשר לשמור עם שם בלבד.",
     saveNow: "מוכנים? לחצו כאן לשמירת הכרטיס.",
-    tryReminder: "כאן בוחרים מתי לקבל תזכורת. נסו או המשיכו איתי.",
+    tryReminder:
+      "בכרטיס יש משימות והערות שיעזרו לכם להמשיך מאיפה שעצרתם. הכפתור הזה קובע זמן לתזכורת. נסו או המשיכו בסיור.",
     tagline: "צעד קטן. התחלה ברורה.",
     welcome: "ברוכים הבאים ל־Where I Left Off",
     intro: "שלום! אני החבר של Wilo. ננסה את האתר ביחד, צעד אחר צעד.",
@@ -121,14 +143,16 @@ export const journeyText = {
     createBody: "לחצו כאן כדי לשמור דבר שתרצו לחזור אליו.",
     waiting: "ממתינים לכרטיס הראשון…",
     card: "הכרטיס שלכם כאן!",
-    cardBody: "כל הכבוד! לחצו כאן כדי לפתוח את הכרטיס.",
+    cardBody:
+      "כל הכבוד! הכרטיס שומר דבר שתרצו לחזור אליו. פתחו אותו כדי לראות איך ממשיכים לעבוד עליו.",
     openCard: "פתיחת הכרטיס",
     tried: "ניסיתי, אפשר להמשיך",
     university: "מקום ללימודים",
     universityBody:
-      "זה המקום ללימודים. הוסיפו קורס כדי לרכז את המטלות והמועדים שלו.",
+      "זה המקום ללימודים. לכל קורס יש מקום למטלות, למועדים ולחומרי לימוד, כדי לדעת מה צריך להגיש. הוסיפו קורס כשתצטרכו.",
     groups: "עובדים ביחד",
-    groupsBody: "עובדים עם חברים? כאן יוצרים קבוצה או מצטרפים לקבוצה.",
+    groupsBody:
+      "עובדים עם חברים? צרו קבוצה או הצטרפו בהזמנה. שתפו בה כרטיסים ומשימות, בעוד הכרטיסים האישיים נשארים בנפרד.",
     finish: "הצעד הבא שלכם",
     finishBody:
       "הכרתם את הבסיס. המשיכו לגלות בקצב שלכם. אפשר להפעיל את הסיור שוב מההגדרות.",

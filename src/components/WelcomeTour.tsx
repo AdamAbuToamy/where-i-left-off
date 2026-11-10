@@ -12,6 +12,7 @@ import { journeySteps, parseJourneySession } from "./journeySession";
 import type { JourneySession, JourneyStep } from "./journeySession";
 import { useJourneyWorkspace } from "./useJourneyWorkspace";
 import { useJourneyGuide } from "./useJourneyGuide";
+import { useJourneyAudio } from "./useJourneyAudio";
 import "./WelcomeTour.css";
 const doneKey = (uid: string) => `welcome-tour:v2:${uid}`;
 const journalKey = (uid: string) =>
@@ -172,10 +173,13 @@ export default function WelcomeTour({
     setOpenedCard,
     coachRef,
   );
+  useJourneyAudio(user.uid, active, `${step}:${guide.cue}`);
   const { focus } = guide;
   const cueBody =
     guide.cue === "name"
-      ? t.writeName
+      ? guide.nameReady
+        ? t.optionalDetails
+        : t.writeName
       : guide.cue === "next"
         ? t.writeNext
         : guide.cue === "save"
@@ -215,6 +219,19 @@ export default function WelcomeTour({
     } finally {
       if (alive.current) setBusy(false);
     }
+  }
+  function saveNamedCard() {
+    const button = document.querySelector<HTMLButtonElement>(
+      '#new-project-panel.is-open [data-tour="save-project"],.phone-form-fullscreen [data-tour="save-project"]',
+    );
+    if (button && !button.disabled) button.click();
+  }
+  function optionalDetails() {
+    const field = document.querySelector<HTMLElement>(
+      "#new-project-panel.is-open #project-next-step,.phone-form-fullscreen #project-next-step",
+    );
+    field?.focus();
+    field?.scrollIntoView({ block: "center", behavior: "instant" });
   }
   function openCard() {
     location.hash = "/personal";
@@ -334,6 +351,15 @@ export default function WelcomeTour({
           >
             {focus && !minimized && (
               <div
+                className="journey-backdrop"
+                aria-hidden="true"
+                style={{
+                  clipPath: `polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,${focus.x}px ${focus.y}px,${focus.x}px ${focus.y + focus.height}px,${focus.x + focus.width}px ${focus.y + focus.height}px,${focus.x + focus.width}px ${focus.y}px,${focus.x}px ${focus.y}px)`,
+                }}
+              />
+            )}
+            {focus && !minimized && (
+              <div
                 className="journey-target"
                 style={{
                   left: focus.x,
@@ -401,13 +427,26 @@ export default function WelcomeTour({
                     >
                       <i style={{ width: `${stepIndex * 25}%` }} />
                     </div>
-                    <div className="journey-actions" hidden={step === "create"}>
+                    <div
+                      className="journey-actions"
+                      hidden={step === "create" && !guide.nameReady}
+                    >
                       {step === "create" ? (
                         <>
-                          <a className="secondary-button" href="#/personal">
-                            {t.personal}
-                          </a>
-                          <small role="status">{t.waiting}</small>
+                          <button
+                            type="button"
+                            className="primary-button"
+                            onClick={saveNamedCard}
+                          >
+                            {t.saveName}
+                          </button>
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={optionalDetails}
+                          >
+                            {t.addDetails}
+                          </button>
                         </>
                       ) : step === "card" ? (
                         <>

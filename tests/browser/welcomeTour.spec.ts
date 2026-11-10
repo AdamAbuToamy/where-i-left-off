@@ -116,8 +116,29 @@ for (const phone of [false, true])
       "My real journey card",
     );
 
-    await page.locator("#project-next-step").fill("Try one small step");
-    await page.locator('[data-tour="save-project"]').click();
+    await expect(page.locator(".journey-backdrop")).toBeVisible();
+    await expect
+      .poll(() =>
+        page.locator(".page-header").evaluate((node) => {
+          let current: Element | null = node;
+          while (current) {
+            if (getComputedStyle(current).filter === "blur(3px)") return true;
+            current = current.parentElement;
+          }
+          return false;
+        }),
+      )
+      .toBe(true);
+    if (phone) {
+      await guide
+        .getByRole("button", { name: t.addDetails, exact: true })
+        .click();
+      await page.locator("#project-next-step").fill("Try one small step");
+      await page.locator('[data-tour="save-project"]').click();
+    } else
+      await guide
+        .getByRole("button", { name: t.saveName, exact: true })
+        .click();
     await expect(page.locator(".journey-layer")).toHaveAttribute(
       "data-tour-step",
       "card",
@@ -144,9 +165,34 @@ for (const phone of [false, true])
     }
     const panel = page.locator(".card-detail-panel");
     await expect(panel).toBeVisible();
-    await expect(
-      panel.getByText("Try one small step", { exact: true }),
-    ).toBeVisible();
+    await expect(guide).toBeVisible();
+    expect(await guide.evaluate((node) => !node.closest("[inert]"))).toBe(true);
+    await expect(guide.locator(".journey-companion")).toBeVisible();
+    await expect(panel.locator(".card-reminder-trigger")).toHaveAttribute(
+      "data-journey-target",
+      "true",
+    );
+    await expect
+      .poll(() =>
+        page.locator("#root").evaluate((node) => getComputedStyle(node).filter),
+      )
+      .toBe("blur(3px)");
+    expect(
+      await guide
+        .locator("h2")
+        .evaluate((node) => node.getBoundingClientRect().width),
+    ).toBeGreaterThan(150);
+    await expect(guide.locator(".journey-minimize")).toHaveCSS("width", "32px");
+
+    await page.screenshot({
+      path: `/tmp/wilo-guide-expanded-${phone ? "phone" : "desktop"}.png`,
+      animations: "disabled",
+    });
+
+    if (phone)
+      await expect(
+        panel.getByText("Try one small step", { exact: true }),
+      ).toBeVisible();
     await panel
       .getByRole("button", { name: phone ? "رجوع" : "Back", exact: true })
       .click();

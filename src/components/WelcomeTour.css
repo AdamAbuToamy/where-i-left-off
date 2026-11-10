@@ -389,3 +389,53 @@
     font-size: 14px;
   }
 }
+
+.journey-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(24 39 32 / 14%);
+  pointer-events: none;
+  z-index: 0;
+}
+.journey-target {
+  z-index: 1;
+}
+.journey-coach {
+  z-index: 2;
+}
+
+/* The companion can live inside a card; card-wide button rules must not style its controls. */
+:root .journey-layer .journey-coach .journey-speech button {
+  width: auto;
+  margin: 0;
+  box-shadow: none;
+  font-size: 12px;
+  background: var(--site-soft, #edf1eb);
+  color: var(--site-text, #25332e);
+  border: 1px solid var(--site-border, #c9d3ca);
+}
+:root .journey-layer .journey-coach .journey-speech .primary-button {
+  background: var(--site-primary, #365b49);
+  color: var(--site-primary-text, #fff);
+}
+:root .journey-layer .journey-coach .journey-speech .journey-minimize {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  line-height: 1;
+}
+:root .journey-layer .journey-coach .journey-speech .journey-stop {
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  min-height: 28px;
+  padding: 5px;
+  margin: 6px auto 0;
+}
+
+/* A transformed modal host would offset fixed guide coordinates. Keep its surface steady during the tour. */
+:root :is(.card-detail-panel,.phone-form-fullscreen,dialog):has(>.journey-layer){transform:none!important;filter:none!important;perspective:none!important;will-change:auto!important;contain:none!important;animation:none!important}

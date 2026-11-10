@@ -1,4 +1,4 @@
-export type InteractionTone = "press" | "navigate" | "drop" | "entry";
+export type InteractionTone = "press" | "navigate" | "drop" | "entry" | "guide";
 /** Browser boundary: synthesized short cues, no media downloads or microphone access. */
 export class InteractionAudio {
   private context: AudioContext | null = null;
@@ -27,11 +27,13 @@ export class InteractionAudio {
       const entry = kind === "entry";
       const tones = entry
         ? [196, 293.66, 392]
-        : kind === "navigate"
-          ? [440, 660]
-          : kind === "drop"
-            ? [330, 495]
-            : [520];
+        : kind === "guide"
+          ? [587.33, 739.99]
+          : kind === "navigate"
+            ? [440, 660]
+            : kind === "drop"
+              ? [330, 495]
+              : [520];
       tones.forEach((frequency, index) => {
         const oscillator = context.createOscillator(),
           gain = context.createGain(),
@@ -44,7 +46,7 @@ export class InteractionAudio {
         );
         gain.gain.setValueAtTime(0.0001, start);
         gain.gain.exponentialRampToValueAtTime(
-          entry ? 0.025 : 0.045,
+          entry || kind === "guide" ? 0.025 : 0.045,
           start + (entry ? 0.035 : 0.008),
         );
         gain.gain.exponentialRampToValueAtTime(

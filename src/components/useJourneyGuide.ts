@@ -22,6 +22,7 @@ export function useJourneyGuide(
   coach: RefObject<HTMLElement | null>,
 ) {
   const [compact, setCompact] = useState(false);
+  const [nameReady, setNameReady] = useState(false);
   const [host, setHost] = useState<HTMLElement>(() => document.body),
     [focus, setFocus] = useState<TourRect | null>(null),
     [cue, setCue] = useState<JourneyCue>("create"),
@@ -35,10 +36,38 @@ export function useJourneyGuide(
     if (!active) return;
     let frame = 0,
       target: HTMLElement | null = null;
+    const blurred = new Map<HTMLElement, string>();
+    let blurTarget: HTMLElement | null = null;
+    const restoreBlur = () => {
+      for (const [node, filter] of blurred) node.style.filter = filter;
+      blurred.clear();
+      blurTarget = null;
+    };
+    const focusAround = (node: HTMLElement | null) => {
+      if (blurTarget === node) return;
+      restoreBlur();
+      if (!node || minimized) return;
+      blurTarget = node;
+      let branch: HTMLElement = node;
+      while (branch.parentElement) {
+        for (const sibling of branch.parentElement.children)
+          if (
+            sibling instanceof HTMLElement &&
+            sibling !== branch &&
+            !sibling.contains(coach.current) &&
+            !sibling.matches(".journey-layer,script,style,link")
+          ) {
+            blurred.set(sibling, sibling.style.filter);
+            sibling.style.filter = "blur(3px)";
+          }
+        if (branch.parentElement === document.body) break;
+        branch = branch.parentElement;
+      }
+    };
     const paint = () => {
       frame = 0;
       const phoneSurface = document.querySelector<HTMLElement>(
-        ".phone-form-fullscreen,.phone-card-fullscreen",
+        ".phone-form-fullscreen,.phone-card-fullscreen,.desktop-card-panel",
       );
       const dialog = document.querySelector<HTMLElement>("dialog[open]");
       const nextHost = dialog || phoneSurface || document.body;
@@ -48,6 +77,8 @@ export function useJourneyGuide(
       const form = document.querySelector<HTMLFormElement>(
         "#new-project-panel.is-open .new-project-form,form.phone-form-fullscreen",
       );
+      const titleField = form?.querySelector<HTMLInputElement>("#project-name");
+      setNameReady(!!titleField?.value.trim());
       if (step === "create" && form) {
         const name = form.querySelector<HTMLInputElement>("#project-name"),
           next = form.querySelector<HTMLTextAreaElement>("#project-next-step"),
@@ -55,7 +86,7 @@ export function useJourneyGuide(
         if (!name?.value.trim() || focused === name) {
           node = name;
           nextCue = "name";
-        } else if (!next?.value.trim()) {
+        } else if (focused === next) {
           node = next;
           nextCue = "next";
         } else {
@@ -88,6 +119,7 @@ export function useJourneyGuide(
         target = node;
         target?.setAttribute("data-journey-target", "true");
       }
+      focusAround(node);
       setCue(nextCue);
       const viewport = window.visualViewport,
         offset = { x: viewport?.offsetLeft || 0, y: viewport?.offsetTop || 0 },
@@ -163,12 +195,14 @@ export function useJourneyGuide(
     document.addEventListener("input", schedule);
     document.addEventListener("change", schedule);
     document.addEventListener("transitionend", schedule, true);
+    document.addEventListener("animationend", schedule, true);
     window.addEventListener("resize", schedule);
     window.addEventListener("scroll", schedule, true);
     window.visualViewport?.addEventListener("resize", schedule);
     window.visualViewport?.addEventListener("scroll", schedule);
     paint();
     return () => {
+      restoreBlur();
       observer.disconnect();
       resize?.disconnect();
       cancelAnimationFrame(frame);
@@ -177,11 +211,12 @@ export function useJourneyGuide(
       document.removeEventListener("input", schedule);
       document.removeEventListener("change", schedule);
       document.removeEventListener("transitionend", schedule, true);
+      document.removeEventListener("animationend", schedule, true);
       window.removeEventListener("resize", schedule);
       window.removeEventListener("scroll", schedule, true);
       window.visualViewport?.removeEventListener("resize", schedule);
       window.visualViewport?.removeEventListener("scroll", schedule);
     };
   }, [active, step, targetId, minimized, onOpened, host, coach]);
-  return { host, focus, cue, position, compact };
+  return { host, focus, cue, position, compact, nameReady };
 }
