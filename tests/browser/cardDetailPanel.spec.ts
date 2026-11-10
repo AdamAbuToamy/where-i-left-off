@@ -49,6 +49,24 @@ for (const phone of [false, true]) {
       .click();
     const panel = page.locator(".card-detail-panel");
     await expect(panel).toBeVisible();
+    if (!phone)
+      await expect
+        .poll(() =>
+          page.locator(".workspace-command-bar").evaluate((bar) => {
+            const box = bar.getBoundingClientRect();
+            return Array.from(
+              bar.querySelectorAll("button,[role=combobox]"),
+            ).filter((el) => {
+              const r = el.getBoundingClientRect();
+              return (
+                r.width > 0 &&
+                r.height > 0 &&
+                (r.left < box.left - 1 || r.right > box.right + 1)
+              );
+            }).length;
+          }),
+        )
+        .toBe(0);
     await expect(
       panel.getByText("Continue the experiment", { exact: true }),
     ).toBeVisible();
@@ -145,6 +163,10 @@ for (const phone of [false, true]) {
       expect(fields[field].stringValue).toBe(value);
     await panel.getByRole("button", { name: "Back", exact: true }).click();
     await expect(page.locator(".card-detail-panel")).toHaveCount(0);
+    if (!phone) {
+      await page.mouse.move(1435, 985);
+      await expect(card.locator(".envelope-expand")).toHaveCSS("opacity", "0");
+    }
     await expect(card.locator(".envelope-summary h2")).toHaveText(
       "Updated panel card",
     );

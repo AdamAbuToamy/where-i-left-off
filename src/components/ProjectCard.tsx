@@ -132,7 +132,12 @@ export default function ProjectCard({
     if (phone) return;
     document.body.classList.add("card-detail-docked");
     const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented && !isEditing) {
+      if (
+        event.key === "Escape" &&
+        !event.defaultPrevented &&
+        !isEditing &&
+        !document.querySelector("dialog[open]")
+      ) {
         setDetailsOpen(false);
       }
     };

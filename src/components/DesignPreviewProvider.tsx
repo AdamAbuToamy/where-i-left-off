@@ -5,6 +5,7 @@ import { DesignPreviewContext } from "./designPreviewContext";
 import "./designPreview.css";
 import "../planning/workspace.css";
 import "./interactionPerformance.css";
+import "./FocusDialog.css";
 /** One final account design; legacy device choices no longer select an alternate UI. */
 export default function DesignPreviewProvider({
   user,

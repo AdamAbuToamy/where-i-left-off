@@ -318,18 +318,37 @@ for (const phone of [false, true])
     await panel
       .getByRole("button", { name: "Card reminder", exact: true })
       .click();
-    await panel
+    const reminderWindow = page.locator("dialog.wilo-focus-dialog[open]");
+    await expect(reminderWindow).toBeVisible();
+    const bounds = await reminderWindow.boundingBox();
+    expect(bounds!.width).toBeLessThan(page.viewportSize()!.width);
+    expect(bounds!.height).toBeLessThan(page.viewportSize()!.height);
+    expect(
+      await reminderWindow.evaluate(
+        (node) => getComputedStyle(node, "::backdrop").backdropFilter,
+      ),
+    ).not.toBe("none");
+    await page.screenshot({
+      path: `/tmp/wilo-focused-reminder-${phone ? "phone" : "desktop"}.png`,
+      animations: "disabled",
+    });
+    await expect(reminderWindow).toHaveAttribute("aria-labelledby", /.+/);
+
+    await reminderWindow
       .getByRole("button", { name: "Add reminder", exact: true })
       .click();
     await expect(
-      panel.getByLabel("How far before?", { exact: true }),
+      reminderWindow.getByLabel("How far before?", { exact: true }),
     ).toBeVisible();
-    await panel
+    await reminderWindow
       .getByRole("button", { name: "Save reminder", exact: true })
       .click();
     await expect(
-      panel.getByText("Scheduled on the server", { exact: true }),
+      reminderWindow.getByText("Scheduled on the server", { exact: true }),
     ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(reminderWindow).toHaveCount(0);
+    await expect(panel).toBeVisible();
     expect(settings[group + "__" + groupProject].schedule).toMatchObject({
       mode: "relative",
     });

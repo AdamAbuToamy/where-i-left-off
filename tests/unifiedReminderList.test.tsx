@@ -37,7 +37,8 @@ const legacy = {
   leadMinutes: 30,
   time: "07:00",
 };
-let node: HTMLDivElement,
+let node: HTMLElement,
+  host: HTMLDivElement,
   root: ReturnType<typeof createRoot>,
   items: Array<Record<string, unknown>>;
 beforeEach(() => {
@@ -73,13 +74,21 @@ beforeEach(() => {
       cardDisabled: false,
     };
   });
-  node = document.createElement("div");
-  document.body.append(node);
-  root = createRoot(node);
+  // jsdom lacks native dialog methods; browser journeys verify the real focus boundary.
+  HTMLDialogElement.prototype.showModal = function () {
+    this.open = true;
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.open = false;
+  };
+  host = document.createElement("div");
+  node = host;
+  document.body.append(host);
+  root = createRoot(host);
 });
 afterEach(() => {
   act(() => root.unmount());
-  node.remove();
+  host.remove();
   vi.unstubAllGlobals();
 });
 async function render() {
@@ -94,6 +103,8 @@ async function render() {
       />,
     ),
   );
+  node = document.querySelector<HTMLElement>("dialog.wilo-focus-dialog")!;
+  expect(node).not.toBeNull();
 }
 it("renders legacy and independent entries together with the quiet-hours adjusted instant first", async () => {
   await render();

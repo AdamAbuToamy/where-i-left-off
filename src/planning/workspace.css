@@ -361,3 +361,43 @@
   display: inline-flex;
   align-items: center;
 }
+
+/* Docked card panels reduce the workspace width, independently of viewport width. */
+body.card-detail-docked #root,
+body.card-detail-docked .workspace {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+:root[data-kitchen-study="on"] body.card-detail-docked .workspace-command-bar {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+:root[data-kitchen-study="on"]
+  body.card-detail-docked
+  .workspace-command-bar
+  .workspace-direct-options {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+:root[data-kitchen-study="on"]
+  body.card-detail-docked
+  .workspace-direct-options
+  .view-tabs {
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+}
+:root[data-kitchen-study="on"]
+  body.card-detail-docked
+  .workspace-direct-options
+  :is(.filter-group, .workspace-section-picker) {
+  flex: 1 1 140px;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+}

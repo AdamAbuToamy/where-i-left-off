@@ -1,0 +1,91 @@
+/* One bounded focus treatment for modal windows across Wilo. */
+:root dialog[open]::backdrop {
+  background: rgb(24 39 32 / 28%);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+:root[data-kitchen-study="on"] dialog[open]::backdrop {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.wilo-focus-dialog {
+  width: min(820px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 40px);
+  box-sizing: border-box;
+  margin: auto;
+  padding: 0;
+  border: 2px solid var(--site-border, #c9d3ca);
+  border-radius: 20px;
+  background: var(--site-surface, #fffdf7);
+  color: var(--site-text, #25332e);
+  box-shadow: 0 24px 80px #17271f35;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.wilo-focus-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  padding: 18px 22px;
+  background: var(--site-surface, #fffdf7);
+  border-bottom: 1px solid var(--site-border, #c9d3ca);
+}
+.wilo-focus-dialog > header h2 {
+  font-size: 20px;
+  line-height: 1.5;
+  margin: 0;
+}
+.wilo-focus-dialog > header button {
+  flex: none;
+  min-height: 42px;
+  padding: 8px 14px;
+}
+.wilo-focus-dialog-content {
+  padding: 22px;
+  min-width: 0;
+}
+.wilo-focus-dialog .card-reminder-control {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.wilo-focus-dialog :is(input, select, textarea) {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.choice-focus-backdrop {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1990;
+  background: rgb(24 39 32 / 10%);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+:root[data-design-preview="on"] .choice-picker-trigger.is-open {
+  position: relative;
+  z-index: 2001;
+}
+:root[data-design-preview="on"] .choice-picker-panel {
+  border-width: 2px;
+  box-shadow: 0 16px 46px #18271f30;
+}
+@media (max-width: 600px) {
+  .wilo-focus-dialog {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 16px;
+  }
+  .wilo-focus-dialog > header {
+    padding: 14px 16px;
+  }
+  .wilo-focus-dialog-content {
+    padding: 16px;
+  }
+}

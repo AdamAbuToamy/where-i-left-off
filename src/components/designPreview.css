@@ -508,7 +508,7 @@
     transform 0.25s;
 }
 :root[data-design-preview="on"] .project-card:hover .envelope-expand,
-:root[data-design-preview="on"] .project-card:focus-within .envelope-expand {
+:root[data-design-preview="on"] .project-card:has(:focus-visible) .envelope-expand {
   opacity: 1;
   transform: none;
   pointer-events: auto;

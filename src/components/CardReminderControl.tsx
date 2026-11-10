@@ -1,3 +1,4 @@
+import FocusDialog from "./FocusDialog";
 import { Bell, ChevronDown } from "lucide-react";
 import { useState, useCallback, useEffect, useRef, useId } from "react";
 import type { Language } from "../translations";
@@ -47,7 +48,7 @@ export default function CardReminderControl(props: Props) {
           type="button"
           className="primary-button card-reminder-trigger"
           aria-expanded={open}
-          aria-controls={panelId}
+          aria-controls={open ? panelId : undefined}
           onClick={() => setOpen((value) => !value)}
         >
           <Bell size={18} aria-hidden="true" />
@@ -58,9 +59,16 @@ export default function CardReminderControl(props: Props) {
             aria-hidden="true"
           />
         </button>
-        <div id={panelId} hidden={!open}>
-          {open && <ReminderList {...props} />}
-        </div>
+        <FocusDialog
+          open={open}
+          title={w.title}
+          language={props.language}
+          onClose={() => setOpen(false)}
+        >
+          <div id={panelId} className="card-reminder-control">
+            <ReminderList {...props} />
+          </div>
+        </FocusDialog>
       </div>
     );
   return (

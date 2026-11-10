@@ -327,7 +327,7 @@
     filter: none !important;
     perspective: none !important;
   }
-  :root[data-kitchen-study="on"] dialog:not(.planning-board-dialog) {
+  :root[data-kitchen-study="on"] dialog:not(.planning-board-dialog):not(.wilo-focus-dialog) {
     position: fixed !important;
     inset: 0 !important;
     width: 100vw !important;
@@ -493,7 +493,7 @@
 }
 
 @media (max-width: 600px) {
-  :root[data-kitchen-study="on"] dialog:not(.planning-board-dialog) {
+  :root[data-kitchen-study="on"] dialog:not(.planning-board-dialog):not(.wilo-focus-dialog) {
     transform: none !important;
   }
   .mobile-deck-card:has(.phone-card-fullscreen) {

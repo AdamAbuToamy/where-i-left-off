@@ -140,7 +140,7 @@ export default function ChoicePicker({
       <button
         ref={button}
         type="button"
-        className="choice-picker-trigger"
+        className={`choice-picker-trigger${open ? " is-open" : ""}`}
         role="combobox"
         aria-label={label}
         aria-expanded={open}
@@ -204,6 +204,11 @@ export default function ChoicePicker({
       {open &&
         createPortal(
           <>
+            <div
+              className="choice-focus-backdrop"
+              style={{ position: placement.position }}
+              aria-hidden="true"
+            />
             <header className="choice-phone-heading">
               <strong>{label}</strong>
               <button
