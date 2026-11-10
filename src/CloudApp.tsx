@@ -1,3 +1,4 @@
+import MobileGestures from "./components/MobileGestures";
 import { authEntryHeld, subscribeAuthEntry } from "./lib/authEntry";
 import CinematicExperience from "./experience/CinematicExperience";
 import MobileNavigation from './components/MobileNavigation';
@@ -94,6 +95,6 @@ export default function App() {
       {!user.displayName?.trim() && page !== 'settings' && <aside className="profile-prompt" aria-label={p.needsName}><span className="profile-prompt-icon" aria-hidden="true">✦</span><div className="profile-prompt-copy"><strong>{p.needsName}</strong><span>{p.profilePrompt}</span></div><a className="primary-button profile-prompt-action" href="#/settings">{p.editProfile} <span aria-hidden="true">↗</span></a></aside>}
       <main id="wilo-main" tabIndex={-1} className="account-page-outlet" data-page={page} key={`${user.uid}/${page}/${groupId}`}><ErrorBoundary embedded><AccountPage page={page} groupId={groupId} user={user} language={language} installed={installed} profileVersion={profileVersion}/></ErrorBoundary></main>
     </AccountLifecycle>{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>}</> : <main id="wilo-main" tabIndex={-1}>{page === 'support' && <p className="notice">{supportText[language].signin}</p>}<AuthPanel language={language} /></main>}
-    <footer className="site-footer">{!user && page !== "api-docs" && <p className="auth-footer-notice">{supportText[language].notice}</p>}<LegalLinks language={language} /></footer>
+    <MobileGestures uid={user?.uid || ""} language={language}/><footer className="site-footer">{!user && page !== "api-docs" && <p className="auth-footer-notice">{supportText[language].notice}</p>}<LegalLinks language={language} /></footer>
   </div></IdleSleep></StudyLocaleProvider></DesignPreviewProvider>
 }

@@ -1,0 +1,9 @@
+# Mobile gestures — 2026-11-10
+
+Phone-only (coarse pointer, width up to 767px) elastic pull-to-refresh replaces browser overscroll with Wilo logo feedback and a real browser reload on release beyond threshold. A deliberate rightward swipe beginning within the physical left 24px uses browser history.back; no action when history has no previous entry. Desktop unchanged. Native OS/browser edge gestures remain under platform control and require physical-device verification.
+
+Gestures ignore editable/draggable elements, open modal dialogs and nested vertical scroll containers. Multi-touch, wrong direction and touch cancellation abort. Experience motion setting and prefers-reduced-motion disable page movement/spinning. Existing beforeunload guard and offline workspace persistence are retained. No data/backend/auth changes, dependencies, account writes or Push messages.
+
+Verification: full application run 1379 passed, 4 shell tests failed because the test environment omits matchMedia. Added safe feature detection; all 4 shell tests and 5 gesture tests then passed (9/9 focused rerun). Combined coverage: 1383 passing test cases across original run and focused rerun, not a second full-suite run. Two Chromium browser tests passed using real CDP touch input: pull/reload and left-edge back; desktop unchanged. Screenshots inspected. Lint, architecture (zero violations), production TypeScript/build and credential-pattern scan passed. Existing SECURITY.md dependency findings remain outside this UI change; this is not a clean dependency audit.
+
+Production evidence is stored outside Git at /home/adam/wilo-recovery/20261110-mobile-gestures. Physical Android/iOS not verified. No exact equivalence with system-level gestures is claimed. Existing public footer and multilingual guides are included in release byte-parity verification.
