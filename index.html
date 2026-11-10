@@ -11,7 +11,7 @@
     <title>Where I Left Off — Project Organizer</title>
     <meta
       name="description"
-      content="Keep track of every project’s current state, next step, priority, notes and links. Resume your work across phone and PC with Where I Left Off."
+      content="Where I Left Off (WILO) keeps your project’s current state, next step, notes and links together. Sign in on your phone or computer and resume your work."
     />
     <link rel="canonical" href="https://where-i-left-off.web.app/" />
     <meta property="og:site_name" content="Where I Left Off" />
@@ -25,7 +25,7 @@
         "@type": "WebSite",
         "@id": "https://where-i-left-off.web.app/#website",
         "name": "Where I Left Off",
-        "alternateName": ["WILO", "ويلو"],
+        "alternateName": ["WILO", "ويلو", "أين وصلت", "לאן הגעתי"],
         "url": "https://where-i-left-off.web.app/",
         "inLanguage": ["en", "ar", "he"]
       }
@@ -34,10 +34,111 @@
     <meta property="og:title" content="Where I Left Off — Project Organizer" />
     <meta
       property="og:description"
-      content="Keep track of every project’s current state, next step, priority, notes and links. Resume your work across phone and PC with Where I Left Off."
+      content="Where I Left Off (WILO) keeps your project’s current state, next step, notes and links together. Sign in on your phone or computer and resume your work."
     />
     <meta property="og:url" content="https://where-i-left-off.web.app/" />
     <meta name="twitter:card" content="summary" />
+    <style id="wilo-site-identity-style">
+      body:has(> #wilo-site-identity) {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      body > #root {
+        flex: 1;
+        min-height: 0;
+      }
+      #wilo-site-identity {
+        padding: 22px 28px;
+        border-top: 1px solid var(--site-border, #d8ddd5);
+        background: var(--site-surface, #fffefa);
+        color: var(--site-muted, #59675f);
+        font:
+          13px/1.6 system-ui,
+          sans-serif;
+      }
+      #wilo-site-identity .site-footer-inner {
+        max-width: 1120px;
+        margin: auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px 32px;
+      }
+      #wilo-site-identity .site-footer-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        text-align: start;
+        text-decoration: none;
+      }
+      #wilo-site-identity .site-footer-brand img {
+        flex: none;
+        border-radius: 10px;
+      }
+      #wilo-site-identity strong {
+        display: block;
+        color: var(--site-text, #25332e);
+        font-size: 14px;
+        font-weight: 650;
+      }
+      #wilo-site-identity .site-footer-names {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+      }
+      #wilo-site-identity a {
+        color: inherit;
+        text-decoration: none;
+        text-underline-offset: 4px;
+      }
+      #wilo-site-identity nav a:hover {
+        color: var(--site-text, #25332e);
+        text-decoration: underline;
+      }
+      #wilo-site-identity a:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
+      }
+      #wilo-site-identity nav {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+      }
+      #wilo-site-identity nav a {
+        padding-block: 8px;
+      }
+      #wilo-site-identity [data-footer-locale] {
+        display: none;
+      }
+      html:not([lang="ar"]):not([lang="he"])
+        #wilo-site-identity
+        [data-footer-locale="en"],
+      html[lang="ar"] #wilo-site-identity [data-footer-locale="ar"],
+      html[lang="he"] #wilo-site-identity [data-footer-locale="he"] {
+        display: inline;
+      }
+      @media (max-width: 640px) {
+        #wilo-site-identity {
+          padding: 20px;
+        }
+        #wilo-site-identity .site-footer-inner {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 12px;
+        }
+        #wilo-site-identity nav {
+          gap: 6px 24px;
+        }
+      }
+      @media (max-width: 640px) {
+        body:has(.mobile-bottom-navigation) #wilo-site-identity {
+          padding-bottom: calc(116px + env(safe-area-inset-bottom));
+        }
+      }
+    </style>
     <!-- WILO_LOADING_STYLES -->
     <script>
       try {
@@ -70,6 +171,58 @@
         </main></noscript
       >
     </div>
+    <footer id="wilo-site-identity" aria-label="Where I Left Off">
+      <div class="site-footer-inner">
+        <a class="site-footer-brand" href="/about.html">
+          <img src="/app-icon-192.png" width="40" height="40" alt="" />
+          <span
+            ><strong dir="ltr">Where I Left Off</strong
+            ><span class="site-footer-names"
+              ><bdi>WILO</bdi> · <bdi lang="ar">ويلو · أين وصلت</bdi> ·
+              <bdi lang="he">לאן הגעתי</bdi></span
+            ></span
+          >
+        </a>
+        <nav aria-label="Learn about Where I Left Off">
+          <a
+            href="/about.html#project-checkpoint"
+            lang="en"
+            data-footer-locale="en"
+            >How it works</a
+          >
+          <a href="/about.html#examples" lang="en" data-footer-locale="en"
+            >Examples</a
+          >
+          <a href="/about.html#questions" lang="en" data-footer-locale="en"
+            >FAQ</a
+          >
+          <a
+            href="/about-ar.html#project-checkpoint"
+            lang="ar"
+            data-footer-locale="ar"
+            >كيف يعمل</a
+          >
+          <a href="/about-ar.html#examples" lang="ar" data-footer-locale="ar"
+            >أمثلة</a
+          >
+          <a href="/about-ar.html#questions" lang="ar" data-footer-locale="ar"
+            >أسئلة شائعة</a
+          >
+          <a
+            href="/about-he.html#project-checkpoint"
+            lang="he"
+            data-footer-locale="he"
+            >איך זה עובד</a
+          >
+          <a href="/about-he.html#examples" lang="he" data-footer-locale="he"
+            >דוגמאות</a
+          >
+          <a href="/about-he.html#questions" lang="he" data-footer-locale="he"
+            >שאלות נפוצות</a
+          >
+        </nav>
+      </div>
+    </footer>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

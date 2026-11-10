@@ -1,2 +1,4 @@
 https://where-i-left-off.web.app/
 https://where-i-left-off.web.app/about.html
+https://where-i-left-off.web.app/about-ar.html
+https://where-i-left-off.web.app/about-he.html

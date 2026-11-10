@@ -1,0 +1,287 @@
+{
+  "en": {
+    "title": "How WILO Works: Project Checkpoints and Examples | Where I Left Off",
+    "description": "Learn how to leave a useful project checkpoint in WILO, with everyday work, study and planning examples, a step-by-step workflow, and answers about your workspace.",
+    "languageLabel": "Page language",
+    "eyebrow": "A little context. A clearer next step.",
+    "heading": "Pick up exactly where you left off.",
+    "intro": "Where I Left Off keeps your progress, next action and useful resources together. Return to a project with the details you need to continue, on your phone or computer.",
+    "open": "Open your workspace",
+    "guide": "See how it works",
+    "public": "Read the guide freely. Sign in to use your workspace.",
+    "sampleLabel": "A WILO card",
+    "sample": "Illustrative example",
+    "status": "In progress",
+    "sampleTitle": "Plan the week",
+    "state": "Current state",
+    "next": "Next action",
+    "resources": "Keep nearby",
+    "sampleState": "Appointments are listed. The main priorities still need to be chosen.",
+    "sampleNext": "Choose three priorities for tomorrow.",
+    "sampleResources": "Weekly calendar and a short task list.",
+    "sampleNote": "A fictional weekly plan. Expand the card to view the example details.",
+    "stepsTitle": "Leave a checkpoint your future self can use.",
+    "stepsIntro": "Before you stop, write down what you know and what you will do next. “Continue the project” leaves you planning again. A specific action gives you somewhere to start.",
+    "steps": [
+      [
+        "Record the state",
+        "Note what is complete, what you last tried and what is blocked. For example: “The import reads the file, but rejects rows with an empty date.”"
+      ],
+      [
+        "Choose one next action",
+        "Write an action you can begin without another planning session. Keep the smaller checks together in a checklist."
+      ],
+      [
+        "Keep the context",
+        "Add your notes and resource links. When you return, read the checkpoint and update it as the work progresses."
+      ]
+    ],
+    "examplesTitle": "One habit, different kinds of work.",
+    "examplesIntro": "Use the same simple structure for work, study and everyday planning. These examples show how you could organize your work.",
+    "examples": [
+      [
+        "Work",
+        "The presentation outline is ready, but the opening still needs a clear message.",
+        "Write one sentence that explains the main idea.",
+        "Outline, source links and a short review checklist."
+      ],
+      [
+        "Study",
+        "The first chapter is reviewed. Two practice questions still need work.",
+        "Solve the first remaining question and note the step that is unclear.",
+        "Course notes and the remaining exercises."
+      ],
+      [
+        "Everyday planning",
+        "Next week’s appointments are listed, but the priorities are not decided.",
+        "Choose three priorities for tomorrow.",
+        "Weekly calendar and the task list."
+      ]
+    ],
+    "featuresTitle": "The details stay with the project.",
+    "features": [
+      "Keep the current state, next step, priority, notes, checklist and useful links with each project. Use search and filtering to find the work you want to resume.",
+      "Open the app on your phone or computer and sign in to the same account. Allow your latest changes to synchronize before expecting them on another device.",
+      "Keep your checkpoint accurate as the work changes. A short, current note and one useful next action are often enough to make restarting easier."
+    ],
+    "questionsTitle": "A few useful answers.",
+    "questions": [
+      [
+        "How is a checkpoint different from a to-do item?",
+        "A to-do item records an action. A checkpoint also records the state behind it: what is finished, what failed and which resources you need. You can keep a checklist alongside that context."
+      ],
+      [
+        "Do I need an account?",
+        "This guide is public. Your workspace requires sign-in, and the examples here do not load anyone’s saved projects."
+      ],
+      [
+        "Can I return from another device?",
+        "Yes. Sign in to the same account on your phone or computer, and let changes synchronize before switching devices."
+      ],
+      [
+        "Which languages are supported?",
+        "The interface and this guide support English, Arabic and Hebrew. Use the language links at the top of this page to read the complete guide in your preferred language."
+      ],
+      [
+        "Where can I read about privacy or get help?",
+        "You can find the privacy policy, terms and support page in the links below. The public guide and your signed-in workspace are separate."
+      ]
+    ],
+    "closing": "Leave one useful next step before you stop.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "support": "Support",
+    "author": "Created by Adam Abu Toamy",
+    "sampleSection": "Personal"
+  },
+  "ar": {
+    "title": "كيف يعمل ويلو — دليل تنظيم المشاريع | Where I Left Off",
+    "description": "تعرّف على ويلو: احفظ تقدّمك وحدّد خطوتك القادمة، مع دليل عملي وأمثلة للعمل والدراسة والتخطيط اليومي وإجابات عن استخدام مساحة العمل.",
+    "languageLabel": "لغة الصفحة",
+    "eyebrow": "سياق واضح. وخطوة قادمة معروفة.",
+    "heading": "ارجع لمشروعك وأنت تعرف خطوتك القادمة.",
+    "intro": "يجمع ويلو آخر تقدّم، والخطوة التالية، والمراجع المفيدة في مكان واحد. ارجع إلى مشروعك من الهاتف أو الكمبيوتر ومعك التفاصيل التي تحتاجها لتكمل.",
+    "open": "افتح مساحة عملك",
+    "guide": "تعرّف كيف يعمل",
+    "public": "اقرأ الدليل دون حساب. استخدام مساحة العمل يحتاج تسجيل الدخول.",
+    "sampleLabel": "بطاقة ويلو",
+    "sample": "مثال توضيحي",
+    "status": "قيد العمل",
+    "sampleTitle": "تنظيم الأسبوع",
+    "state": "أين وصلت؟",
+    "next": "الخطوة القادمة",
+    "resources": "مراجع قريبة منك",
+    "sampleState": "المواعيد مكتوبة، وبقي اختيار الأولويات الرئيسية.",
+    "sampleNext": "اختر ثلاث أولويات ليوم غد.",
+    "sampleResources": "التقويم الأسبوعي وقائمة مهام قصيرة.",
+    "sampleNote": "مثال وهمي لتنظيم الأسبوع. افتح البطاقة لعرض تفاصيل المثال.",
+    "stepsTitle": "اترك نقطة توقّف تفيدك عند العودة.",
+    "stepsIntro": "قبل أن تتوقف، اكتب ما تعرفه وما ستفعله بعده. عبارة «أكمل المشروع» تعيدك للتخطيط من البداية؛ خطوة محدّدة تعطيك نقطة انطلاق واضحة.",
+    "steps": [
+      [
+        "سجّل الوضع الحالي",
+        "اكتب ما أنجزته، وآخر شيء جرّبته، وما بقي عالقًا. مثلًا: «الاستيراد يقرأ الملف، لكنه يرفض الصفوف التي لا تحتوي تاريخًا»."
+      ],
+      [
+        "اختر خطوة واحدة تالية",
+        "حدّد عملًا تستطيع البدء به دون جلسة تخطيط جديدة. اجمع الفحوص الأصغر التابعة له في قائمة تحقّق."
+      ],
+      [
+        "احتفظ بسياق العمل",
+        "أضف ملاحظاتك وروابط المراجع. عند العودة، اقرأ نقطة التوقف وحدّثها مع تقدّم العمل."
+      ]
+    ],
+    "examplesTitle": "عادة واحدة، لأنواع مختلفة من العمل.",
+    "examplesIntro": "استخدم البنية نفسها للعمل والدراسة والتخطيط اليومي. الأمثلة التالية توضّح كيف يمكنك تنظيم عملك.",
+    "examples": [
+      [
+        "العمل",
+        "مخطط العرض جاهز، لكن المقدمة تحتاج رسالة واضحة.",
+        "اكتب جملة واحدة تشرح الفكرة الأساسية.",
+        "مخطط العرض وروابط المراجع وقائمة مراجعة قصيرة."
+      ],
+      [
+        "الدراسة",
+        "راجعت الفصل الأول، وبقي سؤالان تدريبيان يحتاجان عملًا.",
+        "حلّ أول سؤال متبقٍ وحدّد الخطوة غير الواضحة.",
+        "ملاحظات المقرر والتمارين المتبقية."
+      ],
+      [
+        "التخطيط اليومي",
+        "مواعيد الأسبوع القادم مكتوبة، لكن الأولويات لم تُحدّد بعد.",
+        "اختر ثلاث أولويات ليوم غد.",
+        "التقويم الأسبوعي وقائمة المهام."
+      ]
+    ],
+    "featuresTitle": "تفاصيلك تبقى مع المشروع.",
+    "features": [
+      "احتفظ بالوضع الحالي، والخطوة القادمة، والأولوية، والملاحظات، وقائمة التحقّق والروابط مع كل مشروع. يساعدك البحث والتصفية على الوصول إلى العمل الذي تريد استئنافه.",
+      "افتح التطبيق من الهاتف أو الكمبيوتر وسجّل الدخول إلى الحساب نفسه. انتظر مزامنة أحدث تعديلاتك قبل توقع ظهورها على جهاز آخر.",
+      "حدّث نقطة توقّفك عندما يتغيّر العمل. ملاحظة قصيرة وحديثة وخطوة تالية مفيدة غالبًا ما تكفي لتسهيل العودة."
+    ],
+    "questionsTitle": "إجابات تساعدك على البدء.",
+    "questions": [
+      [
+        "ما الفرق بين نقطة التوقف والمهمة العادية؟",
+        "المهمة تسجّل إجراءً مطلوبًا. نقطة التوقف تضيف السياق: ما الذي انتهى، وما الذي لم ينجح، وما المراجع المطلوبة. ويمكنك الاحتفاظ بقائمة تحقّق بجانب هذا السياق."
+      ],
+      [
+        "هل أحتاج إلى حساب؟",
+        "هذا الدليل عام. مساحة العمل تحتاج تسجيل الدخول، والأمثلة هنا لا تعرض مشاريع أي مستخدم."
+      ],
+      [
+        "هل أستطيع العودة من جهاز آخر؟",
+        "نعم. ادخل بالحساب نفسه من الهاتف أو الكمبيوتر، واترك التعديلات تتزامن قبل الانتقال بين الأجهزة."
+      ],
+      [
+        "ما اللغات المتاحة؟",
+        "تدعم الواجهة وهذا الدليل العربية والعبرية والإنجليزية. استخدم روابط اللغة أعلى الصفحة لقراءة الدليل كاملًا بلغتك المفضلة."
+      ],
+      [
+        "أين أجد سياسة الخصوصية أو المساعدة؟",
+        "روابط سياسة الخصوصية وشروط الاستخدام وصفحة الدعم موجودة أسفل الصفحة. هذا الدليل العام منفصل عن مساحة عملك التي تحتاج تسجيل الدخول."
+      ]
+    ],
+    "closing": "اترك خطوة مفيدة لنفسك قبل أن تتوقف.",
+    "privacy": "الخصوصية",
+    "terms": "شروط الاستخدام",
+    "support": "الدعم",
+    "author": "تطوير Adam Abu Toamy",
+    "sampleSection": "شخصي"
+  },
+  "he": {
+    "title": "איך WILO עובד — מדריך לניהול פרויקטים | Where I Left Off",
+    "description": "מדריך מעשי ל-WILO: שמירת התקדמות, בחירת הצעד הבא וחזרה לפרויקט, עם דוגמאות לעבודה, ללימודים ולתכנון יומיומי ותשובות על סביבת העבודה.",
+    "languageLabel": "שפת העמוד",
+    "eyebrow": "הקשר ברור. צעד הבא מוגדר.",
+    "heading": "חוזרים לפרויקט ויודעים מה הצעד הבא.",
+    "intro": "WILO מרכז את ההתקדמות, הפעולה הבאה והמקורות השימושיים במקום אחד. חזרו לפרויקט מהטלפון או מהמחשב, עם הפרטים שצריך כדי להמשיך.",
+    "open": "פתיחת סביבת העבודה",
+    "guide": "איך זה עובד",
+    "public": "המדריך פתוח לכולם. סביבת העבודה דורשת כניסה לחשבון.",
+    "sampleLabel": "כרטיס WILO",
+    "sample": "דוגמה להמחשה",
+    "status": "בעבודה",
+    "sampleTitle": "תכנון השבוע",
+    "state": "לאן הגעתי?",
+    "next": "הפעולה הבאה",
+    "resources": "מקורות בהישג יד",
+    "sampleState": "הפגישות רשומות. עדיין צריך לבחור את העדיפויות המרכזיות.",
+    "sampleNext": "לבחור שלוש עדיפויות למחר.",
+    "sampleResources": "לוח שבועי ורשימת משימות קצרה.",
+    "sampleNote": "דוגמה בדיונית לתכנון שבוע. פתחו את הכרטיס כדי לראות את פרטי הדוגמה.",
+    "stepsTitle": "משאירים נקודת עצירה שתעזור בחזרה.",
+    "stepsIntro": "לפני שעוצרים, רושמים מה יודעים ומה עושים בהמשך. ״להמשיך את הפרויקט״ משאיר את התכנון למחר; פעולה מוגדרת נותנת נקודת התחלה ברורה.",
+    "steps": [
+      [
+        "מתעדים את המצב",
+        "רשמו מה הושלם, מה ניסיתם לאחרונה ומה עדיין תקוע. למשל: ״הייבוא קורא את הקובץ, אבל דוחה שורות ללא תאריך״."
+      ],
+      [
+        "בוחרים פעולה אחת להמשך",
+        "הגדירו פעולה שאפשר להתחיל בלי עוד סבב תכנון. רכזו את הבדיקות הקטנות שקשורות אליה ברשימת בדיקה."
+      ],
+      [
+        "שומרים את ההקשר",
+        "הוסיפו הערות וקישורים למקורות. כשתחזרו, קראו את נקודת העצירה ועדכנו אותה עם התקדמות העבודה."
+      ]
+    ],
+    "examplesTitle": "הרגל אחד, סוגי עבודה שונים.",
+    "examplesIntro": "אותו מבנה פשוט מתאים לעבודה, ללימודים ולתכנון יומיומי. הדוגמאות מציגות דרכים לארגן את העבודה שלכם.",
+    "examples": [
+      [
+        "עבודה",
+        "מבנה המצגת מוכן, אבל הפתיחה עדיין צריכה מסר ברור.",
+        "לכתוב משפט אחד שמסביר את הרעיון המרכזי.",
+        "מבנה המצגת, קישורי מקורות ורשימת בדיקה קצרה."
+      ],
+      [
+        "לימודים",
+        "הפרק הראשון נלמד. שתי שאלות תרגול עדיין דורשות עבודה.",
+        "לפתור את השאלה הראשונה שנותרה ולציין את השלב הלא ברור.",
+        "סיכומי הקורס והתרגילים שנותרו."
+      ],
+      [
+        "תכנון יומיומי",
+        "הפגישות לשבוע הבא רשומות, אבל העדיפויות טרם נקבעו.",
+        "לבחור שלוש עדיפויות למחר.",
+        "לוח שבועי ורשימת המשימות."
+      ]
+    ],
+    "featuresTitle": "הפרטים נשארים עם הפרויקט.",
+    "features": [
+      "שמרו את המצב הנוכחי, הצעד הבא, העדיפות, ההערות, רשימת הבדיקה והקישורים עם כל פרויקט. חיפוש וסינון עוזרים למצוא את העבודה שרוצים להמשיך.",
+      "פתחו את האפליקציה בטלפון או במחשב והיכנסו לאותו חשבון. אפשרו לשינויים האחרונים להסתנכרן לפני שמצפים לראות אותם במכשיר אחר.",
+      "עדכנו את נקודת העצירה כשהעבודה משתנה. הערה קצרה ועדכנית ופעולה מועילה אחת יכולות להספיק כדי להקל על החזרה."
+    ],
+    "questionsTitle": "כמה תשובות שיעזרו להתחיל.",
+    "questions": [
+      [
+        "מה ההבדל בין נקודת עצירה למשימה רגילה?",
+        "משימה מתעדת פעולה. נקודת עצירה מוסיפה את ההקשר: מה הסתיים, מה לא הצליח ואילו מקורות צריך. אפשר לשמור רשימת בדיקה לצד ההקשר הזה."
+      ],
+      [
+        "האם צריך חשבון?",
+        "המדריך פתוח לכולם. סביבת העבודה דורשת כניסה לחשבון, והדוגמאות כאן אינן מציגות פרויקטים שמורים של משתמשים."
+      ],
+      [
+        "אפשר לחזור ממכשיר אחר?",
+        "כן. היכנסו לאותו חשבון בטלפון או במחשב, ואפשרו לשינויים להסתנכרן לפני מעבר בין מכשירים."
+      ],
+      [
+        "באילו שפות אפשר להשתמש?",
+        "הממשק והמדריך תומכים בעברית, בערבית ובאנגלית. קישורי השפה בראש העמוד פותחים את המדריך המלא בשפה המועדפת עליכם."
+      ],
+      [
+        "איפה אפשר לקרוא על פרטיות או לקבל עזרה?",
+        "קישורים למדיניות הפרטיות, לתנאי השימוש ולתמיכה מופיעים בתחתית העמוד. המדריך הציבורי נפרד מסביבת העבודה שמחייבת כניסה לחשבון."
+      ]
+    ],
+    "closing": "לפני שעוצרים, משאירים צעד מועיל להמשך.",
+    "privacy": "פרטיות",
+    "terms": "תנאי שימוש",
+    "support": "תמיכה",
+    "author": "פותח על ידי Adam Abu Toamy",
+    "sampleSection": "אישי"
+  }
+}
