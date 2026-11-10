@@ -49,3 +49,38 @@ for (const language of ["en", "ar", "he"] as const)
       await page.locator(".envelope-collapse").click();
       await expect(page.locator(".envelope-content")).toBeHidden();
     });
+
+test("loading hides both footer areas and restores them when ready", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/assets/*.js", async (route) => {
+    await ready;
+    await route.continue();
+  });
+  try {
+    await page.goto("/", { waitUntil: "commit" });
+    await expect(page.locator("#wilo-bootstrap")).toBeVisible();
+    await expect(page.locator("#wilo-site-identity")).not.toBeVisible();
+  } finally {
+    release();
+  }
+  await expect(page.locator("#wilo-bootstrap")).toHaveCount(0);
+  await expect(page.locator("#wilo-site-identity")).toBeVisible();
+  await expect(page.locator(".site-footer")).toBeVisible();
+  await page.evaluate(() => {
+    const loader = document.createElement("section");
+    loader.className = "wilo-loading";
+    loader.id = "test-loading";
+    loader.textContent = "Getting your space ready";
+    document.querySelector("#root")!.append(loader);
+  });
+  await expect(page.locator("#wilo-site-identity")).not.toBeVisible();
+  await expect(page.locator(".site-footer")).not.toBeVisible();
+  await page.evaluate(() => document.querySelector("#test-loading")!.remove());
+  await expect(page.locator("#wilo-site-identity")).toBeVisible();
+  await expect(page.locator(".site-footer")).toBeVisible();
+});

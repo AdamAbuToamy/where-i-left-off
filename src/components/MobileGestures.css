@@ -1,12 +1,10 @@
-.wilo-refresh,
-.wilo-edge-back {
+.wilo-refresh {
   display: none;
 }
 @media (max-width: 767px) and (pointer: coarse) {
   html.wilo-phone-gestures,
   html.wilo-phone-gestures body {
     overscroll-behavior-y: none;
-    overscroll-behavior-x: none;
   }
   .wilo-pull-active #root,
   .wilo-pull-active #wilo-site-identity {
@@ -38,28 +36,6 @@
   }
   .wilo-refresh.is-refreshing img {
     animation: wilo-refresh-spin 0.8s ease-in-out infinite;
-  }
-  .wilo-edge-back {
-    display: flex;
-    position: fixed;
-    left: 0;
-    top: 45%;
-    z-index: 10001;
-    align-items: center;
-    gap: 8px;
-    padding: 14px;
-    border-radius: 0 24px 24px 0;
-    background: #355e4c;
-    color: white;
-    pointer-events: none;
-    visibility: hidden;
-    direction: ltr;
-  }
-  .wilo-edge-back[data-visible="true"] {
-    visibility: visible;
-  }
-  .wilo-edge-back span {
-    font-size: 12px;
   }
 }
 @keyframes wilo-refresh-spin {

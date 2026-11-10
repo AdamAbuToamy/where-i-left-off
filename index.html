@@ -39,6 +39,12 @@
     <meta property="og:url" content="https://where-i-left-off.web.app/" />
     <meta name="twitter:card" content="summary" />
     <style id="wilo-site-identity-style">
+      body:has(#wilo-bootstrap) #wilo-site-identity,
+      body:has(#root .wilo-loading) #wilo-site-identity,
+      body:has(#root .wilo-loading) .site-footer {
+        display: none;
+      }
+
       body:has(> #wilo-site-identity) {
         min-height: 100dvh;
         display: flex;

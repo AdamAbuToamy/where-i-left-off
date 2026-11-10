@@ -6,9 +6,9 @@ import "./MobileGestures.css";
 
 const phoneQuery = "(max-width: 767px) and (pointer: coarse)";
 const labels = {
-  ar: ["اسحب للتحديث", "اترك للتحديث", "جارٍ تحديث ويلو", "رجوع"],
-  en: ["Pull to refresh", "Release to refresh", "Refreshing Wilo", "Back"],
-  he: ["משיכה לרענון", "שחרור לרענון", "מרענן את Wilo", "חזרה"],
+  ar: ["اسحب للتحديث", "اترك للتحديث", "جارٍ تحديث ويلو"],
+  en: ["Pull to refresh", "Release to refresh", "Refreshing Wilo"],
+  he: ["משיכה לרענון", "שחרור לרענון", "מרענן את Wilo"],
 };
 
 /** Touch-only browser boundary. Never claims gestures inside editors or dialogs. */
@@ -19,25 +19,23 @@ export default function MobileGestures({
   uid: string;
   language: Language;
 }) {
-  const [visual, setVisual] = useState({ pull: 0, back: 0, refreshing: false });
+  const [visual, setVisual] = useState({ pull: 0, refreshing: false });
   const busy = useRef(false);
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
     const media = matchMedia(phoneQuery);
-    let start: { x: number; y: number; edge: boolean; top: boolean } | null =
-      null;
+    let start: { x: number; y: number; top: boolean } | null = null;
     let mode = "",
       pull = 0,
-      back = 0,
       timer = 0;
     const root = document.documentElement;
     const reset = () => {
       start = null;
       mode = "";
-      pull = back = 0;
+      pull = 0;
       root.style.removeProperty("--wilo-pull");
       root.classList.remove("wilo-pull-active");
-      setVisual({ pull: 0, back: 0, refreshing: false });
+      setVisual({ pull: 0, refreshing: false });
     };
     const eligibility = () =>
       root.classList.toggle("wilo-phone-gestures", media.matches);
@@ -69,7 +67,6 @@ export default function MobileGestures({
       start = {
         x: t.clientX,
         y: t.clientY,
-        edge: t.clientX <= 24,
         top: window.scrollY <= 1,
       };
     };
@@ -82,8 +79,7 @@ export default function MobileGestures({
       const dx = event.touches[0].clientX - start.x,
         dy = event.touches[0].clientY - start.y;
       if (!mode && Math.max(Math.abs(dx), Math.abs(dy)) > 10) {
-        if (start.edge && dx > 0 && dx > Math.abs(dy) * 1.5) mode = "back";
-        else if (start.top && dy > 0 && dy > Math.abs(dx) * 1.5) mode = "pull";
+        if (start.top && dy > 0 && dy > Math.abs(dx) * 1.5) mode = "pull";
         else {
           reset();
           return;
@@ -96,23 +92,21 @@ export default function MobileGestures({
       }
       event.preventDefault();
       pull = mode === "pull" ? Math.min(126, Math.max(0, dy) * 0.42) : 0;
-      back = mode === "back" ? Math.min(100, Math.max(0, dx)) : 0;
       const motion =
         readExperience(uid).motion &&
         !matchMedia("(prefers-reduced-motion: reduce)").matches;
       root.classList.toggle("wilo-pull-active", motion && pull > 0);
       root.style.setProperty("--wilo-pull", `${motion ? pull : 0}px`);
-      setVisual({ pull, back, refreshing: false });
+      setVisual({ pull, refreshing: false });
     };
     const end = () => {
       if (!start) return;
-      const refresh = mode === "pull" && pull >= 84,
-        goBack = mode === "back" && back >= 80;
+      const refresh = mode === "pull" && pull >= 84;
       reset();
       if (refresh) {
         busy.current = true;
         root.classList.add("wilo-pull-active");
-        setVisual({ pull: 84, back: 0, refreshing: true });
+        setVisual({ pull: 84, refreshing: true });
         root.style.setProperty(
           "--wilo-pull",
           readExperience(uid).motion &&
@@ -126,7 +120,7 @@ export default function MobileGestures({
           busy.current = false;
           reset();
         }, 600);
-      } else if (goBack && history.length > 1) history.back();
+      }
     };
     document.addEventListener("touchstart", begin, { passive: true });
     document.addEventListener("touchmove", move, { passive: false });
@@ -159,14 +153,6 @@ export default function MobileGestures({
           style={{ transform: `rotate(${visual.pull * 2.5}deg)` }}
         />
         <span>{t[visual.refreshing ? 2 : visual.pull >= 84 ? 1 : 0]}</span>
-      </div>
-      <div
-        className="wilo-edge-back"
-        data-visible={visual.back > 0}
-        aria-hidden="true"
-        style={{ opacity: visual.back / 100 }}
-      >
-        ←<span>{t[3]}</span>
       </div>
     </>,
     document.body,

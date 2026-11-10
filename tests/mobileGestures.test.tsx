@@ -92,15 +92,17 @@ it("leaves editors and open dialogs alone", async () => {
     document.querySelector(".wilo-refresh")?.getAttribute("data-visible"),
   ).toBe("false");
 });
-it("returns once from a deliberate left edge swipe", async () => {
-  vi.spyOn(history, "length", "get").mockReturnValue(2);
+it("does not intercept left-edge swipes or navigate back", async () => {
   const back = vi.spyOn(history, "back").mockImplementation(() => {});
+  let moved: Event;
   await act(async () => {
     touch("touchstart", 5, 200);
-    touch("touchmove", 110, 202);
+    moved = touch("touchmove", 110, 202);
     touch("touchend", 110, 202);
   });
-  expect(back).toHaveBeenCalledTimes(1);
+  expect(back).not.toHaveBeenCalled();
+  expect(moved!.defaultPrevented).toBe(false);
+  expect(document.querySelector(".wilo-edge-back")).toBeNull();
 });
 it("respects disabled motion and ignores short pulls", async () => {
   localStorage.setItem(

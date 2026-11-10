@@ -5,7 +5,7 @@ test.describe("phone gestures", () => {
     isMobile: true,
     hasTouch: true,
   });
-  test("pull refresh and edge navigation use real Chromium touch input", async ({
+  test("pull refresh works and left-edge swipe leaves navigation unchanged", async ({
     page,
     context,
   }) => {
@@ -42,7 +42,7 @@ test.describe("phone gestures", () => {
     await send("touchStart", 8, 70);
     for (let x = 20; x <= 120; x += 15) await send("touchMove", x, 72);
     await send("touchEnd", 120, 72);
-    await expect(page).toHaveURL(/support/);
+    await expect(page).toHaveURL(/personal/);
   });
 });
 test("desktop keeps native layout and does not enable phone gestures", async ({
