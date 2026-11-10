@@ -1,10 +1,13 @@
 export const journeyText = {
   ar: {
     name: "رفيق ويلو",
+    writeName: "اكتب اسم الشيء الذي تريد متابعته هنا.",
+    writeNext: "ما أول خطوة ستعمل عليها؟ اكتبها هنا.",
+    saveNow: "جاهز؟ اضغط هنا لحفظ بطاقتك.",
+    tryReminder: "من هذا الزر تختار متى نذكّرك ببطاقتك. جرّبه أو تابع معي.",
     tagline: "خطوة صغيرة، وبداية واضحة",
     welcome: "أهلًا بك في Where I Left Off",
-    intro:
-      "أنا رفيقك الورقي. لن أشرح كل شيء دفعة واحدة؛ سننشئ بطاقة حقيقية، ثم نلقي نظرة على الجامعة والمجموعات.",
+    intro: "أهلًا! أنا رفيق ويلو. تعال نجرّب الموقع معًا، خطوة بخطوة.",
     start: "خذني في الجولة",
     skip: "سأستكشف بنفسي",
     next: "تابع",
@@ -14,20 +17,16 @@ export const journeyText = {
     show: "إظهار الدليل",
     step: "المحطة",
     create: "لنصنع أول بطاقة",
-    createBody:
-      "اضغط «بطاقة جديدة» في الصفحة. اكتب شيئًا تريد العودة إليه وخطوة صغيرة تالية، ثم احفظ. اختر عنوانًا من عندك؛ هذه بطاقة حقيقية وليست مثالًا.",
+    createBody: "اضغط هنا لنحفظ أول شيء تريد الرجوع إليه.",
     waiting: "بانتظار إنشاء بطاقتك…",
     card: "بطاقتك أصبحت أمامك!",
-    cardBody:
-      "افتح البطاقة التي أنشأتها. ستجد المتابعة وقائمة المهام والملاحظات، وبإمكانك تعديلها أو تعيين تذكير. جرّب ما تحتاجه، ثم ارجع إلى هنا.",
+    cardBody: "أحسنت! اضغط هنا لفتح بطاقتك.",
     openCard: "افتح البطاقة",
     tried: "جرّبت البطاقة، نكمل",
     university: "مكان دراستك",
-    universityBody:
-      "هنا تجمع المقررات، وتفتح كل مقرر لتجد واجباته ومواعيده ومواده. لست مضطرًا لإضافة أي شيء الآن؛ خذ نظرة، وعندما تحتاجه ابدأ بمقرر واحد.",
+    universityBody: "هذا مكان دراستك: أضف مقررًا لتجمع واجباته ومواعيده هنا.",
     groups: "العمل مع الآخرين",
-    groupsBody:
-      "هنا تنشئ مجموعة أو تنضم بدعوة، وتشارك البطاقات والمهام مع فريقك. لن ننشئ مجموعة أو نرسل دعوات في الجولة.",
+    groupsBody: "تريد العمل مع أصدقاء؟ من هنا تنشئ مجموعة أو تنضم إلى واحدة.",
     finish: "أصبحت البداية لك",
     finishBody:
       "عرفت الأساسيات. تقدر الآن تكمل وتكتشف الموقع على راحتك، وتعيد الجولة من الإعدادات في أي وقت.",
@@ -51,10 +50,15 @@ export const journeyText = {
   },
   en: {
     name: "Wilo Companion",
+    writeName: "Give your card a name here.",
+    writeNext: "What's your first small step? Write it here.",
+    saveNow: "Ready? Press here to save your card.",
+    tryReminder:
+      "Choose when to be reminded with this button. Try it, or continue with me.",
     tagline: "A little step. A clear beginning.",
     welcome: "Welcome to Where I Left Off",
     intro:
-      "I'm your paper companion. Let's make a real card, then take a quick look at University and Groups. No long feature tour.",
+      "Hi! I'm your Wilo companion. Let's try the site together, one step at a time.",
     start: "Show me around",
     skip: "I'll explore myself",
     next: "Continue",
@@ -64,20 +68,17 @@ export const journeyText = {
     show: "Show guide",
     step: "Stop",
     create: "Make your first card",
-    createBody:
-      "Press New card on the page. Give it a title and one small next step, then save. Choose something of your own: this is a real card, not a demo.",
+    createBody: "Press here to save the first thing you want to come back to.",
     waiting: "Waiting for your first card…",
     card: "Your card is here!",
-    cardBody:
-      "Open the card you just made. Try its follow-up, checklist, notes, edit or reminder controls. Use only what you need, then come back here.",
+    cardBody: "Nice work! Press here to open your card.",
     openCard: "Open your card",
     tried: "I've tried it, let's continue",
     university: "A home for your studies",
     universityBody:
-      "Keep courses here. Open a course to find its assignments, dates and materials. Just look around for now; when you need it, start with one course.",
+      "This is your study space. Add a course to keep its assignments and dates together.",
     groups: "Work together",
-    groupsBody:
-      "Create a group or join with an invitation to share cards and tasks with your team. This tour won't create groups or send invitations.",
+    groupsBody: "Working with friends? Create a group or join one here.",
     finish: "The next step is yours",
     finishBody:
       "You know the essentials. Keep exploring at your own pace. You can replay this tour from Settings anytime.",
@@ -101,10 +102,13 @@ export const journeyText = {
   },
   he: {
     name: "החבר של Wilo",
+    writeName: "כתבו כאן שם לכרטיס שלכם.",
+    writeNext: "מה הצעד הראשון? כתבו אותו כאן.",
+    saveNow: "מוכנים? לחצו כאן לשמירת הכרטיס.",
+    tryReminder: "כאן בוחרים מתי לקבל תזכורת. נסו או המשיכו איתי.",
     tagline: "צעד קטן. התחלה ברורה.",
     welcome: "ברוכים הבאים ל־Where I Left Off",
-    intro:
-      "אני החבר מנייר שלכם. ניצור כרטיס אמיתי ונכיר בקצרה את האוניברסיטה והקבוצות, בלי להציף אתכם.",
+    intro: "שלום! אני החבר של Wilo. ננסה את האתר ביחד, צעד אחר צעד.",
     start: "התחילו בסיור",
     skip: "אגלה בעצמי",
     next: "המשך",
@@ -114,20 +118,17 @@ export const journeyText = {
     show: "הצגת המדריך",
     step: "תחנה",
     create: "יוצרים כרטיס ראשון",
-    createBody:
-      "לחצו על כרטיס חדש בעמוד, כתבו כותרת וצעד קטן להמשך ושמרו. זה כרטיס אמיתי לבחירתכם, לא הדגמה.",
+    createBody: "לחצו כאן כדי לשמור דבר שתרצו לחזור אליו.",
     waiting: "ממתינים לכרטיס הראשון…",
     card: "הכרטיס שלכם כאן!",
-    cardBody:
-      "פתחו את הכרטיס שיצרתם. נסו מעקב, משימות, הערות, עריכה או תזכורת, ואז חזרו לכאן.",
+    cardBody: "כל הכבוד! לחצו כאן כדי לפתוח את הכרטיס.",
     openCard: "פתיחת הכרטיס",
     tried: "ניסיתי, אפשר להמשיך",
     university: "מקום ללימודים",
     universityBody:
-      "כאן מרכזים קורסים, מטלות, מועדים וחומרי לימוד. אין צורך להוסיף דבר עכשיו. כשתצטרכו, התחילו בקורס אחד.",
+      "זה המקום ללימודים. הוסיפו קורס כדי לרכז את המטלות והמועדים שלו.",
     groups: "עובדים ביחד",
-    groupsBody:
-      "צרו קבוצה או הצטרפו בהזמנה כדי לשתף כרטיסים ומשימות. הסיור לא ייצור קבוצה ולא ישלח הזמנות.",
+    groupsBody: "עובדים עם חברים? כאן יוצרים קבוצה או מצטרפים לקבוצה.",
     finish: "הצעד הבא שלכם",
     finishBody:
       "הכרתם את הבסיס. המשיכו לגלות בקצב שלכם. אפשר להפעיל את הסיור שוב מההגדרות.",

@@ -63,12 +63,35 @@ for (const phone of [false, true])
     ).toBeVisible();
     await welcome.getByRole("button", { name: t.start, exact: true }).click();
     const guide = page.locator(".journey-coach");
+    await page.evaluate(
+      () => (document.documentElement.dataset.cinematic = "on"),
+    );
+    await expect(guide.locator(".companion-life")).toHaveCSS(
+      "animation-iteration-count",
+      "infinite",
+    );
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(guide.locator(".companion-life")).toHaveCSS(
+      "animation-name",
+      "none",
+    );
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.evaluate(
+      () => (document.documentElement.dataset.cinematic = "off"),
+    );
+
     await expect(guide).toBeVisible();
     await expect(page.locator(".journey-layer")).toHaveAttribute(
       "data-tour-step",
       "create",
     );
     await page.locator('[data-tour="add-project"]').click();
+    await expect(page.locator(".journey-layer")).toHaveAttribute(
+      "data-cue",
+      "name",
+    );
+    await expect(guide).toBeVisible();
+    expect(await guide.evaluate((node) => !node.closest("[inert]"))).toBe(true);
     await page.locator("#project-name").fill("My real journey card");
     await page.locator("#project-next-step").fill("Try one small step");
     await page.locator('[data-tour="save-project"]').click();
@@ -94,7 +117,6 @@ for (const phone of [false, true])
         .getByRole("button", { name: t.openCard, exact: true })
         .click();
     else {
-      await card.hover();
       await card.locator(".envelope-expand").click();
     }
     const panel = page.locator(".card-detail-panel");
