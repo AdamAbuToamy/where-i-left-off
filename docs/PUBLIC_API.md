@@ -232,3 +232,18 @@ Every item declares `source`: `account-default`, `legacy-explicit`, or `independ
 ### University assignments and personal cards
 
 Creating a university task writes a study task, not a personal card. Linking its reminder uses an internal project backing record for the existing notification infrastructure; that record is excluded from the personal project listing by exact task link and native helper type. It remains stored and usable by the reminder operations. Matching titles never imply identity: separately created personal cards remain visible. API clients should create assignments with the documented task operation and use its reminder operations; do not additionally create a project unless the user explicitly requests a personal card.
+
+
+### Recover a trashed university reminder helper (1.5.2)
+
+A task is an assignment in `studyRecords`. Its `reminderProjectId` is an internal owned helper for native reminders. `GET /projects` excludes helpers intentionally; `GET /projects/{projectId}/reminders` resolves the owner-scoped stored record directly. Its omission from a personal-card list never proves deletion. A trashed helper yields `reminder-link-conflict` on task linkage and `resource-not-found` on the reminder collection. Do not create replacement assignments/reminders or resend immediate notifications.
+
+`POST /tasks/{id}/reminder/repair` requires `courses:read`, `tasks:read`, `tasks:write`, `reminders:read`, `reminders:write` and `Idempotency-Key`. Preview defaults to `dryRun:true`:
+
+```json
+{"restoreTrashed":true,"dryRun":true}
+```
+
+The preview reports `state`, `repairable`, revisions and planned changes, without data writes. Execute with `dryRun:false`, both `expectedRevision`/`expectedProjectRevision` from the preview, and a distinct idempotency key only after the owner requests restoration. Reuse the execution key/body after uncertain outcomes. Only a trashed, correctly typed owned helper with a complete native intent proving the same assignment relation can be restored; missing/archived/shared/unproven records fail safely. Exact revision guards preserve concurrent edits. This operation clears only the helper's trash flag and advances its revision, leaving all reminder IDs, schedules, manual settings and delivery claims unchanged. A later re-deletion is never undone by replay.
+
+After200, GET the original task linkage and original reminder collection/IDs;202 means native recovery is pending. The original global quiet hours, account enable switch and device subscriptions still apply. No API change is required for existing clients. Do not automatically invoke repair on every409: the account owner must deliberately request recovery.

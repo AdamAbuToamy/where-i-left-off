@@ -22,7 +22,15 @@ type Operation = {
   operationId: string;
   description: string;
   parameters?: Parameter[];
-  requestBody?: { content: Record<string, { schema: Schema }> };
+  requestBody?: {
+    content: Record<
+      string,
+      {
+        schema: Schema;
+        examples?: Record<string, { value: Record<string, unknown> }>;
+      }
+    >;
+  };
   responses: Record<
     string,
     { description: string; content?: Record<string, { schema: Schema }> }
@@ -104,7 +112,11 @@ export function sample(schema: Schema, key = ""): unknown {
   return "";
 }
 export function operationBody(op: ApiOperation) {
-  const schema = op.requestBody?.content["application/json"]?.schema;
+  const media = op.requestBody?.content["application/json"];
+  // Prefer an explicitly documented no-write preview over a fabricated union-schema example.
+  if (media?.examples?.preview)
+    return structuredClone(media.examples.preview.value);
+  const schema = media?.schema;
   if (!schema) return undefined;
   const body = sample(schema) as Record<string, unknown>;
   if (

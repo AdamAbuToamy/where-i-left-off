@@ -1,5 +1,18 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+const specification = JSON.parse(
+  await readFile(
+    new URL("../../docs/openapi-public-api.json", import.meta.url),
+    "utf8",
+  ),
+) as { paths: Record<string, Record<string, { description?: string }>> };
+const taskWriteCount = Object.values(specification.paths)
+  .flatMap((path) => Object.entries(path))
+  .filter(
+    ([method, operation]) =>
+      ["get", "post", "put", "patch", "delete"].includes(method) &&
+      operation.description?.includes("tasks:write"),
+  ).length;
 for (const mobile of [false, true])
   test(`public API documentation ${mobile ? "phone" : "desktop"}: navigation, search, copy and contract download without login`, async ({
     page,
@@ -37,7 +50,9 @@ for (const mobile of [false, true])
     await page
       .getByLabel("Search paths, scopes or operations")
       .fill("tasks:write");
-    await expect(page.locator(".api-doc-operation")).toHaveCount(3);
+    await expect(page.locator(".api-doc-operation")).toHaveCount(
+      taskWriteCount,
+    );
     await expect(page.locator(".api-doc-operation").first()).toHaveAttribute(
       "open",
       "",

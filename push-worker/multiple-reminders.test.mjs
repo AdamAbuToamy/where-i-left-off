@@ -1128,7 +1128,7 @@ test("actual mixed response agrees with contract sources and nullable legacy sch
       view.items.find((item) => item.source === "legacy-explicit").schedule,
       null,
     );
-    assert.equal(contract.info.version, "1.5.1");
+    assert.equal(contract.info.version, "1.5.2");
   } finally {
     s.DB.sqlite.close();
   }

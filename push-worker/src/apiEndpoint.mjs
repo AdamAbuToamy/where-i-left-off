@@ -33,7 +33,7 @@ const headers = {
   "content-type": "application/json",
   "cache-control": "no-store",
   pragma: "no-cache",
-  "x-wilo-api-version": "1.5.1",
+  "x-wilo-api-version": "1.5.2",
 };
 const codes = {
   unauthenticated: 401,
@@ -161,12 +161,19 @@ export function createApiHandler(overrides = {}) {
         });
       }
       const taskReminder = url.pathname.match(
-        /^\/api\/v1\/tasks\/([A-Za-z0-9_-]{1,128})\/reminder$/,
+        /^\/api\/v1\/tasks\/([A-Za-z0-9_-]{1,128})\/reminder(\/repair)?$/,
       );
       if (taskReminder) {
-        const read = request.method === "GET";
-        operation = "task-reminder." + (read ? "read" : "link");
-        if (!["GET", "POST"].includes(request.method) || url.search)
+        const repair = !!taskReminder[2],
+          read = request.method === "GET" && !repair;
+        operation =
+          "task-reminder." + (repair ? "repair" : read ? "read" : "link");
+        if (
+          (repair
+            ? request.method !== "POST"
+            : !["GET", "POST"].includes(request.method)) ||
+          url.search
+        )
           throw new ApiError("not-found");
         requireScopes(
           identity,
@@ -216,7 +223,9 @@ export function createApiHandler(overrides = {}) {
         );
         const result = read
           ? await service.status(taskReminder[1])
-          : await service.link(taskReminder[1], body, key);
+          : repair
+            ? await service.repair(taskReminder[1], body, key)
+            : await service.link(taskReminder[1], body, key);
         const status =
           result.status === "pending"
             ? 202

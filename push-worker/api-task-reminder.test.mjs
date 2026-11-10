@@ -504,3 +504,254 @@ test("absolute task reminders work without a deadline and preserve user schedule
   assert.equal(again.projectId, result.projectId);
   assert.equal(s.settings.size, 1);
 });
+
+async function trashedFixture() {
+  const s = setup(),
+    linked = await link(s),
+    project = s.repository.get("projects", linked.projectId);
+  s.repository.seed("projects", linked.projectId, {
+    ...project,
+    trashedAt: NOW,
+    revision: project.revision + 1,
+  });
+  return {
+    ...s,
+    projectId: linked.projectId,
+    body: {
+      expectedRevision: 1,
+      expectedProjectRevision: 2,
+      restoreTrashed: true,
+      dryRun: false,
+    },
+  };
+}
+test("proven trashed helper recovery is opt-in, revisioned, idempotent and preserves every reminder setting", async () => {
+  const s = await trashedFixture(),
+    beforeTask = s.repository.get("studyRecords", "tasks_task");
+  const manual = {
+    ...s.settings.get(s.projectId),
+    schedule: {
+      mode: "absolute",
+      scheduledAt: "2026-11-14T09:00:00+02:00",
+      timeZone: "Asia/Jerusalem",
+    },
+    leadMinutes: 4320,
+  };
+  s.settings.set(s.projectId, manual);
+  await assert.rejects(
+    () => s.service.status("task"),
+    (e) => e.code === "reminder-link-conflict",
+  );
+  const plan = await s.service.repair(
+    "task",
+    { restoreTrashed: true, dryRun: true },
+    "repair-dry-run-0001",
+  );
+  assert.equal(plan.state, "trashed");
+  assert.equal(plan.repairable, true);
+  assert.equal(s.repository.get("projects", s.projectId).trashedAt, NOW);
+  assert.equal(s.work.size, 0);
+  const result = await s.service.repair(
+    "task",
+    s.body,
+    "repair-operation-0001",
+  );
+  assert.equal(result.repaired, true);
+  assert.equal(s.repository.get("projects", s.projectId).trashedAt, 0);
+  assert.equal(s.repository.get("projects", s.projectId).revision, 3);
+  assert.deepEqual(s.settings.get(s.projectId), manual);
+  assert.deepEqual(s.repository.get("studyRecords", "tasks_task"), beforeTask);
+  const again = await s.service.repair("task", s.body, "repair-operation-0001");
+  assert.equal(again.replayed, true);
+  assert.equal(s.repository.get("projects", s.projectId).revision, 3);
+  assert.notEqual((await s.service.status("task")).status, "pending");
+});
+test("repair rejects stale revisions, mismatched provenance, missing cards, archived cards and shared links", async () => {
+  for (const scenario of [
+    "revision",
+    "provenance",
+    "missing",
+    "archived",
+    "shared",
+  ]) {
+    const s = await trashedFixture();
+    if (scenario === "revision") s.body.expectedProjectRevision = 1;
+    if (scenario === "provenance") {
+      const intent = s.repository.get(
+        "apiOperations",
+        "university_reminder_task",
+      );
+      s.repository.seed("apiOperations", "university_reminder_task", {
+        ...intent,
+        projectId: "other",
+      });
+    }
+    if (scenario === "missing")
+      s.repository.docs.delete("projects/" + s.projectId);
+    if (scenario === "archived")
+      s.repository.seed("projects", s.projectId, {
+        ...s.repository.get("projects", s.projectId),
+        archivedAt: NOW,
+      });
+    if (scenario === "shared") {
+      const record = s.repository.get("studyRecords", "tasks_task"),
+        task = JSON.parse(record.payload);
+      s.repository.seed("studyRecords", "tasks_other", {
+        ...record,
+        id: "other",
+        payload: JSON.stringify({ ...task, id: "other" }),
+      });
+    }
+    await assert.rejects(
+      () => s.service.repair("task", s.body, "repair-negative-0001"),
+      (e) => ["revision-conflict", "reminder-link-conflict"].includes(e.code),
+    );
+    assert.equal(s.work.size, 0);
+  }
+});
+test("repair retains durable work after a lost wake and retry never resets a manually changed schedule", async () => {
+  const s = await trashedFixture();
+  s.setPhase("wake");
+  const result = await s.service.repair(
+    "task",
+    s.body,
+    "repair-wake-retry-0001",
+  );
+  assert.equal(result.status, "pending");
+  assert.equal(s.work.size, 1);
+  const manual = { ...s.settings.get(s.projectId), time: "10:45" };
+  s.settings.set(s.projectId, manual);
+  s.setPhase("");
+  await s.service.repair("task", s.body, "repair-wake-retry-0001");
+  assert.equal(s.work.size, 0);
+  assert.deepEqual(s.settings.get(s.projectId), manual);
+  assert.equal(s.repository.get("projects", s.projectId).revision, 3);
+});
+test("a replay must not restore a helper trashed again after recovery", async () => {
+  const s = await trashedFixture();
+  await s.service.repair("task", s.body, "repair-later-delete-0001");
+  s.repository.seed("projects", s.projectId, {
+    ...s.repository.get("projects", s.projectId),
+    trashedAt: NOW + 1,
+    revision: 4,
+  });
+  await assert.rejects(
+    () => s.service.repair("task", s.body, "repair-later-delete-0001"),
+    (e) => e.code === "reminder-link-conflict",
+  );
+  assert.equal(s.repository.get("projects", s.projectId).trashedAt, NOW + 1);
+});
+test("HTTP recovery requires all link scopes, isolates owners, and hidden helpers retain reminder readback", async () => {
+  const DB = database();
+  for (const file of ["api-schema.sql", "reminder-link-schema.sql"])
+    DB.sqlite.exec(readFileSync(new URL("./" + file, import.meta.url), "utf8"));
+  const s = await trashedFixture(),
+    scopes = [
+      "courses:read",
+      "tasks:read",
+      "tasks:write",
+      "reminders:read",
+      "reminders:write",
+      "projects:read",
+    ],
+    repos = { alice: s.repository, bob: new MemoryRepository("bob") },
+    env = { DB, PUBLIC_API_ENABLED: "true" };
+  const handler = createApiHandler({
+    assertAccount: async () => {},
+    repository: (_, uid) => repos[uid],
+    reminders: () => s.reminders,
+    serviceOptions: { now: () => NOW },
+  });
+  const request = (key, path, method = "GET", body) =>
+    new Request("https://api.example/api/v1" + path, {
+      method,
+      headers: {
+        authorization: "Bearer " + key,
+        "content-type": "application/json",
+        "idempotency-key": "repair-http-request-0001",
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+  const issue = (uid, grant) =>
+    manageApiKeys(env, uid, {
+      action: "create",
+      name: "Synthetic",
+      scopes: grant,
+    });
+  try {
+    for (const scope of scopes.filter((v) => v !== "projects:read")) {
+      const key = await issue(
+        "alice",
+        scopes.filter((v) => v !== scope),
+      );
+      assert.equal(
+        (
+          await handler(
+            request(key.key, "/tasks/task/reminder/repair", "POST", s.body),
+            env,
+          )
+        ).status,
+        403,
+        scope,
+      );
+    }
+    const owner = await issue("alice", scopes),
+      other = await issue("bob", scopes);
+    assert.equal(
+      (
+        await handler(
+          request(other.key, "/tasks/task/reminder/repair", "POST", s.body),
+          env,
+        )
+      ).status,
+      404,
+    );
+    assert.equal(
+      (
+        await handler(
+          request(owner.key, "/projects/" + s.projectId + "/reminders"),
+          env,
+        )
+      ).status,
+      404,
+    );
+    const repaired = await handler(
+      request(owner.key, "/tasks/task/reminder/repair", "POST", s.body),
+      env,
+    );
+    assert.equal(repaired.status, 200);
+    // Native D1 settings/readback remain separate from the personal-card projection.
+    await DB.prepare(
+      "UPDATE accounts SET prefs=?,enabled=1,enabled_at=? WHERE uid=?",
+    )
+      .bind(JSON.stringify(s.p), NOW - 86400000, "alice")
+      .run();
+    await DB.prepare("INSERT INTO cards(uid,id,settings) VALUES(?,?,?)")
+      .bind(
+        "alice",
+        "personal__" + s.projectId,
+        JSON.stringify(s.settings.get(s.projectId)),
+      )
+      .run();
+    const cards = await handler(request(owner.key, "/projects"), env);
+    assert.equal(cards.status, 200);
+    assert.equal((await cards.json()).result.items.length, 0);
+    const reminders = await handler(
+      request(owner.key, "/projects/" + s.projectId + "/reminders"),
+      env,
+    );
+    assert.equal(reminders.status, 200);
+    assert.equal((await reminders.json()).result.projectId, s.projectId);
+    assert.equal(
+      (
+        await handler(
+          request(other.key, "/projects/" + s.projectId + "/reminders"),
+          env,
+        )
+      ).status,
+      404,
+    );
+  } finally {
+    DB.sqlite.close();
+  }
+});

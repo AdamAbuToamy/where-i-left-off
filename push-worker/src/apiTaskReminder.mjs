@@ -42,7 +42,7 @@ export function createTaskReminderService({
 }) {
   if (repository.uid !== ownerUid) fail("account-unavailable");
   const intentKey = (id) => "university_reminder_" + id;
-  async function snapshot(tx, id) {
+  async function snapshot(tx, id, allowTrashed = false) {
     if (!validId(id)) fail("invalid-input");
     const { data, records } = hydrateStudy(await tx.listStudy()),
       task = data.study.tasks.find((t) => t.id === id);
@@ -65,7 +65,7 @@ export function createTaskReminderService({
         !project ||
         project.kind !== "deadline" ||
         project.resourceType !== "course" ||
-        project.trashedAt ||
+        (!allowTrashed && project.trashedAt) ||
         project.archivedAt
       )
         fail("reminder-link-conflict");
@@ -287,10 +287,7 @@ export function createTaskReminderService({
     );
     if (body.schedule !== undefined && body.leadMinutes !== undefined)
       fail("invalid-input");
-    if (
-      body.leadMinutes !== undefined &&
-      !validLeadMinutes(body.leadMinutes)
-    )
+    if (body.leadMinutes !== undefined && !validLeadMinutes(body.leadMinutes))
       fail("invalid-input");
     if (
       !Number.isSafeInteger(body.expectedRevision) ||
@@ -459,5 +456,143 @@ export function createTaskReminderService({
       };
     }
   }
-  return { status, link, resume };
+  /** Explicit owner-authorized recovery of a proven native helper; never create a missing card. */
+  async function repair(id, body, idempotencyKey) {
+    object(
+      body,
+      [
+        "expectedRevision",
+        "expectedProjectRevision",
+        "restoreTrashed",
+        "dryRun",
+      ],
+      ["restoreTrashed"],
+    );
+    const dryRun = body.dryRun !== false;
+    if (
+      body.restoreTrashed !== true ||
+      (body.dryRun !== undefined && typeof body.dryRun !== "boolean") ||
+      ["expectedRevision", "expectedProjectRevision"].some(
+        (key) =>
+          (body[key] !== undefined || !dryRun) &&
+          (!Number.isSafeInteger(body[key]) || body[key] < 0),
+      )
+    )
+      fail("invalid-input");
+    const inspect = async (tx) => {
+      const s = await snapshot(tx, id, true);
+      if (
+        !s.project ||
+        !s.task.reminderProjectId ||
+        s.intent?.projectId !== s.task.reminderProjectId ||
+        s.intent?.taskId !== id ||
+        s.intent?.state !== "complete"
+      )
+        fail("reminder-link-conflict");
+      return s;
+    };
+    const fingerprint = await sha256(
+        stableJson({ path: "/api/v1/tasks/" + id + "/reminder/repair", body }),
+      ),
+      receiptKey = "receipt_" + (await sha256(idempotencyKey));
+    const before = await repository.transact(async (tx) => {
+      const receipt = await tx.getMeta(receiptKey);
+      if (receipt) {
+        if (
+          receipt.fingerprint !== fingerprint ||
+          receipt.taskId !== id ||
+          !receipt.reminderRepair
+        )
+          fail("idempotency-key-reused");
+        return { replay: true, s: await inspect(tx) };
+      }
+      const s = await inspect(tx);
+      if (
+        (body.expectedRevision !== undefined &&
+          s.record.revision !== body.expectedRevision) ||
+        (body.expectedProjectRevision !== undefined &&
+          s.project.revision !== body.expectedProjectRevision)
+      )
+        fail("revision-conflict");
+      return { replay: false, s };
+    });
+    if (dryRun)
+      return {
+        taskId: id,
+        projectId: before.s.task.reminderProjectId,
+        taskRevision: before.s.record.revision,
+        projectRevision: before.s.project.revision,
+        dryRun: true,
+        state: before.s.project.trashedAt ? "trashed" : "active",
+        repairable: !!before.s.project.trashedAt,
+        preservesReminderSettings: true,
+        changes: before.s.project.trashedAt ? ["restore-auxiliary-card"] : [],
+      };
+    // The existing recovery queue closes the Firestore/D1 partial-failure window.
+    await reminders.enqueue(id);
+    const result = await repository.transact(async (tx) => {
+      const receipt = await tx.getMeta(receiptKey);
+      if (receipt) {
+        if (
+          receipt.fingerprint !== fingerprint ||
+          receipt.taskId !== id ||
+          !receipt.reminderRepair
+        )
+          fail("idempotency-key-reused");
+        const s = await inspect(tx);
+        if (s.project.trashedAt) fail("reminder-link-conflict");
+        return {
+          projectId: s.task.reminderProjectId,
+          replayed: true,
+          repaired: false,
+        };
+      }
+      const s = await inspect(tx);
+      if (
+        s.record.revision !== body.expectedRevision ||
+        s.project.revision !== body.expectedProjectRevision
+      )
+        fail("revision-conflict");
+      const repaired = !!s.project.trashedAt;
+      if (repaired) {
+        const next = ProjectEntity.restore({
+          ...s.project,
+          id: s.task.reminderProjectId,
+        })
+          .apply("edit", { trashedAt: 0 }, s.project.revision, now())
+          .snapshot();
+        tx.setProject(s.task.reminderProjectId, {
+          ...next,
+          mutationId: uuid(),
+        });
+      }
+      tx.setMeta(receiptKey, {
+        kind: "receipt",
+        taskId: id,
+        reminderRepair: true,
+        fingerprint,
+        expiresAt: new Date(now() + 30 * 86400000),
+      });
+      return { projectId: s.task.reminderProjectId, replayed: false, repaired };
+    });
+    try {
+      await reminders.wake();
+      await reminders.complete(id);
+    } catch {
+      return {
+        taskId: id,
+        ...result,
+        status: "pending",
+        verified: false,
+        scheduled: false,
+        preservesReminderSettings: true,
+      };
+    }
+    return {
+      ...(await status(id)),
+      ...result,
+      preservesReminderSettings: true,
+    };
+  }
+  return { status, link, resume, repair };
 }

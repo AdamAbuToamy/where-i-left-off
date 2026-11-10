@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wilo Public API",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "description": "Generic personal automation. Ownership comes exclusively from the bearer key. No client-supplied account ID. API keys cannot issue keys or change account/security settings."
   },
   "servers": [
@@ -5604,6 +5604,251 @@
           }
         }
       }
+    },
+    "/tasks/{id}/reminder/repair": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "repairTaskReminderLink",
+        "description": "Requires courses:read, tasks:read, tasks:write, reminders:read and reminders:write. An assignment is a study task; projectId identifies its internal owned helper, not an additional personal card. Helpers are intentionally absent from GET /projects, but reminder endpoints resolve owned storage independently. Default dryRun=true returns a no-write plan. Set dryRun=false and restoreTrashed=true only after the owner requests restoration. Requires exact task and project revisions and a complete native link intent proving the same task/project relation. Only trashedAt is cleared; the project revision advances. Missing, archived, mistyped, shared or unproven helpers are never recreated or restored. Existing reminder IDs, schedules, manual settings and delivery claims are untouched. Repeated identical Idempotency-Key requests do not apply a second restoration; a helper trashed again is not resurrected by replay. Durable native recovery handles a lost wake acknowledgement. Use a different key for preview and execution, retry execution with the same body/key and GET the existing linkage and collection afterward. Never resend task-created notifications as recovery.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{15,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepairTaskReminder"
+              },
+              "examples": {
+                "preview": {
+                  "value": {
+                    "restoreTrashed": true,
+                    "dryRun": true
+                  }
+                },
+                "restoreProvenHelper": {
+                  "value": {
+                    "expectedRevision": 1,
+                    "expectedProjectRevision": 2,
+                    "restoreTrashed": true,
+                    "dryRun": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Invalid JSON, HTTPS required or missing Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, revoked or expired key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing scope or unavailable account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in owner account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "revision-conflict, idempotency-key-reused or reminder-link-conflict (missing/archived/type mismatch/shared/unproven link or a later deletion). Does not recreate resources or replace reminder settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "result",
+                        "requestId"
+                      ],
+                      "properties": {
+                        "result": {
+                          "$ref": "#/components/schemas/TaskReminderStatus"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request/account snapshot too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Existing Wilo domain rejects input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "60 requests/account/minute; Retry-After:60",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Disabled API or unavailable dependency/audit; Retry-After:2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "No-write preview plan, or verified current reminder readback after an explicit restoration. Read individual reminder collection entries for their schedules.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/ReminderRepairPlan"
+                        },
+                        {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/TaskReminderStatus"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "repaired": {
+                                  "type": "boolean"
+                                },
+                                "replayed": {
+                                  "type": "boolean"
+                                },
+                                "preservesReminderSettings": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Restoration committed; native scheduler wake requires reconciliation. Not evidence of scheduled or delivered Push.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/TaskReminderStatus"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Preview or explicitly restore a trashed university reminder helper"
+      }
     }
   },
   "components": {
@@ -7119,6 +7364,114 @@
         "properties": {
           "expectedSettingsVersion": {
             "type": "string"
+          }
+        }
+      },
+      "RepairTaskReminder": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "restoreTrashed"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expectedProjectRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "restoreTrashed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "dryRun": {
+                "enum": [
+                  false
+                ]
+              }
+            },
+            "required": [
+              "dryRun",
+              "expectedRevision",
+              "expectedProjectRevision"
+            ]
+          },
+          {
+            "properties": {
+              "dryRun": {
+                "enum": [
+                  true
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "ReminderRepairPlan": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "projectId",
+          "taskRevision",
+          "projectRevision",
+          "dryRun",
+          "state",
+          "repairable",
+          "preservesReminderSettings",
+          "changes"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "taskRevision": {
+            "type": "integer"
+          },
+          "projectRevision": {
+            "type": "integer"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "trashed",
+              "active"
+            ]
+          },
+          "repairable": {
+            "type": "boolean"
+          },
+          "preservesReminderSettings": {
+            "type": "boolean"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "restore-auxiliary-card"
+              ]
+            }
           }
         }
       }

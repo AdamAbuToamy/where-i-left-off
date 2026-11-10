@@ -107,3 +107,20 @@ it("generates meaningful updates and declares idempotency only where contract re
   }
   expect(workflowCode("python")).toContain("course_id");
 });
+
+it("copies the actual no-write repair preview from the published contract", () => {
+  const repair = operations.find(
+    (op) => op.operationId === "repairTaskReminderLink",
+  )!;
+  expect(repair.path).toBe("/tasks/{id}/reminder/repair");
+  expect(operationBody(repair)).toEqual({ restoreTrashed: true, dryRun: true });
+  expect(repair.scopes).toEqual([
+    "courses:read",
+    "tasks:read",
+    "tasks:write",
+    "reminders:read",
+    "reminders:write",
+  ]);
+  for (const language of ["curl", "python", "javascript"] as const)
+    expect(requestCode(repair, language)).toContain("restoreTrashed");
+});
