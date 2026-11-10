@@ -24,6 +24,15 @@ test('account loading stays branded, responsive and accessible until real verifi
       await page.setViewportSize({width,height:844})
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       await expect(screen.getByRole('heading', {name:'نجهّز مساحتك'})).toBeVisible()
+      await expect(screen).toHaveCSS('position', 'fixed')
+      const box = await screen.boundingBox()
+      expect(box!.y).toBe(0)
+      expect(Math.abs(box!.height - 844)).toBeLessThan(2)
+      const content = await screen.evaluate(el => {
+        const first = el.firstElementChild!.getBoundingClientRect(), last = el.lastElementChild!.getBoundingClientRect()
+        return (first.top + last.bottom) / 2
+      })
+      expect(Math.abs(content - 422)).toBeLessThan(3)
       await page.screenshot({path:`test-results/loading-screen/arabic-${width}.png`,fullPage:true})
     }
     await page.emulateMedia({reducedMotion:'reduce'})
@@ -33,11 +42,12 @@ test('account loading stays branded, responsive and accessible until real verifi
       const result = await new AxeBuilder({page}).include('.wilo-loading').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()
       expect(result.violations, theme).toEqual([])
     }
-    await page.locator('.language-trigger').click()
+    await page.setViewportSize({width:1280,height:844})
+    if (await page.locator('.language-trigger').count()) await page.locator('.language-trigger').click()
     await page.getByRole('button', {name:'English',exact:true}).click()
     await expect(screen).toHaveAttribute('dir','ltr')
     await expect(screen.getByRole('status')).toHaveText('Checking account status…')
-    await page.locator('.language-trigger').click()
+    if (await page.locator('.language-trigger').count()) await page.locator('.language-trigger').click()
     await page.getByRole('button', {name:'עברית',exact:true}).click()
     await expect(screen).toHaveAttribute('dir','rtl')
     await expect(screen.getByRole('heading')).toHaveText('מכינים את המרחב שלך')

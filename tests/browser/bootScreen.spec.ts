@@ -31,6 +31,16 @@ test("shows a localized critical loader before the entry script arrives and repl
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    const loader = boot.locator(".wilo-loading:visible");
+    await expect(loader).toHaveCSS("position", "fixed");
+    const before = await loader.boundingBox();
+    expect(before!.y).toBe(0);
+    expect(Math.abs(before!.height - 844)).toBeLessThan(2);
+    await page.evaluate(() => {
+      const header = document.createElement("header"); header.id = "late-header"; header.style.height = "180px"; header.textContent = "Where I Left Off"; document.body.prepend(header);
+    });
+    expect(await loader.boundingBox()).toEqual(before);
+    await page.evaluate(() => document.querySelector("#late-header")!.remove());
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(boot.locator(".wilo-loading-card-front:visible")).toHaveCSS(
       "animation-name",
