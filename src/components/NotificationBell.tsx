@@ -324,7 +324,7 @@ export default function NotificationBell({
                 </p>
               )}
               <div className="notification-list">
-                {!notices.length && !loading && (
+                {!notices.length && !loading && !error && (
                   <div className="notification-empty">
                     <Bell size={30} />
                     <strong>{t.empty}</strong>

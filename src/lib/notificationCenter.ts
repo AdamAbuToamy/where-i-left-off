@@ -32,7 +32,7 @@ export function parseNotificationFeed(raw: unknown): NotificationFeed {
       typeof item.body !== "string" ||
       item.body.length > 1000 ||
       typeof item.url !== "string" ||
-      !/^#\/(?:settings|notifications|personal\/[-\w]{1,100}|groups\/[A-Za-z0-9]{20}(?:\/[-\w]{1,100})?)$/.test(
+      !/^#\/(?:settings|notifications|university\?courseId=[-\w]{1,100}|personal\/[-\w]{1,100}|groups\/[A-Za-z0-9]{20}(?:\/[-\w]{1,100})?)$/.test(
         item.url,
       ) ||
       !Number.isSafeInteger(item.created_at) ||
