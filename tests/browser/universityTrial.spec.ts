@@ -183,7 +183,7 @@ test("university default view keeps the original menu, assistant, personal cards
   await card.hover();
   await card.getByRole("button", {name: "تكبير البطاقة: Original cards remain", exact: true}).click();
   const details = page.locator(".card-detail-panel");
-  await expect(details.locator(".card-options summary")).toBeVisible();
+  await expect(details.locator(".card-actions")).toBeVisible();
   await details.getByRole("button", {name: "رجوع", exact: true}).click();
   await expect(details).toHaveCount(0);
   await expect(page.locator(".admin-preview")).toHaveCount(0);

@@ -81,7 +81,6 @@ test("admin filters, larger week, tidy undated cards, university agenda and dele
   await page.goto("/#/personal");
   await card.hover();
   await card.locator(".envelope-expand").click();
-  await card.locator(".card-options summary").click();
   await card.getByRole("button", { name: "Delete", exact: true }).click();
   await page
     .getByRole("dialog")

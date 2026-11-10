@@ -18,7 +18,6 @@ import type { Language } from "../translations";
 import { translations } from "../translations";
 import DeleteProjectDialog from "./DeleteProjectDialog";
 import "./ProjectCard.css";
-import { pageText } from "../pageText";
 import { groupText } from "../groupTranslations";
 import { recallText } from "../recallTranslations";
 import { checklistItems } from "../lib/taskOverview";
@@ -191,6 +190,9 @@ export default function ProjectCard({
     setDueDate(project.dueDate ?? "");
     setLinks(project.links || []);
     setIsEditing(true);
+    requestAnimationFrame(() =>
+      surface.current?.scrollTo?.({ top: 0, behavior: "instant" }),
+    );
   }
 
   function finishEditing() {
@@ -276,7 +278,7 @@ export default function ProjectCard({
         )}
         {isEditing ? (
           <form
-            className="card-editor"
+            className="card-editor card-editor-dashboard"
             onSubmit={handleSubmit}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
@@ -285,103 +287,191 @@ export default function ProjectCard({
               }
             }}
           >
-            <label htmlFor={`name-${project.id}`}>{t.projectName}</label>
+            <section className="card-editor-basics">
+              <h3>
+                {language === "ar"
+                  ? "أساسيات البطاقة"
+                  : language === "he"
+                    ? "פרטי הכרטיס"
+                    : "Card essentials"}
+              </h3>
+              <label htmlFor={`name-${project.id}`}>{t.projectName}</label>
 
-            <input
-              disabled={!canManage}
-              id={`name-${project.id}`}
-              autoFocus={!phone}
-              dir="auto"
-              required
-              maxLength={100}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-
-            <label htmlFor={`step-${project.id}`}>{t.nextStep}</label>
-
-            <textarea
-              id={`step-${project.id}`}
-              dir="auto"
-              rows={4}
-              maxLength={1000}
-              placeholder={t.nextStepInputPlaceholder}
-              value={nextStep}
-              onChange={(event) => setNextStep(event.target.value)}
-            />
-
-            {canManage && (
-              <CatalogLookup
-                name={name}
-                type={metadata.resourceType}
-                language={language}
-                onChoose={(title, values) => {
-                  setName(title);
-                  setMetadata({ ...metadata, ...values });
-                  if (values.projectUrl) setProjectUrl(values.projectUrl);
-                }}
+              <input
+                disabled={!canManage}
+                id={`name-${project.id}`}
+                autoFocus={!phone}
+                dir="auto"
+                required
+                maxLength={100}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
               />
-            )}
-            <RecallFields
-              members={members}
-              progressOnly={!canManage}
-              value={metadata}
-              onChange={setMetadata}
-              sections={sections}
-              language={language}
-              prefix={`edit-${project.id}`}
-            />
-            <label htmlFor={`url-${project.id}`}>{t.projectUrl}</label>
-            <input
-              disabled={!canManage}
-              id={`url-${project.id}`}
-              type="url"
-              inputMode="url"
-              maxLength={500}
-              value={projectUrl}
-              onChange={(event) => setProjectUrl(event.target.value)}
-            />
 
-            <label htmlFor={`attachment-${project.id}`}>
-              {t.attachmentUrl}
-            </label>
-            <input
-              disabled={!canManage}
-              id={`attachment-${project.id}`}
-              type="url"
-              inputMode="url"
-              maxLength={500}
-              value={attachmentUrl}
-              onChange={(event) => setAttachmentUrl(event.target.value)}
-            />
-
-            <ExtraLinks
-              value={links}
-              onChange={setLinks}
-              language={language}
-              prefix={`edit-${project.id}`}
-              disabled={!canManage}
-            />
-            <label htmlFor={`date-${project.id}`}>{t.dueDate}</label>
-            <input
-              disabled={!canManage}
-              id={`date-${project.id}`}
-              type="date"
-              value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
-            />
-
-            <button type="submit" disabled={!name.trim()}>
-              {t.saveChanges}
-            </button>
-
-            <button
-              type="button"
-              className="card-secondary"
-              onClick={finishEditing}
-            >
-              {t.cancel}
-            </button>
+              {canManage && (
+                <CatalogLookup
+                  name={name}
+                  type={metadata.resourceType}
+                  language={language}
+                  onChoose={(title, values) => {
+                    setName(title);
+                    setMetadata({ ...metadata, ...values });
+                    if (values.projectUrl) setProjectUrl(values.projectUrl);
+                  }}
+                />
+              )}
+              <RecallFields
+                hideTextFields
+                hideDescription
+                members={members}
+                progressOnly={!canManage}
+                value={metadata}
+                onChange={setMetadata}
+                sections={sections}
+                language={language}
+                prefix={`edit-${project.id}`}
+              />
+            </section>
+            <div className="card-editor-addons">
+              <EditorDisclosure
+                language={language}
+                title={t.nextStep}
+                populated={!!nextStep}
+              >
+                {" "}
+                <label htmlFor={`step-${project.id}`}>{t.nextStep}</label>
+                <textarea
+                  id={`step-${project.id}`}
+                  dir="auto"
+                  rows={4}
+                  maxLength={1000}
+                  placeholder={t.nextStepInputPlaceholder}
+                  value={nextStep}
+                  onChange={(event) => setNextStep(event.target.value)}
+                />
+              </EditorDisclosure>
+              <EditorDisclosure
+                language={language}
+                title={
+                  language === "ar"
+                    ? "ملاحظات ونقطة التوقف"
+                    : language === "he"
+                      ? "הערות ונקודת עצירה"
+                      : "Notes and checkpoint"
+                }
+                populated={!!(metadata.description || metadata.checkpoint)}
+              >
+                <label htmlFor={`edit-${project.id}-description`}>
+                  {language === "ar"
+                    ? "ملاحظات"
+                    : language === "he"
+                      ? "הערות"
+                      : "Notes"}
+                </label>
+                <textarea
+                  id={`edit-${project.id}-description`}
+                  rows={3}
+                  maxLength={1000}
+                  dir="auto"
+                  value={metadata.description || ""}
+                  disabled={!canManage}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, description: e.target.value })
+                  }
+                />
+                <label htmlFor={`edit-${project.id}-checkpoint`}>
+                  {r.checkpoint}
+                </label>
+                <textarea
+                  id={`edit-${project.id}-checkpoint`}
+                  rows={3}
+                  maxLength={1000}
+                  dir="auto"
+                  value={metadata.checkpoint || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, checkpoint: e.target.value })
+                  }
+                />
+              </EditorDisclosure>
+              <EditorDisclosure
+                language={language}
+                title={r.checklist}
+                populated={!!metadata.checklist}
+              >
+                <label htmlFor={`edit-${project.id}-checklist`}>
+                  {r.checklist}
+                </label>
+                <textarea
+                  id={`edit-${project.id}-checklist`}
+                  rows={5}
+                  maxLength={3000}
+                  dir="auto"
+                  value={metadata.checklist || ""}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, checklist: e.target.value })
+                  }
+                />
+              </EditorDisclosure>
+              <EditorDisclosure
+                language={language}
+                title={pages.links}
+                populated={
+                  !!(projectUrl || attachmentUrl || links.length || dueDate)
+                }
+              >
+                {" "}
+                <label htmlFor={`url-${project.id}`}>{t.projectUrl}</label>
+                <input
+                  disabled={!canManage}
+                  id={`url-${project.id}`}
+                  type="url"
+                  inputMode="url"
+                  maxLength={500}
+                  value={projectUrl}
+                  onChange={(event) => setProjectUrl(event.target.value)}
+                />
+                <label htmlFor={`attachment-${project.id}`}>
+                  {t.attachmentUrl}
+                </label>
+                <input
+                  disabled={!canManage}
+                  id={`attachment-${project.id}`}
+                  type="url"
+                  inputMode="url"
+                  maxLength={500}
+                  value={attachmentUrl}
+                  onChange={(event) => setAttachmentUrl(event.target.value)}
+                />
+                <ExtraLinks
+                  value={links}
+                  onChange={setLinks}
+                  language={language}
+                  prefix={`edit-${project.id}`}
+                  disabled={!canManage}
+                />
+                <label htmlFor={`date-${project.id}`}>{t.dueDate}</label>
+                <input
+                  disabled={!canManage}
+                  id={`date-${project.id}`}
+                  type="date"
+                  value={dueDate}
+                  onChange={(event) => setDueDate(event.target.value)}
+                />
+              </EditorDisclosure>
+            </div>
+            <div className="card-editor-save-actions">
+              {" "}
+              <button type="submit" disabled={!name.trim()}>
+                {t.saveChanges}
+              </button>
+              <button
+                type="button"
+                className="card-secondary"
+                onClick={finishEditing}
+              >
+                {t.cancel}
+              </button>
+            </div>
           </form>
         ) : (
           <CompactCardShell
@@ -586,10 +676,14 @@ export default function ProjectCard({
                   </time>
                 </p>
               )}
-              <p className="label">{t.nextStep}</p>
-              <p className="next-step" dir="auto">
-                <LinkedText text={project.nextStep || t.nextStepPlaceholder} />
-              </p>
+              {project.nextStep && (
+                <>
+                  <p className="label">{t.nextStep}</p>
+                  <p className="next-step" dir="auto">
+                    <LinkedText text={project.nextStep} />
+                  </p>
+                </>
+              )}
             </section>
             <section
               className="card-detail-page"
@@ -657,7 +751,17 @@ export default function ProjectCard({
               hidden={fullscreen && detailPage !== "overview"}
             >
               {fullscreen && (
-                <Suspense fallback={null}>
+                <Suspense
+                  fallback={
+                    <button type="button" className="card-secondary" disabled>
+                      {language === "ar"
+                        ? "تذكير البطاقة"
+                        : language === "he"
+                          ? "תזכורת לכרטיס"
+                          : "Card reminder"}
+                    </button>
+                  }
+                >
                   <CardReminderControl
                     compact
                     id={project.id}
@@ -713,8 +817,7 @@ export default function ProjectCard({
                 )}
             </section>
             {(canEdit || canManage) && (
-              <details className="card-options">
-                <summary>{pageText[language].more}</summary>
+              <div className="card-options card-options-visible">
                 <div className="card-actions">
                   {canEdit && (
                     <button
@@ -757,7 +860,7 @@ export default function ProjectCard({
                     </button>
                   )}
                 </div>
-              </details>
+              </div>
             )}
           </CompactCardShell>
         )}
@@ -794,5 +897,39 @@ export default function ProjectCard({
     </>
   ) : (
     content
+  );
+}
+
+function EditorDisclosure({
+  title,
+  populated,
+  language,
+  children,
+}: {
+  title: string;
+  populated: boolean;
+  language: Language;
+  children: ReactNode;
+}) {
+  return (
+    <details className="card-editor-addon">
+      <summary>
+        <span>{title}</span>
+        <small>
+          {populated
+            ? language === "ar"
+              ? "مضاف"
+              : language === "he"
+                ? "נוסף"
+                : "Added"
+            : language === "ar"
+              ? "إضافة"
+              : language === "he"
+                ? "הוספה"
+                : "Add"}
+        </small>
+      </summary>
+      <div className="card-editor-addon-content">{children}</div>
+    </details>
   );
 }

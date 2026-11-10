@@ -19,6 +19,7 @@ export default function RecallFields({
   progressOnly = false,
   hideSection = false,
   hideDescription = false,
+  hideTextFields = false,
 }: {
   value: RecallDetails;
   onChange: (value: RecallDetails) => void;
@@ -29,6 +30,7 @@ export default function RecallFields({
   progressOnly?: boolean;
   hideSection?: boolean;
   hideDescription?: boolean;
+  hideTextFields?: boolean;
 }) {
   const t = recallText[language],
     g = groupText[language];
@@ -129,26 +131,32 @@ export default function RecallFields({
           </select>
         </div>
       )}
-      <label htmlFor={`${prefix}-checkpoint`}>{t.checkpoint}</label>
-      <textarea
-        id={`${prefix}-checkpoint`}
-        dir="auto"
-        rows={3}
-        maxLength={1000}
-        value={value.checkpoint ?? ""}
-        onChange={(e) => onChange({ ...value, checkpoint: e.target.value })}
-      />
-      <>
-        <label htmlFor={`${prefix}-checklist`}>{t.checklist}</label>
-        <textarea
-          id={`${prefix}-checklist`}
-          dir="auto"
-          rows={5}
-          maxLength={3000}
-          value={value.checklist ?? ""}
-          onChange={(e) => onChange({ ...value, checklist: e.target.value })}
-        />
-      </>
+      {!hideTextFields && (
+        <>
+          <label htmlFor={`${prefix}-checkpoint`}>{t.checkpoint}</label>
+          <textarea
+            id={`${prefix}-checkpoint`}
+            dir="auto"
+            rows={3}
+            maxLength={1000}
+            value={value.checkpoint ?? ""}
+            onChange={(e) => onChange({ ...value, checkpoint: e.target.value })}
+          />
+          <>
+            <label htmlFor={`${prefix}-checklist`}>{t.checklist}</label>
+            <textarea
+              id={`${prefix}-checklist`}
+              dir="auto"
+              rows={5}
+              maxLength={3000}
+              value={value.checklist ?? ""}
+              onChange={(e) =>
+                onChange({ ...value, checklist: e.target.value })
+              }
+            />
+          </>
+        </>
+      )}
     </div>
   );
 }

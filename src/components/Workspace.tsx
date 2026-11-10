@@ -475,6 +475,39 @@ export default function Workspace({
         : cached || queued
           ? HardDrive
           : CheckCheck;
+  const syncState =
+    pending || syncing
+      ? "syncing"
+      : !online
+        ? "offline"
+        : queued
+          ? "queued"
+          : cached
+            ? "cached"
+            : "synced";
+  const syncLabel = {
+    ar: {
+      syncing: "جارٍ التزامن",
+      offline: "غير متصل",
+      queued: "تغييرات معلّقة",
+      cached: "نسخة محلية",
+      synced: "متزامن",
+    },
+    he: {
+      syncing: "מסנכרן",
+      offline: "לא מחובר",
+      queued: "שינויים ממתינים",
+      cached: "עותק מקומי",
+      synced: "מסונכרן",
+    },
+    en: {
+      syncing: "Syncing",
+      offline: "Offline",
+      queued: "Changes pending",
+      cached: "Local copy",
+      synced: "Synced",
+    },
+  }[language][syncState];
   const accountLine = (
     <div className="account-strip">
       <span className="account-identity" dir="auto">
@@ -952,7 +985,11 @@ export default function Workspace({
             </WorkspaceTools>
             {kitchenStudy && (
               <details className="workspace-connection-menu">
-                <summary aria-label={syncMessage} title={syncMessage}>
+                <summary
+                  aria-label={syncMessage}
+                  title={syncMessage}
+                  data-sync-state={syncState}
+                >
                   <span role="status" aria-label={syncMessage}>
                     <StatusIcon
                       size={18}
@@ -962,6 +999,7 @@ export default function Workspace({
                       }
                     />
                   </span>
+                  <span className="workspace-sync-label">{syncLabel}</span>
                 </summary>
                 <div className="workspace-connection-panel">{accountLine}</div>
               </details>

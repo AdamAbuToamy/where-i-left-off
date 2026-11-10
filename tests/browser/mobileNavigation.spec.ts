@@ -91,7 +91,6 @@ test("phone bottom bar, compact cards and add/edit/details use the full screen",
     expect(b.height).toBeCloseTo(844, 0);
   }
   await fills(full);
-  await full.getByText("Card options", { exact: true }).click();
   await full.getByRole("button", { name: "Edit", exact: true }).click();
   await fills(full);
   await full

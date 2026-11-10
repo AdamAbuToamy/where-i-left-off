@@ -39,7 +39,6 @@ test("archive and trash restore card contents and archive preference is off by d
   await register(page);
   await add(page, "Keep my project");
   const card = page.locator(".project-card");
-  await card.locator(".card-options summary").click();
   await card.getByRole("button", { name: "Archive card", exact: true }).click();
   await expect(page.locator(".project-card")).toHaveCount(0);
   await page.locator(".side-navigation-toggle").press("Enter");
@@ -52,7 +51,6 @@ test("archive and trash restore card contents and archive preference is off by d
   await page.locator(".side-navigation-toggle").press("Enter");
   await page.getByRole("link", { name: "My projects", exact: true }).click();
   await expect(card).toContainText("Continue tomorrow");
-  await card.locator(".card-options summary").click();
   await card.getByRole("button", { name: "Delete", exact: true }).click();
   await page
     .getByRole("dialog")
