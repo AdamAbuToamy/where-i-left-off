@@ -683,7 +683,7 @@ export default function Workspace({
                   <button
                     data-tour="add-project"
                     ref={addButtonRef}
-                    className="primary-button"
+                    className="primary-button workspace-create-button"
                     disabled={pending}
                     aria-expanded={isFormOpen}
                     aria-controls="new-project-panel"

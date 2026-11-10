@@ -224,3 +224,77 @@
     background: var(--site-primary);
   }
 }
+
+/* Separate the main action from view/filter controls, with one clear priority. */
+:root[data-kitchen-study="on"] .workspace-command-bar .workspace-toolbar {
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 8px 16px;
+  margin-block-end: 4px;
+  border-block-end: 1px solid var(--site-border);
+  box-sizing: border-box;
+}
+:root[data-kitchen-study="on"]
+  .workspace-command-bar
+  .workspace-toolbar
+  > .workspace-create-button {
+  order: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  min-width: 172px;
+  padding: 11px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--site-primary) 28%, transparent);
+}
+:root[data-kitchen-study="on"]
+  .workspace-command-bar
+  .workspace-toolbar
+  > .planning-launch {
+  order: 1;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--site-border);
+  background: transparent;
+  font-size: 13px;
+}
+:root[data-kitchen-study="on"]
+  .workspace-command-bar
+  .workspace-toolbar
+  > .planning-launch:hover {
+  background: var(--site-soft);
+  border-color: var(--site-primary);
+}
+:root[data-kitchen-study="on"]
+  .workspace-command-bar
+  .workspace-toolbar
+  > .project-count {
+  order: 2;
+  margin-inline-start: auto;
+  padding-inline: 4px;
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  :root[data-kitchen-study="on"] .workspace-command-bar > .workspace-toolbar:first-child {
+    flex: 1;
+    width: auto;
+    padding: 0;
+    margin: 0;
+    border-block-end: 0;
+    gap: 8px;
+  }
+  :root[data-kitchen-study="on"]
+    .workspace-command-bar
+    .workspace-toolbar
+    > .workspace-create-button {
+    min-width: 144px;
+    min-height: 46px;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
