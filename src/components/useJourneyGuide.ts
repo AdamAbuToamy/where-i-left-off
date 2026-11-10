@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction, RefObject } from "react";
 import type { JourneyStep } from "./journeySession";
 import { journeyCompanionPosition, journeyFocusRect } from "./tourGeometry";
 import type { TourRect } from "./tourGeometry";
+import { revealJourneyTarget } from "./journeyScroll";
 export type JourneyCue =
   | "create"
   | "name"
@@ -36,6 +37,7 @@ export function useJourneyGuide(
     if (!active) return;
     let frame = 0,
       target: HTMLElement | null = null;
+    let revealed: HTMLElement | null = null;
     const blurred = new Map<HTMLElement, string>();
     let blurTarget: HTMLElement | null = null;
     const restoreBlur = () => {
@@ -108,10 +110,10 @@ export function useJourneyGuide(
           nextCue = "card";
         }
       } else if (step === "university") {
-        node = document.querySelector(".study-toolbar button,.study-toolbar");
+        node = document.querySelector(".study-page");
         nextCue = "university";
       } else if (step === "groups") {
-        node = document.querySelector(".group-create summary,.group-spaces");
+        node = document.querySelector(".group-spaces");
         nextCue = "groups";
       }
       if (target !== node) {
@@ -128,6 +130,13 @@ export function useJourneyGuide(
           height: viewport?.height || innerHeight,
         };
       setCompact(view.height < 500);
+      if (node && node !== revealed && !minimized) {
+        const bounds = node.getBoundingClientRect();
+        if (bounds.width && bounds.height) {
+          revealJourneyTarget(node, { top: offset.y, left: offset.x, ...view });
+          revealed = node;
+        }
+      }
       const rect = node?.getBoundingClientRect();
       const clipped = journeyFocusRect(
         rect
@@ -179,6 +188,15 @@ export function useJourneyGuide(
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(paint);
     };
+    const settled = (event: Event) => {
+      if (
+        event.target instanceof Element &&
+        target &&
+        event.target.contains(target)
+      )
+        revealed = null;
+      schedule();
+    };
     const observer = new MutationObserver(schedule);
     observer.observe(document.body, {
       subtree: true,
@@ -192,10 +210,11 @@ export function useJourneyGuide(
         : null;
     if (coach.current) resize?.observe(coach.current);
     document.addEventListener("focusin", schedule);
+    document.addEventListener("focusout", schedule);
     document.addEventListener("input", schedule);
     document.addEventListener("change", schedule);
-    document.addEventListener("transitionend", schedule, true);
-    document.addEventListener("animationend", schedule, true);
+    document.addEventListener("transitionend", settled, true);
+    document.addEventListener("animationend", settled, true);
     window.addEventListener("resize", schedule);
     window.addEventListener("scroll", schedule, true);
     window.visualViewport?.addEventListener("resize", schedule);
@@ -208,10 +227,11 @@ export function useJourneyGuide(
       cancelAnimationFrame(frame);
       target?.removeAttribute("data-journey-target");
       document.removeEventListener("focusin", schedule);
+      document.removeEventListener("focusout", schedule);
       document.removeEventListener("input", schedule);
       document.removeEventListener("change", schedule);
-      document.removeEventListener("transitionend", schedule, true);
-      document.removeEventListener("animationend", schedule, true);
+      document.removeEventListener("transitionend", settled, true);
+      document.removeEventListener("animationend", settled, true);
       window.removeEventListener("resize", schedule);
       window.removeEventListener("scroll", schedule, true);
       window.visualViewport?.removeEventListener("resize", schedule);

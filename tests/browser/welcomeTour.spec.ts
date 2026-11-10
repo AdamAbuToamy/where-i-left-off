@@ -106,6 +106,22 @@ for (const phone of [false, true])
       animations: "disabled",
     });
     await page.locator("#project-name").fill("My real journey card");
+    await page
+      .locator("#project-name")
+      .evaluate((node) => (node as HTMLInputElement).blur());
+    await expect(page.locator(".journey-layer")).toHaveAttribute(
+      "data-cue",
+      "save",
+    );
+    await expect
+      .poll(() =>
+        page.locator('[data-tour="save-project"]').evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          return rect.top >= 0 && rect.bottom <= innerHeight;
+        }),
+      )
+      .toBe(true);
+
     await guide.getByRole("button", { name: t.hide, exact: true }).click();
     await guide.getByRole("button", { name: t.show, exact: true }).click();
     await expect(page.locator(".journey-layer")).toHaveAttribute(
@@ -199,6 +215,25 @@ for (const phone of [false, true])
     await guide.getByRole("button", { name: t.tried, exact: true }).click();
     await expect(page).toHaveURL(/#\/university/);
     await expect(page.locator(".study-page")).toBeVisible();
+    await expect(page.locator(".study-page")).toHaveAttribute(
+      "data-journey-target",
+      "true",
+    );
+    expect(
+      await page.locator(".study-page").evaluate((node) => {
+        let parent: Element | null = node;
+        while (parent) {
+          if (getComputedStyle(parent).filter.includes("blur")) return false;
+          parent = parent.parentElement;
+        }
+        return !node.querySelector('[style*="filter: blur"]');
+      }),
+    ).toBe(true);
+    await page.screenshot({
+      path: `/tmp/wilo-university-tour-clear-${phone ? "phone" : "desktop"}.png`,
+      animations: "disabled",
+    });
+
     await guide.getByRole("button", { name: t.next, exact: true }).click();
     await expect(page).toHaveURL(/#\/groups/);
     await expect(page.locator(".group-spaces")).toBeVisible();
