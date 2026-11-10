@@ -83,7 +83,7 @@ service cloud.firestore {
         let d=request.resource.data;
         return d.keys().hasOnly(['kind','id','payload','deleted','revision','mutationId','updatedAt'])
           && d.keys().hasAll(['kind','id','payload','deleted','revision','mutationId','updatedAt'])
-          && d.kind in ['courses','tasks','lessons']
+          && d.kind in ['courses','tasks','lessons','curricula']
           && d.id is string && d.id.size()>0 && d.id.size()<=600 && d.id.matches('^[A-Za-z0-9_-]+$')
           && recordId==d.kind+'_'+d.id && validText(d.payload,600000)
           && d.deleted is bool && (!d.deleted || d.payload=='')

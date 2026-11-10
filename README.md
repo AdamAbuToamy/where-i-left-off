@@ -181,3 +181,7 @@ Cards now expose an independent reminder list in their existing reminder section
 
 ### Runtime readiness and safe scaling
 The existing Worker exposes read-only `/healthz` and `/readyz` operational probes. Run `node scripts/verify-runtime-health.mjs` for the production smoke gate. Queue concurrency is conservatively capped at2; exhausted jobs route to a24-hour dead-letter queue. Native read requests have bounded timeouts. See [operations and release procedure](docs/OPERATIONS_RUNBOOK.md) for exact guarantees, recovery and limitations.
+
+### Curriculum import and section view
+
+University → Course map now accepts XLSX, DOCX and text PDF study plans, with a review before map-only persistence. Course numbers, year/semester, order and explicit prerequisites remain editable without adding inactive courses to the active course list. Cards also offer **By sections** alongside Week. See [curriculum map guide](docs/CURRICULUM_MAP.md) for supported layouts, limits and storage compatibility.

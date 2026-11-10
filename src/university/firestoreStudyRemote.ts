@@ -16,7 +16,7 @@ export class FirestoreStudyRemote implements StudyRemote {
     this.check()
     const records = snapshot.docs.map(document => {
      const r = document.data()
-     if (!['courses','tasks','lessons'].includes(r.kind) || typeof r.payload !== 'string' || typeof r.id !== 'string' || !Number.isInteger(r.revision) || r.revision < 0 || typeof r.deleted !== 'boolean' || typeof r.mutationId !== 'string' || document.id !== r.kind+'_'+r.id) throw new Error('invalid-record')
+     if (!['courses','tasks','lessons','curricula'].includes(r.kind) || typeof r.payload !== 'string' || typeof r.id !== 'string' || !Number.isInteger(r.revision) || r.revision < 0 || typeof r.deleted !== 'boolean' || typeof r.mutationId !== 'string' || document.id !== r.kind+'_'+r.id) throw new Error('invalid-record')
      return r as StudyRecord
     })
     receive(records)

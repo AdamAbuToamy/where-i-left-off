@@ -1,7 +1,8 @@
+import { validateCurriculum } from './curriculum';
 import { createClientId } from '../lib/clientId'
 import { emptyUniversity } from './model';
 import type { Course, Lesson, StudyTask, UniversityState, UniversityStore } from './model';
-export type StudyKind='courses'|'tasks'|'lessons';
+export type StudyKind='courses'|'tasks'|'lessons'|'curricula';
 export type StudyRecord={kind:StudyKind;id:string;payload:string;deleted:boolean;revision:number;mutationId:string};
 type Pending={base:StudyRecord|null;record:StudyRecord};
 export type StudySyncStatus={ready:boolean;pending:number;conflicts:string[];error:string};
@@ -12,7 +13,7 @@ export interface StudyRemote {
 const keyOf=(r:{kind:StudyKind;id:string})=>r.kind+'_'+r.id;
 function records(state:UniversityState):Map<string,StudyRecord>{
   const result=new Map<string,StudyRecord>();
-  for(const kind of ['courses','tasks','lessons'] as const)for(const item of state[kind]){
+  for(const kind of ['courses','tasks','lessons','curricula'] as const)for(const item of state[kind]||[]){
     const record:StudyRecord={kind,id:item.id,payload:JSON.stringify(item),deleted:false,revision:0,mutationId:''};
     result.set(keyOf(record),record);
   }
@@ -63,6 +64,7 @@ export class UniversityRepository {
   private publish(){if(this.active)this.notify(this.state,{ready:this.ready,pending:this.pending.size,conflicts:[...this.conflicts],error:this.error});}
   commit(next:UniversityState){
     if(!this.active||this.invalid)throw new Error('انتهت جلسة الدخول');
+    for(const plan of next.curricula||[])validateCurriculum(plan);
     const before=records(this.state),after=records(next),pending=new Map(this.pending);
     for(const key of new Set([...before.keys(),...after.keys()])){
       if(equal(before.get(key),after.get(key)))continue;
@@ -94,7 +96,8 @@ export class UniversityRepository {
       if(item.id!==record.id)throw new Error('سجل سحابي غير صالح');
       if(record.kind==='courses')next.courses.push(item as Course);
       else if(record.kind==='tasks')next.tasks.push(item as StudyTask);
-      else next.lessons.push(item as Lesson);
+      else if(record.kind==='lessons')next.lessons.push(item as Lesson);
+      else (next.curricula??=[]).push(validateCurriculum(item));
     }
     this.state=next;this.store.save(next);
   }

@@ -119,7 +119,7 @@ export default function Workspace({
   };
 
   const [filter, setFilter] = useState(() => workspaceView().filter);
-  const [view, setView] = useState<"board" | "week">(
+  const [view, setView] = useState<"board" | "week" | "sections">(
     () => workspaceView().view,
   );
   const [weekOf, setWeekOf] = useState(() => workspaceView().weekOf);
@@ -352,7 +352,8 @@ export default function Workspace({
             : p.resourceType !== "idea") &&
           (!onlyMine || p.assignedTo === user.uid) &&
           (filter === "ideas" || matchesView(p, filter, today)) &&
-          (sectionFilter === "all" ||
+          (view === "sections" ||
+            sectionFilter === "all" ||
             (sections.some((s) => s.id === p.sectionId) ? p.sectionId : "") ===
               sectionFilter) &&
           `${p.name} ${p.nextStep} ${p.checkpoint ?? ""} ${p.checklist ?? ""} ${p.projectUrl ?? ""} ${p.attachmentUrl ?? ""} ${p.links?.join(" ") || ""}`
@@ -365,6 +366,7 @@ export default function Workspace({
       onlyMine,
       user.uid,
       sectionFilter,
+      view,
       sections,
       search,
       today,
@@ -423,6 +425,17 @@ export default function Workspace({
             onClick={() => setView("week")}
           >
             {t.weekView}
+          </button>
+          <button
+            className="secondary-button"
+            aria-pressed={view === "sections"}
+            onClick={() => setView("sections")}
+          >
+            {language === "ar"
+              ? "حسب الأقسام"
+              : language === "he"
+                ? "לפי מדורים"
+                : "By sections"}
           </button>
         </nav>
       )}
@@ -776,35 +789,42 @@ export default function Workspace({
                   <div className="workspace-direct-options">
                     {viewControls}
                     {projects.length > 0 && filterControl}
-                    <div className="workspace-section-picker">
-                      <ChoicePicker
-                        hoverOpen
-                        label={
-                          language === "ar"
-                            ? "القسم"
-                            : language === "he"
-                              ? "מדור"
-                              : "Section"
-                        }
-                        value={sectionFilter}
-                        onChange={(value) => {
-                          if (value === "__manage_sections")
-                            setManageSections(true);
-                          else setSectionFilter(value);
-                        }}
-                        options={[
-                          { value: "all", label: r.allSections },
-                          { value: "", label: r.noSection },
-                          ...sections.map((section) => ({
-                            value: section.id,
-                            label: section.name,
-                          })),
-                          ...(canManage
-                            ? [{ value: "__manage_sections", label: r.manage }]
-                            : []),
-                        ]}
-                      />
-                    </div>
+                    {view !== "sections" && (
+                      <div className="workspace-section-picker">
+                        <ChoicePicker
+                          hoverOpen
+                          label={
+                            language === "ar"
+                              ? "القسم"
+                              : language === "he"
+                                ? "מדור"
+                                : "Section"
+                          }
+                          value={sectionFilter}
+                          onChange={(value) => {
+                            if (value === "__manage_sections")
+                              setManageSections(true);
+                            else setSectionFilter(value);
+                          }}
+                          options={[
+                            { value: "all", label: r.allSections },
+                            { value: "", label: r.noSection },
+                            ...sections.map((section) => ({
+                              value: section.id,
+                              label: section.name,
+                            })),
+                            ...(canManage
+                              ? [
+                                  {
+                                    value: "__manage_sections",
+                                    label: r.manage,
+                                  },
+                                ]
+                              : []),
+                          ]}
+                        />
+                      </div>
+                    )}
                     {group && (
                       <div className="filter-group">
                         <button
@@ -930,7 +950,7 @@ export default function Workspace({
             disabled={pending}
             aria-busy={pending}
           >
-            {canCreate && view === "board" && (
+            {canCreate && view !== "week" && (
               <div
                 id="new-project-panel"
                 className={`form-reveal ${isFormOpen ? "is-open" : ""}`}
@@ -1004,8 +1024,9 @@ export default function Workspace({
             disabled={pending}
             aria-busy={pending}
           >
-            {view === "board" && (
+            {(view === "board" || view === "sections") && (
               <ProjectBoard
+                groupBySection={view === "sections"}
                 disabled={pending}
                 groupId={group?.id}
                 members={group ? members : undefined}

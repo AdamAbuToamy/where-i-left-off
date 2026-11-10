@@ -19,7 +19,7 @@ export function hydrateStudy(rows) {
     records = new Map();
   for (const { key, value: r } of rows) {
     if (
-      !studyKinds.includes(r.kind) ||
+      (!studyKinds.includes(r.kind) && r.kind !== "curricula") ||
       key !== r.kind + "_" + r.id ||
       !Number.isSafeInteger(r.revision) ||
       r.revision < 0 ||
@@ -27,6 +27,8 @@ export function hydrateStudy(rows) {
       typeof r.payload !== "string"
     )
       fail("invalid-stored-record");
+    // Curriculum plans are map-only records, never active public API courses.
+    if (r.kind === "curricula") continue;
     records.set(key, r);
     if (r.deleted) continue;
     let item;

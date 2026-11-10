@@ -55,6 +55,7 @@ const messages = {
 };
 
 export type ProjectBoardProps = {
+  groupBySection?: boolean;
   disabled?: boolean;
   projects: Project[];
   sections: Section[];
@@ -162,6 +163,7 @@ function SortableCard({
 }
 
 export default function ProjectBoard({
+  groupBySection = false,
   disabled,
   projects,
   sections,
@@ -197,6 +199,23 @@ export default function ProjectBoard({
     return projects.findIndex((project) => project.id === String(id)) + 1;
   }
 
+  const card = (project: Project) => (
+    <SortableCard
+      disabled={disabled}
+      groupId={groupId}
+      key={project.id}
+      project={project}
+      canReorder={canManage && projects.length > 1}
+      members={members}
+      currentUid={currentUid}
+      canManage={canManage}
+      sections={sections}
+      language={language}
+      onToggle={onToggle}
+      onUpdate={onUpdate}
+      onDelete={onDelete}
+    />
+  );
   return (
     <div className="project-board">
       {canManage && projects.length > 1 && (
@@ -237,25 +256,48 @@ export default function ProjectBoard({
           items={projects.map((project) => project.id)}
           strategy={rectSortingStrategy}
         >
-          <div className="projects-grid">
-            {projects.map((project) => (
-              <SortableCard
-                disabled={disabled}
-                groupId={groupId}
-                key={project.id}
-                project={project}
-                canReorder={canManage && projects.length > 1}
-                members={members}
-                currentUid={currentUid}
-                canManage={canManage}
-                sections={sections}
-                language={language}
-                onToggle={onToggle}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-              />
-            ))}
-          </div>
+          {groupBySection ? (
+            <div className="section-clusters">
+              {[
+                ...sections.map((section) => ({
+                  id: section.id,
+                  name: section.name,
+                })),
+                {
+                  id: "",
+                  name:
+                    language === "ar"
+                      ? "بدون قسم"
+                      : language === "he"
+                        ? "ללא מדור"
+                        : "No section",
+                },
+              ].map((section) => {
+                const items = projects.filter(
+                  (project) =>
+                    (sections.some((s) => s.id === project.sectionId)
+                      ? project.sectionId
+                      : "") === section.id,
+                );
+                if (!items.length) return null;
+                return (
+                  <section
+                    key={section.id}
+                    className="section-cluster"
+                    aria-label={section.name}
+                  >
+                    <header>
+                      <h2>{section.name}</h2>
+                      <span>{items.length}</span>
+                    </header>
+                    <div className="projects-grid">{items.map(card)}</div>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="projects-grid">{projects.map(card)}</div>
+          )}
         </SortableContext>
       </DndContext>
     </div>

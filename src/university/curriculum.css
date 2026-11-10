@@ -1,0 +1,151 @@
+.curriculum {
+  padding: 1rem;
+  border: 1px solid var(--border, #d5ddd5);
+  border-radius: 20px;
+  background: var(--card, #fffefa);
+  margin-block: 1rem;
+}
+.curriculum header,
+.curriculum-toolbar,
+.curriculum-review {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.curriculum header h2 {
+  margin: 0;
+}
+.curriculum header p {
+  margin-block: 0.5rem;
+}
+.curriculum-upload {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: 1px solid #365a49;
+  border-radius: 12px;
+}
+.curriculum-upload input {
+  max-width: 100%;
+}
+.curriculum label {
+  display: grid;
+  gap: 0.35rem;
+}
+.curriculum input,
+.curriculum select {
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.6rem;
+  border: 1px solid #c9d3ca;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+.curriculum button {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #789384;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.curriculum button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.curriculum-review {
+  margin-block: 1rem;
+  padding: 1rem;
+  background: #edf2ed;
+}
+.curriculum-toolbar {
+  margin-block: 1.2rem;
+}
+.curriculum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.curriculum-term {
+  min-width: 0;
+}
+.curriculum-term h3 {
+  font-size: 1rem;
+  border-bottom: 2px solid #365a49;
+  padding-bottom: 0.7rem;
+}
+.curriculum-course {
+  border: 1px solid #83958a;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-block: 0.6rem;
+  background: var(--card, #fffefa);
+  transition:
+    filter 0.18s,
+    opacity 0.18s;
+  overflow-wrap: anywhere;
+}
+.curriculum-course h4 {
+  margin-block: 0.5rem;
+}
+.curriculum-muted {
+  filter: blur(1.3px);
+  opacity: 0.35;
+}
+.curriculum-muted:focus-within,
+.curriculum-muted:hover {
+  filter: none;
+  opacity: 1;
+}
+.curriculum-editor {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.curriculum [role="alert"] {
+  color: #9f361c;
+}
+@media (prefers-reduced-motion: reduce) {
+  .curriculum-course {
+    transition: none;
+  }
+}
+@media (max-width: 600px) {
+  .curriculum {
+    padding: 0.7rem;
+  }
+  .curriculum-upload,
+  .curriculum-upload input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .curriculum-toolbar > * {
+    width: 100%;
+  }
+}
+
+.curriculum-grid {
+  position: relative;
+}
+.curriculum-connections {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.curriculum-term {
+  position: relative;
+  z-index: 1;
+}
+.curriculum-course {
+  margin-block: 1.5rem;
+}
+.curriculum-course:has(.curriculum-editor) {
+  position: relative;
+  z-index: 2;
+}

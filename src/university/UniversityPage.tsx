@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { trialCourseColor } from "./trialSelectors";
 import "./university-trial.css";
+const CurriculumMap = lazy(() => import("./CurriculumMap"));
 const UniversityTrial = lazy(() => import("./UniversityTrial"));
 const UniversityTrialSchedule = lazy(() => import("./UniversityTrialSchedule"));
 import LinkedText from "../components/LinkedText";
@@ -955,6 +956,29 @@ function Workspace({ user }: { user: User }) {
             )}
             {tab === "map" && (
               <>
+                <Suspense fallback={<p>جارٍ فتح الخطة الدراسية…</p>}>
+                  <CurriculumMap
+                    plans={state.curricula || []}
+                    onSave={(plan, expectedUpdatedAt) => {
+                      const existing = latest.current.curricula?.find(
+                        (p) => p.id === plan.id,
+                      );
+                      if (existing && existing.updatedAt !== expectedUpdatedAt)
+                        throw new Error(
+                          "تعدلت الخطة من جهاز آخر؛ ألغِ المسودة ثم راجع أحدث نسخة قبل المحاولة.",
+                        );
+                      commit({
+                        ...latest.current,
+                        curricula: [
+                          ...(latest.current.curricula || []).filter(
+                            (p) => p.id !== plan.id,
+                          ),
+                          plan,
+                        ],
+                      });
+                    }}
+                  />
+                </Suspense>
                 <p className="study-hint">
                   اسحب الكورسات لترتيب الخريطة. أضف المتطلبات السابقة من «تعديل
                   الكورس»؛ السهم يتجه من المتطلب إلى الكورس التالي.

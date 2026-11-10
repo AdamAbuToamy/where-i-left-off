@@ -61,7 +61,12 @@ export function workspaceView(hash = location.hash) {
   const anchor = q.get("weekOf") || "";
   return {
     weekOf: validDate(anchor) ? anchor : "",
-    view: q.get("view") === "week" ? ("week" as const) : ("board" as const),
+    view:
+      q.get("view") === "week"
+        ? ("week" as const)
+        : q.get("view") === "sections"
+          ? ("sections" as const)
+          : ("board" as const),
     search: (q.get("search") || "").slice(0, 300),
     filter: [
       "all",

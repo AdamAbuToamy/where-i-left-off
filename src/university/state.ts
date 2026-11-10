@@ -1,3 +1,4 @@
+import type { CurriculumPlan } from './curriculum';
 import { createClientId } from '../lib/clientId'
 export type CourseActivity = {
     id: string;
@@ -64,6 +65,7 @@ export type UniversityState = {
     tasks: StudyTask[];
     lessons: Lesson[];
     importedAt: string;
+    curricula?: CurriculumPlan[];
 };
 export const emptyUniversity = (): UniversityState => ({ version: 1, courses: [], tasks: [], lessons: [], importedAt: '' });
 export function resourceUrl(value: unknown): string {

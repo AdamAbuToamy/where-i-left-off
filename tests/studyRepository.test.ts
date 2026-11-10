@@ -58,3 +58,9 @@ it('reports malformed university cache without discarding offline work',()=>{
  expect(()=>store.loadSync()).toThrow('تعذر قراءة بيانات الجامعة');
  expect(values.get(key+'/sync')).toBe('{unfinished');
 });
+
+it('syncs curriculum atomically as a separate plan and never creates active courses',async()=>{
+ const r=remote(),store=new UniversityStore('alice','curriculum');let state=emptyUniversity();const repo=new UniversityRepository(store,r.port);repo.start(s=>{state=s;});await settle();
+ const plan={id:'plan',name:'Synthetic',updatedAt:new Date().toISOString(),courses:[{id:'one',code:'101',name:'Math',year:1,semester:1,order:0,requires:[]}]};repo.commit({...state,curricula:[plan]});await settle();expect(state.courses).toEqual([]);expect(r.docs.size).toBe(1);expect(r.docs.has('curricula_plan')).toBe(true);repo.stop();
+ const next=new UniversityRepository(store,r.port);next.start(s=>{state=s;});await settle();expect(state.curricula?.[0]).toEqual(plan);expect(state.courses).toEqual([]);next.stop();
+});

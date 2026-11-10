@@ -1,9 +1,12 @@
+import type { CurriculumPlan } from './curriculum';
+import { validateCurriculum } from './curriculum';
 import {sameImportedStudyTask} from "../../shared/studyIdentity.mjs";
 import { createClientId } from '../lib/clientId'
 import { resourceUrl, validateCourse } from './state';
 import type { Course, CourseDetails, Lesson, StudyTask, UniversityState } from './state';
 export type ImportMode = 'courses' | 'tasks' | 'lessons';
 export type PlanPreview = {
+    curricula?: CurriculumPlan[];
     courses: Course[];
     tasks: StudyTask[];
     lessons: Lesson[];
@@ -130,6 +133,7 @@ export function parsePlanBackup(raw: unknown): PlanPreview {
     if (r.version !== 1)
         throw new Error('هذا ليس ملف نسخة احتياطية لمساحة الجامعة');
     const out = blank();
+    if(r.curricula!==undefined)out.curricula=array(r.curricula,20).map(v=>{const p=obj(v);return validateCurriculum({id:id(p.id),name:text(p.name,300),updatedAt:text(p.updatedAt,40),courses:array(p.courses,1000).map(v=>{const c=obj(v);return {id:id(c.id),code:text(c.code,80),name:text(c.name,300),year:integer(c.year,1,10),semester:integer(c.semester,1,3),order:integer(c.order,0,10000),requires:array(c.requires,1000).map(v=>text(v,80))};})});});
     out.courses = array(r.courses, 1000).map(v => { const c = obj(v); return { id: id(c.id), name: text(c.name, 300), url: resourceUrl(c.url), notes: text(c.notes), requires: array(c.requires, 1000).map(id), x: integer(c.x, 0, 10000), y: integer(c.y, 0, 10000), topics: c.topics === undefined ? [] : array(c.topics, 200).map(v => { const t = obj(v); return { id: id(t.id), title: text(t.title, 500), done: bool(t.done) }; }), ...(c.source ? { source: details(c.source) } : {}) }; });
     out.tasks = array(r.tasks, 5000).map(v => { const t = obj(v); const due = text(t.due, 40); if (due && !Number.isFinite(Date.parse(due)))
         throw new Error('موعد غير صالح'); return { id: id(t.id), courseId: id(t.courseId), title: text(t.title, 500), kind: kind(text(t.kind, 20)), due: due ? new Date(due).toISOString() : '', notes: text(t.notes), done: bool(t.done), url: resourceUrl(t.url), sourceDescription: text(t.sourceDescription || '', 5000) }; });
@@ -155,7 +159,7 @@ export function mergePlan(state: UniversityState, p: PlanPreview): UniversitySta
         throw new Error('تجاوزت مساحة الجامعة الحد المسموح للسجلات');
     for (const c of courses)
         validateCourse(c, courses);
-    return { ...state, courses, tasks, lessons, importedAt: new Date().toISOString() };
+    return { ...state, courses, tasks, lessons, ...(p.curricula?.length?{curricula:[...(state.curricula||[]),...p.curricula.filter(c=>!state.curricula?.some(old=>old.id===c.id))]}:{}), importedAt: new Date().toISOString() };
 }
 export function planBackup(state: UniversityState) { return { format: 'wilo-study-plan-v1', exportedAt: new Date().toISOString(), state: { ...state, tasks: state.tasks.map(t => { const task = { ...t }; delete task.reminderProjectId; return task; }) } }; }
 export function lessonConflicts(lessons: Lesson[]): Set<string> {

@@ -24,3 +24,9 @@ it('keeps API receipts private even from normal owner/admin clients',async()=>{
   await assertFails(getDoc(doc(context.firestore(),path)));await assertFails(setDoc(doc(context.firestore(),path),{kind:'receipt'}));
  }
 });
+
+it('protects curriculum plans with the same owner, revision and tombstone checks',async()=>{
+ const alice=env.authenticatedContext('alice',{email_verified:true}).firestore(),bob=env.authenticatedContext('bob',{email_verified:true}).firestore();
+ const path='users/alice/studyRecords/curricula_plan';const record={...data(),kind:'curricula',id:'plan',payload:JSON.stringify({id:'plan',name:'Synthetic',courses:[]})};
+ await assertSucceeds(setDoc(doc(alice,path),record));await assertFails(getDoc(doc(bob,path)));await assertFails(setDoc(doc(bob,path),{...record,revision:1}));await assertFails(setDoc(doc(alice,path),record));await assertSucceeds(setDoc(doc(alice,path),{...record,revision:1}));
+});

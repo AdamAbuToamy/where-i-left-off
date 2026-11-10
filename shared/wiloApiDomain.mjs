@@ -148,6 +148,33 @@ function validateCourse(course, courses) {
   visit(course.id, /* @__PURE__ */ new Set());
 }
 
+// src/university/curriculum.ts
+function validateCurriculum(plan) {
+  if (!plan.id || !plan.name.trim() || plan.name.length > 300 || plan.courses.length > 1e3 || !plan.courses.length)
+    throw new Error("\u0627\u0644\u062E\u0637\u0629 \u062A\u062D\u062A\u0627\u062C \u0627\u0633\u0645\u064B\u0627 \u0648\u0645\u0646 1 \u0625\u0644\u0649 1000 \u0643\u0648\u0631\u0633");
+  const codes = /* @__PURE__ */ new Set(), ids = /* @__PURE__ */ new Set();
+  for (const c of plan.courses) {
+    if (!c.id || ids.has(c.id) || !c.code.trim() || codes.has(c.code) || c.code.length > 80 || !c.name.trim() || c.name.length > 300 || !Number.isInteger(c.year) || c.year < 1 || c.year > 10 || !Number.isInteger(c.semester) || c.semester < 1 || c.semester > 3 || !Number.isInteger(c.order) || c.order < 0 || !Array.isArray(c.requires))
+      throw new Error(
+        "\u0631\u0627\u062C\u0639 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0648\u0627\u0644\u0623\u0633\u0645\u0627\u0621 \u0648\u0627\u0644\u0633\u0646\u0629 \u0648\u0627\u0644\u0633\u0645\u0633\u062A\u0631 (1\u20133)\u060C \u0648\u0644\u0627 \u062A\u0643\u0631\u0631 \u0631\u0642\u0645 \u0643\u0648\u0631\u0633"
+      );
+    ids.add(c.id);
+    codes.add(c.code);
+  }
+  const byCode = new Map(plan.courses.map((c) => [c.code, c]));
+  const visited = /* @__PURE__ */ new Set();
+  function visit(code, path) {
+    if (path.has(code)) throw new Error("\u0627\u0644\u0645\u062A\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0633\u0627\u0628\u0642\u0629 \u062A\u062D\u062A\u0648\u064A \u062D\u0644\u0642\u0629");
+    if (visited.has(code)) return;
+    const c = byCode.get(code);
+    if (!c) throw new Error("\u0645\u062A\u0637\u0644\u0628 \u0633\u0627\u0628\u0642 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u0627\u0644\u062E\u0637\u0629: " + code);
+    for (const dep of c.requires) visit(dep, new Set(path).add(code));
+    visited.add(code);
+  }
+  for (const c of plan.courses) visit(c.code, /* @__PURE__ */ new Set());
+  return plan;
+}
+
 // src/university/planImport.ts
 var fold = (s) => s.trim().replace(/\s+/g, " ").toLocaleLowerCase();
 var blank = () => ({ courses: [], tasks: [], lessons: [], errors: [], skipped: 0 });
@@ -213,6 +240,13 @@ function parsePlanBackup(raw) {
   if (r.version !== 1)
     throw new Error("\u0647\u0630\u0627 \u0644\u064A\u0633 \u0645\u0644\u0641 \u0646\u0633\u062E\u0629 \u0627\u062D\u062A\u064A\u0627\u0637\u064A\u0629 \u0644\u0645\u0633\u0627\u062D\u0629 \u0627\u0644\u062C\u0627\u0645\u0639\u0629");
   const out = blank();
+  if (r.curricula !== void 0) out.curricula = array(r.curricula, 20).map((v) => {
+    const p = obj(v);
+    return validateCurriculum({ id: id(p.id), name: text(p.name, 300), updatedAt: text(p.updatedAt, 40), courses: array(p.courses, 1e3).map((v2) => {
+      const c = obj(v2);
+      return { id: id(c.id), code: text(c.code, 80), name: text(c.name, 300), year: integer(c.year, 1, 10), semester: integer(c.semester, 1, 3), order: integer(c.order, 0, 1e4), requires: array(c.requires, 1e3).map((v3) => text(v3, 80)) };
+    }) });
+  });
   out.courses = array(r.courses, 1e3).map((v) => {
     const c = obj(v);
     return { id: id(c.id), name: text(c.name, 300), url: resourceUrl(c.url), notes: text(c.notes), requires: array(c.requires, 1e3).map(id), x: integer(c.x, 0, 1e4), y: integer(c.y, 0, 1e4), topics: c.topics === void 0 ? [] : array(c.topics, 200).map((v2) => {
