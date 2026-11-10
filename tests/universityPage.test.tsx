@@ -122,7 +122,7 @@ it("creates and edits real course and task records, persists them, and never ena
   await click("إضافة مهمة");
   await submit({
     title: "Exercise 1",
-    due: "2026-11-10T14:30",
+    due: "2099-11-10T14:30",
     notes: "Proof by induction",
     url: "",
   });

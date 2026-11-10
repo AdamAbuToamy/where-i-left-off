@@ -1,96 +1,47 @@
 import { createPortal } from "react-dom";
-import {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Compass,
-  X,
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, ArrowRight, Check, X } from "lucide-react";
 import type { User } from "firebase/auth";
 import type { Language } from "../translations";
+import { db } from "../lib/firebase";
 import { route } from "../lib/navigation";
-import { tourText } from "../tourText";
-import { tourGeometry } from "./tourGeometry";
-import type { TourRect } from "./tourGeometry";
+import FocusDialog from "./FocusDialog";
+import JourneyCompanion from "./JourneyCompanion";
+import { journeyText } from "./journeyText";
+import { journeySteps, parseJourneySession } from "./journeySession";
+import type { JourneySession, JourneyStep } from "./journeySession";
+import { useJourneyWorkspace } from "./useJourneyWorkspace";
+import { journeyFocusRect } from "./tourGeometry";
 import "./WelcomeTour.css";
-
-const storageKey = (uid: string) => `welcome-tour:v2:${uid}`;
-const desktopQuery = "(min-width:1024px) and (pointer:fine)";
-const desktopAvailable = () =>
-  window.matchMedia?.(desktopQuery).matches ?? true;
-const currentHash = () => location.hash.replace(/^#/, "") || "/personal";
-function shouldOpen(user: User) {
+const doneKey = (uid: string) => `welcome-tour:v2:${uid}`;
+const journalKey = (uid: string) =>
+  `welcome-journey:v1:${db?.app.options.projectId || "wilo"}/${uid}`;
+function readSession(uid: string) {
   try {
-    if (localStorage.getItem(storageKey(user.uid))) return false;
+    return parseJourneySession(sessionStorage.getItem(journalKey(uid)));
+  } catch {
+    return null;
+  }
+}
+function initialSession(user: User): JourneySession | null {
+  const resumed = readSession(user.uid);
+  if (resumed) return resumed;
+  try {
+    if (localStorage.getItem(doneKey(user.uid))) return null;
   } catch {
     /* Optional preference. */
   }
   const created = Date.parse(user.metadata.creationTime || "");
-  return (
-    route().page === "personal" &&
-    !new URLSearchParams(location.search).has("groupInvite") &&
-    new URLSearchParams(location.search).get("capture") !== "tab" &&
+  const query = new URLSearchParams(location.search);
+  return route().page === "personal" &&
+    !query.has("groupInvite") &&
+    query.get("capture") !== "tab" &&
     Number.isFinite(created) &&
     Date.now() - created < 86400000
-  );
+    ? { step: "welcome", ids: [] }
+    : null;
 }
-const visible = (node: HTMLElement) => {
-  const rect = node.getBoundingClientRect();
-  return (
-    rect.width > 0 &&
-    rect.height > 0 &&
-    getComputedStyle(node).visibility !== "hidden"
-  );
-};
-const focusable =
-  "button:not(:disabled),a[href],summary,[tabindex]:not([tabindex='-1'])";
-const examples: Record<string, [string, string, string]> = {
-  cards: ["مشروع التخرج", "Graduation project", "פרויקט גמר"],
-  create: [
-    "عنوان: تعلّم لغة جديدة",
-    "Title: learn a new language",
-    "כותרת: ללמוד שפה חדשה",
-  ],
-  details: [
-    "توقفت عند: الفصل الثاني",
-    "Checkpoint: chapter two",
-    "נקודת עצירה: פרק שני",
-  ],
-  week: [
-    "الأحد · مراجعة الخطة",
-    "Sunday · review the plan",
-    "ראשון · בדיקת התוכנית",
-  ],
-  board: [
-    "فكرة ← خطة ← تنفيذ",
-    "Idea → Plan → Action",
-    "רעיון ← תוכנית ← ביצוע",
-  ],
-  courses: [
-    "رياضيات · واجب يوم الخميس",
-    "Math · assignment due Thursday",
-    "מתמטיקה · הגשה ביום חמישי",
-  ],
-  assistant: [
-    "«أضف بطاقة لمراجعة الامتحان»",
-    "“Add a card to revise for the exam”",
-    "״הוסף כרטיס לחזרה למבחן״",
-  ],
-  appearance: [
-    "اختر المظهر الذي يريح عينيك",
-    "Choose a comfortable appearance",
-    "בחרו מראה נוח לעיניים",
-  ],
-};
-/** Read-only guided navigation: no simulated app actions, writes or provider requests. */
+/** A short learning-by-doing journey over the actual application, not simulated cards. */
 export default function WelcomeTour({
   user,
   language,
@@ -98,521 +49,420 @@ export default function WelcomeTour({
   user: User;
   language: Language;
 }) {
-  const [open, setOpen] = useState(() => shouldOpen(user));
-  const [stepId, setStepId] = useState("cards"),
-    [desktop, setDesktop] = useState(desktopAvailable),
-    [hash, setHash] = useState(currentHash);
-  const [anchor, setAnchor] = useState<TourRect | null>(null),
-    [fallback, setFallback] = useState(false);
-  const [viewport, setViewport] = useState({
-      width: innerWidth,
-      height: innerHeight,
-    }),
-    [cardSize, setCardSize] = useState({ width: 420, height: 340 });
-  const layer = useRef<HTMLDivElement>(null),
-    card = useRef<HTMLElement>(null),
-    heading = useRef<HTMLHeadingElement>(null),
-    target = useRef<HTMLElement | null>(null),
-    previousFocus = useRef<HTMLElement | null>(null);
-  const indexMenu = useRef<HTMLDetailsElement>(null),
-    titleId = useId(),
-    bodyId = useId();
-  const t = tourText[language];
-  const steps = useMemo(
-    () => t.steps.filter((step) => !step.desktopOnly || desktop),
-    [t, desktop],
+  const [session, setSession] = useState<JourneySession | null>(() =>
+    initialSession(user),
   );
-  const index = Math.max(
-      0,
-      steps.findIndex((step) => step.id === stepId),
-    ),
-    current = steps[index];
-  const offPage = hash !== current.hash;
-  const geometry = tourGeometry(offPage ? null : anchor, viewport, cardSize);
-  const finish = (explore = false) => {
-    try {
-      localStorage.setItem(storageKey(user.uid), "done");
-    } catch {
-      /* Dismiss this session even if storage is unavailable. */
-    }
-    const destination = explore ? target.current : previousFocus.current;
-    setOpen(false);
-    requestAnimationFrame(() => {
-      let candidate = destination?.isConnected
-        ? destination
-        : document.getElementById("wilo-main");
-      if (explore && candidate) {
-        let ancestor = candidate.parentElement;
-        while (ancestor) {
-          if (ancestor instanceof HTMLDetailsElement) ancestor.open = true;
-          ancestor = ancestor.parentElement;
-        }
-      }
-      if (!candidate || !visible(candidate))
-        candidate = document.getElementById("wilo-main");
-      if (!candidate) return;
-      if (!candidate.matches("button,a,summary,[tabindex]")) {
-        const node = candidate;
-        node.setAttribute("tabindex", "-1");
-        node.addEventListener(
-          "blur",
-          () => {
-            if (node.getAttribute("tabindex") === "-1")
-              node.removeAttribute("tabindex");
-          },
-          { once: true },
-        );
-      }
-      candidate.focus({ preventScroll: true });
-    });
-  };
-
-  const go = (next: number) => {
-    indexMenu.current?.removeAttribute("open");
-    const nextId = steps[Math.max(0, Math.min(next, steps.length - 1))].id;
-    if (nextId === current.id) heading.current?.focus({ preventScroll: true });
-    setStepId(nextId);
-  };
+  const [ending, setEnding] = useState(false),
+    [minimized, setMinimized] = useState(false),
+    [busy, setBusy] = useState(false),
+    [failure, setFailure] = useState(false);
+  const [surfaceOpen, setSurfaceOpen] = useState(false),
+    [openedCard, setOpenedCard] = useState(false);
+  const [focus, setFocus] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const active = !!session,
+    step = session?.step || "welcome",
+    t = journeyText[language];
+  const { snapshot, ready, discard } = useJourneyWorkspace(user.uid, active);
+  const createdIds = session?.ids || [];
+  const cards = (snapshot?.projects || []).filter((p) =>
+    createdIds.includes(p.id),
+  );
+  const stepIndex = journeySteps.indexOf(step);
+  const alive = useRef(true);
   useEffect(() => {
-    let waiting: MutationObserver | null = null;
-    const replay = () => {
-      waiting?.disconnect();
-      const begin = () => {
-        if (
-          document.querySelector(
-            "dialog[open],#new-project-panel.is-open,.phone-form-fullscreen,.phone-card-fullscreen,.desktop-card-panel,.card-editor",
-          )
-        )
-          return false;
-        waiting?.disconnect();
-        waiting = null;
-        setStepId("cards");
-        setOpen(true);
-        return true;
-      };
-      if (!begin()) {
-        waiting = new MutationObserver(() => {
-          begin();
-        });
-        waiting.observe(document.body, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-          attributeFilter: ["class", "open"],
-        });
-      }
-    };
-    const changed = () => setHash(currentHash());
-    const resized = () => {
-      const enabled = desktopAvailable();
-      setDesktop(enabled);
-      if (!enabled) setStepId((id) => (id === "board" ? "courses" : id));
-    };
-    window.addEventListener("replay-welcome-tour", replay);
-    window.addEventListener("hashchange", changed);
-    window.addEventListener("resize", resized);
+    alive.current = true;
     return () => {
-      waiting?.disconnect();
-      window.removeEventListener("replay-welcome-tour", replay);
-      window.removeEventListener("hashchange", changed);
-      window.removeEventListener("resize", resized);
+      alive.current = false;
     };
   }, []);
   useEffect(() => {
-    if (open && currentHash() !== current.hash) location.hash = current.hash;
-  }, [open, current.hash]);
-  useLayoutEffect(() => {
-    if (!open || !layer.current) return;
-    previousFocus.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    const saved = new Map<HTMLElement, boolean>(),
-      overflow = document.body.style.overflow;
-    const isolate = () => {
-      for (const node of document.body.children)
+    if (!session) return;
+    try {
+      sessionStorage.setItem(journalKey(user.uid), JSON.stringify(session));
+    } catch {
+      /* Session still works in memory. */
+    }
+  }, [session, user.uid]);
+  const finish = useCallback(() => {
+    try {
+      localStorage.setItem(doneKey(user.uid), "done");
+      sessionStorage.removeItem(journalKey(user.uid));
+    } catch {
+      /* Session still closes. */
+    }
+    setSession(null);
+    setEnding(false);
+    setFailure(false);
+    location.hash = "/personal";
+  }, [user.uid]);
+  const stop = () => {
+    if (createdIds.length) {
+      setEnding(true);
+      setFailure(false);
+    } else finish();
+  };
+  useEffect(() => {
+    let observer: MutationObserver | null = null;
+    const replay = () => {
+      const begin = () => {
         if (
-          node instanceof HTMLElement &&
-          !node.contains(layer.current) &&
-          !saved.has(node)
-        ) {
-          saved.set(node, node.hasAttribute("inert"));
-          node.setAttribute("inert", "");
-        }
+          document.querySelector(
+            "dialog[open],#new-project-panel.is-open,.phone-form-fullscreen,.phone-card-fullscreen,.card-editor",
+          )
+        )
+          return false;
+        observer?.disconnect();
+        setSession(readSession(user.uid) || { step: "welcome", ids: [] });
+        setEnding(false);
+        setMinimized(false);
+        return true;
+      };
+      if (!begin()) {
+        observer = new MutationObserver(begin);
+        observer.observe(document.body, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ["open", "class"],
+        });
+      }
     };
-    isolate();
-    const observer = new MutationObserver(isolate);
-    observer.observe(document.body, { childList: true });
-    document.body.style.overflow = "hidden";
+    window.addEventListener("replay-welcome-tour", replay);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("replay-welcome-tour", replay);
+    };
+  }, [user.uid]);
+  useEffect(() => {
+    if (!active) return;
+    const created = (event: Event) => {
+      const detail = (event as CustomEvent<{ uid: string; id: string }>).detail;
+      if (
+        !detail ||
+        detail.uid !== user.uid ||
+        !/^[-\w]{1,100}$/.test(detail.id)
+      )
+        return;
+      setSession((current) =>
+        current && current.step === "create"
+          ? {
+              step: "card",
+              ids: [...new Set([...current.ids, detail.id])].slice(0, 30),
+            }
+          : current,
+      );
+      setOpenedCard(false);
+      setMinimized(false);
+    };
+    window.addEventListener("tour-project-created", created);
+    return () => window.removeEventListener("tour-project-created", created);
+  }, [active, user.uid]);
+  useEffect(() => {
+    if (!active) return;
     document.body.dataset.tourActive = "true";
     return () => {
-      observer.disconnect();
-      for (const [node, inert] of saved) node.toggleAttribute("inert", inert);
-      document.body.style.overflow = overflow;
       delete document.body.dataset.tourActive;
     };
-  }, [open]);
-  useLayoutEffect(() => {
-    if (!open) return;
-    heading.current?.focus({ preventScroll: true });
-    if (offPage) {
-      target.current = null;
-      return;
-    }
-    let frame = 0,
-      stopped = false,
-      scrolled: HTMLElement | null = null,
-      allowFallback = false;
-    const details = new Map<HTMLDetailsElement, boolean>();
-    for (const node of document.querySelectorAll<HTMLDetailsElement>("details"))
-      if (!layer.current?.contains(node)) details.set(node, node.open);
-    const blurred = new Map<HTMLElement, string>();
-    const restoreBlur = () => {
-      for (const [node, filter] of blurred) node.style.filter = filter;
-      blurred.clear();
-    };
-    const blurAround = (node: HTMLElement) => {
-      restoreBlur();
-      let branch: HTMLElement = node;
-      while (branch.parentElement) {
-        for (const sibling of branch.parentElement.children)
-          if (
-            sibling instanceof HTMLElement &&
-            sibling !== branch &&
-            sibling !== layer.current &&
-            !sibling.contains(layer.current)
-          ) {
-            blurred.set(sibling, sibling.style.filter);
-            sibling.style.filter = "blur(3px)";
-          }
-        if (branch.parentElement === document.body) break;
-        branch = branch.parentElement;
-      }
-    };
-    const reveal = (node: HTMLElement) => {
-      const parents: HTMLDetailsElement[] = [];
-      let parent = node.parentElement;
-      while (parent) {
-        if (parent instanceof HTMLDetailsElement) parents.unshift(parent);
-        parent = parent.parentElement;
-      }
-      for (const item of parents) item.open = true;
-    };
-    const measure = () => {
+  }, [active]);
+  const targetId = createdIds[createdIds.length - 1];
+  useEffect(() => {
+    if (!active || step === "welcome" || step === "finish" || ending) return;
+    let frame = 0;
+    const update = () => {
       frame = 0;
-      if (stopped) return;
-      let element: HTMLElement | null = null;
-      for (const selector of current.targets) {
-        for (const item of document.querySelectorAll<HTMLElement>(selector)) {
-          reveal(item);
-          if (visible(item)) {
-            element = item;
-            break;
-          }
-        }
-        if (element) break;
-      }
-      const exact = !!element;
-      if (!element && allowFallback) {
-        const main = document.getElementById("wilo-main");
-        if (main && visible(main)) element = main;
-      }
-      if (element && element !== scrolled) {
-        element.scrollIntoView?.({
-          block: "center",
-          inline: "nearest",
-          behavior: "instant",
-        });
-        scrolled = element;
-      }
-      target.current = element;
-      if (element) blurAround(element);
-      else restoreBlur();
-      const view = window.visualViewport;
-      setViewport((old) => {
-        const next = {
-          width: view?.width || innerWidth,
-          height: view?.height || innerHeight,
-        };
-        return old.width === next.width && old.height === next.height
-          ? old
-          : next;
-      });
-      const bounds = element?.getBoundingClientRect();
-      const next = bounds
-        ? {
-            x: bounds.x - (view?.offsetLeft || 0),
-            y: bounds.y - (view?.offsetTop || 0),
-            width: bounds.width,
-            height: bounds.height,
-          }
-        : null;
-      setAnchor((old) =>
-        old &&
-        next &&
-        Math.abs(old.x - next.x) < 0.5 &&
-        Math.abs(old.y - next.y) < 0.5 &&
-        Math.abs(old.width - next.width) < 0.5 &&
-        Math.abs(old.height - next.height) < 0.5
-          ? old
-          : next,
+      const editing = !!document.querySelector(
+        ".phone-form-fullscreen,.phone-card-fullscreen,.desktop-card-panel,.card-editor,dialog[open]",
       );
-      setFallback(!exact && allowFallback);
-      const rect = card.current?.getBoundingClientRect();
-      if (rect?.height)
-        setCardSize((old) =>
-          Math.abs(old.height - rect.height) < 0.5
-            ? old
-            : { width: 420, height: rect.height },
-        );
+      setSurfaceOpen(editing);
+      if (
+        step === "card" &&
+        document.querySelector(
+          `[data-project="${CSS.escape(targetId || "")}"].card-detail-panel`,
+        )
+      )
+        setOpenedCard(true);
+      const selector =
+        step === "create"
+          ? '[data-tour="add-project"]'
+          : step === "card"
+            ? `[data-project="${CSS.escape(targetId || "")}"]`
+            : step === "university"
+              ? ".study-toolbar,.study-dashboard-preview"
+              : ".group-spaces";
+      const node = document.querySelector<HTMLElement>(selector),
+        rect = node?.getBoundingClientRect();
+      const next = journeyFocusRect(rect || null, {
+        width: innerWidth,
+        height: innerHeight,
+      });
+      setFocus((previous) =>
+        JSON.stringify(previous) === JSON.stringify(next) ? previous : next,
+      );
     };
     const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(measure);
+      if (!frame) frame = requestAnimationFrame(update);
     };
     const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList: true, subtree: true });
-    const resize =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(schedule)
-        : null;
-    if (card.current) resize?.observe(card.current);
-    const delayed = setTimeout(() => {
-      allowFallback = true;
-      schedule();
-    }, 300);
+    observer.observe(document.getElementById("root") || document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["class", "open"],
+    });
     window.addEventListener("resize", schedule);
     window.addEventListener("scroll", schedule, true);
-    window.visualViewport?.addEventListener("resize", schedule);
-    window.visualViewport?.addEventListener("scroll", schedule);
-    measure();
+    window.addEventListener("hashchange", schedule);
+    update();
     return () => {
-      stopped = true;
-      restoreBlur();
-      cancelAnimationFrame(frame);
-      clearTimeout(delayed);
       observer.disconnect();
-      resize?.disconnect();
+      cancelAnimationFrame(frame);
       window.removeEventListener("resize", schedule);
       window.removeEventListener("scroll", schedule, true);
-      window.visualViewport?.removeEventListener("resize", schedule);
-      window.visualViewport?.removeEventListener("scroll", schedule);
-      for (const [node, wasOpen] of details)
-        if (node.isConnected) node.open = wasOpen;
+      window.removeEventListener("hashchange", schedule);
     };
-  }, [open, current, offPage]);
-  // Keep keyboard users in the explanation; Explore explicitly returns control to the app.
-  useEffect(() => {
-    if (!open) return;
-    const keyboard = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        finish();
-      }
-      if (event.key !== "Tab") return;
-      const controls = Array.from(
-        card.current?.querySelectorAll<HTMLElement>(focusable) || [],
-      ).filter(visible);
-      if (!controls.length) return;
-      const position = controls.indexOf(document.activeElement as HTMLElement);
-      if (event.shiftKey && position <= 0) {
-        event.preventDefault();
-        controls.at(-1)?.focus();
-      } else if (
-        !event.shiftKey &&
-        (position < 0 || position === controls.length - 1)
-      ) {
-        event.preventDefault();
-        controls[0].focus();
-      }
-    };
-    document.addEventListener("keydown", keyboard, true);
-    return () => document.removeEventListener("keydown", keyboard, true);
-  });
-  if (!open) return null;
-  const focus = geometry.focus,
-    box = geometry.card;
-  const clip = focus
-    ? `polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,${focus.x}px ${focus.y}px,${focus.x}px ${focus.y + focus.height}px,${focus.x + focus.width}px ${focus.y + focus.height}px,${focus.x + focus.width}px ${focus.y}px,${focus.x}px ${focus.y}px)`
-    : undefined;
-  return createPortal(
-    <div
-      ref={layer}
-      className="tour-layer"
-      dir={language === "en" ? "ltr" : "rtl"}
-      style={{
-        top: window.visualViewport?.offsetTop || 0,
-        left: window.visualViewport?.offsetLeft || 0,
-        width: viewport.width,
-        height: viewport.height,
-      }}
-    >
-      <div
-        className="tour-scrim"
-        style={{ clipPath: clip }}
-        aria-hidden="true"
-      />
-      {focus && (
-        <div
-          className="tour-focus"
-          style={{
-            left: focus.x,
-            top: focus.y,
-            width: focus.width,
-            height: focus.height,
-          }}
-          aria-hidden="true"
-        >
-          <span>{index + 1}</span>
-        </div>
-      )}
-      <aside
-        ref={card}
-        className="welcome-guide tour-popover"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={bodyId}
-        data-tour-step={current.id}
-        data-index-up={box.y > viewport.height / 2}
-        style={{
-          left: box.x,
-          top: box.y,
-          width: box.width,
-          maxHeight: viewport.height - 24,
-        }}
-      >
-        <header className="guide-heading">
-          <Compass size={19} aria-hidden="true" />
-          <strong>{t.quick}</strong>
-          <button
-            className="guide-skip"
-            type="button"
-            aria-label={t.skip}
-            onClick={() => finish()}
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
-        </header>
-        <details className="tour-chapters" ref={indexMenu}>
-          <summary>
-            {t.chapters[current.chapter]}
-            <span dir="ltr">
-              {index + 1} / {steps.length}
-            </span>
-            <ChevronDown size={15} aria-hidden="true" />
-          </summary>
-          <nav className="tour-index-panel" aria-label={t.browse}>
-            {steps.map((step, i) => (
-              <button
-                type="button"
-                key={step.id}
-                aria-current={i === index ? "step" : undefined}
-                onClick={() => go(i)}
-              >
-                <small>{i + 1}</small>
-                {step.title}
-              </button>
+  }, [active, step, targetId, ending]);
+  function go(next: JourneyStep) {
+    setSession((current) => (current ? { ...current, step: next } : current));
+    setMinimized(false);
+    const path =
+      next === "university"
+        ? "/university"
+        : next === "groups"
+          ? "/groups"
+          : "/personal";
+    location.hash = path;
+  }
+  async function remove() {
+    if (busy) return;
+    setBusy(true);
+    setFailure(false);
+    try {
+      await discard(createdIds);
+      if (alive.current) finish();
+    } catch {
+      if (alive.current) setFailure(true);
+    } finally {
+      if (alive.current) setBusy(false);
+    }
+  }
+  function openCard() {
+    location.hash = "/personal";
+    const node = document.querySelector<HTMLElement>(
+      `[data-project="${CSS.escape(targetId || "")}"] .envelope-expand`,
+    );
+    if (node) {
+      node.click();
+      setOpenedCard(true);
+    }
+  }
+  if (!session) return null;
+  const modal = step === "welcome" || step === "finish" || ending;
+  const title = ending ? t.cleanup : t[step];
+  const body = ending
+    ? t.cleanupBody
+    : step === "welcome"
+      ? t.intro
+      : step === "create"
+        ? t.createBody
+        : step === "card"
+          ? t.cardBody
+          : step === "university"
+            ? t.universityBody
+            : step === "groups"
+              ? t.groupsBody
+              : t.finishBody;
+  const finishContent = (
+    <>
+      <p>{ending ? t.cleanupBody : t.finishBody}</p>
+      {createdIds.length > 0 && (
+        <>
+          {!ending && (
+            <>
+              <h3>{t.cleanup}</h3>
+              <p>{t.cleanupBody}</p>
+            </>
+          )}
+          <ul className="journey-receipts">
+            {cards.map((card) => (
+              <li key={card.id}>
+                <Check size={16} />
+                <span dir="auto">{card.name}</span>
+              </li>
             ))}
-          </nav>
-        </details>
-        <div
-          className="guide-copy"
-          key={`${language}/${current.id}`}
-          aria-live="polite"
-        >
-          <h2 id={titleId} tabIndex={-1} ref={heading}>
-            {current.title}
-          </h2>
-          <p id={bodyId}>{current.body}</p>
-          <div
-            className="tour-example"
-            aria-label={
-              language === "ar"
-                ? "مثال توضيحي فقط، لا يتم حفظه"
-                : language === "he"
-                  ? "דוגמה בלבד, לא נשמרת"
-                  : "Preview only — never saved"
-            }
-          >
-            <small>
-              {language === "ar"
-                ? "مثال فقط · لا يُحفظ"
-                : language === "he"
-                  ? "דוגמה בלבד · לא נשמרת"
-                  : "Example only · never saved"}
-            </small>
-            <strong>
-              {
-                examples[current.id]?.[
-                  language === "ar" ? 0 : language === "he" ? 2 : 1
-                ]
-              }
-            </strong>
-            <span className="tour-example-line" />
-            <span>
-              {language === "ar"
-                ? "معاينة توضيحية — بيانات حسابك لا تتغير"
-                : language === "he"
-                  ? "תצוגה לדוגמה — נתוני החשבון אינם משתנים"
-                  : "Illustration — your account data stays unchanged"}
-            </span>
-            <i aria-hidden="true" />
-          </div>
-        </div>
-        {offPage && (
+          </ul>
+          <small>{t.saveNotice}</small>
+        </>
+      )}
+      {!createdIds.length && <p>{t.none}</p>}
+      {failure && (
+        <p role="alert" className="notice error">
+          {t.failure}
+        </p>
+      )}
+      <div className="journey-actions">
+        <button className="primary-button" disabled={busy} onClick={finish}>
+          {createdIds.length ? t.keep : t.done}
+        </button>
+        {createdIds.length > 0 && (
           <button
-            type="button"
-            className="tour-return"
-            onClick={() => {
-              location.hash = current.hash;
-            }}
+            className="journey-remove"
+            disabled={busy || !ready}
+            onClick={() => void remove()}
           >
-            {t.returnStep}
+            {busy ? t.removing : t.remove}
           </button>
         )}
-        {fallback && !offPage && <p className="tour-fallback">{t.fallback}</p>}
-        <div className="guide-progress" aria-hidden="true">
-          <span style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+      </div>
+      {!!createdIds.length && !ready && <p role="status">{t.sync}</p>}
+    </>
+  );
+  return (
+    <>
+      <FocusDialog
+        open={modal}
+        title={title}
+        language={language}
+        onClose={() => {
+          if (!busy) {
+            if (ending || step === "finish") {
+              setEnding(false);
+              if (step === "finish") go("groups");
+            } else stop();
+          }
+        }}
+      >
+        <div className="journey-welcome tour-popover" data-tour-step={step}>
+          <JourneyCompanion celebrate={step === "finish"} />
+          <span className="journey-eyebrow">{t.name}</span>
+          {step === "welcome" && !ending ? (
+            <>
+              <p>{t.intro}</p>
+              <small>{t.saveNotice}</small>
+              <div className="journey-actions">
+                <button className="primary-button" onClick={() => go("create")}>
+                  {t.start}
+                  <ArrowRight size={17} />
+                </button>
+                <button className="secondary-button guide-skip" onClick={stop}>
+                  {t.skip}
+                </button>
+              </div>
+            </>
+          ) : (
+            finishContent
+          )}
         </div>
-        <div className="guide-bottom">
-          <button
-            type="button"
-            className="tour-back"
-            disabled={!index}
-            onClick={() => go(index - 1)}
+      </FocusDialog>
+      {!modal &&
+        createPortal(
+          <div
+            className="journey-layer"
+            dir={language === "en" ? "ltr" : "rtl"}
+            data-tour-step={step}
+            data-surface-open={surfaceOpen}
           >
-            {language === "en" ? (
-              <ChevronLeft size={17} />
-            ) : (
-              <ChevronRight size={17} />
-            )}{" "}
-            {t.back}
-          </button>
-          <button
-            type="button"
-            className="tour-next"
-            onClick={() =>
-              index === steps.length - 1 ? finish() : go(index + 1)
-            }
-          >
-            {index === steps.length - 1 ? t.start : t.next}
-            {language === "en" ? (
-              <ChevronRight size={17} />
-            ) : (
-              <ChevronLeft size={17} />
+            {focus && !surfaceOpen && !minimized && (
+              <div
+                className="journey-target"
+                style={{
+                  left: focus.x,
+                  top: focus.y,
+                  width: focus.width,
+                  height: focus.height,
+                }}
+                aria-hidden="true"
+              />
             )}
-          </button>
-        </div>
-        <button
-          type="button"
-          className="tour-explore"
-          onClick={() => finish(true)}
-        >
-          {t.tryIt}
-        </button>
-      </aside>
-    </div>,
-    document.body,
+            <aside
+              className={"journey-coach" + (minimized ? " is-minimized" : "")}
+              aria-label={t.name}
+            >
+              <header>
+                <JourneyCompanion celebrate={step === "card"} />
+                <div>
+                  <small>
+                    {t.name} · {t.step} {stepIndex}/4
+                  </small>
+                  <h2 aria-live="polite">{title}</h2>
+                </div>
+                <button
+                  className="journey-minimize"
+                  aria-label={minimized ? t.show : t.hide}
+                  onClick={() => setMinimized((v) => !v)}
+                >
+                  {minimized ? (
+                    <ChevronUp size={18} />
+                  ) : (
+                    <ChevronDown size={18} />
+                  )}
+                </button>
+              </header>
+              {!minimized && (
+                <>
+                  <p>{body}</p>
+                  <div
+                    className="journey-progress"
+                    aria-label={`${stepIndex}/4`}
+                  >
+                    <i style={{ width: `${stepIndex * 25}%` }} />
+                  </div>
+                  <div className="journey-actions">
+                    {step === "create" ? (
+                      <>
+                        <a className="secondary-button" href="#/personal">
+                          {t.personal}
+                        </a>
+                        <small role="status">{t.waiting}</small>
+                      </>
+                    ) : step === "card" ? (
+                      <>
+                        <button className="secondary-button" onClick={openCard}>
+                          {t.openCard}
+                        </button>
+                        <button
+                          className="primary-button"
+                          disabled={!openedCard}
+                          onClick={() => go("university")}
+                        >
+                          {t.tried}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <a
+                          className="secondary-button"
+                          href={
+                            step === "university" ? "#/university" : "#/groups"
+                          }
+                        >
+                          {step === "university" ? t.goUniversity : t.goGroups}
+                        </a>
+                        <button
+                          className="primary-button"
+                          onClick={() =>
+                            go(step === "university" ? "groups" : "finish")
+                          }
+                        >
+                          {t.next}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <button className="journey-stop" onClick={stop}>
+                    <X size={13} />
+                    {t.stop}
+                  </button>
+                </>
+              )}
+            </aside>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

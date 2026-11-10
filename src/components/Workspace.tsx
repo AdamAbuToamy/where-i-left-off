@@ -1035,9 +1035,10 @@ export default function Workspace({
                     initialValues={capture ?? undefined}
                     onCancel={closeForm}
                     onAdd={async (name, nextStep, details) => {
-                      const ok = await run(() => {
+                      let createdId = "";
+                      const ok = await run(async () => {
                         if (!canCreate) throw new Error("permission-denied");
-                        return repository.current!.add(
+                        createdId = await repository.current!.add(
                           name,
                           nextStep,
                           (projects[0]?.rank ?? 1024) - 1024,
@@ -1053,7 +1054,9 @@ export default function Workspace({
                         closeForm();
                         if (!group)
                           window.dispatchEvent(
-                            new Event("tour-project-created"),
+                            new CustomEvent("tour-project-created", {
+                              detail: { uid: user.uid, id: createdId },
+                            }),
                           );
                       }
                       return ok;

@@ -1,0 +1,152 @@
+export const journeyText = {
+  ar: {
+    name: "رفيق ويلو",
+    tagline: "خطوة صغيرة، وبداية واضحة",
+    welcome: "أهلًا بك في Where I Left Off",
+    intro:
+      "أنا رفيقك الورقي. لن أشرح كل شيء دفعة واحدة؛ سننشئ بطاقة حقيقية، ثم نلقي نظرة على الجامعة والمجموعات.",
+    start: "خذني في الجولة",
+    skip: "سأستكشف بنفسي",
+    next: "تابع",
+    back: "السابق",
+    stop: "إنهاء الجولة",
+    hide: "تصغير الدليل",
+    show: "إظهار الدليل",
+    step: "المحطة",
+    create: "لنصنع أول بطاقة",
+    createBody:
+      "اضغط «بطاقة جديدة» في الصفحة. اكتب شيئًا تريد العودة إليه وخطوة صغيرة تالية، ثم احفظ. اختر عنوانًا من عندك؛ هذه بطاقة حقيقية وليست مثالًا.",
+    waiting: "بانتظار إنشاء بطاقتك…",
+    card: "بطاقتك أصبحت أمامك!",
+    cardBody:
+      "افتح البطاقة التي أنشأتها. ستجد المتابعة وقائمة المهام والملاحظات، وبإمكانك تعديلها أو تعيين تذكير. جرّب ما تحتاجه، ثم ارجع إلى هنا.",
+    openCard: "افتح البطاقة",
+    tried: "جرّبت البطاقة، نكمل",
+    university: "مكان دراستك",
+    universityBody:
+      "هنا تجمع المقررات، وتفتح كل مقرر لتجد واجباته ومواعيده ومواده. لست مضطرًا لإضافة أي شيء الآن؛ خذ نظرة، وعندما تحتاجه ابدأ بمقرر واحد.",
+    groups: "العمل مع الآخرين",
+    groupsBody:
+      "هنا تنشئ مجموعة أو تنضم بدعوة، وتشارك البطاقات والمهام مع فريقك. لن ننشئ مجموعة أو نرسل دعوات في الجولة.",
+    finish: "أصبحت البداية لك",
+    finishBody:
+      "عرفت الأساسيات. تقدر الآن تكمل وتكتشف الموقع على راحتك، وتعيد الجولة من الإعدادات في أي وقت.",
+    keep: "احتفظ ببطاقتي وابدأ",
+    remove: "احذف بطاقات الجولة فقط",
+    cleanup: "ماذا نفعل ببطاقات الجولة؟",
+    cleanupBody:
+      "هذه فقط البطاقات التي أنشأتها خلال الجولة. الاحتفاظ بها لا يغيّرها. حذفها لا يمس بطاقاتك السابقة ولا مقرراتك أو مجموعاتك.",
+    none: "لم تُنشئ أي بطاقة خلال هذه الجولة.",
+    done: "ابدأ الاستكشاف",
+    sync: "انتظر اكتمال المزامنة قبل حذف بطاقات الجولة.",
+    failure:
+      "لم يكتمل حذف بطاقات الجولة. بقيت القائمة محفوظة؛ أعد المحاولة أو احتفظ بما تبقى.",
+    removing: "جارٍ حذف بطاقات الجولة…",
+    resume: "سنكمل من حيث توقفنا.",
+    personal: "العودة إلى بطاقاتي",
+    goUniversity: "افتح الجامعة",
+    goGroups: "افتح المجموعات",
+    saved: "محفوظة في حسابك",
+    saveNotice: "لن نحذف أي شيء إلا باختيارك في نهاية الجولة.",
+  },
+  en: {
+    name: "Wilo Companion",
+    tagline: "A little step. A clear beginning.",
+    welcome: "Welcome to Where I Left Off",
+    intro:
+      "I'm your paper companion. Let's make a real card, then take a quick look at University and Groups. No long feature tour.",
+    start: "Show me around",
+    skip: "I'll explore myself",
+    next: "Continue",
+    back: "Back",
+    stop: "End tour",
+    hide: "Minimize guide",
+    show: "Show guide",
+    step: "Stop",
+    create: "Make your first card",
+    createBody:
+      "Press New card on the page. Give it a title and one small next step, then save. Choose something of your own: this is a real card, not a demo.",
+    waiting: "Waiting for your first card…",
+    card: "Your card is here!",
+    cardBody:
+      "Open the card you just made. Try its follow-up, checklist, notes, edit or reminder controls. Use only what you need, then come back here.",
+    openCard: "Open your card",
+    tried: "I've tried it, let's continue",
+    university: "A home for your studies",
+    universityBody:
+      "Keep courses here. Open a course to find its assignments, dates and materials. Just look around for now; when you need it, start with one course.",
+    groups: "Work together",
+    groupsBody:
+      "Create a group or join with an invitation to share cards and tasks with your team. This tour won't create groups or send invitations.",
+    finish: "The next step is yours",
+    finishBody:
+      "You know the essentials. Keep exploring at your own pace. You can replay this tour from Settings anytime.",
+    keep: "Keep my cards and start",
+    remove: "Delete only tour cards",
+    cleanup: "Keep the cards you made?",
+    cleanupBody:
+      "Only cards created during this tour are listed below. Keeping them leaves them unchanged. Deleting them won't touch your earlier cards, courses or groups.",
+    none: "You didn't create any cards during this tour.",
+    done: "Start exploring",
+    sync: "Wait for synchronization before deleting tour cards.",
+    failure:
+      "Tour cleanup didn't finish. Your list is saved; retry or keep the remaining cards.",
+    removing: "Deleting tour cards…",
+    resume: "Let's pick up where you left off.",
+    personal: "Back to my cards",
+    goUniversity: "Open University",
+    goGroups: "Open Groups",
+    saved: "Saved in your account",
+    saveNotice: "Nothing is deleted unless you choose it at the end.",
+  },
+  he: {
+    name: "החבר של Wilo",
+    tagline: "צעד קטן. התחלה ברורה.",
+    welcome: "ברוכים הבאים ל־Where I Left Off",
+    intro:
+      "אני החבר מנייר שלכם. ניצור כרטיס אמיתי ונכיר בקצרה את האוניברסיטה והקבוצות, בלי להציף אתכם.",
+    start: "התחילו בסיור",
+    skip: "אגלה בעצמי",
+    next: "המשך",
+    back: "חזרה",
+    stop: "סיום הסיור",
+    hide: "מזעור המדריך",
+    show: "הצגת המדריך",
+    step: "תחנה",
+    create: "יוצרים כרטיס ראשון",
+    createBody:
+      "לחצו על כרטיס חדש בעמוד, כתבו כותרת וצעד קטן להמשך ושמרו. זה כרטיס אמיתי לבחירתכם, לא הדגמה.",
+    waiting: "ממתינים לכרטיס הראשון…",
+    card: "הכרטיס שלכם כאן!",
+    cardBody:
+      "פתחו את הכרטיס שיצרתם. נסו מעקב, משימות, הערות, עריכה או תזכורת, ואז חזרו לכאן.",
+    openCard: "פתיחת הכרטיס",
+    tried: "ניסיתי, אפשר להמשיך",
+    university: "מקום ללימודים",
+    universityBody:
+      "כאן מרכזים קורסים, מטלות, מועדים וחומרי לימוד. אין צורך להוסיף דבר עכשיו. כשתצטרכו, התחילו בקורס אחד.",
+    groups: "עובדים ביחד",
+    groupsBody:
+      "צרו קבוצה או הצטרפו בהזמנה כדי לשתף כרטיסים ומשימות. הסיור לא ייצור קבוצה ולא ישלח הזמנות.",
+    finish: "הצעד הבא שלכם",
+    finishBody:
+      "הכרתם את הבסיס. המשיכו לגלות בקצב שלכם. אפשר להפעיל את הסיור שוב מההגדרות.",
+    keep: "שמירת הכרטיסים והתחלה",
+    remove: "מחיקת כרטיסי הסיור בלבד",
+    cleanup: "לשמור את כרטיסי הסיור?",
+    cleanupBody:
+      "רק כרטיסים שנוצרו בסיור הזה מופיעים כאן. שמירה לא משנה אותם; מחיקה לא נוגעת בכרטיסים קודמים, בקורסים או בקבוצות.",
+    none: "לא נוצרו כרטיסים בסיור הזה.",
+    done: "מתחילים לגלות",
+    sync: "המתינו לסנכרון לפני מחיקת כרטיסי הסיור.",
+    failure:
+      "המחיקה לא הושלמה. הרשימה נשמרה; נסו שוב או שמרו את הכרטיסים שנותרו.",
+    removing: "מוחקים כרטיסי סיור…",
+    resume: "נמשיך מהמקום שבו עצרנו.",
+    personal: "חזרה לכרטיסים",
+    goUniversity: "פתיחת האוניברסיטה",
+    goGroups: "פתיחת הקבוצות",
+    saved: "נשמר בחשבון",
+    saveNotice: "לא נמחק דבר בלי בחירתכם בסוף הסיור.",
+  },
+};

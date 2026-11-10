@@ -105,9 +105,10 @@ export class OfflineWorkspace {
     if (!this.isCurrentUser()) throw new DomainError('permission-denied')
     await this.update(state => ({ ...state, operations: [...state.operations, change(state)] }))
   }
-  add(name: string, nextStep: string, rank: number, details: ProjectDetails) {
+  async add(name: string, nextStep: string, rank: number, details: ProjectDetails) {
     const after = ProjectEntity.create(this.id(), name, nextStep, rank, details, this.now()).snapshot()
-    return this.queue(() => ({ id: this.id(), entity: 'project', entityId: after.id, before: null, after }))
+    await this.queue(() => ({ id: this.id(), entity: 'project', entityId: after.id, before: null, after }))
+    return after.id
   }
   /** Deterministic captures are idempotent; note conversion may require matching existing content. */
   addOnce(id: string, name: string, nextStep: string, rank: number, details: ProjectDetails, requireMatchingContent = false) {

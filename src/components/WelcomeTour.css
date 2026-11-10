@@ -1,372 +1,278 @@
-/* A read-only spotlight keeps the current explanation and target unmistakable. */
-.tour-layer {
-  position: fixed;
-  z-index: 30000;
-  color: var(--site-text, #25332e);
-  font: inherit;
-  overflow: hidden;
+/* The guide stays beside the real application; only welcome/cleanup are modal. */
+.journey-companion {
+  width: 112px;
+  height: 120px;
+  flex: none;
+  color: var(--site-primary, #365b49);
+  overflow: visible;
 }
-.tour-scrim {
-  position: absolute;
-  inset: 0;
-  background: #15251ed1;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: clip-path 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+.companion-wave {
+  transform-origin: 105px 81px;
+  animation: companion-hello 1s ease-in-out 2;
 }
-.tour-focus {
-  position: absolute;
-  box-sizing: border-box;
-  border: 2px solid #b4d1a7;
-  border-radius: 14px;
-  box-shadow: 0 0 0 5px #b4d1a71a;
-  pointer-events: none;
-  transition:
-    left 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    top 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    height 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+@keyframes companion-hello {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(-18deg);
+  }
 }
-.tour-focus > span {
-  position: absolute;
-  top: -12px;
-  inset-inline-start: 12px;
-  display: grid;
-  place-items: center;
-  min-width: 25px;
-  height: 25px;
-  padding-inline: 3px;
-  border-radius: 7px;
-  background: #d5e5ca;
-  color: #253e2d;
-  font-size: 12px;
+.journey-companion.is-celebrating {
+  animation: companion-cheer 0.6s ease-out;
+}
+@keyframes companion-cheer {
+  40% {
+    transform: translateY(-6px) rotate(-4deg);
+  }
+}
+.journey-welcome {
+  text-align: center;
+  max-width: 560px;
+  margin: auto;
+  padding: 8px 10px 18px;
+  line-height: 1.85;
+}
+.journey-welcome > .journey-companion {
+  display: block;
+  margin: 0 auto 8px;
+  width: 140px;
+  height: 150px;
+}
+.journey-eyebrow {
+  display: block;
+  color: var(--site-primary);
   font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
 }
-.welcome-guide.tour-popover {
-  position: absolute;
+.journey-welcome p {
+  font-size: 17px;
+  color: var(--site-text);
+  margin: 14px 0;
+}
+.journey-welcome small {
+  display: block;
+  color: var(--site-muted);
+  font-size: 13px;
+}
+.journey-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.journey-actions > :is(button, a) {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 150px;
+  min-height: 44px;
   box-sizing: border-box;
-  z-index: 2;
-  margin: 0;
-  padding: 22px;
-  border: 1px solid var(--site-border, #c9c6b3);
+  text-decoration: none;
+  line-height: 1.5;
+  font-size: 14px;
+}
+.journey-actions > small {
+  flex-basis: 100%;
+  color: var(--site-muted);
+  font-size: 12px;
+}
+.journey-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+}
+.journey-target {
+  position: fixed;
+  box-sizing: border-box;
+  border: 2px solid var(--site-primary, #365b49);
+  border-radius: 18px;
+  outline: 5px solid
+    color-mix(in srgb, var(--site-primary, #365b49) 12%, transparent);
+  pointer-events: none;
+}
+.journey-coach {
+  position: absolute;
+  bottom: 26px;
+  inset-inline-end: 26px;
+  width: 350px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  padding: 18px;
+  border: 2px solid var(--site-border, #c9d3ca);
   border-radius: 20px;
   background: var(--site-surface, #fffdf7);
   color: var(--site-text, #25332e);
-  box-shadow: 0 18px 64px #08140d55;
-  overflow: visible;
-  transition: none;
+  box-shadow: 0 12px 44px #18271f22;
+  box-sizing: border-box;
+  pointer-events: auto;
 }
-.guide-heading {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--site-primary, #385c4b);
-  font-size: 13px;
-}
-.guide-heading strong {
-  flex: 1;
-}
-.welcome-guide button {
-  font: inherit;
-  cursor: pointer;
-}
-.welcome-guide .guide-skip {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  padding: 7px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--site-muted, #59684f);
-  box-shadow: none;
-}
-.guide-skip:hover {
-  background: var(--site-soft, #edf1eb);
-}
-.tour-chapters {
-  position: relative;
-  margin-block: 12px 0;
-  font-size: 12px;
-  color: var(--site-muted, #59684f);
-}
-.tour-chapters > summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  list-style: none;
-  min-height: 30px;
-}
-.tour-chapters summary::-webkit-details-marker {
-  display: none;
-}
-.tour-chapters summary > span {
-  margin-inline-start: auto;
-  font-variant-numeric: tabular-nums;
-}
-.tour-index-panel {
-  position: absolute;
-  inset-inline: 0;
-  top: calc(100% + 8px);
-  z-index: 4;
-  display: grid;
-  gap: 3px;
-  max-height: min(38vh, 300px);
-  overflow: auto;
-  overscroll-behavior: contain;
-  padding: 8px;
-  border: 1px solid var(--site-border, #c9c6b3);
-  border-radius: 12px;
-  background: var(--site-surface, #fffdf7);
-  box-shadow: 0 12px 35px #15251e44;
-}
-.tour-popover[data-index-up="true"] .tour-index-panel {
-  top: auto;
-  bottom: calc(100% + 8px);
-}
-.tour-index-panel button {
+.journey-coach header {
   display: flex;
   align-items: center;
   gap: 10px;
-  text-align: start;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--site-text, #25332e);
-  padding: 10px;
-  min-height: 42px;
-  font-size: 12px;
 }
-.tour-index-panel button:hover,
-.tour-index-panel button[aria-current="step"] {
-  background: var(--site-soft, #edf1eb);
-  color: var(--site-primary, #385c4b);
+.journey-coach header > .journey-companion {
+  width: 64px;
+  height: 70px;
 }
-.tour-index-panel small {
-  min-width: 20px;
-  color: var(--site-muted, #59684f);
+.journey-coach header > div {
+  flex: 1;
+  min-width: 0;
 }
-.guide-copy {
-  animation: guide-copy-in 0.25s ease-out;
+.journey-coach header small {
+  color: var(--site-muted);
+  font-size: 11px;
+  display: block;
 }
-.guide-copy h2 {
-  margin: 16px 0 10px;
-  font-size: 23px;
-  line-height: 1.4;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  outline: none;
+.journey-coach h2 {
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 4px 0;
 }
-.guide-copy p {
-  margin: 0;
-  font-size: 15px;
+.journey-coach p {
+  font-size: 14px;
   line-height: 1.85;
-  color: var(--site-text, #25332e);
+  margin: 12px 0;
 }
-.guide-progress {
-  height: 3px;
-  margin-block: 20px 16px;
-  border-radius: 3px;
-  background: var(--site-border, #d7dacb);
+.journey-coach .journey-minimize {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--site-soft, #edf1eb);
+  color: inherit;
+  display: grid;
+  place-items: center;
+}
+.journey-progress {
+  height: 4px;
+  background: var(--site-soft, #edf1eb);
+  border-radius: 5px;
   overflow: hidden;
+  margin: 16px 0;
 }
-.guide-progress > span {
+.journey-progress i {
   display: block;
   height: 100%;
-  background: var(--site-primary, #385c4b);
-  transition: width 0.3s ease;
+  background: var(--site-primary, #365b49);
+  transition: width 0.2s ease;
 }
-.guide-bottom {
+.journey-stop {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.guide-bottom button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 44px;
-  border: 1px solid var(--site-border, #c9c6b3);
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-size: 14px;
-}
-.guide-bottom .tour-back {
-  background: transparent;
-  color: var(--site-muted, #59684f);
-}
-.guide-bottom .tour-next {
-  background: var(--site-primary, #385c4b);
-  color: white;
-  border-color: var(--site-primary, #385c4b);
-  font-weight: 600;
-}
-.guide-bottom button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-.welcome-guide .tour-explore {
-  display: block;
+  gap: 5px;
   margin: 14px auto 0;
-  padding: 4px;
-  background: transparent;
   border: 0;
-  color: var(--site-primary, #385c4b);
+  background: transparent;
+  color: var(--site-muted);
   font-size: 12px;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  padding: 8px;
+  min-height: 32px;
 }
-.tour-fallback {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--site-muted, #59684f);
-  margin-block: 12px 0;
+.journey-remove {
+  border: 1px solid #c1907e;
+  color: var(--site-text, #853d2d);
+  border-radius: 12px;
+  background: transparent;
+  padding: 10px 14px;
 }
-.tour-return {
-  margin-block-start: 10px;
-  padding: 8px 12px;
+.journey-receipts {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  text-align: start;
+  max-height: 170px;
+  overflow: auto;
+}
+.journey-receipts li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--site-soft, #edf1eb);
   border: 1px solid var(--site-border);
-  border-radius: 8px;
-  background: var(--site-soft);
+  padding: 12px 16px;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.journey-receipts li svg {
+  flex: none;
   color: var(--site-primary);
 }
-.tour-layer :is(button, summary):focus-visible {
-  outline: 3px solid var(--site-primary, #385c4b);
+.journey-coach :is(button, a):focus-visible,
+.journey-welcome :is(button, a):focus-visible {
+  outline: 2px solid var(--site-primary);
   outline-offset: 3px;
 }
-@keyframes guide-copy-in {
-  from {
-    opacity: 0.35;
-    transform: translateY(9px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.journey-coach.is-minimized {
+  padding: 8px 14px;
+  width: auto;
+  max-width: calc(100vw - 24px);
+}
+.journey-coach.is-minimized header > .journey-companion {
+  width: 42px;
+  height: 46px;
 }
 @media (max-width: 600px) {
-  .welcome-guide.tour-popover {
-    padding: 16px;
-    border-radius: 16px;
+  .journey-coach {
+    bottom: calc(100px + env(safe-area-inset-bottom));
+    inset-inline: 12px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 140px);
+    padding: 14px;
   }
-  .guide-copy h2 {
-    font-size: 20px;
+  .journey-coach header > .journey-companion {
+    width: 52px;
+    height: 58px;
   }
-  .guide-copy p {
-    font-size: 14px;
-    line-height: 1.75;
+  .journey-coach h2 {
+    font-size: 17px;
   }
-  .guide-progress {
-    margin-block: 16px 12px;
-  }
-}
-@media (max-height: 520px) {
-  .welcome-guide.tour-popover {
-    overflow: auto;
-  }
-  .guide-copy h2 {
-    font-size: 18px;
-    margin-block: 8px;
-  }
-  .guide-copy p {
+  .journey-coach p {
     font-size: 13px;
+    line-height: 1.7;
+    margin: 8px 0;
   }
-  .tour-chapters {
-    margin-block-start: 4px;
+  .journey-coach .journey-actions {
+    margin-top: 12px;
   }
-  .guide-progress {
-    margin-block: 10px;
+  .journey-layer[data-surface-open="true"] {
+    visibility: hidden;
+  }
+  .journey-welcome {
+    padding: 0 0 8px;
+  }
+  .journey-welcome > .journey-companion {
+    width: 105px;
+    height: 112px;
+  }
+  .journey-welcome p {
+    font-size: 15px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tour-focus,
-  .tour-scrim,
-  .tour-popover,
-  .guide-progress > span {
-    transition: none !important;
-  }
-  .guide-copy {
+  .journey-companion,
+  .companion-wave {
     animation: none !important;
   }
+  .journey-progress i {
+    transition: none;
+  }
+}
+:root[data-motion="off"] :is(.journey-companion, .companion-wave) {
+  animation: none;
 }
 
-.guide-copy {
-  max-height: min(42dvh, 300px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-/* Decorative preview: isolated markup, no application actions or persisted data. */
-.tour-example {
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  gap: 7px;
-  margin-top: 12px;
-  padding: 14px;
-  border: 1px solid #b7c6b9;
-  border-radius: 14px;
-  background: #edf2e9;
-  color: #294c3e;
-  font-size: 13px;
-  animation: tour-example-in 0.45s ease-out both;
-}
-.tour-example small {
-  font-size: 11px;
-  opacity: 0.75;
-}
-.tour-example strong {
-  font-size: 16px;
-}
-.tour-example-line {
-  height: 2px;
-  width: 65%;
-  background: #c09054;
-  transform-origin: right;
-  animation: tour-example-draw 1s 0.2s both;
-}
-.tour-example i {
-  position: absolute;
-  inset-inline-end: 12px;
-  top: 14px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #3b6b54;
-  animation: tour-example-pulse 2.4s ease-in-out infinite;
-}
-@keyframes tour-example-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) rotate(-1deg);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes tour-example-draw {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-@keyframes tour-example-pulse {
-  50% {
-    box-shadow: 0 0 0 6px #3b6b5418;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tour-example,
-  .tour-example-line,
-  .tour-example i {
-    animation: none;
-  }
+:root[data-cinematic="off"] :is(.journey-companion, .companion-wave) {
+  animation: none;
 }

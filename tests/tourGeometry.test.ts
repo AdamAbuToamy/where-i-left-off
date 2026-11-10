@@ -1,7 +1,8 @@
 import { it, expect } from "vitest";
-import { tourGeometry } from "../src/components/tourGeometry";
-import { tourText } from "../src/tourText";
-it("keeps the explanation and spotlight within desktop, phone and landscape bounds", () => {
+import { journeyFocusRect } from "../src/components/tourGeometry";
+import { journeyText } from "../src/components/journeyText";
+import { journeySteps } from "../src/components/journeySession";
+it("clips highlights within desktop, narrow phone and landscape viewports", () => {
   for (const view of [
     { width: 390, height: 844 },
     { width: 1440, height: 1000 },
@@ -11,53 +12,37 @@ it("keeps the explanation and spotlight within desktop, phone and landscape boun
     for (const target of [
       null,
       { x: 10, y: 12, width: 120, height: 44 },
-      { x: view.width - 70, y: view.height - 60, width: 65, height: 48 },
+      { x: view.width - 70, y: view.height - 60, width: 200, height: 180 },
       { x: 0, y: -700, width: view.width, height: 2000 },
+      { x: 0, y: -300, width: 30, height: 20 },
     ]) {
-      const { focus, card } = tourGeometry(target, view, {
-        width: 420,
-        height: 340,
-      });
-      expect(card.x).toBeGreaterThanOrEqual(12);
-      expect(card.y).toBeGreaterThanOrEqual(12);
-      expect(card.x + card.width).toBeLessThanOrEqual(view.width - 12);
-      expect(card.y + card.height).toBeLessThanOrEqual(view.height - 12);
+      const focus = journeyFocusRect(target, view);
       if (focus) {
+        expect(focus.x).toBeGreaterThanOrEqual(8);
+        expect(focus.y).toBeGreaterThanOrEqual(8);
+        expect(focus.x + focus.width).toBeLessThanOrEqual(view.width - 8);
+        expect(focus.y + focus.height).toBeLessThanOrEqual(view.height - 8);
         expect(focus.width).toBeGreaterThan(0);
         expect(focus.height).toBeGreaterThan(0);
-        expect(focus.x + focus.width).toBeLessThanOrEqual(view.width - 16);
-        expect(focus.y + focus.height).toBeLessThanOrEqual(view.height - 16);
       }
     }
+  expect(
+    journeyFocusRect(
+      { x: 0, y: -300, width: 30, height: 20 },
+      { width: 390, height: 844 },
+    ),
+  ).toBeNull();
 });
-it("provides localized coverage across the actual app areas and keeps admin steps restricted", () => {
-  for (const language of ["ar", "en", "he"] as const) {
-    const steps = tourText[language].steps;
-    for (const step of steps) {
-      const english = tourText.en.steps.find((value) => value.id === step.id);
-      expect(step.targets).toEqual(english?.targets);
-      expect(step.hash).toBe(english?.hash);
-    }
-    expect(steps.map((step) => step.id)).toEqual([
-      "cards",
-      "create",
-      "details",
-      "week",
-      "board",
-      "courses",
-      "assistant",
-      "appearance",
-    ]);
-    expect(
-      steps.some((step) => step.adminOnly || step.hash.startsWith("/admin")),
-    ).toBe(false);
-    expect(new Set(steps.map((s) => s.id)).size).toBe(steps.length);
-    expect(steps.find((s) => s.id === "board")?.desktopOnly).toBe(true);
-
-    expect(
-      steps.every(
-        (s) => s.title.length > 0 && s.body.length > 0 && s.targets.length > 0,
-      ),
-    ).toBe(true);
-  }
+it("provides the same four essential activities in every language", () => {
+  expect(journeySteps).toEqual([
+    "welcome",
+    "create",
+    "card",
+    "university",
+    "groups",
+    "finish",
+  ]);
+  for (const language of ["ar", "en", "he"] as const)
+    for (const step of journeySteps)
+      expect(journeyText[language][step].length).toBeGreaterThan(0);
 });

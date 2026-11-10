@@ -1,98 +1,131 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import type { Root } from "react-dom/client";
 import { computeAccessibleName } from "dom-accessibility-api";
-import { beforeEach, afterEach, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import type { User } from "firebase/auth";
+const mock = vi.hoisted(() => ({
+  discard: vi.fn(),
+  snapshot: { projects: [], queued: 0 },
+  ready: true,
+}));
+vi.mock("../src/lib/firebase", () => ({
+  db: { app: { options: { projectId: "demo" } } },
+}));
+vi.mock("../src/components/useJourneyWorkspace", () => ({
+  useJourneyWorkspace: () => mock,
+}));
 import WelcomeTour from "../src/components/WelcomeTour";
-import { tourText } from "../src/tourText";
-let root: Root, container: HTMLDivElement;
+import { journeyText } from "../src/components/journeyText";
+let host: HTMLDivElement, root: ReturnType<typeof createRoot>;
+const user = {
+  uid: "new-user",
+  metadata: { creationTime: new Date().toUTCString() },
+} as User;
 beforeEach(() => {
-  history.replaceState({}, "", location.pathname + "#/personal");
   localStorage.clear();
-  location.hash = "#/personal";
+  sessionStorage.clear();
+  history.replaceState({}, "", location.pathname + "#/personal");
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
+  vi.stubGlobal("CSS", { escape: (v: string) => v });
+  HTMLDialogElement.prototype.showModal = function () {
+    this.open = true;
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.open = false;
+  };
+  host = document.createElement("div");
+  document.body.append(host);
+  root = createRoot(host);
+  mock.discard.mockReset();
 });
 afterEach(() => {
   act(() => root.unmount());
-  container.remove();
+  host.remove();
   vi.unstubAllGlobals();
 });
 it.each(["ar", "en", "he"] as const)(
-  "tour close button has the exact translated name and dismisses in %s",
+  "offers an accessible opt-out before writes in %s",
   (language) => {
-    const user = {
-      uid: "new-user",
-      metadata: { creationTime: new Date().toUTCString() },
-    } as User;
     act(() => root.render(<WelcomeTour user={user} language={language} />));
-    const button = document.querySelector<HTMLButtonElement>(".guide-skip")!;
-    expect(button).not.toBeNull();
-    expect(computeAccessibleName(button)).toBe(tourText[language].skip);
-    act(() => button.click());
-    expect(document.querySelector(".welcome-guide")).toBeNull();
+    const skip = document.querySelector<HTMLButtonElement>(".guide-skip")!;
+    expect(computeAccessibleName(skip)).toBe(journeyText[language].skip);
+    act(() => skip.click());
+    expect(document.querySelector("dialog[open]")).toBeNull();
     expect(localStorage.getItem("welcome-tour:v2:new-user")).toBe("done");
-    act(() => window.dispatchEvent(new Event("replay-welcome-tour")));
-    expect(document.querySelector(".welcome-guide")).not.toBeNull();
+    expect(mock.discard).not.toHaveBeenCalled();
   },
 );
-
-it("isolates the explanation, restores the app on Escape and never requires creating data", () => {
-  const user = {
-    uid: "keyboard-user",
-    metadata: { creationTime: new Date().toUTCString() },
-  } as User;
+it("waits for a real account-scoped creation receipt, and asks before discarding", async () => {
   act(() => root.render(<WelcomeTour user={user} language="en" />));
-  expect(container.hasAttribute("inert")).toBe(true);
-  expect(
-    document.querySelector(".tour-popover")?.getAttribute("aria-modal"),
-  ).toBe("true");
-  expect(
-    document.querySelector<HTMLButtonElement>(".tour-next")?.disabled,
-  ).toBe(false);
   act(() =>
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: "Escape",
-        bubbles: true,
-        cancelable: true,
+    document
+      .querySelector<HTMLButtonElement>(".journey-welcome .primary-button")!
+      .click(),
+  );
+  expect(
+    document.querySelector(".journey-layer")?.getAttribute("data-tour-step"),
+  ).toBe("create");
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent("tour-project-created", {
+        detail: { uid: "other", id: "not-mine" },
       }),
     ),
   );
-  expect(document.querySelector(".tour-layer")).toBeNull();
-  expect(container.hasAttribute("inert")).toBe(false);
-  expect(localStorage.getItem("welcome-tour:v2:keyboard-user")).toBe("done");
+  expect(
+    document.querySelector(".journey-layer")?.getAttribute("data-tour-step"),
+  ).toBe("create");
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent("tour-project-created", {
+        detail: { uid: user.uid, id: "created-here" },
+      }),
+    ),
+  );
+  expect(
+    document.querySelector(".journey-layer")?.getAttribute("data-tour-step"),
+  ).toBe("card");
+  act(() =>
+    document.querySelector<HTMLButtonElement>(".journey-stop")!.click(),
+  );
+  expect(mock.discard).not.toHaveBeenCalled();
+  await act(async () =>
+    document.querySelector<HTMLButtonElement>(".journey-remove")!.click(),
+  );
+  expect(mock.discard).toHaveBeenCalledWith(["created-here"]);
+  expect(sessionStorage.getItem("welcome-journey:v1:demo/new-user")).toBeNull();
 });
-
-it("defers a replay until an open editor closes rather than discarding its draft", async () => {
-  const user = {
-    uid: "existing",
-    metadata: { creationTime: new Date(Date.now() - 172800000).toUTCString() },
-  } as User;
+it("does not interrupt extension capture and defers replay until drafts close", async () => {
+  history.replaceState({}, "", location.pathname + "?capture=tab#/personal");
   act(() => root.render(<WelcomeTour user={user} language="en" />));
+  expect(document.querySelector("dialog")).toBeNull();
   const editor = document.createElement("div");
-  editor.id = "new-project-panel";
-  editor.className = "is-open";
+  editor.className = "phone-form-fullscreen";
   document.body.append(editor);
   act(() => window.dispatchEvent(new Event("replay-welcome-tour")));
-  expect(document.querySelector(".tour-layer")).toBeNull();
+  expect(document.querySelector("dialog")).toBeNull();
   await act(async () => {
     editor.remove();
     await Promise.resolve();
   });
-  expect(document.querySelector(".tour-layer")).not.toBeNull();
+  expect(document.querySelector("dialog[open]")).not.toBeNull();
 });
-it("leaves extension captures uninterrupted until a tour is explicitly requested", () => {
-  history.replaceState({}, "", location.pathname + "?capture=tab#/personal");
-  const user = {
-    uid: "capturing",
-    metadata: { creationTime: new Date().toUTCString() },
-  } as User;
+it("retains receipts after cleanup failure rather than silently finishing", async () => {
+  sessionStorage.setItem(
+    "welcome-journey:v1:demo/new-user",
+    JSON.stringify({ step: "finish", ids: ["created-here"] }),
+  );
+  mock.discard.mockRejectedValue(new Error("conflict"));
   act(() => root.render(<WelcomeTour user={user} language="en" />));
-  expect(document.querySelector(".tour-layer")).toBeNull();
-  history.replaceState({}, "", location.pathname + "#/personal");
+  await act(async () =>
+    document.querySelector<HTMLButtonElement>(".journey-remove")!.click(),
+  );
+  expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+    "didn't finish",
+  );
+  expect(sessionStorage.getItem("welcome-journey:v1:demo/new-user")).toContain(
+    "created-here",
+  );
+  expect(localStorage.getItem("welcome-tour:v2:new-user")).toBeNull();
 });
