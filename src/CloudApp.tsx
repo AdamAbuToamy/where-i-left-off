@@ -1,3 +1,4 @@
+import { observeColorMode } from "./lib/colorMode";
 import MobileGestures from "./components/MobileGestures";
 import { authEntryHeld, subscribeAuthEntry } from "./lib/authEntry";
 import CinematicExperience from "./experience/CinematicExperience";
@@ -64,7 +65,7 @@ export default function App() {
   const [loading, setLoading] = useState(configured)
   const [authError, setAuthError] = useState<unknown>(null)
   const t = translations[language], c = cloudText[language], p = pageText[language]
-  useEffect(() => { applyTheme(user?.uid) }, [user?.uid])
+  useEffect(() => { applyTheme(user?.uid); return observeColorMode(user?.uid) }, [user?.uid])
   useEffect(() => { const changed = () => setProfileVersion(v => v + 1); window.addEventListener('profile-updated', changed); return () => window.removeEventListener('profile-updated', changed) }, [])
   useEffect(() => {
     document.documentElement.lang = language

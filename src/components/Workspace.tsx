@@ -1,3 +1,4 @@
+import { matchesCardSearch } from "../lib/cardSearch";
 import { isUniversityReminderProject } from "../../shared/universityCardVisibility.mjs";
 import { useUniversityReminderLinks } from "../university/useUniversityReminderLinks";
 import ContentSkeleton from "./ContentSkeleton";
@@ -156,6 +157,30 @@ export default function Workspace({
     };
     document.addEventListener("pointerdown", outside);
     return () => document.removeEventListener("pointerdown", outside);
+  }, []);
+  useEffect(() => {
+    const quickSearch = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.altKey ||
+        (target instanceof Element &&
+          target.closest('input,textarea,select,[contenteditable="true"]')) ||
+        document.querySelector('dialog[open],[aria-modal="true"]')
+      )
+        return;
+      if (
+        event.key !== "/" &&
+        !((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k")
+      )
+        return;
+      const panel = searchDisclosure.current;
+      if (!panel) return;
+      event.preventDefault();
+      panel.open = true;
+      panel.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
+    };
+    window.addEventListener("keydown", quickSearch);
+    return () => window.removeEventListener("keydown", quickSearch);
   }, []);
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const autoCaptured = useRef(false);
@@ -367,9 +392,10 @@ export default function Workspace({
             sectionFilter === "all" ||
             (sections.some((s) => s.id === p.sectionId) ? p.sectionId : "") ===
               sectionFilter) &&
-          `${p.name} ${p.nextStep} ${p.checkpoint ?? ""} ${p.checklist ?? ""} ${p.projectUrl ?? ""} ${p.attachmentUrl ?? ""} ${p.links?.join(" ") || ""}`
-            .toLocaleLowerCase()
-            .includes(search.toLocaleLowerCase()),
+          matchesCardSearch(
+            `${p.name} ${p.nextStep} ${p.description ?? ""} ${p.checkpoint ?? ""} ${p.checklist ?? ""} ${p.projectUrl ?? ""} ${p.attachmentUrl ?? ""} ${p.links?.join(" ") || ""}`,
+            search,
+          ),
       ),
     [
       projects,
@@ -386,6 +412,7 @@ export default function Workspace({
   const searchInput = (
     <input
       type="search"
+      aria-keyshortcuts="/ Control+k Meta+k"
       aria-label={c.search}
       placeholder={c.search}
       value={search}
@@ -1001,7 +1028,20 @@ export default function Workspace({
                   </span>
                   <span className="workspace-sync-label">{syncLabel}</span>
                 </summary>
-                <div className="workspace-connection-panel">{accountLine}</div>
+                <div className="workspace-connection-panel">
+                  {accountLine}
+                  <p className="sync-explanation">
+                    {syncState === "offline" || syncState === "queued"
+                      ? {
+                          ar: "التغييرات المحفوظة محليًا تنتظر الاتصال. افتح ويلو عند عودة الإنترنت لإكمال المزامنة؛ لا تمسح بيانات المتصفح قبل ذلك.",
+                          en: "Locally saved changes wait for a connection. Keep Wilo open or reopen it when online to finish syncing; avoid clearing browser data before then.",
+                          he: "שינויים שנשמרו מקומית ממתינים לחיבור. השאירו את Wilo פתוח או פתחו אותו מחדש כשיש חיבור; אל תמחקו נתוני דפדפן לפני הסנכרון.",
+                        }[language]
+                      : syncState === "cached"
+                        ? o.reminder
+                        : syncMessage}
+                  </p>
+                </div>
               </details>
             )}
           </CommandFrame>

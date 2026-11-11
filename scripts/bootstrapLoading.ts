@@ -17,6 +17,7 @@ export function bootstrapLoading(): Plugin {
       const css =
         palettes +
         read("src/components/LoadingScreen.css") +
+        read("src/DarkMode.css") +
         read("src/Backgrounds.css") +
         main +
         `

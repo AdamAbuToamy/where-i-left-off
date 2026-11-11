@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import './Experience.css'
+import './DarkMode.css'
 import { sharedInvite } from './lib/inviteLink'
 const incomingInvite = sharedInvite(location.search, location.origin)
 if (incomingInvite) history.replaceState({}, '', `/?groupInvite=${incomingInvite}`)

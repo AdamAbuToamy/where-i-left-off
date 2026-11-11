@@ -56,6 +56,14 @@ for (const phone of [false, true])
     await input.press("Enter");
     await expect(details).not.toHaveAttribute("open", "");
     await expect(input).not.toBeVisible();
+    if (!phone) {
+      await page.keyboard.press("Control+k");
+      await expect(input).toBeFocused();
+      await input.fill("applications Fives");
+      await expect(page.locator(".project-card")).toHaveCount(1);
+      await input.press("Escape");
+      await expect(input).not.toBeVisible();
+    }
     await page
       .getByRole("button", { name: "Clear search", exact: true })
       .click();
@@ -72,6 +80,14 @@ for (const phone of [false, true])
     await page.locator(".heading-copy").click();
     await expect(details).not.toHaveAttribute("open", "");
     await expect(input).not.toBeVisible();
+    if (!phone) {
+      await page.keyboard.press("Control+k");
+      await expect(input).toBeFocused();
+      await input.fill("applications Fives");
+      await expect(page.locator(".project-card")).toHaveCount(1);
+      await input.press("Escape");
+      await expect(input).not.toBeVisible();
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1,

@@ -1,0 +1,214 @@
+/* A separate illumination mode preserves the existing accent palettes. */
+:root:root[data-color-scheme="dark"] {
+  color-scheme: dark;
+  --site-bg: #141c19;
+  --site-surface: #202b25;
+  --site-input: #18221d;
+  --site-text: #e6eee7;
+  --site-muted: #b3c3b7;
+  --site-border: #526258;
+  --site-primary: #35654f;
+  --site-primary-border: #7baa91;
+  --site-primary-shadow: #14271d;
+  --site-soft: #2c3b31;
+  --site-accent: #b2d6bf;
+  --site-dot: #45574a;
+}
+.color-mode-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 24px;
+}
+.color-mode-options button {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+  background: var(--site-surface);
+  color: var(--site-text);
+  font: inherit;
+  cursor: pointer;
+}
+.color-mode-options button[aria-pressed="true"] {
+  outline: 2px solid var(--site-accent);
+  outline-offset: 2px;
+  background: var(--site-soft);
+}
+:root[data-color-scheme="dark"] :is(input, textarea, select) {
+  color: var(--site-text);
+  background-color: var(--site-input);
+  border-color: var(--site-border);
+}
+:root[data-color-scheme="dark"] :is(input, textarea)::placeholder {
+  color: var(--site-muted);
+  opacity: 1;
+}
+:root[data-color-scheme="dark"]
+  :is(
+    .text-button,
+    .secondary-button,
+    .language-trigger,
+    .language-options button,
+    .card-meta,
+    .card-section,
+    .settings-section a
+  ) {
+  color: var(--site-text);
+}
+:root[data-color-scheme="dark"]
+  :is(
+    .auth-panel,
+    .new-project-form,
+    .card-editor,
+    .project-card,
+    .project-detail,
+    .planning-board-dialog,
+    .site-footer,
+    .phone-card-surface,
+    dialog,
+    .journey-coach,
+    .notification-inbox
+  ) {
+  background-color: var(--site-surface);
+  color: var(--site-text);
+  border-color: var(--site-border);
+}
+:root[data-color-scheme="dark"] :is(.notice, .notice.error, .danger-button) {
+  background: #362b26;
+  color: #ffcfb8;
+  border-color: #9e715b;
+}
+:root[data-color-scheme="dark"]
+  :is(.status-badge, .card-status, .card-meta span, .section-navigation small) {
+  background: var(--site-soft);
+  color: var(--site-text);
+}
+:root[data-color-scheme="dark"] a {
+  color: #b8dac8;
+}
+:root[data-color-scheme="dark"] a.primary-button {
+  color: #fff;
+}
+:root[data-color-scheme="dark"] #wilo-site-identity {
+  background: var(--site-surface);
+  color: var(--site-text);
+  border-color: var(--site-border);
+}
+:root[data-color-scheme="dark"] #wilo-site-identity :is(a, .site-footer-names) {
+  color: var(--site-muted);
+}
+:root[data-color-scheme="dark"] .wilo-refresh {
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+:root[data-color-scheme="dark"] .auth-journey {
+  background: var(--site-surface);
+  color: var(--site-text);
+}
+:root[data-color-scheme="dark"] :is(.api-docs, .api-docs pre, .api-docs code) {
+  background: var(--site-input);
+  color: var(--site-text);
+}
+:root[data-color-scheme="dark"] :is(dialog, .focus-dialog)::backdrop {
+  background: #070e0bb3;
+}
+
+:root:root[data-color-scheme="dark"] {
+  --background-base: var(--site-bg);
+}
+:root:root[data-color-scheme="dark"]:is(
+    [data-background="dots"],
+    :not([data-background])
+  ) {
+  --background-image: radial-gradient(circle, #45574a 1px, transparent 1.5px);
+}
+:root:root[data-color-scheme="dark"][data-background="paper"] {
+  --background-image: linear-gradient(
+    transparent 27px,
+    #52625880 27px,
+    #52625880 28px
+  );
+}
+:root:root[data-color-scheme="dark"][data-background="mist"] {
+  --background-image:
+    radial-gradient(ellipse at 10% 0%, #385c4b40, transparent 65%),
+    radial-gradient(ellipse at 95% 90%, #52625840, transparent 65%);
+}
+:root[data-color-scheme="dark"]
+  :is(
+    .planning-launch,
+    .compact-workspace-search summary,
+    .workspace-connection-menu > summary,
+    .notification-bell,
+    .workspace-sync-label,
+    .header-signout,
+    .wilo-loading-wordmark,
+    .wilo-loading-return,
+    .wilo-loading-bookmark
+  ) {
+  color: var(--site-text);
+}
+:root[data-color-scheme="dark"] .header-signout {
+  background: var(--site-soft);
+  border-color: var(--site-border);
+}
+
+:root:root[data-color-scheme="dark"][data-theme="ocean"] {
+  --site-primary: #235c78;
+  --site-accent: #94cae8;
+  --site-soft: #223843;
+}
+:root:root[data-color-scheme="dark"][data-theme="cobalt"] {
+  --site-primary: #354e9d;
+  --site-accent: #aec3ff;
+  --site-soft: #293348;
+}
+:root:root[data-color-scheme="dark"][data-theme="olive"] {
+  --site-primary: #4b6034;
+  --site-accent: #c4d9a7;
+  --site-soft: #303b29;
+}
+:root:root[data-color-scheme="dark"][data-theme="emerald"] {
+  --site-primary: #246c51;
+  --site-accent: #a7ddc4;
+  --site-soft: #223b30;
+}
+:root:root[data-color-scheme="dark"][data-theme="violet"] {
+  --site-primary: #705185;
+  --site-accent: #d0b7e0;
+  --site-soft: #382d43;
+}
+:root:root[data-color-scheme="dark"][data-theme="sunset"] {
+  --site-primary: #9b442a;
+  --site-accent: #f2baa0;
+  --site-soft: #402e28;
+}
+:root:root[data-color-scheme="dark"][data-theme="rose"] {
+  --site-primary: #8d385d;
+  --site-accent: #e9acc5;
+  --site-soft: #3e2a34;
+}
+
+.sync-explanation {
+  margin: 12px 0 0;
+  color: var(--site-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 40ch;
+}
+
+:root:root[data-color-scheme="dark"] .project-card button.card-delete {
+  color: #ffc1b2;
+  border-color: #aa7f70;
+}
+
+.color-mode-heading {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  color: var(--site-text);
+}
+
+:root[data-color-scheme="dark"] label {
+  color: var(--site-text);
+}
