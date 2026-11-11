@@ -22,7 +22,7 @@ export function applyColorMode(mode: ColorMode) {
   document.documentElement.style.colorScheme = dark ? "dark" : "light";
   document
     .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-    ?.setAttribute("content", dark ? "#141c19" : "#aa4c2a");
+    ?.setAttribute("content", dark ? "#171b22" : "#aa4c2a");
 }
 export function saveColorMode(uid: string, mode: ColorMode) {
   try {

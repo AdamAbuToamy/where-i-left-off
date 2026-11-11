@@ -1,18 +1,18 @@
 /* A separate illumination mode preserves the existing accent palettes. */
 :root:root[data-color-scheme="dark"] {
   color-scheme: dark;
-  --site-bg: #141c19;
-  --site-surface: #202b25;
-  --site-input: #18221d;
-  --site-text: #e6eee7;
-  --site-muted: #b3c3b7;
-  --site-border: #526258;
-  --site-primary: #35654f;
-  --site-primary-border: #7baa91;
-  --site-primary-shadow: #14271d;
-  --site-soft: #2c3b31;
-  --site-accent: #b2d6bf;
-  --site-dot: #45574a;
+  --site-bg: #171b22;
+  --site-surface: #272f3a;
+  --site-input: #1c222b;
+  --site-text: #e3e7ee;
+  --site-muted: #acb8c8;
+  --site-border: #414d5e;
+  --site-primary: #32745a;
+  --site-primary-border: #69a78b;
+  --site-primary-shadow: #101915;
+  --site-soft: #323d4b;
+  --site-accent: #8ccdb0;
+  --site-dot: #2b3441;
 }
 .color-mode-options {
   display: flex;
@@ -85,7 +85,7 @@
   color: var(--site-text);
 }
 :root[data-color-scheme="dark"] a {
-  color: #b8dac8;
+  color: #8ed6bc;
 }
 :root[data-color-scheme="dark"] a.primary-button {
   color: #fff;
@@ -121,19 +121,19 @@
     [data-background="dots"],
     :not([data-background])
   ) {
-  --background-image: radial-gradient(circle, #45574a 1px, transparent 1.5px);
+  --background-image: radial-gradient(circle, #2b3441 1px, transparent 1.5px);
 }
 :root:root[data-color-scheme="dark"][data-background="paper"] {
   --background-image: linear-gradient(
     transparent 27px,
-    #52625880 27px,
-    #52625880 28px
+    #71809a22 27px,
+    #71809a22 28px
   );
 }
 :root:root[data-color-scheme="dark"][data-background="mist"] {
   --background-image:
-    radial-gradient(ellipse at 10% 0%, #385c4b40, transparent 65%),
-    radial-gradient(ellipse at 95% 90%, #52625840, transparent 65%);
+    radial-gradient(ellipse at 10% 0%, #52729d1a, transparent 65%),
+    radial-gradient(ellipse at 95% 90%, #3d775a1a, transparent 65%);
 }
 :root[data-color-scheme="dark"]
   :is(
@@ -211,4 +211,14 @@
 
 :root[data-color-scheme="dark"] label {
   color: var(--site-text);
+}
+
+/* Keep texture quiet and distinguish surfaces without bright outlining. */
+:root:root[data-color-scheme="dark"][data-background="grid"] {
+  --background-image:
+    linear-gradient(#8595af12 1px, transparent 1px),
+    linear-gradient(90deg, #8595af12 1px, transparent 1px);
+}
+:root[data-color-scheme="dark"] .project-card {
+  box-shadow: 0 12px 30px #00000026;
 }

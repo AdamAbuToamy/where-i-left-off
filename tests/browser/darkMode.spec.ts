@@ -79,7 +79,7 @@ for (const phone of [false, true])
         await page.evaluate(
           () => getComputedStyle(document.body).backgroundColor,
         ),
-      ).toBe("rgb(20, 28, 25)");
+      ).toBe("rgb(23, 27, 34)");
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
@@ -132,7 +132,7 @@ test("system mode responds live and saved dark mode styles bootstrap before Java
           .getPropertyValue("--site-bg")
           .trim(),
       ),
-    ).toBe("#141c19");
+    ).toBe("#171b22");
   } finally {
     release();
   }

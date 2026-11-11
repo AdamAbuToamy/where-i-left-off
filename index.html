@@ -153,7 +153,7 @@
         const dark = mode === "dark" || (mode !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.colorScheme = dark ? "dark" : "light";
         document.documentElement.style.colorScheme = dark ? "dark" : "light";
-        document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#141c19" : "#aa4c2a");
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#171b22" : "#aa4c2a");
         const language = localStorage.getItem("language");
         if (["en", "ar", "he"].includes(language)) {
           document.documentElement.lang = language;
