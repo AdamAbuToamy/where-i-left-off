@@ -1,3 +1,5 @@
+import CompanionSettings from "../companion/CompanionSettings";
+import { companionText } from "../companion/text";
 import ApiKeySettings from './ApiKeySettings';
 import ExperienceSettings from "../experience/ExperienceSettings";
 import { pushText } from '../pushText'
@@ -46,6 +48,7 @@ export default function ProfileSettings({ user, language }: { user: User; langua
     <SettingsGroup title="API Keys"><ApiKeySettings key={user.uid} user={user} language={language}/></SettingsGroup>
     <SettingsGroup title={a.appearance}><ThemePicker uid={user.uid} language={language} /><ExperienceSettings uid={user.uid} language={language}/></SettingsGroup>
     <SettingsGroup title={w.workflow}><WorkflowSettings uid={user.uid} language={language} /></SettingsGroup>
+    <SettingsGroup title={companionText[language].name}><CompanionSettings uid={user.uid} language={language}/></SettingsGroup>
     <SettingsGroup title={l.rest}><SleepPreference uid={user.uid} language={language} /><section className="settings-section tour-settings"><h3>{tourText[language].replay}</h3><button className="secondary-button tour-replay" onClick={() => window.dispatchEvent(new Event('replay-welcome-tour'))}>{tourText[language].replay}</button></section></SettingsGroup>
     {<SettingsGroup title={pushText[language].title}><section className="settings-section"><p>{pushText[language].intro}</p><a className="primary-button" href="#/notifications">{pushText[language].open}</a></section></SettingsGroup>}
     <SettingsGroup title={l.extension}><ExtensionInstall language={language} settings admin={isAdmin(user.email, user.emailVerified)} /></SettingsGroup>

@@ -185,3 +185,7 @@ The existing Worker exposes read-only `/healthz` and `/readyz` operational probe
 ### Curriculum import and section view
 
 University → Course map now accepts XLSX, DOCX and text PDF study plans, with a review before map-only persistence. Course numbers, year/semester, order and explicit prerequisites remain editable without adding inactive courses to the active course list. Cards also offer **By sections** alongside Week. See [curriculum map guide](docs/CURRICULUM_MAP.md) for supported layouts, limits and storage compatibility.
+
+### Contextual companion
+
+The onboarding mascot can offer occasional deadline, actual stale-visit, release and Chrome-install suggestions. Settings → Wilo companion provides a master opt-out, category controls and frequency. Preferences and bounded visit metadata are local to each account/browser; suggestions never replace scheduled reminders or Push. See [behavior, verification and limits](docs/READINESS-2026-11-11-CONTEXTUAL-COMPANION.md).

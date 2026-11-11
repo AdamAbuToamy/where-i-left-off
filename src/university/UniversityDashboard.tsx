@@ -231,6 +231,7 @@ export default function UniversityDashboard(p: Props) {
                       <div key={task.id} className="uni-deadline-row">
                         <button
                           className="uni-deadline"
+                          data-companion-task={task.id}
                           onClick={() => p.editTask(task)}
                         >
                           <span>
@@ -316,6 +317,7 @@ export default function UniversityDashboard(p: Props) {
                       return (
                         <button
                           className="uni-course-card"
+                          data-companion-course={course.id}
                           key={course.id}
                           style={{
                             borderInlineStartColor: trialCourseColor(course.id),

@@ -1,3 +1,4 @@
+import { recordCompanionVisit } from "../companion/preferences";
 import { createPortal } from "react-dom";
 import { usePhoneLayout, usePhoneSurface } from "./usePhoneSurface";
 import { useDesignPreview } from "./designPreviewContext";
@@ -483,7 +484,7 @@ export default function ProjectCard({
             summaryExtras={summaryExtras}
             expanded={detailsOpen}
             onExpandedChange={(open) => {
-              if (open) setDetailPage("overview");
+              if (open) { setDetailPage("overview"); if(!groupId&&auth?.currentUser)recordCompanionVisit(auth.currentUser.uid,"card:"+project.id); }
               setDetailsOpen(open);
             }}
             project={project}

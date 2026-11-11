@@ -1,3 +1,5 @@
+import { useCompanionFeed } from "../companion/feed";
+import type { CompanionItem } from "../companion/policy";
 import { matchesCardSearch } from "../lib/cardSearch";
 import { isUniversityReminderProject } from "../../shared/universityCardVisibility.mjs";
 import { useUniversityReminderLinks } from "../university/useUniversityReminderLinks";
@@ -104,6 +106,8 @@ export default function Workspace({
   const [pending, setPending] = useState(false);
   const lock = useRef(false);
   const [online, setOnline] = useState(navigator.onLine);
+  const companionItems = useMemo<CompanionItem[]>(() => !group && loaded && online && !cached && !syncError && !queued && !syncing ? projects.filter(p=>p.status!=="done"&&!p.archivedAt&&!p.trashedAt).map(p=>({kind:"card",id:p.id,title:p.name,...(p.dueDate?{dueAt:Date.parse(p.dueDate+"T23:59:59")}: {})})) : [],[projects,group,loaded,online,cached,syncError,queued,syncing]);
+  useCompanionFeed(user.uid,"personal",companionItems);
   const [capture, setCapture] = useState(() =>
     parseTabCapture(window.location.search),
   );

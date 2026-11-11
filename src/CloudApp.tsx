@@ -1,3 +1,4 @@
+import ContextualCompanion from "./companion/ContextualCompanion";
 import { observeColorMode } from "./lib/colorMode";
 import MobileGestures from "./components/MobileGestures";
 import { authEntryHeld, subscribeAuthEntry } from "./lib/authEntry";
@@ -17,7 +18,7 @@ import PushLifecycle from './components/PushLifecycle'
 import { useInstalledApp, preparePushSignOut } from './lib/pushNotifications'
 import SideNavigation from './components/SideNavigation'
 import Support, { LegalLinks } from './components/Support'
-import ExtensionInstall from './components/ExtensionInstall'
+
 import { supportText } from './supportText'
 import WorkflowAgent from './components/WorkflowAgent'
 import { useEffect, useState } from 'react'
@@ -89,9 +90,9 @@ export default function App() {
     {emulatorMode && <p className="notice">{c.demo}</p>}
     {authError !== null && <p className="notice error" role="alert">{errorText(authError, language)}</p>}
     {page === "api-docs" ? <main id="wilo-main" tabIndex={-1}><ErrorBoundary embedded><Suspense fallback={<LoadingScreen language={language} status={c.loading}/>}><ApiDocumentation language={language}/></Suspense></ErrorBoundary></main> : !configured ? <main id="wilo-main" tabIndex={-1}><section className="empty-state"><h2>{c.setup}</h2><p>{c.setupBody}</p></section></main> : loading ? <main id="wilo-main" tabIndex={-1}><LoadingScreen language={language} status={c.loading} /></main> : user ? page === 'support' ? <><main id="wilo-main" tabIndex={-1}><Support key={user.uid} user={user} language={language} initialKind={new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='deletion'?'deletion':new URLSearchParams(location.hash.split('?')[1] || '').get('kind')==='privacy'?'privacy':'suggestion'} /></main>{assistantAccess(import.meta.env.VITE_ASSISTANT_ENABLED,emulatorMode,user.email,user.emailVerified)&&<ErrorBoundary embedded><Suspense fallback={null}><AssistantSandbox key={user.uid} user={user} language={language}/></Suspense></ErrorBoundary>}</> : <><AccountLifecycle key={user.uid} user={user} language={language} mainLandmark>
-      {page !== 'settings' && <ExtensionInstall language={language} />}
       <SessionOutboxSync uid={user.uid}/><CloudPushSync user={user}/><WorkflowAgent user={user} language={language}/>{!user.emailVerified&&<AnnouncementInbox user={user} language={language} />}
       <WelcomeTour key={user.uid} user={user} language={language} />
+      <ContextualCompanion key={"companion:"+user.uid} uid={user.uid} language={language} page={page}/>
       <SideNavigation language={language} page={page} admin={isAdmin(user.email, user.emailVerified)} onSignOut={logout} onLanguageChange={setLanguage} /><MobileNavigation uid={user.uid} language={language} page={page}/>
       {!user.displayName?.trim() && page !== 'settings' && <aside className="profile-prompt" aria-label={p.needsName}><span className="profile-prompt-icon" aria-hidden="true">✦</span><div className="profile-prompt-copy"><strong>{p.needsName}</strong><span>{p.profilePrompt}</span></div><a className="primary-button profile-prompt-action" href="#/settings">{p.editProfile} <span aria-hidden="true">↗</span></a></aside>}
       <main id="wilo-main" tabIndex={-1} className="account-page-outlet" data-page={page} key={`${user.uid}/${page}/${groupId}`}><ErrorBoundary embedded><AccountPage page={page} groupId={groupId} user={user} language={language} installed={installed} profileVersion={profileVersion}/></ErrorBoundary></main>

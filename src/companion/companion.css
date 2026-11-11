@@ -1,0 +1,158 @@
+.context-companion {
+  position: fixed;
+  left: 22px;
+  bottom: 24px;
+  z-index: 1800;
+  width: min(330px, calc(100vw - 32px));
+  color: var(--site-text);
+}
+.context-companion > .journey-companion {
+  position: absolute;
+  bottom: calc(100% - 24px);
+  inset-inline-start: 12px;
+  width: 84px;
+  height: 90px;
+  pointer-events: none;
+}
+.companion-bubble {
+  padding: 20px 16px 12px;
+  border: 1px solid var(--site-border);
+  border-radius: 20px;
+  background: var(--site-surface);
+  box-shadow: 0 12px 36px #0002;
+}
+.companion-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--site-muted);
+  padding-inline-end: 30px;
+}
+.companion-bubble p {
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 10px 0 14px;
+  overflow-wrap: anywhere;
+}
+.companion-close {
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 5px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--site-muted);
+  cursor: pointer;
+}
+.companion-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.companion-actions :is(button, a) {
+  min-height: 44px;
+  padding: 9px 12px;
+  font-size: 13px;
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.companion-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+.companion-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 0;
+  min-height: 36px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--site-muted);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.companion-attention {
+  outline: 2px solid var(--site-accent) !important;
+  outline-offset: 5px;
+}
+.companion-pointer {
+  position: fixed;
+  z-index: 1850;
+  pointer-events: none;
+}
+.companion-pointer > .journey-companion {
+  width: 82px;
+  height: 90px;
+}
+.companion-settings > label,
+.companion-settings fieldset > label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  line-height: 1.6;
+  font-size: 14px;
+}
+.companion-settings input[type="checkbox"] {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  accent-color: var(--site-primary);
+}
+.companion-settings fieldset {
+  margin: 20px 0 0;
+  padding: 0;
+  border: 0;
+}
+.companion-settings legend {
+  font-size: 13px;
+  color: var(--site-muted);
+}
+.companion-settings select {
+  max-width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: var(--site-input);
+  color: var(--site-text);
+  font: inherit;
+}
+.companion-settings fieldset > label:last-child {
+  display: grid;
+}
+@media (max-width: 767px) {
+  .context-companion {
+    left: 16px;
+    bottom: calc(100px + env(safe-area-inset-bottom));
+  }
+  .companion-bubble {
+    padding-top: 16px;
+  }
+}
+
+.companion-pointer small {
+  display: block;
+  max-width: 180px;
+  padding: 5px 9px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: var(--site-surface);
+  color: var(--site-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.companion-bubble {
+  max-height: min(420px, calc(100svh - 210px));
+  overflow: auto;
+}

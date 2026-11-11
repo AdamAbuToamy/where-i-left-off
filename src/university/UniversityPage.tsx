@@ -1,3 +1,6 @@
+import { useCompanionFeed } from "../companion/feed";
+import { recordCompanionVisit } from "../companion/preferences";
+import type { CompanionItem } from "../companion/policy";
 import UniversityDashboard from "./UniversityDashboard";
 import CardReminderControl from "../components/CardReminderControl";
 import { usePhoneLayout } from "../components/usePhoneSurface";
@@ -179,10 +182,12 @@ function Workspace({ user }: { user: User }) {
       () => studyView().tab,
     ),
     [filter, setFilter] = useState(() => studyView().courseId),
+    [linkedLocation,setLinkedLocation] = useState(location.hash),
     [preview, setPreview] = useState<PlanPreview | null>(null),
     [batchOpen, setBatchOpen] = useState(false);
   useEffect(() => {
     const changed = () => {
+      setLinkedLocation(location.hash);
       const next = studyView();
       setTab(next.tab);
       setFilter(next.courseId);
@@ -220,6 +225,12 @@ function Workspace({ user }: { user: User }) {
     latest.current = next;
     setState(next);
   });
+  const companionItems = useMemo<CompanionItem[]>(()=> cloud.status.ready&&!cloud.status.error&&!cloud.status.pending&&!cloud.status.conflicts.length&&!busy ? [
+    ...state.courses.map(c=>({kind:"course" as const,id:c.id,title:c.name})),
+    ...state.tasks.filter(t=>!t.done&&state.courses.some(c=>c.id===t.courseId)).map(t=>({kind:"task" as const,id:t.id,title:t.title,courseId:t.courseId,...(t.due?{dueAt:Date.parse(t.due)}:{})}))
+  ] : [],[state,cloud.status,busy]);
+  useCompanionFeed(user.uid,"university",companionItems);
+  useEffect(()=>{if(filter&&state.courses.some(c=>c.id===filter))recordCompanionVisit(user.uid,"course:"+filter)},[filter,user.uid,state.courses]);
   const openedLink = useRef("");
   useEffect(() => {
     const params = new URLSearchParams(location.hash.split("?")[1] || "");
@@ -242,7 +253,7 @@ function Workspace({ user }: { user: User }) {
         );
       });
     }
-  }, [state]);
+  }, [state, linkedLocation]);
   useEffect(() => {
     const receive = () => {
       try {
