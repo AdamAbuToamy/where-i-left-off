@@ -22,6 +22,7 @@ for (const phone of [false, true])
     }, c.uid);
     await page.goto("/");
     await page.locator("input[type=email]").fill(c.email);
+    await page.locator(".auth-continue").click();
     await page.locator("input[type=password]").fill(c.password);
     await page
       .locator("form")

@@ -1,5 +1,10 @@
 # Security scope and release gates
 
+## Dependency snapshot — 2026-11-11
+
+A fresh full `npm audit --json` reports 23 moderate and 1 low affected dependency entries, with no high or critical entries. These include development/transitive parents and are not 24 independent exploitable issues. Several automatic suggestions propose major downgrades of ESLint/Firebase tooling; no blind audit fix or dependency changes were applied in the appearance/quality release. Earlier counts below are historical. This snapshot is not penetration-test or production IAM evidence.
+
+
 This beta uses Firebase Authentication and server-enforced Firestore rules. Hiding controls is not an authorization mechanism. Tests issue allowed and denied requests directly against the emulator.
 
 ## Covered boundaries

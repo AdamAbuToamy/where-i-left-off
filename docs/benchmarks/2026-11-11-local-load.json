@@ -1,0 +1,32 @@
+{
+  "kind": "local-injected-load-not-provider-capacity",
+  "at": "2026-11-10T23:50:06.802Z",
+  "apiRequests": 1087,
+  "syntheticAccounts": 23,
+  "concurrency": 20,
+  "statusCounts": {
+    "200": 1060,
+    "201": 4,
+    "401": 1,
+    "403": 1,
+    "404": 1,
+    "429": 20
+  },
+  "p50Ms": 6.29,
+  "p95Ms": 21.6,
+  "p99Ms": 25.62,
+  "elapsedMs": 1297,
+  "rateLimit": {
+    "accepted": 60,
+    "rejected": 20
+  },
+  "sameIdempotencyKeyResourceCount": 1,
+  "schedulerInputCards": 300,
+  "firstTickDispatches": 8,
+  "syntheticDispatches": 300,
+  "uniqueDispatchedCards": 300,
+  "simulatedDueTicks": 38,
+  "replayedSchedulerAdditionalDispatches": 0,
+  "realNetworkRequests": 0,
+  "productionWrites": 0
+}

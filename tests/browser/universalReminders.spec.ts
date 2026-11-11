@@ -315,7 +315,7 @@ for (const phone of [false, true])
         .getByRole("button", { name: "Card reminder", exact: true })
         .click();
       await expect(
-        detail.getByText("Cancelled", { exact: true }),
+        page.getByRole("dialog", { name: "Card reminder", exact: true }).getByText("Cancelled", { exact: true }),
       ).toBeVisible();
     });
   });

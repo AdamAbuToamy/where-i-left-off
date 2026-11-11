@@ -18,6 +18,7 @@ async function login(
   );
   await page.goto("/");
   await page.locator('input[type="email"]').fill(email);
+  await page.locator(".auth-continue").click();
   await page.locator('input[type="password"]').fill(password);
   await page
     .locator("form")
@@ -86,9 +87,8 @@ test("desktop planning board keeps main order, saves manual ropes/notes/circles 
   await page.goto("/#/personal");
   await addMainCard(page, "Plan Alpha");
   await addMainCard(page, "Plan Beta");
-  expect(
-    (await page.locator(".workspace-command-bar").boundingBox())!.height,
-  ).toBeLessThan(100);
+  expect(await page.locator(".workspace-command-bar").evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await expect(page.getByRole("button",{name:"Planning board",exact:true})).toBeVisible();
   await page
     .locator(".envelope-summary h2")
     .filter({ hasText: "Plan Alpha" })

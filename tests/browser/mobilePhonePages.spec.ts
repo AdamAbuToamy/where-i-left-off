@@ -142,15 +142,13 @@ test("phone separates secondary tools, course index and course details; records 
     .tap();
   await page.goto("/#/university");
   await expect(page.locator(".study-phone-pages")).toBeVisible();
-  await expect(page.locator(".study-tabs > button")).toHaveCount(2);
+  await expect(page.locator(".uni-navigation > button")).toHaveCount(2);
   await expect(page.locator(".study-schedule-options")).not.toHaveAttribute(
     "open",
   );
-  await expect(page.locator(".study-overview-disclosure")).not.toHaveAttribute(
-    "open",
-  );
-  await page.locator(".study-trial-tools > summary").click();
-  await page.locator(".study-upload input").setInputFiles({
+  await expect(page.locator(".uni-next-lesson")).toBeVisible();
+  await page.locator(".uni-tools > summary").click();
+  await page.locator(".uni-restore input").setInputFiles({
     name: "phone-plan.json",
     mimeType: "application/json",
     buffer: Buffer.from(
@@ -186,24 +184,24 @@ test("phone separates secondary tools, course index and course details; records 
   await page
     .getByRole("button", { name: "Confirm addition", exact: true })
     .click();
-  await expect(page.locator(".study-course-browser")).toBeVisible();
+  await expect(page.locator(".uni-courses")).toBeVisible();
   await expect(page.locator(".study-trial-panel")).toHaveCount(0);
   await page.screenshot({
     path: ".wrangler/mobile-pages-university.png",
     animations: "disabled",
   });
   await page
-    .locator(".study-course-choice")
+    .locator(".uni-course-card")
     .filter({ hasText: "Phone course A" })
     .tap();
-  await expect(page.locator(".study-course-browser")).toHaveCount(0);
+  await expect(page.locator(".uni-courses")).toHaveCount(0);
   await expect(page.locator(".study-trial-panel")).toContainText(
     "Phone course A",
   );
   await page
     .getByRole("button", { name: "Back to courses", exact: true })
     .tap();
-  await expect(page.locator(".study-course-browser")).toBeVisible();
+  await expect(page.locator(".uni-courses")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -256,9 +254,9 @@ test("Arabic phone card form fits the viewport and university prioritizes its co
     .locator(".mobile-bottom-navigation")
     .getByRole("link", { name: "الجامعة", exact: true })
     .click();
-  await expect(page.locator(".study-course-browser")).toBeVisible();
-  await expect(page.locator(".study-tabs > button")).toHaveCount(2);
-  await expect(page.locator(".study-trial-tools")).not.toHaveAttribute("open");
+  await expect(page.locator(".uni-courses")).toBeVisible();
+  await expect(page.locator(".uni-navigation > button")).toHaveCount(2);
+  await expect(page.locator(".uni-tools")).not.toHaveAttribute("open");
   await page.screenshot({
     path: ".wrangler/rtl-university-refined.png",
     animations: "disabled",

@@ -30,7 +30,8 @@
     "generate:api:domain": "node scripts/generate-api-domain.mjs",
     "generate:about": "node scripts/generate-about.mjs",
     "check:about": "node scripts/generate-about.mjs --check",
-    "check:seo:live": "node scripts/check-seo-live.mjs"
+    "check:seo:live": "node scripts/check-seo-live.mjs",
+    "test:load:local": "node scripts/load-test-local-api.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
