@@ -1,0 +1,24 @@
+name: WILO isolated stress validation
+on:
+  push:
+    branches: ['test/wilo-resilience-20261024']
+    paths: ['push-worker/assistant-stress.test.mjs', '.github/workflows/wilo-stress.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stress:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --prefix push-worker --no-audit --no-fund
+      - name: Run synthetic WILO stress and failure tests
+        run: node --test push-worker/assistant-stress.test.mjs
+      - name: Run existing Worker regressions
+        run: npm test --prefix push-worker
